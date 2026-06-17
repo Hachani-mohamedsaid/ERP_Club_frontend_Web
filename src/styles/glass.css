@@ -1,0 +1,118 @@
+/* ============================================================
+   ODIN Glass — frosted-glass surface system
+   Strict glassmorphism: blur + translucency + hairline border +
+   soft sheen. Used for nav, cards, modals, inputs.
+   ============================================================ */
+
+.glass-panel {
+  background: var(--surface-panel);
+  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  border: 1px solid var(--surface-panel-border);
+  border-radius: var(--radius-odin-lg);
+  box-shadow: var(--shadow-glass);
+  position: relative;
+}
+
+/* Top sheen — the light catching the "glass" edge */
+.glass-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    160deg,
+    var(--glass-sheen) 0%,
+    transparent 35%
+  );
+  pointer-events: none;
+}
+
+.glass-panel--raised {
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-glass-strong);
+}
+
+.glass-nav {
+  background: var(--nav-bg);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border-right: 1px solid var(--surface-panel-border);
+}
+
+.glass-input {
+  background: var(--surface-panel);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--surface-panel-border);
+  border-radius: var(--radius-odin-md);
+  color: var(--text-primary);
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.glass-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface-raised);
+}
+
+.glass-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Ambient gradient backdrop, sits behind the whole app */
+.odin-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--surface-canvas);
+  overflow: hidden;
+}
+
+.odin-backdrop::before,
+.odin-backdrop::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.35;
+}
+
+.odin-backdrop::before {
+  width: 38vw;
+  height: 38vw;
+  top: -10%;
+  right: -8%;
+  background: var(--accent);
+}
+
+.odin-backdrop::after {
+  width: 30vw;
+  height: 30vw;
+  bottom: -5%;
+  left: -6%;
+  background: var(--color-ink-500);
+}
+
+[data-theme="light"] .odin-backdrop::before,
+[data-theme="light"] .odin-backdrop::after {
+  opacity: 0.14;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .odin-backdrop::before {
+    animation: odin-drift-a 22s ease-in-out infinite alternate;
+  }
+  .odin-backdrop::after {
+    animation: odin-drift-b 26s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes odin-drift-a {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(-4%, 6%) scale(1.08); }
+}
+@keyframes odin-drift-b {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(5%, -4%) scale(1.05); }
+}
