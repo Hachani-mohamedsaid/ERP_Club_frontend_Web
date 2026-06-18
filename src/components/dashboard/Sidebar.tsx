@@ -1,3 +1,4 @@
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -8,28 +9,31 @@ import {
   Wallet,
   FileText,
   MessageSquare,
-  Settings,
+  LogOut,
 } from "lucide-react";
 
 interface NavItem {
   label: string;
   icon: typeof LayoutDashboard;
-  active?: boolean;
+  path: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Tableau de bord", icon: LayoutDashboard, active: true },
-  { label: "Joueurs", icon: Users },
-  { label: "Équipes", icon: Shield },
-  { label: "Entraînements", icon: CalendarDays },
-  { label: "Matchs", icon: Swords },
-  { label: "Médical", icon: Stethoscope },
-  { label: "Finance", icon: Wallet },
-  { label: "Documents", icon: FileText },
-  { label: "Messages", icon: MessageSquare },
+  { label: "Tableau de bord", icon: LayoutDashboard, path: "/dashboard" },
+  { label: "Joueurs", icon: Users, path: "/players" },
+  { label: "Équipes", icon: Shield, path: "/teams" },
+  { label: "Entraînements", icon: CalendarDays, path: "/training" },
+  { label: "Matchs", icon: Swords, path: "/matches" },
+  { label: "Médical", icon: Stethoscope, path: "/medical" },
+  { label: "Finance", icon: Wallet, path: "/finance" },
+  { label: "Documents", icon: FileText, path: "/documents" },
+  { label: "Messages", icon: MessageSquare, path: "/messages" },
 ];
 
 export function Sidebar() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   return (
     <aside className="glass-nav flex h-full w-64 flex-col px-4 py-6">
       <div className="mb-8 flex items-center gap-2.5 px-2">
@@ -50,27 +54,35 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-1">
-        {NAV_ITEMS.map(({ label, icon: Icon, active }) => (
-          <button
-            key={label}
-            className="flex w-full items-center gap-3 rounded-[var(--radius-odin-md)] px-3 py-2.5 text-sm transition-colors duration-150"
-            style={{
-              background: active ? "var(--accent)" : "transparent",
-              color: active ? "white" : "var(--nav-text)",
-            }}
-          >
-            <Icon size={17} strokeWidth={2} />
-            {label}
-          </button>
-        ))}
+        {NAV_ITEMS.map(({ label, icon: Icon, path }) => {
+          const active = location.pathname === path;
+
+          return (
+            <button
+              key={label}
+              type="button"
+              onClick={() => navigate(path)}
+              className="flex w-full items-center gap-3 rounded-[var(--radius-odin-md)] px-3 py-2.5 text-sm transition-colors duration-150"
+              style={{
+                background: active ? "var(--accent)" : "transparent",
+                color: active ? "white" : "var(--nav-text)",
+              }}
+            >
+              <Icon size={17} strokeWidth={2} />
+              {label}
+            </button>
+          );
+        })}
       </nav>
 
       <button
-        className="flex items-center gap-3 rounded-[var(--radius-odin-md)] px-3 py-2.5 text-sm"
+        type="button"
+        onClick={() => navigate("/login")}
+        className="flex w-full items-center gap-3 rounded-[var(--radius-odin-md)] px-3 py-2.5 text-sm transition-colors duration-150"
         style={{ color: "var(--nav-text)" }}
       >
-        <Settings size={17} strokeWidth={2} />
-        Paramètres
+        <LogOut size={17} strokeWidth={2} />
+        Déconnexion
       </button>
     </aside>
   );

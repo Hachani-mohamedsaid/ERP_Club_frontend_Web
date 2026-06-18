@@ -1,10 +1,13 @@
+import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "./lib/theme";
-import { Dashboard } from "./components/dashboard/Dashboard";
+import { AppRouter } from "./router";
 
 function App() {
   return (
     <ThemeProvider>
-      <Dashboard />
+      <BrowserRouter>
+        <AppRouter />
+      </BrowserRouter>
     </ThemeProvider>
   );
 }
