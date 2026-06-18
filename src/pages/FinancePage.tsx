@@ -1,6 +1,12 @@
 import { GlassCard } from "../components/ui/GlassCard";
+import { Badge } from "../components/ui/Badge";
 
 interface SummaryCard {
+  label: string;
+  value: string;
+}
+
+interface RevenueCard {
   label: string;
   value: string;
 }
@@ -18,6 +24,13 @@ const SUMMARY: SummaryCard[] = [
   { label: "Dépenses ce mois", value: "186 400 DT" },
   { label: "Revenus ce mois", value: "312 000 DT" },
   { label: "Solde restant", value: "184 200 DT" },
+];
+
+const REVENUE_BLOCKS: RevenueCard[] = [
+  { label: "Sponsors", value: "Sponsor principal" },
+  { label: "Billetterie", value: "Recettes matchs" },
+  { label: "Merchandising", value: "Vente maillots" },
+  { label: "Droits TV", value: "Revenus médias" },
 ];
 
 const TRANSACTIONS: Transaction[] = [
@@ -58,6 +71,39 @@ export function FinancePage() {
           </GlassCard>
         ))}
       </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {REVENUE_BLOCKS.map((block, index) => (
+          <GlassCard key={block.label} className="p-4">
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>{block.label}</p>
+            <p className="mt-1 text-lg font-semibold" style={{ color: "var(--text-primary)" }}>{block.value}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Badge tone={index % 2 === 0 ? "success" : "info"}>Actif</Badge>
+              <Badge tone="neutral">Suivi mensuel</Badge>
+            </div>
+          </GlassCard>
+        ))}
+      </div>
+
+      <GlassCard className="p-6">
+        <h2 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+          Graphiques de pilotage
+        </h2>
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-[var(--radius-odin-md)] border px-4 py-3" style={{ borderColor: "var(--surface-panel-border)" }}>
+            <p className="text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Revenus</p>
+            <p className="mt-2 text-lg font-semibold" style={{ color: "var(--text-primary)" }}>+312 000 DT</p>
+          </div>
+          <div className="rounded-[var(--radius-odin-md)] border px-4 py-3" style={{ borderColor: "var(--surface-panel-border)" }}>
+            <p className="text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Dépenses</p>
+            <p className="mt-2 text-lg font-semibold" style={{ color: "var(--text-primary)" }}>-186 400 DT</p>
+          </div>
+          <div className="rounded-[var(--radius-odin-md)] border px-4 py-3" style={{ borderColor: "var(--surface-panel-border)" }}>
+            <p className="text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Cash Flow</p>
+            <p className="mt-2 text-lg font-semibold" style={{ color: "var(--text-primary)" }}>+125 600 DT</p>
+          </div>
+        </div>
+      </GlassCard>
 
       <GlassCard raised className="p-6">
         <h2 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
