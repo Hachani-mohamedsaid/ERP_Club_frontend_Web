@@ -46,16 +46,17 @@
    ============================================================ */
 :root,
 [data-theme="light"] {
-  --surface-canvas: #eef0f3;
-  --surface-canvas-2: #e4e7eb;
-  --surface-panel: rgba(255, 255, 255, 0.6);
+  --surface-canvas: #dfe3e8;
+  --surface-canvas-2: #d4d9e0;
+  --surface-panel: rgba(255, 255, 255, 0.72);
   --surface-panel-solid: #ffffff;
-  --surface-panel-border: rgba(26, 26, 46, 0.08);
-  --surface-raised: rgba(255, 255, 255, 0.78);
+  --surface-panel-border: #727986;
+  --pitch-line: #5f6b7a;
+  --surface-raised: rgba(255, 255, 255, 0.88);
 
   --text-primary: #1a1a2e;
   --text-secondary: #4a4a4a;
-  --text-muted: #7f8c8d;
+  --text-muted: #656f70;
   --text-on-accent: #ffffff;
 
   --accent: #c0392b;
@@ -68,8 +69,8 @@
 
   --glass-blur: 18px;
   --glass-sheen: rgba(255, 255, 255, 0.5);
-  --shadow-glass: 0 8px 32px rgba(26, 26, 46, 0.10);
-  --shadow-glass-strong: 0 16px 48px rgba(26, 26, 46, 0.16);
+  --shadow-glass: 0 8px 32px rgba(26, 26, 46, 0.12), 0 1px 0 rgba(26, 26, 46, 0.06);
+  --shadow-glass-strong: 0 12px 40px rgba(26, 26, 46, 0.16), 0 0 0 1px rgba(109, 119, 132, 0.35);
 }
 
 [data-theme="dark"] {

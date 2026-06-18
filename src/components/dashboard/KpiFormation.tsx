@@ -84,7 +84,7 @@ export function KpiFormation() {
             height="284"
             rx="12"
             fill="none"
-            stroke="var(--surface-panel-border)"
+            stroke="var(--pitch-line, var(--surface-panel-border))"
             strokeWidth="1.5"
           />
           <line
@@ -92,7 +92,7 @@ export function KpiFormation() {
             y1="150"
             x2="392"
             y2="150"
-            stroke="var(--surface-panel-border)"
+            stroke="var(--pitch-line, var(--surface-panel-border))"
             strokeWidth="1.5"
           />
           <circle
@@ -100,7 +100,7 @@ export function KpiFormation() {
             cy="150"
             r="38"
             fill="none"
-            stroke="var(--surface-panel-border)"
+            stroke="var(--pitch-line, var(--surface-panel-border))"
             strokeWidth="1.5"
           />
           <rect
@@ -109,7 +109,7 @@ export function KpiFormation() {
             width="120"
             height="46"
             fill="none"
-            stroke="var(--surface-panel-border)"
+            stroke="var(--pitch-line, var(--surface-panel-border))"
             strokeWidth="1.5"
           />
           <rect
@@ -118,7 +118,7 @@ export function KpiFormation() {
             width="120"
             height="46"
             fill="none"
-            stroke="var(--surface-panel-border)"
+            stroke="var(--pitch-line, var(--surface-panel-border))"
             strokeWidth="1.5"
           />
         </svg>
@@ -126,7 +126,7 @@ export function KpiFormation() {
         {KPI_NODES.map(({ label, value, delta, deltaTone, icon: Icon, top, left }) => (
           <div
             key={label}
-            className="glass-panel absolute flex w-[168px] -translate-x-1/2 -translate-y-1/2 flex-col gap-1 p-3"
+            className="glass-panel glass-panel--raised absolute flex w-[168px] -translate-x-1/2 -translate-y-1/2 flex-col gap-1 p-3"
             style={{ top, left }}
           >
             <div className="flex items-center gap-2">
