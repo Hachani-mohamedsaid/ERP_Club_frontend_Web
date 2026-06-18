@@ -5,34 +5,50 @@ import {
   Shield,
   CalendarDays,
   Swords,
+  Radar,
+  ScrollText,
   Stethoscope,
   Wallet,
-  FileText,
   MessageSquare,
+  ChartColumn,
+  Sparkles,
   LogOut,
+  BarChart3,
+  UserPlus,
 } from "lucide-react";
 
 interface NavItem {
   label: string;
   icon: typeof LayoutDashboard;
   path: string;
+  allowedRoles?: string[];
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Tableau de bord", icon: LayoutDashboard, path: "/dashboard" },
-  { label: "Joueurs", icon: Users, path: "/players" },
-  { label: "Équipes", icon: Shield, path: "/teams" },
+  { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard", allowedRoles: ["responsable"] },
+  { label: "Joueurs", icon: Users, path: "/players", allowedRoles: ["responsable"] },
+  { label: "Teams", icon: Shield, path: "/teams", allowedRoles: ["responsable"] },
+  { label: "Entraîneur", icon: CalendarDays, path: "/coach", allowedRoles: ["coach"] },
+  { label: "Scout", icon: Radar, path: "/scout", allowedRoles: ["scout"] },
+  { label: "Performances", icon: BarChart3, path: "/performance", allowedRoles: ["coach"] },
+  { label: "Recrutement", icon: UserPlus, path: "/recruitment", allowedRoles: ["coach"] },
   { label: "Entraînements", icon: CalendarDays, path: "/training" },
   { label: "Matchs", icon: Swords, path: "/matches" },
-  { label: "Médical", icon: Stethoscope, path: "/medical" },
-  { label: "Finance", icon: Wallet, path: "/finance" },
-  { label: "Documents", icon: FileText, path: "/documents" },
   { label: "Messages", icon: MessageSquare, path: "/messages" },
+  { label: "Reports", icon: ChartColumn, path: "/reports", allowedRoles: ["coach", "responsable"] },
+  { label: "Scouting", icon: Radar, path: "/scouting", allowedRoles: ["coach", "scout"] },
+  { label: "Contracts", icon: ScrollText, path: "/contracts", allowedRoles: ["responsable"] },
+  { label: "Médical", icon: Stethoscope, path: "/medical" },
+  { label: "Finance", icon: Wallet, path: "/finance", allowedRoles: ["responsable"] },
+  { label: "ODIN AI", icon: Sparkles, path: "/odin-ai", allowedRoles: ["responsable"] },
 ];
+
+import { useAuth } from "../../contexts/AuthContext";
 
 export function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
 
   return (
     <aside className="glass-nav flex h-full w-64 flex-col px-4 py-6">
@@ -54,7 +70,11 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-1">
-        {NAV_ITEMS.map(({ label, icon: Icon, path }) => {
+        {NAV_ITEMS.filter((it) => {
+          if (!it.allowedRoles) return true;
+          if (!user) return false;
+          return it.allowedRoles.includes(user.role);
+        }).map(({ label, icon: Icon, path }) => {
           const active = location.pathname === path;
 
           return (

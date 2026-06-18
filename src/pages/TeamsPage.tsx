@@ -1,19 +1,23 @@
 import { Users } from "lucide-react";
 import { GlassCard } from "../components/ui/GlassCard";
 import { Button } from "../components/ui/Button";
+import { Badge } from "../components/ui/Badge";
 
 interface TeamCard {
   category: string;
   name: string;
   playerCount: number;
   coach: string;
+  ranking: string;
+  calendar: string;
+  staff: string;
 }
 
 const TEAMS: TeamCard[] = [
-  { category: "Seniors", name: "FC Carthage — Équipe A", playerCount: 27, coach: "Nabil Maaloul" },
-  { category: "U21", name: "FC Carthage U21", playerCount: 22, coach: "Slim Riahi" },
-  { category: "U18", name: "FC Carthage U18", playerCount: 20, coach: "Amine Gharbi" },
-  { category: "U15", name: "FC Carthage U15", playerCount: 18, coach: "Lotfi Ben Ammar" },
+  { category: "Seniors", name: "FC Carthage — Équipe A", playerCount: 27, coach: "Nabil Maaloul", ranking: "3ème", calendar: "4 matchs ce mois", staff: "3 analystes / 2 kinés" },
+  { category: "U21", name: "FC Carthage U21", playerCount: 22, coach: "Slim Riahi", ranking: "2ème", calendar: "3 matchs ce mois", staff: "1 assistant / 1 préparateur" },
+  { category: "U18", name: "FC Carthage U18", playerCount: 20, coach: "Amine Gharbi", ranking: "1er", calendar: "2 matchs ce mois", staff: "1 scout / 1 kiné" },
+  { category: "U15", name: "FC Carthage U15", playerCount: 18, coach: "Lotfi Ben Ammar", ranking: "4ème", calendar: "3 matchs ce mois", staff: "1 assistant" },
 ];
 
 export function TeamsPage() {
@@ -60,6 +64,18 @@ export function TeamsPage() {
                 <span className="font-medium" style={{ color: "var(--text-primary)" }}>
                   {team.coach}
                 </span>
+              </div>
+              <div className="flex justify-between">
+                <span style={{ color: "var(--text-muted)" }}>Classement</span>
+                <Badge tone="info">{team.ranking}</Badge>
+              </div>
+              <div className="flex justify-between">
+                <span style={{ color: "var(--text-muted)" }}>Calendrier</span>
+                <span className="font-medium" style={{ color: "var(--text-primary)" }}>{team.calendar}</span>
+              </div>
+              <div className="flex justify-between">
+                <span style={{ color: "var(--text-muted)" }}>Staff technique</span>
+                <span className="font-medium" style={{ color: "var(--text-primary)" }}>{team.staff}</span>
               </div>
             </div>
 

@@ -3,16 +3,25 @@ import { Link, useNavigate } from "react-router-dom";
 import { GlassCard } from "../components/ui/GlassCard";
 import { Button } from "../components/ui/Button";
 import { GoogleIcon } from "../components/ui/GoogleIcon";
+import { useAuth } from "../contexts/AuthContext";
 
 export function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { login } = useAuth();
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    console.log({ email, password });
-    navigate("/dashboard");
+    const role = login(email);
+    const destination = role === "coach" ? "/coach" : role === "scout" ? "/scout" : "/dashboard";
+    navigate(destination);
+  }
+
+  function handleQuickLogin(email: string) {
+    const role = login(email);
+    const destination = role === "coach" ? "/coach" : role === "scout" ? "/scout" : "/dashboard";
+    navigate(destination);
   }
 
   function handleGoogleClick() {
@@ -88,6 +97,45 @@ export function LoginPage() {
               Se connecter
             </Button>
           </form>
+
+          <div className="my-5 flex items-center gap-3">
+            <div
+              className="h-px flex-1"
+              style={{ background: "var(--surface-panel-border)" }}
+            />
+            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+              ou
+            </span>
+            <div
+              className="h-px flex-1"
+              style={{ background: "var(--surface-panel-border)" }}
+            />
+          </div>
+
+          <button
+            type="button"
+            className="w-full text-center px-4 py-2.5 rounded-[var(--radius-odin-md)] border text-sm font-medium transition-all duration-300 mb-2"
+            style={{ borderColor: "var(--surface-panel-border)", color: "var(--accent)" }}
+            onClick={() => handleQuickLogin("coach@club.com")}
+          >
+            Se connecter comme Coach
+          </button>
+          <button
+            type="button"
+            className="w-full text-center px-4 py-2.5 rounded-[var(--radius-odin-md)] border text-sm font-medium transition-all duration-300 mb-2"
+            style={{ borderColor: "var(--surface-panel-border)", color: "var(--accent)" }}
+            onClick={() => handleQuickLogin("scout@club.com")}
+          >
+            Se connecter comme Scout
+          </button>
+          <button
+            type="button"
+            className="w-full text-center px-4 py-2.5 rounded-[var(--radius-odin-md)] border text-sm font-medium transition-all duration-300"
+            style={{ borderColor: "var(--surface-panel-border)", color: "var(--accent)" }}
+            onClick={() => handleQuickLogin("responsable@club.com")}
+          >
+            Se connecter comme Responsable
+          </button>
 
           <div className="my-5 flex items-center gap-3">
             <div

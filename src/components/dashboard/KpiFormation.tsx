@@ -1,162 +1,119 @@
-import type { LucideIcon } from "lucide-react";
-import { Trophy, Users, Wallet, HeartPulse } from "lucide-react";
+import { ChartColumn, DollarSign, ShieldAlert, Users, TrendingUp, Trophy } from "lucide-react";
+import { motion } from "framer-motion";
 import { GlassCard } from "../ui/GlassCard";
 
-interface KpiNode {
-  label: string;
-  value: string;
-  delta: string;
-  deltaTone: "up" | "down" | "flat";
-  icon: LucideIcon;
-  /** position on the pitch, percentage based */
-  top: string;
-  left: string;
-}
-
-const KPI_NODES: KpiNode[] = [
-  {
-    label: "Victoires (saison)",
-    value: "14/18",
-    delta: "+3 vs N-1",
-    deltaTone: "up",
-    icon: Trophy,
-    top: "8%",
-    left: "50%",
-  },
-  {
-    label: "Effectif actif",
-    value: "27",
-    delta: "2 en attente",
-    deltaTone: "flat",
-    icon: Users,
-    top: "42%",
-    left: "14%",
-  },
-  {
-    label: "Budget restant",
-    value: "184 200 DT",
-    delta: "−6% ce mois",
-    deltaTone: "down",
-    icon: Wallet,
-    top: "42%",
-    left: "86%",
-  },
-  {
-    label: "Joueurs blessés",
-    value: "3",
-    delta: "1 en rééducation",
-    deltaTone: "flat",
-    icon: HeartPulse,
-    top: "82%",
-    left: "50%",
-  },
+const EXEC_KPIS = [
+  { label: "Classement championnat", value: "2ème", trend: "+1 place", icon: Trophy, tone: "info" as const, bar: 86 },
+  { label: "Budget restant", value: "184 000 DT", trend: "-6% ce mois", icon: DollarSign, tone: "success" as const, bar: 72 },
+  { label: "Valeur effectif", value: "2.8 M DT", trend: "+11% saison", icon: TrendingUp, tone: "success" as const, bar: 64 },
+  { label: "Disponibilité effectif", value: "89%", trend: "3 indisponibles", icon: Users, tone: "info" as const, bar: 89 },
+  { label: "Cash Flow", value: "+125 600 DT", trend: "Stable", icon: ChartColumn, tone: "warning" as const, bar: 58 },
+  { label: "Score ODIN", value: "87/100", trend: "Risque bas", icon: ShieldAlert, tone: "danger" as const, bar: 87 },
 ];
 
-const DELTA_COLOR: Record<KpiNode["deltaTone"], string> = {
-  up: "var(--color-state-success)",
-  down: "var(--color-state-danger)",
-  flat: "var(--text-muted)",
-};
-
 export function KpiFormation() {
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5 },
+    },
+  };
+
   return (
-    <GlassCard raised className="relative overflow-hidden p-6">
-      <div className="mb-1 flex items-baseline justify-between">
-        <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-          Indicateurs clés
-        </h2>
-        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-          Mis à jour il y a 12 min
-        </span>
-      </div>
-
-      {/* Pitch markings — subtle, structural, not decorative-for-its-own-sake */}
-      <div className="relative mx-auto mt-4 aspect-[4/3] w-full max-w-xl">
-        <svg
-          viewBox="0 0 400 300"
-          className="absolute inset-0 h-full w-full"
-          aria-hidden="true"
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <GlassCard raised className="p-6">
+        <motion.div 
+          className="mb-1 flex items-baseline justify-between"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
         >
-          <rect
-            x="8"
-            y="8"
-            width="384"
-            height="284"
-            rx="12"
-            fill="none"
-            stroke="var(--pitch-line, var(--surface-panel-border))"
-            strokeWidth="1.5"
-          />
-          <line
-            x1="8"
-            y1="150"
-            x2="392"
-            y2="150"
-            stroke="var(--pitch-line, var(--surface-panel-border))"
-            strokeWidth="1.5"
-          />
-          <circle
-            cx="200"
-            cy="150"
-            r="38"
-            fill="none"
-            stroke="var(--pitch-line, var(--surface-panel-border))"
-            strokeWidth="1.5"
-          />
-          <rect
-            x="140"
-            y="8"
-            width="120"
-            height="46"
-            fill="none"
-            stroke="var(--pitch-line, var(--surface-panel-border))"
-            strokeWidth="1.5"
-          />
-          <rect
-            x="140"
-            y="246"
-            width="120"
-            height="46"
-            fill="none"
-            stroke="var(--pitch-line, var(--surface-panel-border))"
-            strokeWidth="1.5"
-          />
-        </svg>
+          <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+            Executive KPIs
+          </h2>
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+            Mis à jour il y a 12 min
+          </span>
+        </motion.div>
 
-        {KPI_NODES.map(({ label, value, delta, deltaTone, icon: Icon, top, left }) => (
-          <div
-            key={label}
-            className="glass-panel glass-panel--raised absolute flex w-[168px] -translate-x-1/2 -translate-y-1/2 flex-col gap-1 p-3"
-            style={{ top, left }}
-          >
-            <div className="flex items-center gap-2">
-              <div
-                className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-odin-sm)]"
-                style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
-              >
-                <Icon size={14} strokeWidth={2.2} />
+        <motion.div 
+          className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          {EXEC_KPIS.map(({ label, value, trend, icon: Icon, tone, bar }, index) => (
+            <motion.div 
+              key={label} 
+              variants={itemVariants}
+              whileHover={{ y: -5, boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="rounded-[var(--radius-odin-lg)] border px-4 py-4" 
+              style={{ borderColor: "var(--surface-panel-border)", background: "var(--surface-panel)" }}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>{label}</p>
+                  <motion.p 
+                    className="mt-2 text-2xl font-semibold" 
+                    style={{ color: "var(--text-primary)" }}
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5 + index * 0.1, duration: 0.5 }}
+                  >
+                    {value}
+                  </motion.p>
+                </div>
+                <motion.div 
+                  className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-odin-md)]" 
+                  style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                >
+                  <Icon size={16} />
+                </motion.div>
               </div>
-              <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-                {label}
-              </span>
-            </div>
-            <div className="flex items-baseline justify-between">
-              <span
-                className="text-lg font-semibold"
-                style={{ color: "var(--text-primary)" }}
+
+              <motion.p 
+                className="mt-2 text-xs" 
+                style={{ color: "var(--text-muted)" }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 + index * 0.1, duration: 0.5 }}
               >
-                {value}
-              </span>
-              <span
-                className="text-[11px] font-medium"
-                style={{ color: DELTA_COLOR[deltaTone] }}
-              >
-                {delta}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </GlassCard>
+                {trend}
+              </motion.p>
+
+              <div className="mt-4 h-2 rounded-full" style={{ background: "var(--surface-canvas-2)" }}>
+                <motion.div 
+                  className="h-2 rounded-full" 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${bar}%` }}
+                  transition={{ duration: 1.2, ease: "easeOut", delay: 0.8 + index * 0.1 }}
+                  style={{ background: tone === "danger" ? "var(--color-state-danger)" : tone === "warning" ? "var(--color-state-warning)" : tone === "success" ? "var(--color-state-success)" : "var(--accent)" }} 
+                />
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </GlassCard>
+    </motion.div>
   );
 }

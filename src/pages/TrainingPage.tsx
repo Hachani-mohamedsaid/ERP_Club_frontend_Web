@@ -1,4 +1,4 @@
-import { Clock, MapPin } from "lucide-react";
+import { Clock, MapPin, Users, CalendarDays } from "lucide-react";
 import { GlassCard } from "../components/ui/GlassCard";
 import { Badge } from "../components/ui/Badge";
 
@@ -59,6 +59,27 @@ export function TrainingPage() {
           92%
         </p>
       </GlassCard>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <GlassCard className="p-4">
+          <div className="flex items-center gap-2 text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
+            <Users size={15} style={{ color: "var(--accent)" }} /> Groupe senior
+          </div>
+          <p className="mt-2 text-lg font-semibold" style={{ color: "var(--text-primary)" }}>18 joueurs</p>
+        </GlassCard>
+        <GlassCard className="p-4">
+          <div className="flex items-center gap-2 text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
+            <CalendarDays size={15} style={{ color: "var(--color-state-info)" }} /> Séances prévues
+          </div>
+          <p className="mt-2 text-lg font-semibold" style={{ color: "var(--text-primary)" }}>4 cette semaine</p>
+        </GlassCard>
+        <GlassCard className="p-4">
+          <div className="flex items-center gap-2 text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
+            <Clock size={15} style={{ color: "var(--color-state-warning)" }} /> Charge moyenne
+          </div>
+          <p className="mt-2 text-lg font-semibold" style={{ color: "var(--text-primary)" }}>1h 35</p>
+        </GlassCard>
+      </div>
 
       <GlassCard raised className="p-6">
         <h2 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
