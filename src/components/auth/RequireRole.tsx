@@ -9,7 +9,7 @@ export function RequireRole({ roles, children }: { roles: string[]; children: Re
   if (!roles.includes(user.role)) {
     const fallback: Record<string, string> = {
       joueur: "/joueurs", medical: "/medical", coach: "/coach", scout: "/scout",
-      finance: "/comptabilite", superadmin: "/superadmin/dashboard", adminclub: "/club", responsable: "/dashboard",
+      finance: "/comptabilite", superadmin: "/superadmin/dashboard", adminclub: "/club", preparateur: "/preparateur", analyste: "/analyste", recruteur: "/recruteur", responsable: "/dashboard",
     };
     return <Navigate to={fallback[user.role] ?? "/login"} replace />;
   }

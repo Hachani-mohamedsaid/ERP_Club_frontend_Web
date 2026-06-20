@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { GlassCard } from "../components/ui/GlassCard";
 import { Button } from "../components/ui/Button";
-import { TrendingUp, Users, Globe, Sparkles } from "lucide-react";
+import { TrendingUp, Users, Globe, Sparkles, Zap } from "lucide-react";
 
 const KPI_CARDS = [
   { label: "Clubs Actifs", value: "125", icon: Globe, color: "#3B82F6" },
@@ -49,15 +49,42 @@ const COLORS = ["#3B82F6", "#10B981", "#EF4444", "#8B5CF6", "#F59E0B"];
 export function SuperAdminDashboard() {
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-sm text-[var(--text-muted)]">Bonjour Admin 👋</p>
-          <h1 className="text-2xl font-semibold" style={{ color: "var(--text-primary)" }}>
-            Vue globale de ODIN ERP
-          </h1>
+      <motion.div
+        className="relative overflow-hidden rounded-[20px] border p-6"
+        style={{ background: "linear-gradient(135deg, rgba(15,29,58,0.95), rgba(40,15,60,0.85))", borderColor: "rgba(139,92,246,0.25)" }}
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <motion.div
+                className="flex h-10 w-10 items-center justify-center rounded-xl"
+                style={{ background: "linear-gradient(135deg,#F59E0B,#EF4444)", boxShadow: "0 0 24px rgba(245,158,11,0.5)" }}
+                animate={{ scale: [1, 1.08, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <Zap size={20} className="text-white" />
+              </motion.div>
+              <h1 className="text-2xl font-extrabold" style={{ color: "var(--text-primary)" }}>ODIN ERP Control Center</h1>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-6">
+              {[
+                { v: "125", l: "Clubs actifs", c: "#3B82F6" },
+                { v: "4 580", l: "Utilisateurs", c: "#10B981" },
+                { v: "245 000 DT", l: "MRR", c: "#F59E0B" },
+              ].map((s) => (
+                <div key={s.l}>
+                  <div className="text-xl font-extrabold" style={{ color: s.c }}>{s.v}</div>
+                  <div className="text-[11px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>{s.l}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <Button variant="ghost">Voir rapport complet</Button>
         </div>
-        <Button variant="ghost">Voir rapport complet</Button>
-      </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         {KPI_CARDS.map((item) => {

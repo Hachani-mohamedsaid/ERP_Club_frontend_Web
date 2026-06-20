@@ -185,3 +185,78 @@
 .animate-blink-slow {
   animation: blink-slow 3s infinite;
 }
+
+/* ============================================================
+   LOGIN — Premium SaaS (Vercel/Stripe-style) aurora + cursor
+   ============================================================ */
+
+.login-aurora {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(60% 80% at 15% 20%, rgba(139, 92, 246, 0.18), transparent 60%),
+    radial-gradient(50% 70% at 85% 15%, rgba(192, 57, 43, 0.20), transparent 60%),
+    radial-gradient(55% 75% at 75% 85%, rgba(58, 123, 213, 0.16), transparent 60%),
+    radial-gradient(50% 60% at 25% 90%, rgba(6, 182, 212, 0.14), transparent 60%),
+    var(--surface-canvas);
+}
+
+.login-aurora::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(139, 92, 246, 0.10),
+    rgba(192, 57, 43, 0.12),
+    rgba(58, 123, 213, 0.10),
+    rgba(6, 182, 212, 0.10),
+    rgba(139, 92, 246, 0.10)
+  );
+  filter: blur(80px);
+  animation: aurora-spin 18s linear infinite;
+}
+
+@keyframes aurora-spin {
+  from { transform: rotate(0deg) scale(1.1); }
+  to { transform: rotate(360deg) scale(1.1); }
+}
+
+.login-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(circle at 50% 45%, black, transparent 75%);
+  -webkit-mask-image: radial-gradient(circle at 50% 45%, black, transparent 75%);
+}
+
+.neon-cursor-dot,
+.neon-cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 100;
+  border-radius: 9999px;
+  mix-blend-mode: screen;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .neon-cursor-dot,
+  .neon-cursor-ring { display: none; }
+}
+
+/* App logo — glow + hover (Vercel/Linear feel) */
+.app-logo {
+  transition: transform 0.3s ease, filter 0.3s ease;
+  filter: drop-shadow(0 0 8px rgba(255, 107, 0, 0.35));
+}
+.app-logo:hover {
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 20px rgba(255, 107, 0, 0.8)) drop-shadow(0 0 40px rgba(255, 107, 0, 0.4));
+}

@@ -5,6 +5,7 @@ import { ThemeToggle } from "../ui/ThemeToggle";
 import { useAuth } from "../../contexts/AuthContext";
 import { ChatDrawer } from "../medical/ChatDrawer";
 import { MedicalNotificationsDropdown } from "../medical/MedicalNotificationsDropdown";
+import { PrepNotificationsDropdown } from "../preparateur/PrepNotificationsDropdown";
 import { JoueurNotificationsDropdown } from "../player/JoueurNotificationsDropdown";
 import { JoueurChatDrawer } from "../player/JoueurChatDrawer";
 import { getPlayerById } from "../../data/joueurMockData";
@@ -50,6 +51,39 @@ const TITLE_BY_PATH: Record<string, { title: string; subtitle: string }> = {
   "/club/analytics": { title: "Analytics Club", subtitle: "Performance, buteurs et valeur marchande" },
   "/club/ia": { title: "Assistant IA Club", subtitle: "Analyse intelligente du club" },
   "/club/parametres": { title: "Paramètres Club", subtitle: "Général, sécurité et notifications" },
+  "/preparateur": { title: "Dashboard Préparateur", subtitle: "Hichem Mansouri — FC Carthage" },
+  "/preparateur/charge": { title: "Charge d'Entraînement", subtitle: "Suivi charge, fatigue et récupération" },
+  "/preparateur/condition": { title: "Condition Physique", subtitle: "Profils FIFA et évolution joueurs" },
+  "/preparateur/risques": { title: "Risque Blessures", subtitle: "Heatmap, IA et recommandations coach" },
+  "/preparateur/programmes": { title: "Programmes Physiques", subtitle: "Création, affectation et calendrier" },
+  "/preparateur/historique": { title: "Historique Séances", subtitle: "Sessions passées et planifiées" },
+  "/preparateur/disponibilite": { title: "Disponibilité Match", subtitle: "Fitness, fatigue et readiness joueurs" },
+  "/preparateur/rapports": { title: "Rapports Physiques", subtitle: "Historique, export PDF et Excel" },
+  "/preparateur/ia": { title: "Assistant IA Préparateur", subtitle: "Analyse charge, fatigue et disponibilité" },
+  "/analyste": { title: "Performance Intelligence Center", subtitle: "Sami Gharbi — FC Carthage" },
+  "/analyste/tactique": { title: "Tactical Simulator", subtitle: "Terrain 3D · Drag & Drop · Métriques IA" },
+  "/analyste/replay": { title: "Match Replay Intelligence", subtitle: "Détection auto · Timeline · Jump vidéo" },
+  "/analyste/adversaire": { title: "Opponent Intelligence", subtitle: "Plan de match · Heatmap · Faiblesses" },
+  "/analyste/blessures": { title: "Injury Prediction Lab", subtitle: "Modèle ML · Probabilités 7/14/30 jours" },
+  "/analyste/evolution": { title: "Physical Evolution Lab", subtitle: "Deep Learning · Forecast ML" },
+  "/analyste/valeur": { title: "Market Value Predictor", subtitle: "Estimation IA · Projection 3/6 mois" },
+  "/analyste/scouting": { title: "Scouting Intelligence", subtitle: "Similarité IA · Top 10 joueurs" },
+  "/analyste/patterns": { title: "Deep Learning Insights", subtitle: "Pattern Detection Premium" },
+  "/analyste/training": { title: "Training Optimizer", subtitle: "Programme IA · Calendar DnD" },
+  "/analyste/video-coach": { title: "AI Video Coach", subtitle: "Summary post-match · Voice AI" },
+  "/analyste/executive": { title: "Executive Dashboard", subtitle: "KPIs direction · ROI · Stratégie IA" },
+  "/recruteur": { title: "Dashboard Recruteur", subtitle: "Karim Belaïd — Cellule de recrutement" },
+  "/recruteur/discovery": { title: "Talent Discovery", subtitle: "Filtres avancés · Score IA · Base mondiale" },
+  "/recruteur/shortlist": { title: "Shortlist", subtitle: "Cibles prioritaires et suivi" },
+  "/recruteur/ai": { title: "AI Recruitment", subtitle: "Recherche intelligente par critères" },
+  "/recruteur/video": { title: "Video Scouting", subtitle: "Analyse vidéo IA · Timeline · Heatmap" },
+  "/recruteur/compare": { title: "Player Compare", subtitle: "Comparaison split-screen · Radar" },
+  "/recruteur/market": { title: "Market Value", subtitle: "Valeur, historique et prévision IA" },
+  "/recruteur/negotiations": { title: "Negotiations", subtitle: "Pipeline Kanban des transferts" },
+  "/recruteur/contracts": { title: "Contracts", subtitle: "Génération et conseil IA" },
+  "/recruteur/transfers": { title: "Transfer Center", subtitle: "Offres, statuts et budget" },
+  "/recruteur/requests": { title: "Requests & Validation", subtitle: "Workflow Scout → Responsable" },
+  "/recruteur/reports": { title: "Reports", subtitle: "Export PDF · Excel · PowerPoint" },
   "/finance": { title: "Finance", subtitle: "Budget, revenus et dépenses" },
   "/reports": { title: "Rapports", subtitle: "Rapports sportifs, financiers et recrutement" },
   "/messages": { title: "Messages", subtitle: "Communication interne du club" },
@@ -80,6 +114,7 @@ export function Topbar() {
   const [chatOpen, setChatOpen] = useState(false);
   const isMedical = user?.role === "medical";
   const isJoueur = user?.role === "joueur";
+  const isPreparateur = user?.role === "preparateur";
 
   const profileMatch = location.pathname.match(/^\/joueurs\/([^/]+)$/);
   const profileId = profileMatch?.[1];
@@ -137,6 +172,8 @@ export function Topbar() {
           <MedicalNotificationsDropdown />
         ) : isJoueur ? (
           <JoueurNotificationsDropdown />
+        ) : isPreparateur ? (
+          <PrepNotificationsDropdown />
         ) : (
           <button className="glass-input relative flex h-10 w-10 items-center justify-center">
             <Bell size={16} style={{ color: "var(--text-secondary)" }} />
