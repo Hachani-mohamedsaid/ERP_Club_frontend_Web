@@ -11,17 +11,26 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const { login } = useAuth();
 
+  function getDestination(role: string) {
+    return role === "coach" ? "/coach" :
+      role === "scout" ? "/scout" :
+      role === "medical" ? "/medical" :
+      role === "finance" ? "/comptabilite" :
+      role === "superadmin" ? "/superadmin/dashboard" :
+      role === "adminclub" ? "/club" :
+      role === "joueur" ? "/joueurs" :
+      "/dashboard";
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const role = login(email);
-    const destination = role === "coach" ? "/coach" : role === "scout" ? "/scout" : "/dashboard";
-    navigate(destination);
+    navigate(getDestination(role));
   }
 
   function handleQuickLogin(email: string) {
     const role = login(email);
-    const destination = role === "coach" ? "/coach" : role === "scout" ? "/scout" : "/dashboard";
-    navigate(destination);
+    navigate(getDestination(role));
   }
 
   function handleGoogleClick() {
@@ -127,6 +136,46 @@ export function LoginPage() {
             onClick={() => handleQuickLogin("scout@club.com")}
           >
             Se connecter comme Scout
+          </button>
+          <button
+            type="button"
+            className="w-full text-center px-4 py-2.5 rounded-[var(--radius-odin-md)] border text-sm font-medium transition-all duration-300 mb-2"
+            style={{ borderColor: "var(--surface-panel-border)", color: "var(--accent)" }}
+            onClick={() => handleQuickLogin("medecin@club.com")}
+          >
+            Se connecter comme Médecin
+          </button>
+          <button
+            type="button"
+            className="w-full text-center px-4 py-2.5 rounded-[var(--radius-odin-md)] border text-sm font-medium transition-all duration-300 mb-2"
+            style={{ borderColor: "var(--surface-panel-border)", color: "var(--accent)" }}
+            onClick={() => handleQuickLogin("finance@club.com")}
+          >
+            Se connecter comme Finance
+          </button>
+          <button
+            type="button"
+            className="w-full text-center px-4 py-2.5 rounded-[var(--radius-odin-md)] border text-sm font-medium transition-all duration-300 mb-2"
+            style={{ borderColor: "var(--surface-panel-border)", color: "var(--accent)" }}
+            onClick={() => handleQuickLogin("superadmin@club.com")}
+          >
+            Se connecter comme Super Admin
+          </button>
+          <button
+            type="button"
+            className="w-full text-center px-4 py-2.5 rounded-[var(--radius-odin-md)] border text-sm font-medium transition-all duration-300 mb-2"
+            style={{ borderColor: "var(--surface-panel-border)", color: "var(--accent)" }}
+            onClick={() => handleQuickLogin("admin@club.com")}
+          >
+            Se connecter comme Admin Club
+          </button>
+          <button
+            type="button"
+            className="w-full text-center px-4 py-2.5 rounded-[var(--radius-odin-md)] border text-sm font-medium transition-all duration-300 mb-2"
+            style={{ borderColor: "var(--surface-panel-border)", color: "var(--accent)" }}
+            onClick={() => handleQuickLogin("joueur@club.com")}
+          >
+            Se connecter comme Joueur
           </button>
           <button
             type="button"
