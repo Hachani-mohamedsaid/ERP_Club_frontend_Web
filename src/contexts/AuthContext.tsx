@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState } from "react";
 
 /* eslint-disable react-refresh/only-export-components */
 
-type Role = "responsable" | "coach" | "scout" | "medical" | "finance" | "superadmin" | "adminclub" | "joueur" | "guest";
+type Role = "responsable" | "coach" | "scout" | "medical" | "finance" | "superadmin" | "adminclub" | "preparateur" | "analyste" | "recruteur" | "joueur" | "guest";
 
 interface User {
   email: string;
@@ -27,6 +27,9 @@ const ROLE_MAP: Record<string, Role> = {
   "finance@club.com": "finance",
   "superadmin@club.com": "superadmin",
   "admin@club.com": "adminclub",
+  "preparateur@club.com": "preparateur",
+  "analyste@club.com": "analyste",
+  "recruteur@club.com": "recruteur",
   "joueur@club.com": "joueur",
 };
 

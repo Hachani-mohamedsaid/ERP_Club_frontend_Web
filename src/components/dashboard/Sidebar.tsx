@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import odinLogo from "../../assets/odin-logo.png";
 import {
   LayoutDashboard,
   Users,
@@ -39,6 +40,19 @@ import {
   Settings,
   Trophy,
   Building2,
+  Dumbbell,
+  History,
+  CheckCircle,
+  Brain,
+  Crosshair,
+  Film,
+  Mic,
+  TrendingUp,
+  Briefcase,
+  Star,
+  GitCompare,
+  ArrowLeftRight,
+  Inbox,
 } from "lucide-react";
 
 const JOUEUR_STATIC_ROUTES = ["performances", "medical", "planning", "profil", "ia", "messages"];
@@ -75,7 +89,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Recrutement", icon: UserPlus, path: "/recruitment", allowedRoles: ["coach"] },
   { label: "Entraînements", icon: CalendarDays, path: "/training", allowedRoles: ["coach", "responsable"] },
   { label: "Matchs", icon: Swords, path: "/matches", allowedRoles: ["coach", "responsable"] },
-  { label: "Messages", icon: MessageSquare, path: "/messages", excludeRoles: ["medical", "joueur", "adminclub"] },
+  { label: "Messages", icon: MessageSquare, path: "/messages", excludeRoles: ["medical", "joueur", "adminclub", "preparateur", "analyste", "recruteur"] },
   { label: "Notifications", icon: Bell, path: "/notifications", allowedRoles: ["coach", "responsable", "scout", "finance", "superadmin"] },
   { label: "Reports", icon: ChartColumn, path: "/reports", allowedRoles: ["coach", "responsable"] },
   { label: "Contracts", icon: ScrollText, path: "/contracts", allowedRoles: ["responsable"] },
@@ -96,6 +110,63 @@ const NAV_ITEMS: NavItem[] = [
       { label: "Analytics", icon: BarChart3, path: "/club/analytics" },
       { label: "Assistant IA", icon: Sparkles, path: "/club/ia" },
       { label: "Paramètres", icon: Settings, path: "/club/parametres" },
+    ],
+  },
+  {
+    label: "Préparateur",
+    icon: Dumbbell,
+    path: "/preparateur",
+    allowedRoles: ["preparateur"],
+    submenu: [
+      { label: "Dashboard", icon: LayoutDashboard, path: "/preparateur" },
+      { label: "Charge Équipe", icon: Activity, path: "/preparateur/charge" },
+      { label: "Condition Physique", icon: BarChart3, path: "/preparateur/condition" },
+      { label: "Risque Blessures", icon: Bandage, path: "/preparateur/risques" },
+      { label: "Programmes", icon: Calendar, path: "/preparateur/programmes" },
+      { label: "Historique Séances", icon: History, path: "/preparateur/historique" },
+      { label: "Disponibilité Match", icon: CheckCircle, path: "/preparateur/disponibilite" },
+      { label: "Rapports", icon: FileText, path: "/preparateur/rapports" },
+      { label: "Assistant IA", icon: Sparkles, path: "/preparateur/ia" },
+    ],
+  },
+  {
+    label: "Analyste",
+    icon: Brain,
+    path: "/analyste",
+    allowedRoles: ["analyste"],
+    submenu: [
+      { label: "Intelligence Center", icon: LayoutDashboard, path: "/analyste" },
+      { label: "Tactical Simulator", icon: Crosshair, path: "/analyste/tactique" },
+      { label: "Match Replay", icon: Film, path: "/analyste/replay" },
+      { label: "Opponent Intel", icon: Shield, path: "/analyste/adversaire" },
+      { label: "Injury Lab", icon: Bandage, path: "/analyste/blessures" },
+      { label: "Evolution Lab", icon: TrendingUp, path: "/analyste/evolution" },
+      { label: "Market Value", icon: DollarSign, path: "/analyste/valeur" },
+      { label: "Scouting AI", icon: Search, path: "/analyste/scouting" },
+      { label: "Pattern Detection", icon: Sparkles, path: "/analyste/patterns" },
+      { label: "Training Optimizer", icon: Calendar, path: "/analyste/training" },
+      { label: "AI Video Coach", icon: Mic, path: "/analyste/video-coach" },
+      { label: "Executive", icon: BarChart3, path: "/analyste/executive" },
+    ],
+  },
+  {
+    label: "Recruteur",
+    icon: Briefcase,
+    path: "/recruteur",
+    allowedRoles: ["recruteur"],
+    submenu: [
+      { label: "Dashboard", icon: LayoutDashboard, path: "/recruteur" },
+      { label: "Talent Discovery", icon: Radar, path: "/recruteur/discovery" },
+      { label: "Shortlist", icon: Star, path: "/recruteur/shortlist" },
+      { label: "AI Recruitment", icon: Sparkles, path: "/recruteur/ai" },
+      { label: "Video Scouting", icon: Film, path: "/recruteur/video" },
+      { label: "Player Compare", icon: GitCompare, path: "/recruteur/compare" },
+      { label: "Market Value", icon: TrendingUp, path: "/recruteur/market" },
+      { label: "Negotiations", icon: Handshake, path: "/recruteur/negotiations" },
+      { label: "Contracts", icon: FileText, path: "/recruteur/contracts" },
+      { label: "Transfer Center", icon: ArrowLeftRight, path: "/recruteur/transfers" },
+      { label: "Requests & Validation", icon: Inbox, path: "/recruteur/requests" },
+      { label: "Reports", icon: BarChart3, path: "/recruteur/reports" },
     ],
   },
   {
@@ -182,24 +253,20 @@ export function Sidebar() {
   const [expandedMedical, setExpandedMedical] = useState(true);
   const [expandedJoueur, setExpandedJoueur] = useState(true);
   const [expandedClubAdmin, setExpandedClubAdmin] = useState(true);
+  const [expandedPreparateur, setExpandedPreparateur] = useState(true);
+  const [expandedAnalyste, setExpandedAnalyste] = useState(true);
+  const [expandedRecruteur, setExpandedRecruteur] = useState(true);
 
   return (
     <aside className="glass-nav flex h-full w-64 flex-col px-4 py-6">
-      <div className="mb-8 flex items-center gap-2.5 px-2">
-        <div
-          className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-odin-md)] text-sm font-semibold"
-          style={{ background: "var(--accent)", color: "white" }}
-        >
-          O
-        </div>
-        <div>
-          <p className="text-sm font-semibold leading-tight text-white">
-            ODIN ERP
-          </p>
-          <p className="text-[11px] leading-tight" style={{ color: "var(--nav-text)" }}>
-            FC Carthage
-          </p>
-        </div>
+      <div className="mb-8 flex items-center justify-center px-2">
+        <img
+          src={odinLogo}
+          alt="ODIN ERP"
+          className="app-logo w-36 cursor-pointer"
+          draggable={false}
+          onClick={() => navigate("/")}
+        />
       </div>
 
       <nav className="flex-1 space-y-1">
@@ -215,10 +282,13 @@ export function Sidebar() {
           const isSuperAdmin = label === "Super Admin";
           const isMedical = label === "Médical";
           const isClubAdminMenu = path === "/club";
+          const isPreparateurMenu = path === "/preparateur";
+          const isAnalysteMenu = path === "/analyste";
+          const isRecruteurMenu = path === "/recruteur";
           const isJoueurMenu = path === "/joueurs";
           const activeSubmenu = submenu && submenu.some((item) => {
             if (location.pathname === item.path) return true;
-            if (item.path === "/joueurs" || item.path === "/medical" || item.path === "/club") return false;
+            if (item.path === "/joueurs" || item.path === "/medical" || item.path === "/club" || item.path === "/preparateur" || item.path === "/analyste" || item.path === "/recruteur") return false;
             return location.pathname.startsWith(item.path);
           });
           const isProfileActive = isJoueurMenu && /^\/joueurs\/[^/]+$/.test(location.pathname) && !JOUEUR_STATIC_ROUTES.includes(location.pathname.split("/")[2] ?? "");
@@ -228,13 +298,16 @@ export function Sidebar() {
               <button
                 type="button"
                 onClick={() => {
-                  if ((isScout || isFinance || isSuperAdmin || isMedical || isJoueurMenu || isClubAdminMenu) && submenu) {
+                  if ((isScout || isFinance || isSuperAdmin || isMedical || isJoueurMenu || isClubAdminMenu || isPreparateurMenu || isAnalysteMenu || isRecruteurMenu) && submenu) {
                     if (isScout) setExpandedScout(!expandedScout);
                     if (isFinance) setExpandedFinance(!expandedFinance);
                     if (isSuperAdmin) setExpandedSuperAdmin(!expandedSuperAdmin);
                     if (isMedical) setExpandedMedical(!expandedMedical);
                     if (isJoueurMenu) setExpandedJoueur(!expandedJoueur);
                     if (isClubAdminMenu) setExpandedClubAdmin(!expandedClubAdmin);
+                    if (isPreparateurMenu) setExpandedPreparateur(!expandedPreparateur);
+                    if (isAnalysteMenu) setExpandedAnalyste(!expandedAnalyste);
+                    if (isRecruteurMenu) setExpandedRecruteur(!expandedRecruteur);
                   } else {
                     navigate(path);
                   }
@@ -247,12 +320,12 @@ export function Sidebar() {
               >
                 <Icon size={17} strokeWidth={2} />
                 {label}
-                {(isScout || isFinance || isSuperAdmin || isMedical || isJoueurMenu || isClubAdminMenu) && submenu && (
+                {(isScout || isFinance || isSuperAdmin || isMedical || isJoueurMenu || isClubAdminMenu || isPreparateurMenu || isAnalysteMenu || isRecruteurMenu) && submenu && (
                   <ChevronDown
                     size={16}
                     strokeWidth={2}
                     className="ml-auto transition-transform duration-200"
-                    style={{ transform: (isScout && expandedScout) || (isFinance && expandedFinance) || (isSuperAdmin && expandedSuperAdmin) || (isMedical && expandedMedical) || (isJoueurMenu && expandedJoueur) || (isClubAdminMenu && expandedClubAdmin) ? "rotate(180deg)" : "rotate(0deg)" }}
+                    style={{ transform: (isScout && expandedScout) || (isFinance && expandedFinance) || (isSuperAdmin && expandedSuperAdmin) || (isMedical && expandedMedical) || (isJoueurMenu && expandedJoueur) || (isClubAdminMenu && expandedClubAdmin) || (isPreparateurMenu && expandedPreparateur) || (isAnalysteMenu && expandedAnalyste) || (isRecruteurMenu && expandedRecruteur) ? "rotate(180deg)" : "rotate(0deg)" }}
                   />
                 )}
               </button>
@@ -372,6 +445,72 @@ export function Sidebar() {
                 <div className="mt-1 space-y-1 pl-4">
                   {submenu.map(({ label: subLabel, icon: SubIcon, path: subPath }) => {
                     const subActive = location.pathname === subPath || (subPath === "/club" && location.pathname === "/club");
+                    return (
+                      <button
+                        key={subLabel}
+                        type="button"
+                        onClick={() => navigate(subPath)}
+                        className="flex w-full items-center gap-3 rounded-[var(--radius-odin-md)] px-3 py-2 text-sm transition-colors duration-150"
+                        style={{
+                          background: subActive ? "rgba(var(--accent-rgb), 0.3)" : "transparent",
+                          color: subActive ? "var(--accent)" : "var(--nav-text)",
+                        }}
+                      >
+                        <SubIcon size={15} strokeWidth={2} />
+                        {subLabel}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {isPreparateurMenu && submenu && expandedPreparateur && (
+                <div className="mt-1 space-y-1 pl-4">
+                  {submenu.map(({ label: subLabel, icon: SubIcon, path: subPath }) => {
+                    const subActive = location.pathname === subPath || (subPath === "/preparateur" && location.pathname === "/preparateur");
+                    return (
+                      <button
+                        key={subLabel}
+                        type="button"
+                        onClick={() => navigate(subPath)}
+                        className="flex w-full items-center gap-3 rounded-[var(--radius-odin-md)] px-3 py-2 text-sm transition-colors duration-150"
+                        style={{
+                          background: subActive ? "rgba(var(--accent-rgb), 0.3)" : "transparent",
+                          color: subActive ? "var(--accent)" : "var(--nav-text)",
+                        }}
+                      >
+                        <SubIcon size={15} strokeWidth={2} />
+                        {subLabel}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {isAnalysteMenu && submenu && expandedAnalyste && (
+                <div className="mt-1 space-y-1 pl-4">
+                  {submenu.map(({ label: subLabel, icon: SubIcon, path: subPath }) => {
+                    const subActive = location.pathname === subPath || (subPath === "/analyste" && location.pathname === "/analyste");
+                    return (
+                      <button
+                        key={subLabel}
+                        type="button"
+                        onClick={() => navigate(subPath)}
+                        className="flex w-full items-center gap-3 rounded-[var(--radius-odin-md)] px-3 py-2 text-sm transition-colors duration-150"
+                        style={{
+                          background: subActive ? "rgba(var(--accent-rgb), 0.3)" : "transparent",
+                          color: subActive ? "var(--accent)" : "var(--nav-text)",
+                        }}
+                      >
+                        <SubIcon size={15} strokeWidth={2} />
+                        {subLabel}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {isRecruteurMenu && submenu && expandedRecruteur && (
+                <div className="mt-1 space-y-1 pl-4">
+                  {submenu.map(({ label: subLabel, icon: SubIcon, path: subPath }) => {
+                    const subActive = location.pathname === subPath || (subPath === "/recruteur" && location.pathname === "/recruteur");
                     return (
                       <button
                         key={subLabel}
