@@ -46,7 +46,7 @@ export function PerformancePage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <PerformanceChart
           title="Tendance ODIN Score"
           subtitle="Performance de l'équipe sur 5 semaines"
