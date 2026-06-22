@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Sun, Wind, MapPin, User, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sun, Wind, MapPin, User, Clock, BarChart3, Flame } from "lucide-react";
 import { JoueurPageTransition } from "../../components/player/JoueurPageTransition";
 import { JoueurKpiCard } from "../../components/player/JoueurKpiCard";
-import { MatchCountdown } from "../../components/player/MatchCountdown";
+import { MatchPreviewCard } from "../../components/player/MatchPreviewCard";
 import { useLocale } from "../../contexts/LocaleContext";
 import {
   PLANNING_EVENTS,
   PLANNING_TYPE_COLORS,
   DAILY_TIMELINE,
   MATCH_WEATHER,
-  NEXT_MATCH,
+  TRAINING_LOAD_WEEK,
   type PlanningEventType,
 } from "../../data/joueurPersonalData";
 
@@ -41,15 +41,61 @@ export function JoueurPlanningPage() {
   const firstDay = getFirstDayOfMonth(year, month);
   const monthLabel = currentDate.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
 
+  const loadColor = TRAINING_LOAD_WEEK.load >= 80 ? "#EF4444" : TRAINING_LOAD_WEEK.load >= 60 ? "#F59E0B" : "#22C55E";
+
   return (
     <JoueurPageTransition>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="space-y-4 lg:col-span-1">
-          <JoueurKpiCard>
-            <MatchCountdown targetDate={NEXT_MATCH.targetDate} label={t.planning.countdown} />
+      {/* Match + charge row */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[340px_1fr]">
+        <MatchPreviewCard starterLabel={t.dashboard.starterProb} />
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <JoueurKpiCard delay={0.05}>
+            <div className="mb-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BarChart3 size={16} style={{ color: loadColor }} />
+                <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{t.planning.trainingLoad}</h3>
+              </div>
+              <span className="text-lg font-black" style={{ color: loadColor }}>{TRAINING_LOAD_WEEK.load}%</span>
+            </div>
+            <div className="h-2.5 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+              <motion.div className="h-full rounded-full" style={{ background: loadColor }}
+                initial={{ width: 0 }} animate={{ width: `${TRAINING_LOAD_WEEK.load}%` }} transition={{ duration: 1 }} />
+            </div>
+            <p className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>
+              {TRAINING_LOAD_WEEK.sessionsCompleted}/{TRAINING_LOAD_WEEK.sessionsTotal} séances · Intensité {TRAINING_LOAD_WEEK.intensity}
+            </p>
+            <div className="mt-3 flex gap-1">
+              {Array.from({ length: TRAINING_LOAD_WEEK.sessionsTotal }).map((_, i) => (
+                <div key={i} className="h-1.5 flex-1 rounded-full"
+                  style={{ background: i < TRAINING_LOAD_WEEK.sessionsCompleted ? loadColor : "rgba(255,255,255,0.08)" }} />
+              ))}
+            </div>
           </JoueurKpiCard>
 
           <JoueurKpiCard delay={0.08}>
+            <div className="mb-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Flame size={16} style={{ color: "#F59E0B" }} />
+                <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{t.planning.fatiguePredicted}</h3>
+              </div>
+              <span className="text-lg font-black" style={{ color: "#F59E0B" }}>{TRAINING_LOAD_WEEK.fatiguePredicted}%</span>
+            </div>
+            <div className="h-2.5 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+              <motion.div className="h-full rounded-full" style={{ background: "#F59E0B" }}
+                initial={{ width: 0 }} animate={{ width: `${TRAINING_LOAD_WEEK.fatiguePredicted}%` }} transition={{ duration: 1, delay: 0.1 }} />
+            </div>
+            <p className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>Prédiction IA · repos recommandé jeudi</p>
+            <div className="mt-3 rounded-xl border px-3 py-2 text-xs" style={{ borderColor: "rgba(245,158,11,0.25)", background: "rgba(245,158,11,0.06)", color: "var(--text-secondary)" }}>
+              ⚠️ Charge élevée avant match EST — réduire intensité vendredi
+            </div>
+          </JoueurKpiCard>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="space-y-4 lg:col-span-1">
+          <JoueurKpiCard delay={0.1}>
             <div className="flex items-center gap-2">
               <Sun size={18} style={{ color: "#F59E0B" }} />
               <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{t.planning.weather}</h3>
@@ -61,7 +107,7 @@ export function JoueurPlanningPage() {
             </div>
           </JoueurKpiCard>
 
-          <JoueurKpiCard delay={0.1}>
+          <JoueurKpiCard delay={0.12}>
             <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{t.planning.timeline}</h3>
             <div className="relative space-y-0">
               {DAILY_TIMELINE.map((item, idx) => (
@@ -129,6 +175,14 @@ export function JoueurPlanningPage() {
                   </motion.div>
                 );
               })}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-3">
+              {(Object.keys(TYPE_LABELS) as PlanningEventType[]).map((type) => (
+                <div key={type} className="flex items-center gap-1.5 text-[10px]" style={{ color: "var(--text-muted)" }}>
+                  <span className="h-2 w-2 rounded-full" style={{ background: PLANNING_TYPE_COLORS[type] }} />
+                  {TYPE_LABELS[type]}
+                </div>
+              ))}
             </div>
           </JoueurKpiCard>
 

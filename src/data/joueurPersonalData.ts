@@ -1,7 +1,24 @@
 import { getPlayerById } from "./joueurMockData";
 
-export const PLAYER_AVATAR_URL =
-  "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&h=400&fit=crop&crop=faces";
+/** Cutout joueur PNG transparent — carte FUT */
+export const PLAYER_CUTOUT_URL: string | null = "/images/player-cutout.png";
+
+export const STADIUM_BG_URL =
+  "https://images.unsplash.com/photo-1459865264687-5955966577e7?w=1200&h=500&fit=crop";
+
+export const TRAINING_LOAD_WEEK = {
+  load: 85,
+  fatiguePredicted: 72,
+  sessionsCompleted: 4,
+  sessionsTotal: 5,
+  intensity: "Élevée" as const,
+};
+
+export const LAST_MATCH_RATINGS = [
+  { opponent: "EST", rating: 8.5, goals: 2, date: "15/06" },
+  { opponent: "CA",  rating: 7.2, goals: 1, date: "08/06" },
+  { opponent: "CSS", rating: 7.8, goals: 0, date: "01/06" },
+];
 
 export const CURRENT_PLAYER_ID = "1";
 
@@ -17,7 +34,13 @@ export const NEXT_MATCH = {
   opponent: "EST",
   home: "FC Carthage",
   away: "EST",
+  homeShort: "FCC",
+  awayShort: "EST",
+  homeColor: "#FF6B57",
+  awayColor: "#E11D48",
   label: "FC Carthage vs EST",
+  competition: "Ligue 1 · J26",
+  stadium: "Stade Olympique de Radès",
   daysUntil: 2,
   date: "21/06/2026",
   time: "20:00",
@@ -295,6 +318,37 @@ export const TEAM_AVERAGE = {
   defending: 68,
 };
 
+export const TOP_CLUB_PLAYER = {
+  name: "Youssef Msakni",
+  position: "MOC",
+  ovr: 86,
+  avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=120&fit=crop&crop=faces",
+  radar: {
+    speed: 82,
+    passing: 88,
+    shooting: 79,
+    physical: 76,
+    vision: 90,
+    defending: 62,
+  },
+};
+
+export const VIDEO_ANALYSIS = {
+  match: "FC Carthage vs CSS",
+  date: "15/06/2026",
+  result: "1-0",
+  thumbnail: "https://images.unsplash.com/photo-1574629810360-43c2d185f1d8?w=720&h=400&fit=crop",
+  goals: [
+    { minute: 67, type: "Pied droit", xG: 0.72, description: "Enveloppé surface — angle fermé" },
+    { minute: 82, type: "Tête", xG: 0.41, description: "Corner — 2e poteau" },
+  ],
+  passes: { completed: 28, key: 4, accuracy: 84, intoBox: 6 },
+  missedChances: [
+    { minute: 23, xG: 0.61, reason: "Tir cadré — arrêt gardien" },
+    { minute: 54, xG: 0.38, reason: "Hors cadre — pied gauche" },
+  ],
+};
+
 export const PERFORMANCE_EVOLUTION = [
   { month: "Jan", score: 78 },
   { month: "Fév", score: 82 },
@@ -395,3 +449,86 @@ export function getCurrentPlayerData(playerId: string = CURRENT_PLAYER_ID) {
   if (!player) return null;
   return { ...player, ...DASHBOARD_KPIS };
 }
+
+/* ─── FIFA / FUT Card attributes ──────────────────────────────── */
+export interface FifaAttributes {
+  pac: number; sho: number; pas: number; dri: number; def: number; phy: number;
+}
+
+export function getFifaAttributes(radar: {
+  speed: number; passing: number; shooting: number; physical: number; vision: number; defending: number;
+}): FifaAttributes {
+  return {
+    pac: radar.speed,
+    sho: radar.shooting,
+    pas: radar.passing,
+    dri: Math.round((radar.vision + radar.speed) / 2),
+    def: radar.defending,
+    phy: radar.physical,
+  };
+}
+
+/* ─── Career Stats (cumulative) ───────────────────────────────── */
+export const CAREER_STATS = {
+  matches: 128,
+  goals: 84,
+  assists: 29,
+  minutes: 10240,
+  yellowCards: 14,
+  redCards: 2,
+  cleanSheets: 0,
+  trophies: 3,
+  seasons: 4,
+};
+
+export const CAREER_STATS_BY_SEASON = [
+  { season: "2022-23", club: "Club Africain", matches: 22, goals: 9,  assists: 4 },
+  { season: "2023-24", club: "FC Carthage",   matches: 34, goals: 21, assists: 8 },
+  { season: "2024-25", club: "FC Carthage",   matches: 38, goals: 26, assists: 9 },
+  { season: "2025-26", club: "FC Carthage",   matches: 34, goals: 28, assists: 8 },
+];
+
+/* ─── AI Coach: Strengths / Weaknesses / Training Plan ────────── */
+export const AI_STRENGTHS = [
+  { label: "Finition", value: 91, note: "Top 5% du championnat" },
+  { label: "Vitesse de pointe", value: 88, note: "+8% ce trimestre" },
+  { label: "Jeu sans ballon", value: 86, note: "Appels intelligents" },
+];
+
+export const AI_WEAKNESSES = [
+  { label: "Jeu de tête", value: 72, note: "Travailler le timing du saut" },
+  { label: "Pressing défensif", value: 68, note: "Intensité à améliorer" },
+  { label: "Pied gauche", value: 64, note: "Finition à renforcer" },
+];
+
+export type TrainingFocus = "Sprint" | "Finishing" | "Repos" | "Tactique" | "Force" | "Récupération";
+
+export interface TrainingDay {
+  day: string;
+  focus: TrainingFocus;
+  detail: string;
+  intensity: number;
+  icon: string;
+}
+
+export const AI_TRAINING_PLAN: TrainingDay[] = [
+  { day: "Lundi",    focus: "Sprint",       detail: "Pliométrie + sprints 30m × 8", intensity: 85, icon: "⚡" },
+  { day: "Mardi",    focus: "Finishing",    detail: "Finition 1-touch · 60 frappes", intensity: 75, icon: "🎯" },
+  { day: "Mercredi", focus: "Repos",        detail: "Repos actif + mobilité",        intensity: 20, icon: "😴" },
+  { day: "Jeudi",    focus: "Tactique",     detail: "Appels dans la surface · vidéo", intensity: 60, icon: "📋" },
+  { day: "Vendredi", focus: "Force",        detail: "Core + jambes · renforcement",   intensity: 80, icon: "💪" },
+  { day: "Samedi",   focus: "Récupération", detail: "Cryothérapie + physio",          intensity: 30, icon: "🧊" },
+];
+
+export const AI_INJURY_PREVENTION = {
+  zone: "Genou droit",
+  risk: 32,
+  level: "Modéré",
+  advice: "Limiter les changements de direction à haute intensité. Renforcement ischio-jambiers recommandé 2×/semaine.",
+};
+
+export const AI_RECOMMENDATIONS = [
+  "Maintenir 7h30 de sommeil minimum avant chaque match",
+  "Ajouter 1 séance de jeu de tête par semaine (point faible identifié)",
+  "Hydratation +0.5L les jours d'entraînement intense",
+];

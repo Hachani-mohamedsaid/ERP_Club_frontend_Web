@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { Eye, GitCompare, Star } from "lucide-react";
+import { Eye, GitCompare, Star, UserSearch } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { PlayerAvatar } from "../player/PlayerAvatar";
 import type { ScoutPlayer } from "../../data/recruteurData";
 
@@ -23,6 +24,7 @@ export function TalentCard({
   onCompare: (p: ScoutPlayer) => void;
   onShortlist: (p: ScoutPlayer) => void;
 }) {
+  const navigate = useNavigate();
   const col = scoreColor(player.aiScore);
 
   return (
@@ -94,7 +96,16 @@ export function TalentCard({
           className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold text-white transition-transform hover:scale-[1.03]"
           style={{ background: "linear-gradient(135deg,#8B5CF6,#6366F1)" }}
         >
-          <Eye size={13} /> Profil
+          <Eye size={13} /> Vue rapide
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate(`/recruteur/player/${player.id}`)}
+          className="flex items-center justify-center rounded-lg px-3 py-2 text-xs transition-colors hover:bg-white/10"
+          style={{ background: "rgba(139,92,246,0.1)", color: "#8B5CF6" }}
+          title="Profil complet"
+        >
+          <UserSearch size={14} />
         </button>
         <button
           type="button"

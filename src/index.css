@@ -45,34 +45,6 @@
    Consumed via CSS vars so components never hardcode colors.
    ============================================================ */
 :root,
-[data-theme="light"] {
-  --surface-canvas: #dfe3e8;
-  --surface-canvas-2: #d4d9e0;
-  --surface-panel: rgba(255, 255, 255, 0.72);
-  --surface-panel-solid: #ffffff;
-  --surface-panel-border: #727986;
-  --pitch-line: #5f6b7a;
-  --surface-raised: rgba(255, 255, 255, 0.88);
-
-  --text-primary: #1a1a2e;
-  --text-secondary: #4a4a4a;
-  --text-muted: #656f70;
-  --text-on-accent: #ffffff;
-
-  --accent: #c0392b;
-  --accent-strong: #962d22;
-  --accent-soft: rgba(192, 57, 43, 0.12);
-
-  --nav-bg: rgba(26, 26, 46, 0.92);
-  --nav-text: rgba(255, 255, 255, 0.7);
-  --nav-text-active: #ffffff;
-
-  --glass-blur: 18px;
-  --glass-sheen: rgba(255, 255, 255, 0.5);
-  --shadow-glass: 0 8px 32px rgba(26, 26, 46, 0.12), 0 1px 0 rgba(26, 26, 46, 0.06);
-  --shadow-glass-strong: 0 12px 40px rgba(26, 26, 46, 0.16), 0 0 0 1px rgba(109, 119, 132, 0.35);
-}
-
 [data-theme="dark"] {
   --surface-canvas: #0d0d18;
   --surface-canvas-2: #14141f;
@@ -80,15 +52,19 @@
   --surface-panel-solid: #1a1a2e;
   --surface-panel-border: rgba(255, 255, 255, 0.08);
   --surface-raised: rgba(46, 46, 72, 0.6);
+  --bg-primary: #0d0d18;
 
   --text-primary: #f4f5f7;
   --text-secondary: #c2c5cc;
   --text-muted: #8d8fa3;
   --text-on-accent: #ffffff;
 
-  --accent: #e0584a;
-  --accent-strong: #c0392b;
-  --accent-soft: rgba(224, 88, 74, 0.16);
+  --accent: #ff7a00;
+  --accent-strong: #e66000;
+  --accent-dark: #c0392b;
+  --accent-soft: rgba(255, 122, 0, 0.16);
+  --accent-rgb: 255, 122, 0;
+  --pitch-line: rgba(255, 255, 255, 0.12);
 
   --nav-bg: rgba(13, 13, 24, 0.92);
   --nav-text: rgba(255, 255, 255, 0.55);
@@ -98,6 +74,37 @@
   --glass-sheen: rgba(255, 255, 255, 0.06);
   --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.35);
   --shadow-glass-strong: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="light"] {
+  --surface-canvas: #dfe3e8;
+  --surface-canvas-2: #d4d9e0;
+  --surface-panel: rgba(255, 255, 255, 0.72);
+  --surface-panel-solid: #ffffff;
+  --surface-panel-border: #727986;
+  --pitch-line: #5f6b7a;
+  --surface-raised: rgba(255, 255, 255, 0.88);
+  --bg-primary: #dfe3e8;
+
+  --text-primary: #1a1a2e;
+  --text-secondary: #4a4a4a;
+  --text-muted: #656f70;
+  --text-on-accent: #ffffff;
+
+  --accent: #ff7a00;
+  --accent-strong: #e66000;
+  --accent-dark: #c0392b;
+  --accent-soft: rgba(255, 122, 0, 0.12);
+  --accent-rgb: 255, 122, 0;
+
+  --nav-bg: rgba(26, 26, 46, 0.92);
+  --nav-text: rgba(255, 255, 255, 0.7);
+  --nav-text-active: #ffffff;
+
+  --glass-blur: 18px;
+  --glass-sheen: rgba(255, 255, 255, 0.5);
+  --shadow-glass: 0 8px 32px rgba(26, 26, 46, 0.12), 0 1px 0 rgba(26, 26, 46, 0.06);
+  --shadow-glass-strong: 0 12px 40px rgba(26, 26, 46, 0.16), 0 0 0 1px rgba(109, 119, 132, 0.35);
 }
 
 * {
@@ -135,4 +142,19 @@ body {
 }
 ::-webkit-scrollbar-track {
   background: transparent;
+}
+
+@keyframes fifa-card-shine {
+  0% { transform: translateX(-130%) skewX(-14deg); opacity: 0; }
+  35% { opacity: 0.85; }
+  100% { transform: translateX(130%) skewX(-14deg); opacity: 0; }
+}
+
+.group:hover .fifa-card-shine-hover {
+  animation: fifa-card-shine 0.85s ease-in-out;
+  opacity: 1;
+}
+
+.fifa-ut-card {
+  transform-style: preserve-3d;
 }

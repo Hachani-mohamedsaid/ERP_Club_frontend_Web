@@ -645,6 +645,12 @@ export function LoginPage() {
             </button>
 
             <p className="mt-5 text-center text-sm">
+              Pas encore de compte ?{" "}
+              <Link to="/register" className="font-semibold transition-opacity hover:opacity-80" style={{ color: "#F97316" }}>
+                Créer un compte
+              </Link>
+            </p>
+            <p className="mt-3 text-center text-sm">
               <Link to="/forgot-password" className="transition-opacity hover:opacity-80" style={{ color: "var(--text-muted)" }}>Mot de passe oublié ?</Link>
             </p>
           </motion.div>

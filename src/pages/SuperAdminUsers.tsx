@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { GlassCard } from "../components/ui/GlassCard";
-import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
-import { Users } from "lucide-react";
+import { Users, UserCheck, UserX, Shield } from "lucide-react";
+import { SuperAdminPageTransition, SuperAdminPageHeader, SuperAdminGhostButton, SuperAdminKpiCard, SuperAdminKpiGrid, SuperAdminSection, SuperAdminSelectFilter, SuperAdminListRow, SuperAdminCard } from "../components/superadmin";
 
 interface UserRecord {
   id: string;
@@ -23,127 +22,106 @@ const USERS: UserRecord[] = [
 
 export function SuperAdminUsers() {
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
+  const [roleFilter, setRoleFilter] = useState("Tous");
+  const [statusFilter, setStatusFilter] = useState("Tous");
+  const [clubFilter, setClubFilter] = useState("Tous");
+
+  const filteredUsers = USERS.filter((u) => {
+    if (roleFilter !== "Tous" && u.role !== roleFilter) return false;
+    if (statusFilter !== "Tous" && u.status !== statusFilter) return false;
+    if (clubFilter !== "Tous" && u.club !== clubFilter) return false;
+    return true;
+  });
+
+  const roles = ["Tous", ...new Set(USERS.map((u) => u.role))];
+  const statuses = ["Tous", "Actif", "Bloqué", "Inactif"];
+  const clubs = ["Tous", ...new Set(USERS.map((u) => u.club))];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
-            Gestion Utilisateurs
-          </h1>
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            Contrôlez les accès et les rôles de la plateforme.
-          </p>
-        </div>
-        <Button variant="ghost">Créer utilisateur</Button>
+    <SuperAdminPageTransition>
+      <SuperAdminPageHeader
+        title="Gestion Utilisateurs"
+        subtitle="Contrôlez les accès et les rôles de la plateforme."
+        action={<SuperAdminGhostButton>Créer utilisateur</SuperAdminGhostButton>}
+      />
+
+      <SuperAdminKpiGrid>
+        <SuperAdminKpiCard label="Total Utilisateurs" value="4 580" icon={Users} color="#3B82F6" />
+        <SuperAdminKpiCard label="Actifs" value="4 120" icon={UserCheck} color="#10B981" />
+        <SuperAdminKpiCard label="Bloqués" value="186" icon={UserX} color="#EF4444" />
+        <SuperAdminKpiCard label="Admins" value="34" icon={Shield} color="#FF7A00" />
+      </SuperAdminKpiGrid>
+
+      <div className="flex flex-wrap gap-2">
+        <SuperAdminSelectFilter label="Rôle" value={roleFilter} options={roles} onChange={setRoleFilter} />
+        <SuperAdminSelectFilter label="Statut" value={statusFilter} options={statuses} onChange={setStatusFilter} />
+        <SuperAdminSelectFilter label="Club" value={clubFilter} options={clubs} onChange={setClubFilter} />
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[2fr_1fr]">
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-            <GlassCard className="p-4">
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>Total Utilisateurs</p>
-              <p className="mt-2 text-2xl font-semibold" style={{ color: "var(--text-primary)" }}>4 580</p>
-            </GlassCard>
-            <GlassCard className="p-4">
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>Actifs</p>
-              <p className="mt-2 text-2xl font-semibold" style={{ color: "var(--text-primary)" }}>4 120</p>
-            </GlassCard>
-            <GlassCard className="p-4">
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>Bloqués</p>
-              <p className="mt-2 text-2xl font-semibold" style={{ color: "var(--text-primary)" }}>186</p>
-            </GlassCard>
-            <GlassCard className="p-4">
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>Admins</p>
-              <p className="mt-2 text-2xl font-semibold" style={{ color: "var(--text-primary)" }}>34</p>
-            </GlassCard>
-          </div>
-
-          <GlassCard raised className="p-6">
-            <h2 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Utilisateurs</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ borderBottom: "1px solid var(--surface-panel-border)" }}>
-                    <th className="px-4 py-3 text-left font-semibold" style={{ color: "var(--text-muted)" }}>Nom</th>
-                    <th className="px-4 py-3 text-left font-semibold" style={{ color: "var(--text-muted)" }}>Email</th>
-                    <th className="px-4 py-3 text-left font-semibold" style={{ color: "var(--text-muted)" }}>Role</th>
-                    <th className="px-4 py-3 text-left font-semibold" style={{ color: "var(--text-muted)" }}>Club</th>
-                    <th className="px-4 py-3 text-left font-semibold" style={{ color: "var(--text-muted)" }}>Dernière connexion</th>
-                    <th className="px-4 py-3 text-left font-semibold" style={{ color: "var(--text-muted)" }}>Statut</th>
-                    <th className="px-4 py-3 text-right font-semibold" style={{ color: "var(--text-muted)" }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {USERS.map((user) => (
-                    <tr key={user.id} style={{ borderBottom: "1px solid var(--surface-panel-border)" }}>
-                      <td className="px-4 py-3" style={{ color: "var(--text-primary)" }}>{user.name}</td>
-                      <td className="px-4 py-3" style={{ color: "var(--text-secondary)" }}>{user.email}</td>
-                      <td className="px-4 py-3" style={{ color: "var(--text-primary)" }}>{user.role}</td>
-                      <td className="px-4 py-3" style={{ color: "var(--text-primary)" }}>{user.club}</td>
-                      <td className="px-4 py-3" style={{ color: "var(--text-secondary)" }}>{user.lastLogin}</td>
-                      <td className="px-4 py-3">
-                        <Badge tone={user.status === 'Actif' ? 'success' : user.status === 'Bloqué' ? 'danger' : 'warning'}>{user.status}</Badge>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => setSelectedUser(user)}>Modifier</Button>
-                          <Button variant="ghost" size="sm">Bloquer</Button>
-                          <Button variant="ghost" size="sm">Reset</Button>
-                        </div>
-                      </td>
-                    </tr>
+        <SuperAdminSection title="Utilisateurs" subtitle="Liste filtrée des comptes.">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ borderBottom: "1px solid var(--surface-panel-border)" }}>
+                  {["Nom", "Email", "Role", "Club", "Dernière connexion", "Statut", "Actions"].map((h, i) => (
+                    <th key={h} className={`px-4 py-3 font-semibold ${i === 6 ? "text-right" : "text-left"}`} style={{ color: "var(--text-muted)" }}>{h}</th>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </GlassCard>
-        </div>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.map((user) => (
+                  <tr key={user.id} style={{ borderBottom: "1px solid var(--surface-panel-border)" }}>
+                    <td className="px-4 py-3" style={{ color: "var(--text-primary)" }}>{user.name}</td>
+                    <td className="px-4 py-3" style={{ color: "var(--text-secondary)" }}>{user.email}</td>
+                    <td className="px-4 py-3" style={{ color: "var(--text-primary)" }}>{user.role}</td>
+                    <td className="px-4 py-3" style={{ color: "var(--text-primary)" }}>{user.club}</td>
+                    <td className="px-4 py-3" style={{ color: "var(--text-secondary)" }}>{user.lastLogin}</td>
+                    <td className="px-4 py-3">
+                      <Badge tone={user.status === "Actif" ? "success" : user.status === "Bloqué" ? "danger" : "warning"}>{user.status}</Badge>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex justify-end gap-2">
+                        <SuperAdminGhostButton className="px-3 py-1.5 text-xs" onClick={() => setSelectedUser(user)}>Modifier</SuperAdminGhostButton>
+                        <SuperAdminGhostButton className="px-3 py-1.5 text-xs">Bloquer</SuperAdminGhostButton>
+                        <SuperAdminGhostButton className="px-3 py-1.5 text-xs">Reset</SuperAdminGhostButton>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </SuperAdminSection>
 
         <div className="space-y-4">
-          <GlassCard className="p-4">
-            <div className="flex items-center gap-3">
-              <Users size={20} />
-              <div>
-                <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Rôle Assignment</p>
-                <p className="text-xs" style={{ color: "var(--text-muted)" }}>Modifier les rôles des utilisateurs.</p>
-              </div>
+          <SuperAdminSection title="Rôle Assignment" subtitle="Modifier les rôles des utilisateurs." icon={Users}>
+            <div className="space-y-2">
+              {USERS.slice(0, 2).map((user) => (
+                <SuperAdminListRow key={user.id}>
+                  <p className="font-medium" style={{ color: "var(--text-primary)" }}>{user.name}</p>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>{user.role}</p>
+                  <SuperAdminGhostButton className="mt-3 px-3 py-1.5 text-xs">Modifier rôle</SuperAdminGhostButton>
+                </SuperAdminListRow>
+              ))}
             </div>
-            <div className="mt-4 space-y-2 text-sm">
-              <div className="rounded-[var(--radius-odin-md)] border p-3" style={{ borderColor: "var(--surface-panel-border)" }}>
-                <p className="font-medium" style={{ color: "var(--text-primary)" }}>Sarra Belhaj</p>
-                <p className="text-xs" style={{ color: "var(--text-muted)" }}>Responsable Club</p>
-                <Button variant="ghost" size="sm" className="mt-3">Modifier rôle</Button>
-              </div>
-              <div className="rounded-[var(--radius-odin-md)] border p-3" style={{ borderColor: "var(--surface-panel-border)" }}>
-                <p className="font-medium" style={{ color: "var(--text-primary)" }}>Rami Saadi</p>
-                <p className="text-xs" style={{ color: "var(--text-muted)" }}>Scout</p>
-                <Button variant="ghost" size="sm" className="mt-3">Attribuer rôle</Button>
-              </div>
-            </div>
-          </GlassCard>
+          </SuperAdminSection>
 
           {selectedUser && (
-            <GlassCard className="p-4">
+            <SuperAdminCard hover={false} glow className="!p-4">
               <div className="mb-3 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Profil rapide</p>
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Détails utilisateur</p>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>{selectedUser.email}</p>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedUser(null)}>Fermer</Button>
+                <SuperAdminGhostButton className="px-3 py-1.5 text-xs" onClick={() => setSelectedUser(null)}>Fermer</SuperAdminGhostButton>
               </div>
               <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{selectedUser.name}</p>
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>{selectedUser.email}</p>
               <p className="mt-2 text-sm">Rôle: {selectedUser.role}</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button variant="ghost" size="sm">Bloquer</Button>
-                <Button variant="ghost" size="sm">Réinitialiser mot de passe</Button>
-                <Button variant="ghost" size="sm">Voir profil</Button>
-              </div>
-            </GlassCard>
+            </SuperAdminCard>
           )}
         </div>
       </div>
-    </div>
+    </SuperAdminPageTransition>
   );
 }

@@ -2,7 +2,8 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
   Brain, Crosshair, Film, Shield, Activity, TrendingUp, DollarSign,
-  Search, Sparkles, Calendar, Mic, BarChart3, ArrowUpRight,
+  Search, Sparkles, Calendar, BarChart3, ArrowUpRight,
+  Star, GitCompare, UserPlus, Radio, Zap, Camera,
 } from "lucide-react";
 import { AnalystePageTransition } from "../../components/analyste/AnalystePageTransition";
 import { AITacticalCenter } from "../../components/analyste/AITacticalCenter";
@@ -10,17 +11,23 @@ import { TypewriterText } from "../../components/analyste/TypewriterText";
 import { ANALYSTE_INFO, DETECTED_PATTERNS } from "../../data/analysteData";
 
 const MODULES = [
-  { label: "Tactical Simulator", desc: "Terrain 3D live", icon: Crosshair, path: "/analyste/tactique", color: "#8B5CF6", gradient: "from-violet-500/20 to-purple-900/5" },
-  { label: "Match Replay", desc: "Timeline IA", icon: Film, path: "/analyste/replay", color: "#6366F1", gradient: "from-indigo-500/20 to-blue-900/5" },
-  { label: "Opponent Intel", desc: "Plan de match", icon: Shield, path: "/analyste/adversaire", color: "#FF6B57", gradient: "from-orange-500/20 to-red-900/5" },
-  { label: "Injury Lab", desc: "Prédiction ML", icon: Activity, path: "/analyste/blessures", color: "#EF4444", gradient: "from-red-500/20 to-rose-900/5" },
-  { label: "Evolution Lab", desc: "Forecast DL", icon: TrendingUp, path: "/analyste/evolution", color: "#22C55E", gradient: "from-green-500/20 to-emerald-900/5" },
-  { label: "Market Value", desc: "Projection IA", icon: DollarSign, path: "/analyste/valeur", color: "#F59E0B", gradient: "from-yellow-500/20 to-amber-900/5" },
-  { label: "Scouting AI", desc: "Similarité 89%", icon: Search, path: "/analyste/scouting", color: "#3B82F6", gradient: "from-blue-500/20 to-sky-900/5" },
-  { label: "Patterns", desc: "Deep Learning", icon: Sparkles, path: "/analyste/patterns", color: "#A855F7", gradient: "from-purple-500/20 to-violet-900/5" },
-  { label: "Training AI", desc: "Optimiseur", icon: Calendar, path: "/analyste/training", color: "#6366F1", gradient: "from-indigo-500/20 to-blue-900/5" },
-  { label: "Video Coach", desc: "Summary IA", icon: Mic, path: "/analyste/video-coach", color: "#FF6B57", gradient: "from-red-500/20 to-orange-900/5" },
-  { label: "Executive", desc: "KPIs direction", icon: BarChart3, path: "/analyste/executive", color: "#22C55E", gradient: "from-green-500/20 to-teal-900/5" },
+  { label: "Match Prediction", desc: "RF · XGBoost · CatBoost", icon: Brain,     path: "/analyste/prediction",      color: "#8B5CF6", gradient: "from-violet-500/20 to-purple-900/5" },
+  { label: "Player PPI",       desc: "FIFA-like Score IA",       icon: Star,      path: "/analyste/ppi",             color: "#F59E0B", gradient: "from-yellow-500/20 to-amber-900/5" },
+  { label: "Team Chemistry",   desc: "Graphe relationnel",        icon: GitCompare,path: "/analyste/chemistry",       color: "#22C55E", gradient: "from-green-500/20 to-emerald-900/5" },
+  { label: "Live Match",       desc: "Temps réel · Win prob.",   icon: Radio,     path: "/analyste/live-match",      color: "#EF4444", gradient: "from-red-500/20 to-rose-900/5" },
+  { label: "Video Analysis",   desc: "Replay · AI Coach · Highlights", icon: Camera, path: "/analyste/video-analysis", color: "#6366F1", gradient: "from-indigo-500/20 to-blue-900/5" },
+  { label: "Fatigue Heatmap",  desc: "Par 15 minutes",            icon: Activity,  path: "/analyste/fatigue-heatmap", color: "#FF7A00", gradient: "from-orange-500/20 to-red-900/5" },
+  { label: "Transfer Engine",  desc: "Compatibilité IA",          icon: UserPlus,  path: "/analyste/transfer",        color: "#3B82F6", gradient: "from-blue-500/20 to-sky-900/5" },
+  { label: "Injury Forecast",  desc: "Retour estimé ML",          icon: TrendingUp,path: "/analyste/injury-forecast", color: "#EF4444", gradient: "from-red-500/20 to-rose-900/5" },
+  { label: "Tactical Sim.",    desc: "Terrain 3D live",           icon: Crosshair, path: "/analyste/tactique",        color: "#8B5CF6", gradient: "from-violet-500/20 to-purple-900/5" },
+  { label: "Opponent Intel",   desc: "Plan de match",             icon: Shield,    path: "/analyste/adversaire",      color: "#FF6B57", gradient: "from-orange-500/20 to-red-900/5" },
+  { label: "Patterns",         desc: "Deep Learning",             icon: Sparkles,  path: "/analyste/patterns",        color: "#A855F7", gradient: "from-purple-500/20 to-violet-900/5" },
+  { label: "Scouting AI",      desc: "Similarité 89%",            icon: Search,    path: "/analyste/scouting",        color: "#3B82F6", gradient: "from-blue-500/20 to-sky-900/5" },
+  { label: "Market Value",     desc: "Projection IA",             icon: DollarSign,path: "/analyste/valeur",          color: "#F59E0B", gradient: "from-yellow-500/20 to-amber-900/5" },
+  { label: "Evolution Lab",    desc: "Forecast DL",               icon: TrendingUp,path: "/analyste/evolution",       color: "#22C55E", gradient: "from-green-500/20 to-emerald-900/5" },
+  { label: "Training AI",      desc: "Optimiseur",                icon: Calendar,  path: "/analyste/training",        color: "#6366F1", gradient: "from-indigo-500/20 to-blue-900/5" },
+  { label: "Executive",        desc: "KPIs direction",            icon: BarChart3, path: "/analyste/executive",       color: "#22C55E", gradient: "from-green-500/20 to-teal-900/5" },
+  { label: "Injury Lab",       desc: "Prédiction ML",             icon: Zap,       path: "/analyste/blessures",       color: "#EF4444", gradient: "from-red-500/20 to-rose-900/5" },
 ];
 
 const LIVE_STATS = [

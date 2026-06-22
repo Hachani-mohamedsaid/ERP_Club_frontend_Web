@@ -1,14 +1,20 @@
-import { motion } from "framer-motion";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { GlassCard } from "../components/ui/GlassCard";
-import { Button } from "../components/ui/Button";
+import {
+  SuperAdminPageTransition,
+  SuperAdminHero,
+  SuperAdminKpiCard,
+  SuperAdminKpiGrid,
+  SuperAdminSection,
+  SuperAdminListRow,
+  SuperAdminGhostButton,
+} from "../components/superadmin";
 import { TrendingUp, Users, Globe, Sparkles, Zap } from "lucide-react";
 
 const KPI_CARDS = [
-  { label: "Clubs Actifs", value: "125", icon: Globe, color: "#3B82F6" },
-  { label: "Utilisateurs", value: "4 580", icon: Users, color: "#10B981" },
-  { label: "Revenus SaaS", value: "245 000 DT", icon: TrendingUp, color: "#EF4444" },
-  { label: "Croissance", value: "+12%", icon: Sparkles, color: "#8B5CF6" },
+  { label: "Clubs", value: "125", icon: Globe, color: "#3B82F6", trend: "+8 ce mois" },
+  { label: "Users", value: "4 580", icon: Users, color: "#10B981", trend: "+120 actifs" },
+  { label: "Revenue", value: "245 000 DT", icon: TrendingUp, color: "#FF7A00", trend: "+12% MRR" },
+  { label: "Growth", value: "+12%", icon: Sparkles, color: "#8B5CF6", trend: "vs trimestre" },
 ];
 
 const CLUBS_GROWTH = [
@@ -44,141 +50,81 @@ const ACTIVITY_FEED = [
   "3 tickets ouverts",
 ];
 
-const COLORS = ["#3B82F6", "#10B981", "#EF4444", "#8B5CF6", "#F59E0B"];
+const COLORS = ["#3B82F6", "#10B981", "#EF4444", "#8B5CF6", "#FF7A00"];
 
 export function SuperAdminDashboard() {
   return (
-    <div className="space-y-6">
-      <motion.div
-        className="relative overflow-hidden rounded-[20px] border p-6"
-        style={{ background: "linear-gradient(135deg, rgba(15,29,58,0.95), rgba(40,15,60,0.85))", borderColor: "rgba(139,92,246,0.25)" }}
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <motion.div
-                className="flex h-10 w-10 items-center justify-center rounded-xl"
-                style={{ background: "linear-gradient(135deg,#F59E0B,#EF4444)", boxShadow: "0 0 24px rgba(245,158,11,0.5)" }}
-                animate={{ scale: [1, 1.08, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <Zap size={20} className="text-white" />
-              </motion.div>
-              <h1 className="text-2xl font-extrabold" style={{ color: "var(--text-primary)" }}>ODIN ERP Control Center</h1>
-            </div>
-            <div className="mt-4 flex flex-wrap gap-6">
-              {[
-                { v: "125", l: "Clubs actifs", c: "#3B82F6" },
-                { v: "4 580", l: "Utilisateurs", c: "#10B981" },
-                { v: "245 000 DT", l: "MRR", c: "#F59E0B" },
-              ].map((s) => (
-                <div key={s.l}>
-                  <div className="text-xl font-extrabold" style={{ color: s.c }}>{s.v}</div>
-                  <div className="text-[11px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>{s.l}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <Button variant="ghost">Voir rapport complet</Button>
-        </div>
-      </motion.div>
+    <SuperAdminPageTransition>
+      <SuperAdminHero
+        badge="SaaS Control Center"
+        title="ODIN ERP Control Center"
+        subtitle="Vue globale plateforme • Super Admin"
+        icon={Zap}
+        action={<SuperAdminGhostButton>Voir rapport complet</SuperAdminGhostButton>}
+        stats={[
+          { value: "245 000 DT", label: "MRR", color: "#FF7A00" },
+          { value: "2.94M DT", label: "ARR", color: "#3B82F6" },
+          { value: "+12%", label: "Growth", color: "#10B981" },
+          { value: "96.8%", label: "Retention", color: "#8B5CF6" },
+        ]}
+      />
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        {KPI_CARDS.map((item) => {
-          const Icon = item.icon;
-          return (
-            <motion.div key={item.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-              <GlassCard className="p-5 hover:-translate-y-1 transition-transform">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs uppercase" style={{ color: "var(--text-muted)" }}>{item.label}</p>
-                    <p className="mt-3 text-3xl font-semibold" style={{ color: "var(--text-primary)" }}>{item.value}</p>
-                  </div>
-                  <div className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-odin-md)]" style={{ background: `${item.color}20` }}>
-                    <Icon size={20} color={item.color} />
-                  </div>
-                </div>
-              </GlassCard>
-            </motion.div>
-          );
-        })}
-      </div>
+      <SuperAdminKpiGrid>
+        {KPI_CARDS.map((item, i) => (
+          <SuperAdminKpiCard key={item.label} {...item} delay={i * 0.08} />
+        ))}
+      </SuperAdminKpiGrid>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <GlassCard raised className="p-6 xl:col-span-2">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Clubs Growth</h2>
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>Évolution des clubs actifs par mois.</p>
-            </div>
-            <Button variant="ghost">Détails</Button>
-          </div>
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <SuperAdminSection title="Clubs Growth" subtitle="Évolution des clubs actifs par mois." className="xl:col-span-2">
           <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={CLUBS_GROWTH} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-panel-border)" />
-              <XAxis dataKey="month" stroke="var(--text-muted)" />
-              <YAxis stroke="var(--text-muted)" />
-              <Tooltip contentStyle={{ background: "var(--surface-panel)", borderColor: "var(--surface-panel-border)" }} />
-              <Line type="monotone" dataKey="clubs" stroke="#3B82F6" strokeWidth={3} dot={{ r: 4 }} />
+            <LineChart data={CLUBS_GROWTH}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+              <XAxis dataKey="month" tick={{ fill: "#94A3B8", fontSize: 11 }} />
+              <YAxis tick={{ fill: "#94A3B8", fontSize: 11 }} />
+              <Tooltip contentStyle={{ background: "#0F1D3A", borderColor: "rgba(255,122,0,0.3)" }} />
+              <Line type="monotone" dataKey="clubs" stroke="#FF7A00" strokeWidth={3} dot={{ r: 4, fill: "#FF7A00" }} />
             </LineChart>
           </ResponsiveContainer>
-        </GlassCard>
+        </SuperAdminSection>
 
-        <GlassCard raised className="p-6">
-          <div className="mb-4">
-            <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Users by Role</h2>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>Répartition des rôles sur la plateforme.</p>
-          </div>
+        <SuperAdminSection title="Users by Role" subtitle="Répartition des rôles sur la plateforme.">
           <ResponsiveContainer width="100%" height={280}>
             <PieChart>
               <Pie data={USERS_BY_ROLE} dataKey="value" nameKey="name" innerRadius={50} outerRadius={90} paddingAngle={4}>
-                {USERS_BY_ROLE.map((entry, index) => (
+                {USERS_BY_ROLE.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip contentStyle={{ background: "var(--surface-panel)", borderColor: "var(--surface-panel-border)" }} />
+              <Tooltip contentStyle={{ background: "#0F1D3A", borderColor: "rgba(255,122,0,0.3)" }} />
             </PieChart>
           </ResponsiveContainer>
-        </GlassCard>
+        </SuperAdminSection>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <GlassCard raised className="p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Monthly Revenue</h2>
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>Chiffre d'affaires mensuel en DT.</p>
-            </div>
-            <Button variant="ghost">Exporter</Button>
-          </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <SuperAdminSection title="Monthly Revenue" subtitle="Chiffre d'affaires mensuel en DT.">
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={REVENUE_MONTHLY} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-panel-border)" />
-              <XAxis dataKey="month" stroke="var(--text-muted)" />
-              <YAxis stroke="var(--text-muted)" />
-              <Tooltip contentStyle={{ background: "var(--surface-panel)", borderColor: "var(--surface-panel-border)" }} />
-              <Bar dataKey="revenue" fill="#10B981" radius={[8, 8, 0, 0]} />
+            <BarChart data={REVENUE_MONTHLY}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+              <XAxis dataKey="month" tick={{ fill: "#94A3B8", fontSize: 11 }} />
+              <YAxis tick={{ fill: "#94A3B8", fontSize: 11 }} />
+              <Tooltip contentStyle={{ background: "#0F1D3A", borderColor: "rgba(255,122,0,0.3)" }} />
+              <Bar dataKey="revenue" fill="#FF7A00" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </GlassCard>
+        </SuperAdminSection>
 
-        <GlassCard raised className="p-6">
-          <div className="mb-4">
-            <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Activity Feed</h2>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>Dernières actions système.</p>
-          </div>
+        <SuperAdminSection title="Activity Feed" subtitle="Dernières actions système.">
           <div className="space-y-3">
             {ACTIVITY_FEED.map((item) => (
-              <div key={item} className="rounded-[var(--radius-odin-md)] border p-4" style={{ borderColor: "var(--surface-panel-border)" }}>
+              <SuperAdminListRow key={item}>
                 <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{item}</p>
-              </div>
+              </SuperAdminListRow>
             ))}
           </div>
-        </GlassCard>
+        </SuperAdminSection>
       </div>
-    </div>
+    </SuperAdminPageTransition>
   );
 }

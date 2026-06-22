@@ -32,6 +32,10 @@ export const joueurTranslations = {
       keyPasses: "Passes clés",
       highlights: "Highlights — Dernier Match",
       watch: "Regarder",
+      videoAnalysis: "Analyse vidéo — Dernier match",
+      missedChances: "Occasions manquées",
+      vsTopPlayer: "Moi vs Meilleur joueur club",
+      vsTeamAvg: "Moi vs Moyenne équipe",
     },
     medical: {
       status: "Statut",
@@ -50,6 +54,9 @@ export const joueurTranslations = {
       weather: "Météo",
       upcoming: "À venir",
       legend: "Légende",
+      trainingLoad: "Charge cette semaine",
+      fatiguePredicted: "Fatigue prévue",
+      nextMatch: "Prochain match",
     },
     ai: {
       title: "AI Coach",
@@ -121,6 +128,10 @@ export const joueurTranslations = {
       keyPasses: "Key Passes",
       highlights: "Highlights — Last Match",
       watch: "Watch",
+      videoAnalysis: "Video Analysis — Last Match",
+      missedChances: "Missed chances",
+      vsTopPlayer: "Me vs Top club player",
+      vsTeamAvg: "Me vs Team average",
     },
     medical: {
       status: "Status",
@@ -139,6 +150,9 @@ export const joueurTranslations = {
       weather: "Weather",
       upcoming: "Upcoming",
       legend: "Legend",
+      trainingLoad: "Weekly training load",
+      fatiguePredicted: "Predicted fatigue",
+      nextMatch: "Next match",
     },
     ai: {
       title: "AI Coach",
