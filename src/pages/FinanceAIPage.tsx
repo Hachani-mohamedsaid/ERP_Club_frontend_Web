@@ -1,303 +1,356 @@
-import { useRef, useState } from "react";
-import { GlassCard } from "../components/ui/GlassCard";
-import { Button } from "../components/ui/Button";
-import { Send, TrendingUp, BarChart3, AlertCircle } from "lucide-react";
+import { useRef, useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Send, Brain, BarChart3, TrendingUp, CheckCircle, Sparkles, MessageSquare } from "lucide-react";
+import {
+  ResponsiveContainer, AreaChart, Area, BarChart, Bar, LineChart, Line,
+  XAxis, YAxis, Tooltip, CartesianGrid,
+} from "recharts";
+
+const F = { primary: "#FF7A00", success: "#22C55E", danger: "#EF4444", info: "#3B82F6", warning: "#F59E0B", ai: "#6366F1" };
 
 interface Message {
   id: string;
   type: "user" | "ai";
   content: string;
   timestamp: string;
+  chart?: { type: "area" | "bar" | "line"; data: { label: string; val: number }[]; color: string; title: string };
 }
 
-interface Suggestion {
-  id: string;
-  question: string;
-  icon: string;
-  category: string;
+type ChartType = "area" | "bar" | "line";
+
+const SUGGESTIONS = [
+  { icon: "👤", q: "Si nous recrutons un joueur à 2M DT, quel sera le budget restant?",   cat: "Recrutement" },
+  { icon: "🤝", q: "Quel sponsor rapporte le plus ce mois?",                               cat: "Sponsors"    },
+  { icon: "📊", q: "Prévoir les revenus des 6 prochains mois",                             cat: "Prévisions"  },
+  { icon: "💰", q: "Quelle est la catégorie de dépense la plus importante?",              cat: "Analyse"     },
+  { icon: "📈", q: "Comparaison budget réel vs budget prévu",                              cat: "Analyse"     },
+  { icon: "⚡", q: "Recommandations pour optimiser les dépenses",                          cat: "Optimisation"},
+];
+
+const INIT_GREETING: Message = {
+  id: "init",
+  type: "ai",
+  content: "Bonjour ! Je suis ODIN Finance AI — votre assistant intelligent pour l'analyse budgétaire du FC Carthage. Posez-moi une question sur les dépenses, revenus, sponsors ou prévisions, et je génère une réponse détaillée avec graphiques automatiques.",
+  timestamp: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+};
+
+function buildAIResponse(q: string): { content: string; chart?: Message["chart"] } {
+  const lower = q.toLowerCase();
+
+  if (lower.includes("prévoir") || lower.includes("revenu") || lower.includes("6 mois")) {
+    return {
+      content: "📈 Voici la prévision des revenus pour les 6 prochains mois, basée sur les tendances historiques et les contrats sponsors actifs :",
+      chart: {
+        type: "area" as ChartType,
+        title: "Prévision Revenus 6 mois (K DT)",
+        color: F.success,
+        data: [
+          { label: "Juil", val: 1680 }, { label: "Août", val: 1720 }, { label: "Sep", val: 1750 },
+          { label: "Oct", val: 1800 }, { label: "Nov", val: 1850 }, { label: "Déc", val: 1950 },
+        ],
+      },
+    };
+  }
+  if (lower.includes("recrut")) {
+    return {
+      content: "✅ Budget actuel : 9.8M DT · Utilisé : 7.7M DT · Restant : 2.1M DT\nAprès un recrutement à 2M DT, il vous resterait 0.1M DT de réserve. ⚠️ Risque budgétaire élevé — recommandation : négocier à 1.5M DT maximum.",
+      chart: {
+        type: "bar" as ChartType,
+        title: "Impact recrutement sur le budget (M DT)",
+        color: F.warning,
+        data: [
+          { label: "Budget total", val: 9.8 }, { label: "Utilisé", val: 7.7 },
+          { label: "Restant", val: 2.1 }, { label: "Après recrut.", val: 0.1 },
+        ],
+      },
+    };
+  }
+  if (lower.includes("dépense") || lower.includes("catégorie")) {
+    return {
+      content: "💼 La masse salariale représente 66% des dépenses — c'est la principale poste. Infrastructure 20%, Équipements 8%, Divers 6%.",
+      chart: {
+        type: "bar" as ChartType,
+        title: "Répartition dépenses par catégorie (K DT)",
+        color: F.danger,
+        data: [
+          { label: "Salaires", val: 520 }, { label: "Infra", val: 160 },
+          { label: "Équipements", val: 64 }, { label: "Transport", val: 30 }, { label: "Divers", val: 48 },
+        ],
+      },
+    };
+  }
+  if (lower.includes("sponsor")) {
+    return {
+      content: "🏆 Nike reste le sponsor principal avec 450K DT/an (+12%). Ooredoo expire dans 45 jours — action requise.",
+      chart: {
+        type: "bar" as ChartType,
+        title: "Revenus sponsors (K DT / an)",
+        color: F.primary,
+        data: [
+          { label: "Nike", val: 450 }, { label: "Emirates", val: 350 },
+          { label: "Ooredoo", val: 280 }, { label: "STEG", val: 200 }, { label: "Attijari", val: 150 },
+        ],
+      },
+    };
+  }
+  if (lower.includes("budget") || lower.includes("comparaison")) {
+    return {
+      content: "📊 Le budget réel suit le budget prévu avec un écart moyen de +3.5%. Juin a connu un pic de dépenses dû aux transferts.",
+      chart: {
+        type: "line" as ChartType,
+        title: "Budget réel vs prévu (M DT)",
+        color: F.info,
+        data: [
+          { label: "Jan", val: 8.0 }, { label: "Fév", val: 8.5 }, { label: "Mar", val: 9.2 },
+          { label: "Avr", val: 8.8 }, { label: "Mai", val: 10.2 }, { label: "Jun", val: 9.8 },
+        ],
+      },
+    };
+  }
+  if (lower.includes("optim")) {
+    return {
+      content: "⚡ Top 3 optimisations :\n1. Renégociation contrats fournisseurs → +50K DT/mois\n2. Groupage déplacements transport → +10K DT/mois\n3. Renouvellement Ooredoo tôt → garantit 280K DT/an\n\nÉconomies potentielles : 85K DT/mois → 1.02M DT/an 💰",
+    };
+  }
+  return {
+    content: `Analyse de « ${q} » en cours...\n\nBasé sur les données financières de la saison 2025-2026, le club est dans une position saine avec un ratio revenus/dépenses de 1.12. Consultez les rapports détaillés pour approfondir cette analyse.`,
+  };
 }
-
-const SUGGESTIONS: Suggestion[] = [
-  {
-    id: "1",
-    question: "Si nous recrutons un joueur à 2M DT, quel sera le budget restant?",
-    icon: "👤",
-    category: "Recrutement",
-  },
-  {
-    id: "2",
-    question: "Quel sponsor rapporte le plus cet mois?",
-    icon: "🤝",
-    category: "Sponsors",
-  },
-  {
-    id: "3",
-    question: "Prévoir les dépenses des 6 prochains mois",
-    icon: "📊",
-    category: "Prévisions",
-  },
-  {
-    id: "4",
-    question: "Quelle est la catégorie de dépense la plus importante?",
-    icon: "💰",
-    category: "Analyse",
-  },
-  {
-    id: "5",
-    question: "Comparaison: budget réel vs budget prévu",
-    icon: "📈",
-    category: "Analyse",
-  },
-  {
-    id: "6",
-    question: "Recommandations pour optimiser les dépenses",
-    icon: "⚡",
-    category: "Optimisation",
-  },
-];
-
-const IA_STATS = [
-  { label: "Analyses réalisées", value: "24", icon: BarChart3, color: "#3B82F6" },
-  { label: "Questions suggérées", value: "6", icon: TrendingUp, color: "#10B981" },
-  { label: "Réponses générées", value: "18", icon: AlertCircle, color: "#F59E0B" },
-];
 
 export function FinanceAIPage() {
-  const initialTimestamp = new Date().toLocaleTimeString();
-  const messageCounter = useRef(1);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      type: "ai",
-      content: "Bonjour! 👋 Je suis l'Assistant IA Finance de FC Carthage. Je peux vous aider à:\n\n✅ Analyser les données financières\n✅ Prédire les tendances budgétaires\n✅ Répondre à vos questions financières\n✅ Fournir des recommandations\n\nPosez-moi une question sur le budget, les dépenses, les sponsors ou les prévisions!",
-      timestamp: initialTimestamp,
-    },
-  ]);
-
+  const [messages, setMessages] = useState<Message[]>([INIT_GREETING]);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [msgCount, setMsgCount] = useState(1);
+  const chatRef = useRef<HTMLDivElement>(null);
 
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  useEffect(() => {
+    chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages, loading]);
 
-  const exportReport = () => {
-    const reportHtml = `<!doctype html><html><head><meta charset="utf-8"><title>Rapport IA</title></head><body><h1>Rapport IA - ${new Date().toLocaleString()}</h1>${messages.map(m => `<div style="margin-bottom:12px;"><strong>${m.type === 'user' ? 'Question' : 'Réponse'}</strong><div>${m.content.replace(/\n/g,'<br/>')}</div><div style="color:#666;font-size:12px;">${m.timestamp}</div></div>`).join('')}<script>setTimeout(()=>window.print(),300);</script></body></html>`;
-    const w = window.open('', '_blank');
-    if (w) {
-      w.document.write(reportHtml);
-      w.document.close();
-      w.focus();
-    }
-  };
-
-  const handleSendMessage = (message?: string) => {
-    const text = message || input;
-    if (!text.trim()) return;
-
-    const id = messageCounter.current;
-    const userMessage: Message = {
-      id: `user-${id}`,
-      type: "user",
-      content: text,
-      timestamp: new Date().toLocaleTimeString(),
-    };
-
-    setMessages((prevMessages) => [...prevMessages, userMessage]);
-
-    setTimeout(() => {
-      const aiResponse: Message = {
-        id: `ai-${id}`,
-        type: "ai",
-        content: generateAIResponse(text),
-        timestamp: new Date().toLocaleTimeString(),
-      };
-      setMessages((prev) => [...prev, aiResponse]);
-    }, 800);
-
-    messageCounter.current = messageCounter.current + 1;
+  const sendMessage = (text?: string) => {
+    const q = text || input;
+    if (!q.trim() || loading) return;
+    const id = msgCount;
+    setMsgCount(c => c + 1);
+    setMessages(prev => [...prev, { id: `u${id}`, type: "user", content: q, timestamp: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) }]);
     setInput("");
+    setLoading(true);
+    setTimeout(() => {
+      const { content, chart } = buildAIResponse(q);
+      setMessages(prev => [...prev, { id: `a${id}`, type: "ai", content, chart, timestamp: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) }]);
+      setLoading(false);
+    }, 900 + Math.random() * 400);
   };
 
-  const generateAIResponse = (question: string): string => {
-    const q = question.toLowerCase();
+  const liveQuestions = messages.filter(m => m.type === "user").length;
+  const liveReports   = messages.filter(m => m.chart).length;
+  const liveAnalyses  = messages.filter(m => m.type === "ai").length;
 
-    if (q.includes("recrut") && q.includes("2m")) {
-      return `D'après notre analyse financière:\n\n📊 Situation Actuelle:\n• Budget Total: 12.5M DT\n• Budget Utilisé: 8.3M DT\n• Budget Restant: 4.2M DT\n\n✅ Si vous recruitez un joueur à 2M DT:\n• Nouveau Budget Restant: 2.2M DT (52%)\n• Impact: Réduction de 47.6%\n\n⚠️ Recommandation:\nCette dépense reste acceptable. Vous auriez encore un buffer de 2.2M DT pour:\n- Imprévus (500K)\n- Autres transferts (1.5M)\n- Opérations courantes\n\n💡 Conseil: Vérifier les alternatives moins coûteuses pour optimiser le budget.`;
-    }
-
-    if (q.includes("sponsor") && q.includes("rapporte")) {
-      return `🏆 Analyse des Sponsors - Juin 2026:\n\n1️⃣ Nike: 450K DT (35%)\n   └─ Contrat: 2 ans (actif)\n   └─ Trend: ↑ +12%\n\n2️⃣ Emirates: 350K DT (27%)\n   └─ Contrat: 3 ans (actif)\n   └─ Trend: Stable\n\n3️⃣ Ooredoo: 280K DT (22%)\n   └─ Contrat: 1 an (expire bientôt)\n   └─ Trend: À renouveler\n\n4️⃣ STEG: 200K DT (16%)\n   └─ Contrat: 2 ans (actif)\n   └─ Trend: ↑ +5%\n\n💰 Total Sponsors: 1.28M DT/an\n\n🎯 Action: Préparer renouvellement Ooredoo (30 jours).`;
-    }
-
-    if (q.includes("dépense") && q.includes("6")) {
-      return `📈 Prévision des Dépenses - 6 Prochains Mois:\n\nJuillet: 650K DT\nAoût: 700K DT\nSeptembre: 720K DT\nOctobre: 750K DT\nNovembre: 800K DT\nDécembre: 900K DT\n\n📊 Total Prévisionnel: 4.52M DT\n\nRépartition Estimée:\n• Salaires: 2.70M DT (60%)\n• Infrastructure: 900K DT (20%)\n• Transferts: 600K DT (13%)\n• Divers: 320K DT (7%)\n\n⚠️ Augmentation Décembre (fêtes):\nBudget supplémentaire recommandé: 200K DT`;
-    }
-
-    if (q.includes("catégorie") && q.includes("dépense")) {
-      return `💼 Analyse par Catégorie de Dépense:\n\n🥇 Infrastructure: 250K DT (36%)\n   └─ Rénovation vestiaires en cours\n\n🥈 Transport: 14.7K DT (2%)\n   └─ Déplacements match\n\n🥉 Équipements: 57K DT (8%)\n   └─ Maillots, ballons\n\n🏥 Médical: 35K DT (5%)\n   └─ Équipement kiné\n\n🏨 Hébergement: 125K DT (18%)\n   └─ Stage été\n\n📦 Autres: 300K DT (31%)\n\n💡 Opportunité: Réduire Hébergement de 15% = Économies 18K DT`;
-    }
-
-    if (q.includes("optimis")) {
-      return `⚡ Recommandations d'Optimisation Budgétaire:\n\n1. 🔄 Renégocier contrats fournisseurs\n   └─ Impact potentiel: +50K DT/mois\n\n2. 🏨 Négocier tarifs hébergement stage\n   └─ Impact potentiel: +30K DT/mois\n\n3. 🚗 Optimiser trajets transport\n   └─ Impact potentiel: +5K DT/mois\n\n4. ⚽ Acheter équipement en vrac\n   └─ Impact potentiel: +10K DT/mois\n\n5. 🤝 Diversifier revenus sponsors\n   └─ Impact potentiel: +200K DT/an\n\n💰 Économies Totales Estimées: 85K DT/mois\n📊 Augmentation Annualisée: 1.02M DT\n\n✅ Priorité: Négociation sponsors + hébergement`;
-    }
-
-    // Default response
-    return `Je suis en train d'analyser votre question...\n\n📊 Pour "${question}":\n\n✅ Analyse en cours basée sur:\n• Données financières historiques\n• Prévisions budgétaires\n• Performances actuelles\n\nVoici les données pertinentes pour cette période.\n\n💡 Conseil: Consultez les rapports détaillés pour plus d'informations.`;
-  };
+  const KPI_STATS = [
+    { label: "Questions aujourd'hui", value: (12 + liveQuestions).toString(),   icon: MessageSquare, color: F.info    },
+    { label: "Précision IA",          value: "96%",                               icon: CheckCircle,   color: F.success },
+    { label: "Rapports générés",      value: (27 + liveReports).toString(),       icon: BarChart3,     color: F.primary },
+    { label: "Budget analysé",        value: liveAnalyses > 3 ? `${(12.5 + liveAnalyses * 0.1).toFixed(1)}M DT` : "12.5M DT", icon: TrendingUp, color: F.warning },
+  ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
-            🤖 Finance IA Assistant
-          </h1>
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            Assistant intelligent pour vos questions financières (PFE Bonus 🚀)
-          </p>
+    <motion.div className="h-full space-y-4" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <motion.div className="flex h-10 w-10 items-center justify-center rounded-xl"
+            style={{ background: `linear-gradient(135deg,${F.ai},${F.primary})` }}
+            animate={{ scale: [1, 1.07, 1] }} transition={{ duration: 2.5, repeat: Infinity }}>
+            <Brain size={18} className="text-white" />
+          </motion.div>
+          <div>
+            <h1 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>ODIN Finance AI</h1>
+            <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>Assistant intelligent · FC Carthage</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" onClick={exportReport}>Exporter Rapport IA</Button>
+          <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+          <span className="text-xs font-bold" style={{ color: F.success }}>En ligne</span>
         </div>
       </div>
 
-      {/* Chat Area */}
-      <GlassCard raised className="flex flex-col p-6" style={{ height: "500px" }}>
-        {/* Messages */}
-        <div className="mb-4 flex-1 space-y-4 overflow-y-auto">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}
-            >
-              <div
-                className="max-w-xs rounded-lg px-4 py-3 lg:max-w-md"
-                style={{
-                  background: msg.type === "user" ? "var(--accent)" : "var(--surface-panel)",
-                  color: msg.type === "user" ? "white" : "var(--text-primary)",
-                }}
-              >
-                <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
-                <p className="mt-1 text-xs opacity-70">{msg.timestamp}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Input */}
-        <div className="flex gap-2 border-t pt-4" style={{ borderColor: "var(--surface-panel-border)" }}>
-          <input
-            type="text"
-            placeholder="Posez une question sur la finance..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-            className="flex-1 rounded-lg border bg-transparent px-3 py-2 text-sm outline-none focus:border-accent"
-            style={{ borderColor: "var(--surface-panel-border)" }}
-          />
-          <Button onClick={() => handleSendMessage()} size="sm">
-            <Send size={16} />
-          </Button>
-        </div>
-      </GlassCard>
-
-      {/* Suggestions */}
-      <div>
-        <h2 className="mb-3 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-          💡 Questions Suggérées
-        </h2>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {SUGGESTIONS.map((suggestion) => (
-            <GlassCard
-              key={suggestion.id}
-              className="cursor-pointer p-4 transition-all hover:border-accent"
-              style={{ borderColor: "var(--surface-panel-border)" }}
-              onClick={() => handleSendMessage(suggestion.question)}
-            >
-              <div className="flex items-start gap-3">
-                <span className="text-xl">{suggestion.icon}</span>
-                <div className="flex-1">
-                  <p className="text-xs font-medium" style={{ color: "var(--accent)" }}>
-                    {suggestion.category}
-                  </p>
-                  <p className="mt-1 text-sm" style={{ color: "var(--text-primary)" }}>
-                    {suggestion.question}
-                  </p>
-                </div>
-              </div>
-            </GlassCard>
-          ))}
-        </div>
-      </div>
-
-      {/* Statistiques IA */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {IA_STATS.map((stat) => {
-          const Icon = stat.icon;
+      {/* KPI row */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {KPI_STATS.map((k, i) => {
+          const Icon = k.icon;
           return (
-            <GlassCard raised className="p-4" key={stat.label}>
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>
-                    {stat.label}
-                  </p>
-                  <p className="mt-2 text-2xl font-semibold" style={{ color: "var(--text-primary)" }}>
-                    {stat.value}
-                  </p>
+            <motion.div key={i} className="rounded-[16px] border p-3"
+              style={{ background: "rgba(8,6,24,0.88)", borderColor: "rgba(255,255,255,0.07)" }}
+              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
+              whileHover={{ y: -2 }}>
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex h-6 w-6 items-center justify-center rounded-lg" style={{ background: `${k.color}14` }}>
+                  <Icon size={11} style={{ color: k.color }} />
                 </div>
-                <Icon size={22} style={{ color: stat.color }} />
               </div>
-            </GlassCard>
+              <p className="text-[9px] uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.35)" }}>{k.label}</p>
+              <p className="text-lg font-extrabold" style={{ color: k.color }}>{k.value}</p>
+            </motion.div>
           );
         })}
       </div>
 
-      {/* Historique des analyses */}
-      <GlassCard raised className="p-6">
-        <h2 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-          Historique des analyses
-        </h2>
-        <div className="space-y-3">
-          {messages.filter((msg) => msg.type === "user").slice(-10).reverse().map((msg) => {
-            const aiReply = messages.find((m) => m.id === `ai-${msg.id.split('-')[1]}`);
-            const isExpanded = expandedId === msg.id;
-            return (
-              <div
-                key={msg.id}
-                className="rounded-[var(--radius-odin-md)] border px-4 py-3"
-                style={{ borderColor: "var(--surface-panel-border)" }}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                      {msg.content}
-                    </p>
-                    <p className="mt-1 text-xs" style={{ color: "var(--text-muted)" }}>
-                      {msg.timestamp}
-                    </p>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_260px]">
+        {/* Chat area */}
+        <div className="flex flex-col rounded-[22px] border overflow-hidden"
+          style={{ background: "rgba(8,6,24,0.92)", borderColor: "rgba(255,255,255,0.07)", minHeight: "520px" }}>
+
+          {/* Chat messages */}
+          <div ref={chatRef} className="flex-1 overflow-y-auto p-4 space-y-4" style={{ maxHeight: "440px" }}>
+            <AnimatePresence initial={false}>
+              {messages.map(msg => (
+                <motion.div key={msg.id}
+                  initial={{ opacity: 0, y: 8, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0 }}
+                  className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"} gap-2`}>
+                  {msg.type === "ai" && (
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full mt-0.5"
+                      style={{ background: `linear-gradient(135deg,${F.ai},${F.primary})` }}>
+                      <Sparkles size={11} className="text-white" />
+                    </div>
+                  )}
+                  <div className={`max-w-[72%] ${msg.type === "user" ? "items-end" : "items-start"} flex flex-col gap-2`}>
+                    <div className="rounded-[16px] px-4 py-3"
+                      style={{
+                        background: msg.type === "user"
+                          ? `linear-gradient(135deg,${F.primary},${F.primary}cc)`
+                          : "rgba(255,255,255,0.05)",
+                        color: "white",
+                        borderRadius: msg.type === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+                      }}>
+                      <p className="text-xs leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                      <p className="mt-1 text-[9px] opacity-50">{msg.timestamp}</p>
+                    </div>
+                    {/* Auto-generated chart */}
+                    {msg.chart && (
+                      <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                        className="w-full rounded-[16px] border p-3"
+                        style={{ background: "rgba(255,255,255,0.04)", borderColor: `${msg.chart.color}25` }}>
+                        <p className="text-[9px] font-bold mb-2" style={{ color: msg.chart.color }}>
+                          📊 {msg.chart.title}
+                        </p>
+                        <div className="h-28">
+                          <ResponsiveContainer width="100%" height="100%">
+                            {msg.chart.type === "area" ? (
+                              <AreaChart data={msg.chart.data.map(d => ({ name: d.label, v: d.val }))}>
+                                <defs>
+                                  <linearGradient id={`g${msg.id}`} x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor={msg.chart.color} stopOpacity={0.35} />
+                                    <stop offset="100%" stopColor={msg.chart.color} stopOpacity={0} />
+                                  </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="2 2" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                                <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 8 }} axisLine={false} tickLine={false} />
+                                <Tooltip contentStyle={{ background: "rgba(8,6,24,0.97)", border: "none", color: "white", borderRadius: 8, fontSize: 10 }} />
+                                <Area type="monotone" dataKey="v" stroke={msg.chart.color} fill={`url(#g${msg.id})`} strokeWidth={2} />
+                              </AreaChart>
+                            ) : msg.chart.type === "line" ? (
+                              <LineChart data={msg.chart.data.map(d => ({ name: d.label, v: d.val }))}>
+                                <CartesianGrid strokeDasharray="2 2" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                                <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 8 }} axisLine={false} tickLine={false} />
+                                <Tooltip contentStyle={{ background: "rgba(8,6,24,0.97)", border: "none", color: "white", borderRadius: 8, fontSize: 10 }} />
+                                <Line type="monotone" dataKey="v" stroke={msg.chart.color} strokeWidth={2.5} dot={{ fill: msg.chart.color, r: 3 }} />
+                              </LineChart>
+                            ) : (
+                              <BarChart data={msg.chart.data.map(d => ({ name: d.label, v: d.val }))}>
+                                <CartesianGrid strokeDasharray="2 2" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                                <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 8 }} axisLine={false} tickLine={false} />
+                                <Tooltip contentStyle={{ background: "rgba(8,6,24,0.97)", border: "none", color: "white", borderRadius: 8, fontSize: 10 }} />
+                                <Bar dataKey="v" fill={msg.chart.color} radius={[4, 4, 0, 0]} />
+                              </BarChart>
+                            )}
+                          </ResponsiveContainer>
+                        </div>
+                      </motion.div>
+                    )}
                   </div>
-                  <div className="text-right">
-                    <button className="text-xs font-medium" style={{ color: "var(--accent)" }} onClick={() => setExpandedId(isExpanded ? null : msg.id)}>
-                      {isExpanded ? 'Fermer' : 'Voir réponse'}
-                    </button>
-                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+
+            {/* Loading dots */}
+            {loading && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start gap-2">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+                  style={{ background: `linear-gradient(135deg,${F.ai},${F.primary})` }}>
+                  <Sparkles size={11} className="text-white" />
                 </div>
+                <div className="flex items-center gap-1 rounded-[16px] px-4 py-3" style={{ background: "rgba(255,255,255,0.05)", borderRadius: "18px 18px 18px 4px" }}>
+                  {[0, 0.2, 0.4].map((d, i) => (
+                    <motion.div key={i} className="h-1.5 w-1.5 rounded-full" style={{ background: F.ai }}
+                      animate={{ scale: [0.6, 1.2, 0.6] }} transition={{ duration: 0.8, repeat: Infinity, delay: d }} />
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </div>
 
-                {isExpanded && aiReply && (
-                  <div className="mt-3 rounded bg-[var(--surface-panel)] p-3">
-                    <p className="whitespace-pre-wrap text-sm" style={{ color: "var(--text-primary)" }}>{aiReply.content}</p>
-                    <p className="mt-1 text-xs" style={{ color: "var(--text-muted)" }}>{aiReply.timestamp}</p>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {messages.filter((msg) => msg.type === "user").length === 0 && (
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              Aucune analyse utilisateur récente.
-            </p>
-          )}
+          {/* Input */}
+          <div className="border-t px-4 py-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+            <div className="flex items-center gap-2">
+              <input type="text"
+                placeholder="Posez une question financière... (ex: Prévoir revenus 6 mois)"
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && sendMessage()}
+                className="flex-1 rounded-xl border bg-transparent px-4 py-2 text-xs outline-none"
+                style={{ borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }} />
+              <motion.button type="button"
+                onClick={() => sendMessage()}
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-white shrink-0"
+                style={{ background: input.trim() ? `linear-gradient(135deg,${F.ai},${F.primary})` : "rgba(255,255,255,0.08)" }}
+                whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.9 }}>
+                <Send size={14} />
+              </motion.button>
+            </div>
+          </div>
         </div>
-      </GlassCard>
-    </div>
+
+        {/* Right: suggestions */}
+        <div className="space-y-3">
+          <div className="rounded-[20px] border p-4" style={{ background: "rgba(8,6,24,0.88)", borderColor: "rgba(255,255,255,0.07)" }}>
+            <p className="text-[10px] font-bold mb-3" style={{ color: "rgba(255,255,255,0.5)" }}>
+              💡 Questions suggérées
+            </p>
+            <div className="space-y-2">
+              {SUGGESTIONS.map((s, i) => (
+                <motion.button key={i} type="button"
+                  onClick={() => sendMessage(s.q)}
+                  className="w-full rounded-[14px] border p-3 text-left"
+                  style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}
+                  whileHover={{ scale: 1.02, borderColor: `${F.primary}30`, background: `${F.primary}06` }}
+                  whileTap={{ scale: 0.98 }}>
+                  <div className="flex items-start gap-2">
+                    <span className="text-sm shrink-0">{s.icon}</span>
+                    <div>
+                      <p className="text-[8px] font-bold mb-0.5" style={{ color: F.primary }}>{s.cat}</p>
+                      <p className="text-[9px] leading-snug" style={{ color: "rgba(255,255,255,0.6)" }}>{s.q}</p>
+                    </div>
+                  </div>
+                </motion.button>
+              ))}
+            </div>
+          </div>
+
+          {/* Capabilities */}
+          <div className="rounded-[20px] border p-4" style={{ background: "rgba(8,6,24,0.88)", borderColor: `${F.ai}20` }}>
+            <p className="text-[10px] font-bold mb-2" style={{ color: F.ai }}>🤖 Capacités ODIN AI</p>
+            <div className="space-y-1.5 text-[9px]" style={{ color: "rgba(255,255,255,0.5)" }}>
+              {["Analyse budgétaire automatique","Graphiques générés en temps réel","Prévisions sur 6 mois","Alertes budget & sponsors","Recommandations optimisation"].map((c, i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <div className="h-1 w-1 rounded-full" style={{ background: F.ai }} />
+                  {c}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
   );
 }

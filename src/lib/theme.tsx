@@ -13,10 +13,11 @@ const STORAGE_KEY = "odin-theme";
 
 function getInitialTheme(): Theme {
   const stored = window.localStorage.getItem(STORAGE_KEY);
-  if (stored === "light" || stored === "dark") return stored;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  if (stored === "light") return "light";
+  if (stored !== "dark") {
+    window.localStorage.setItem(STORAGE_KEY, "dark");
+  }
+  return "dark";
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

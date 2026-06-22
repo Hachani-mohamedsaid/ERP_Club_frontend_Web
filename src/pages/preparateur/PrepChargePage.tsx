@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Minus, Plus, ClipboardList, Send } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Minus, Plus, ClipboardList, Send, UserSquare2 } from "lucide-react";
 import { PrepPageTransition } from "../../components/preparateur/PrepPageTransition";
 import { PrepKpiCard } from "../../components/preparateur/PrepKpiCard";
 import { PrepToolbar, downloadCsv } from "../../components/preparateur/PrepToolbar";
@@ -18,6 +19,7 @@ function TableSkeleton() {
 }
 
 export function PrepChargePage() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [loads, setLoads] = useState(PLAYER_LOAD);
@@ -127,6 +129,9 @@ export function PrepChargePage() {
                           </button>
                           <button type="button" onClick={() => sendToCoach(p)} className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs hover:bg-white/5" style={{ color: "#FF6B57" }}>
                             <Send size={12} /> Coach
+                          </button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/preparateur/fiche/${p.id}`); }} className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs hover:bg-white/5" style={{ color: "#FF7A00" }}>
+                            <UserSquare2 size={12} /> Fiche
                           </button>
                         </div>
                       </td>

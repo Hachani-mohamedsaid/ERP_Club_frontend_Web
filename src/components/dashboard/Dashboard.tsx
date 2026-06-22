@@ -10,7 +10,6 @@ const KPI_CARDS = [
   { label: "Blessés", value: "3", note: "Disponibilité 89%" },
   { label: "Contrats expirants", value: "4", note: "90 / 60 / 30 jours" },
   { label: "Prospects à valider", value: "8", note: "Demandes coach en attente" },
-  { label: "Budget restant", value: "184 000 DT", note: "Suivi mensuel" },
   { label: "Présence entraînement", value: "92%", note: "Semaine courante" },
   { label: "ODIN Club Score", value: "87/100", note: "Indice global" },
 ];
@@ -23,7 +22,6 @@ const PROSPECTS = [
 
 const REPORTS = [
   { label: "Rapport sportif", items: ["Classement", "Victoires", "Défaites", "ODIN Score"] },
-  { label: "Rapport financier", items: ["Budget", "Revenus", "Dépenses", "Cash flow"] },
   { label: "Rapport recrutement", items: ["Prospects", "Recrutés", "Refusés"] },
   { label: "Rapport médical", items: ["Blessures", "Temps moyen de récupération"] },
 ];
@@ -32,30 +30,30 @@ const AI_INSIGHTS = [
   { label: "Player Performance Index", value: "Ahmed — 88/100", tone: "success" as const },
   { label: "Injury Risk", value: "12%", tone: "warning" as const },
   { label: "Talent Ranking", value: "Top Prospects", tone: "info" as const },
-  { label: "Budget Forecast", value: "6 / 12 mois", tone: "neutral" as const },
+  { label: "Club ODIN Score", value: "87 / 100", tone: "neutral" as const },
 ];
 
 const NOTIFICATIONS = [
   "Contrat expire bientôt",
   "Joueur blessé",
   "Prospect validé",
-  "Budget dépassé",
   "Match demain",
-  "Nouvelle facture",
+  "Entraînement demain",
+  "Rapport disponible",
 ];
 
 const VALIDATION_QUEUE = [
   { title: "Recrutement joueur", subtitle: "Youssef Ben Ali", tone: "info" as const },
   { title: "Renouvellement contrat", subtitle: "Ahmed Ben Salah", tone: "warning" as const },
-  { title: "Dépense exceptionnelle", subtitle: "40 000 DT", tone: "danger" as const },
+  { title: "Convocation match", subtitle: "FC Carthage vs ES Sahel", tone: "info" as const },
 ];
 
 const DECISION_HISTORY = [
   { date: "12/06/2026", type: "Recrutement", description: "Youssef Ben Ali", decision: "Accepté", tone: "success" as const },
   { date: "10/06/2026", type: "Renouvellement", description: "Ahmed Ben Salah", decision: "Accepté", tone: "success" as const },
-  { date: "08/06/2026", type: "Dépense", description: "Équipement médical", decision: "Refusée", tone: "danger" as const },
+  { date: "07/06/2026", type: "Convocation", description: "FC Carthage vs US Monastir", decision: "Accepté", tone: "success" as const },
   { date: "05/06/2026", type: "Recrutement", description: "Nader Trabelsi", decision: "Accepté", tone: "success" as const },
-  { date: "02/06/2026", type: "Budget", description: "Dépense marketing", decision: "Refusée", tone: "danger" as const },
+  { date: "02/06/2026", type: "Renouvellement", description: "Sonia Khelil — Coach", decision: "Refusée", tone: "danger" as const },
 ];
 
 function SectionLabel({ icon: Icon, title, subtitle }: { icon: typeof AlertTriangle; title: string; subtitle: string }) {
@@ -334,10 +332,10 @@ export function Dashboard() {
           <SectionLabel icon={ShieldCheck} title="Permissions Responsable Club" subtitle="Vue autorisée et périmètre de contrôle" />
           <motion.div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" variants={containerVariants}>
             {[
-              ["Voir tous les joueurs", "Voir statistiques", "Voir finances"],
-              ["Voir contrats", "Voir scouting", "Voir rapports"],
-              ["Valider recrutement", "Valider contrats", "Valider budgets"],
-              ["Pas de gestion utilisateurs", "Pas de rôles", "Pas de configuration système"],
+              ["Voir tous les joueurs", "Voir statistiques", "Voir scouting"],
+              ["Voir contrats", "Voir rapports", "Voir calendrier"],
+              ["Valider recrutement", "Valider contrats", "Valider convocations"],
+              ["Pas de gestion utilisateurs", "Pas de finances", "Pas de configuration système"],
             ].map((group, index) => (
               <motion.div 
                 key={index} 

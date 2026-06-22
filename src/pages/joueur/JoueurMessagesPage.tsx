@@ -57,26 +57,26 @@ export function JoueurMessagesPage() {
         </motion.div>
       )}
 
-      {/* Notification cards */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      {/* Notification cards — compact strip */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
         {MESSAGE_NOTIFICATIONS.map((n, idx) => (
           <motion.button
             key={n.id}
             type="button"
             onClick={() => setActiveId(n.role === "direction" ? "coach" : n.role)}
-            className="rounded-[20px] border p-4 text-left transition-all hover:scale-[1.02]"
+            className="min-w-[200px] shrink-0 rounded-2xl border px-3 py-2.5 text-left transition-all hover:scale-[1.02] sm:min-w-0 sm:flex-1"
             style={{ borderColor: n.unread ? `${ROLE_COLORS[n.role]}44` : "rgba(255,255,255,0.08)", background: n.unread ? `${ROLE_COLORS[n.role]}11` : "rgba(255,255,255,0.02)" }}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.06 }}
           >
-            <div className="flex items-center gap-2">
-              <Bell size={14} style={{ color: ROLE_COLORS[n.role] }} />
-              <span className="text-xs font-semibold uppercase" style={{ color: ROLE_COLORS[n.role] }}>{n.from}</span>
-              {n.unread && <span className="ml-auto h-2 w-2 rounded-full" style={{ background: "#FF6B57" }} />}
+            <div className="flex items-center gap-1.5">
+              <Bell size={12} style={{ color: ROLE_COLORS[n.role] }} />
+              <span className="truncate text-[10px] font-semibold uppercase" style={{ color: ROLE_COLORS[n.role] }}>{n.from}</span>
+              {n.unread && <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: "#FF6B57" }} />}
             </div>
-            <p className="mt-2 text-sm font-medium" style={{ color: "var(--text-primary)" }}>{n.message}</p>
-            <p className="mt-1 text-[10px]" style={{ color: "var(--text-muted)" }}>{n.time}</p>
+            <p className="mt-1 truncate text-xs font-medium" style={{ color: "var(--text-primary)" }}>{n.message}</p>
+            <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>{n.time}</p>
           </motion.button>
         ))}
       </div>

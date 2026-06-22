@@ -11,6 +11,10 @@ import {
   type HeatmapPeriod,
 } from "../../data/joueurPersonalData";
 
+interface PlayerHeatmapProps {
+  compact?: boolean;
+}
+
 function PitchSvg() {
   return (
     <svg viewBox="0 0 68 105" className="absolute inset-0 h-full w-full" preserveAspectRatio="none">
@@ -83,12 +87,13 @@ function HeatBlobLayer({ blob, index, onHover, onLeave }: {
   );
 }
 
-export function PlayerHeatmap() {
+export function PlayerHeatmap({ compact = false }: PlayerHeatmapProps) {
   const [period, setPeriod] = useState<HeatmapPeriod>("season");
   const [hovered, setHovered] = useState<HeatBlob | null>(null);
 
   const data = HEATMAP_BY_PERIOD[period];
   const display = hovered ?? data.blobs[0];
+  const pitchMaxWidth = compact ? 288 : 360;
 
   return (
     <div className="space-y-4">
@@ -144,9 +149,9 @@ export function PlayerHeatmap() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_200px]">
+      <div className={`grid grid-cols-1 gap-4 ${compact ? "lg:grid-cols-[1fr_168px]" : "lg:grid-cols-[1fr_200px]"}`}>
         {/* Pitch + blobs */}
-        <div className="relative mx-auto w-full" style={{ maxWidth: 360 }}>
+        <div className="relative mx-auto w-full" style={{ maxWidth: pitchMaxWidth }}>
           <motion.div
             className="relative overflow-hidden rounded-2xl border-2"
             style={{ borderColor: "rgba(255,255,255,0.15)", aspectRatio: "68 / 105" }}

@@ -1,13 +1,11 @@
-import { ChartColumn, DollarSign, ShieldAlert, Users, TrendingUp, Trophy } from "lucide-react";
+import { ShieldAlert, Users, TrendingUp, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
 import { GlassCard } from "../ui/GlassCard";
 
 const EXEC_KPIS = [
   { label: "Classement championnat", value: "2ème", trend: "+1 place", icon: Trophy, tone: "info" as const, bar: 86 },
-  { label: "Budget restant", value: "184 000 DT", trend: "-6% ce mois", icon: DollarSign, tone: "success" as const, bar: 72 },
   { label: "Valeur effectif", value: "2.8 M DT", trend: "+11% saison", icon: TrendingUp, tone: "success" as const, bar: 64 },
   { label: "Disponibilité effectif", value: "89%", trend: "3 indisponibles", icon: Users, tone: "info" as const, bar: 89 },
-  { label: "Cash Flow", value: "+125 600 DT", trend: "Stable", icon: ChartColumn, tone: "warning" as const, bar: 58 },
   { label: "Score ODIN", value: "87/100", trend: "Risque bas", icon: ShieldAlert, tone: "danger" as const, bar: 87 },
 ];
 
