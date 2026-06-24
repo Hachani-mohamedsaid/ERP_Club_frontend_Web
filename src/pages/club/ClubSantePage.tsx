@@ -1,18 +1,53 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
-import { Sparkles } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
 import { ClubPageTransition } from "../../components/club/ClubPageTransition";
 import { ClubKpiCard } from "../../components/club/ClubKpiCard";
+import { ClubEmptyState } from "../../components/club/ClubEmptyState";
+import { ClubFormModal } from "../../components/club/ClubFormModal";
 import { ClubHeatInjuryMap } from "../../components/club/ClubHeatInjuryMap";
 import { CountUpStat } from "../../components/player/CountUpStat";
 import { PlayerAvatar } from "../../components/player/PlayerAvatar";
-import { HEALTH_KPIS, INJURIES_BY_MONTH, INJURIES_BY_POSITION, INJURED_PLAYERS } from "../../data/clubAdminData";
+import { clubApi } from "../../lib/api/club";
+import { useClubResource } from "../../hooks/useClubResource";
+import { usePermissions } from "../../hooks/usePermissions";
+
+interface InjuryData {
+  kpis: { injured: number; available: number; avgRisk: number };
+  injured: { name: string; injury: string; returnDate: string; riskIA: number }[];
+}
 
 export function ClubSantePage() {
+  const { can } = usePermissions();
+  const { data, loading, error, reload } = useClubResource(() => clubApi.getInjuries() as Promise<InjuryData>);
+  const [showAdd, setShowAdd] = useState(false);
+  const kpis = data?.kpis ?? { injured: 0, available: 0, avgRisk: 0 };
+  const injured = data?.injured ?? [];
+
+  const kpiCards = [
+    { label: "Blessés", value: kpis.injured, color: "#EF4444" },
+    { label: "Disponibles", value: kpis.available, color: "#22C55E" },
+    { label: "Risque moyen IA", value: kpis.avgRisk, color: "#F59E0B", suffix: "/10" },
+  ];
+
   return (
     <ClubPageTransition>
+      <div className="mb-4 flex justify-end">
+        {can("Sante", "créer") && (
+          <button type="button" onClick={() => setShowAdd(true)}
+            className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+            style={{ background: "linear-gradient(135deg,#FF6B57,#E65240)" }}>
+            <Plus size={16} /> Ajouter blessure
+          </button>
+        )}
+      </div>
+
+      {loading && <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement…</p>}
+      {error && <p className="text-sm text-red-400">{error}</p>}
+
       <div className="grid grid-cols-3 gap-4">
-        {HEALTH_KPIS.map((kpi, i) => (
+        {kpiCards.map((kpi, i) => (
           <ClubKpiCard key={kpi.label} delay={i * 0.05}>
             <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{kpi.label}</p>
             <p className="mt-2 text-2xl font-bold" style={{ color: kpi.color }}>
@@ -28,82 +63,69 @@ export function ClubSantePage() {
 
       <ClubKpiCard delay={0.1} hover={false}>
         <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Liste Blessés</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                {["Joueur", "Blessure", "Retour prévu", "Risk IA"].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {INJURED_PLAYERS.map((p, i) => (
-                <motion.tr
-                  key={p.name}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  style={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}
-                  className="hover:bg-white/[0.02]"
-                >
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <PlayerAvatar name={p.name} size={32} />
-                      <span className="font-medium" style={{ color: "var(--text-primary)" }}>{p.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3" style={{ color: "#EF4444" }}>{p.injury}</td>
-                  <td className="px-4 py-3" style={{ color: "var(--text-secondary)" }}>{p.returnDate}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Sparkles size={12} style={{ color: "#F59E0B" }} />
-                      <div className="h-2 w-16 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.05)" }}>
-                        <motion.div
-                          className="h-full rounded-full"
-                          style={{ background: p.riskIA > 70 ? "#EF4444" : "#F59E0B" }}
-                          initial={{ width: 0 }}
-                          animate={{ width: `${p.riskIA}%` }}
-                          transition={{ duration: 1, delay: i * 0.1 }}
-                        />
+        {injured.length === 0 ? (
+          <ClubEmptyState title="Aucune blessure" description="L'effectif est au complet." />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                  {["Joueur", "Blessure", "Retour prévu", "Risk IA"].map((h) => (
+                    <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {injured.map((p, i) => (
+                  <motion.tr key={p.name + i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }} style={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }} className="hover:bg-white/[0.02]">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <PlayerAvatar name={p.name} size={32} />
+                        <span className="font-medium" style={{ color: "var(--text-primary)" }}>{p.name}</span>
                       </div>
-                      <span className="text-xs font-bold" style={{ color: p.riskIA > 70 ? "#EF4444" : "#F59E0B" }}>{p.riskIA}%</span>
-                    </div>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    </td>
+                    <td className="px-4 py-3" style={{ color: "#EF4444" }}>{p.injury}</td>
+                    <td className="px-4 py-3" style={{ color: "var(--text-secondary)" }}>{p.returnDate}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <Sparkles size={12} style={{ color: "#F59E0B" }} />
+                        <span className="font-semibold" style={{ color: p.riskIA >= 7 ? "#EF4444" : "#F59E0B" }}>{p.riskIA}/10</span>
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </ClubKpiCard>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <ClubKpiCard delay={0.15}>
-          <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Blessures par mois</h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={INJURIES_BY_MONTH}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="month" tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
-              <YAxis tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
-              <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12 }} />
-              <Bar dataKey="count" fill="#FF6B57" radius={[6, 6, 0, 0]} animationDuration={1000} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ClubKpiCard>
-
-        <ClubKpiCard delay={0.2}>
-          <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Blessures par poste</h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={INJURIES_BY_POSITION} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis type="number" tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
-              <YAxis dataKey="position" type="category" tick={{ fill: "var(--text-muted)", fontSize: 11 }} width={70} />
-              <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12 }} />
-              <Bar dataKey="count" fill="#EF4444" radius={[0, 6, 6, 0]} animationDuration={1000} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ClubKpiCard>
-      </div>
+      <AnimatePresence>
+        {showAdd && (
+          <ClubFormModal
+            title="Enregistrer une blessure"
+            fields={[
+              { key: "playerName", label: "Joueur" },
+              { key: "injuryType", label: "Type de blessure" },
+              { key: "bodyPart", label: "Zone" },
+              { key: "returnDate", label: "Retour prévu", type: "date" },
+              { key: "riskScore", label: "Score risque IA (0-10)", type: "number" },
+            ]}
+            onClose={() => setShowAdd(false)}
+            onSubmit={async (v) => {
+              await clubApi.createInjury({
+                playerName: v.playerName,
+                injuryType: v.injuryType,
+                bodyPart: v.bodyPart,
+                returnDate: v.returnDate,
+                riskScore: Number(v.riskScore) || 0,
+              });
+              await reload();
+            }}
+          />
+        )}
+      </AnimatePresence>
     </ClubPageTransition>
   );
 }

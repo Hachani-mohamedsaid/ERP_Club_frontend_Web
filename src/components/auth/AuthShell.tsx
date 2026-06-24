@@ -355,9 +355,22 @@ interface AuthShellProps {
   maxWidth?: string;
   bootDelay?: number;
   showBoot?: boolean;
+  layout?: "auth" | "register";
+  featurePreview?: string[];
+  sidebar?: ReactNode;
 }
 
-export function AuthShell({ children, overlay, maxWidth = "600px", bootDelay = 2100, showBoot = true }: AuthShellProps) {
+export function AuthShell({
+  children,
+  overlay,
+  maxWidth,
+  bootDelay = 2100,
+  showBoot = true,
+  layout = "auth",
+  featurePreview,
+  sidebar,
+}: AuthShellProps) {
+  const resolvedMaxWidth = maxWidth ?? (layout === "register" ? "1120px" : "600px");
   const [booted, setBooted] = useState(!showBoot);
 
   useEffect(() => {
@@ -394,55 +407,94 @@ export function AuthShell({ children, overlay, maxWidth = "600px", bootDelay = 2
       <div className="relative z-10 flex min-h-screen items-center justify-center p-6">
         <motion.div
           className="w-full"
-          style={{ maxWidth, rotateX: tiltX, rotateY: tiltY, transformPerspective: 1200, transformStyle: "preserve-3d" }}
+          style={{ maxWidth: resolvedMaxWidth, rotateX: tiltX, rotateY: tiltY, transformPerspective: 1200, transformStyle: "preserve-3d" }}
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: booted ? 1 : 0, y: booted ? 0 : 24 }}
           transition={{ duration: 0.6, delay: 0.1 }}
         >
           <div className="mb-7 flex flex-col items-center gap-3 text-center">
-            <OdinLogo width={240} />
+            <OdinLogo width={layout === "register" ? 200 : 240} />
             <p className="text-xs font-semibold uppercase tracking-[0.3em]" style={{ color: "#F97316" }}>
               Football Intelligence Platform
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-1.5">
-              {["IA", "Analyse", "Performance", "Recrutement"].map((tag, i) => (
-                <motion.span
-                  key={tag}
-                  className="rounded-full border px-2.5 py-1 text-[11px] font-semibold"
-                  style={{ borderColor: "rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "var(--text-secondary)" }}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: booted ? 1 : 0, y: booted ? 0 : 6 }}
-                  transition={{ delay: 0.3 + i * 0.1 }}
-                >
-                  {tag}
-                </motion.span>
-              ))}
-            </div>
-            <motion.div
-              className="mt-2 grid grid-cols-4 gap-2"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: booted ? 1 : 0 }}
-              transition={{ delay: 0.6 }}
-            >
-              {HERO_COUNTERS.map((c) => (
-                <div key={c.label} className="flex flex-col items-center">
-                  <span className="text-lg font-black" style={{ color: "var(--text-primary)" }}>
-                    +<CountTo end={c.end} decimals={c.decimals} suffix={c.suffix} start={booted} />
-                  </span>
-                  <span className="text-center text-[9px] uppercase leading-tight tracking-wide" style={{ color: "var(--text-muted)" }}>{c.label}</span>
+            {layout === "register" && featurePreview ? (
+              <motion.ul
+                className="mt-1 grid grid-cols-1 gap-1.5 sm:grid-cols-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: booted ? 1 : 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                {featurePreview.map((f) => (
+                  <li key={f} className="flex items-center gap-2 text-left text-xs" style={{ color: "var(--text-secondary)" }}>
+                    <CheckCircle2 size={13} style={{ color: "#22C55E", flexShrink: 0 }} />
+                    {f}
+                  </li>
+                ))}
+              </motion.ul>
+            ) : (
+              <>
+                <div className="flex flex-wrap items-center justify-center gap-1.5">
+                  {["IA", "Analyse", "Performance", "Recrutement"].map((tag, i) => (
+                    <motion.span
+                      key={tag}
+                      className="rounded-full border px-2.5 py-1 text-[11px] font-semibold"
+                      style={{ borderColor: "rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "var(--text-secondary)" }}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: booted ? 1 : 0, y: booted ? 0 : 6 }}
+                      transition={{ delay: 0.3 + i * 0.1 }}
+                    >
+                      {tag}
+                    </motion.span>
+                  ))}
                 </div>
-              ))}
-            </motion.div>
+                <motion.div
+                  className="mt-2 grid grid-cols-4 gap-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: booted ? 1 : 0 }}
+                  transition={{ delay: 0.6 }}
+                >
+                  {HERO_COUNTERS.map((c) => (
+                    <div key={c.label} className="flex flex-col items-center">
+                      <span className="text-lg font-black" style={{ color: "var(--text-primary)" }}>
+                        +<CountTo end={c.end} decimals={c.decimals} suffix={c.suffix} start={booted} />
+                      </span>
+                      <span className="text-center text-[9px] uppercase leading-tight tracking-wide" style={{ color: "var(--text-muted)" }}>{c.label}</span>
+                    </div>
+                  ))}
+                </motion.div>
+              </>
+            )}
           </div>
 
-          <motion.div
-            className="rounded-3xl border p-7"
-            style={AUTH_CARD_STYLE}
-            animate={booted ? { y: [0, -6, 0] } : { y: 0 }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-          >
-            {children}
-          </motion.div>
+          {layout === "register" && sidebar ? (
+            <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[1fr_280px]">
+              <motion.div
+                className="rounded-3xl border p-6 lg:p-7"
+                style={AUTH_CARD_STYLE}
+                animate={booted ? { y: [0, -4, 0] } : { y: 0 }}
+                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+              >
+                {children}
+              </motion.div>
+              <motion.div
+                className="hidden xl:block"
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: booted ? 1 : 0, x: booted ? 0 : 16 }}
+                transition={{ delay: 0.3 }}
+              >
+                {sidebar}
+              </motion.div>
+            </div>
+          ) : (
+            <motion.div
+              className="rounded-3xl border p-7"
+              style={AUTH_CARD_STYLE}
+              animate={booted ? { y: [0, -6, 0] } : { y: 0 }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+            >
+              {children}
+            </motion.div>
+          )}
         </motion.div>
       </div>
     </div>

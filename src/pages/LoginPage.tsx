@@ -4,35 +4,16 @@ import {
   motion, AnimatePresence, useMotionValue, useSpring, useTransform, type MotionValue,
 } from "framer-motion";
 import {
-  ShieldCheck, Building2, LayoutDashboard, Dumbbell, Brain, Briefcase, Goal,
-  Stethoscope, Radar, Wallet, User, Sparkles, Bell, CheckCircle2, Cpu, ArrowRight, Loader2,
-  type LucideIcon,
+  Sparkles, Bell, CheckCircle2, Cpu, ArrowRight, Loader2,
 } from "lucide-react";
 import { GoogleIcon } from "../components/ui/GoogleIcon";
 import { useAuth } from "../contexts/AuthContext";
+import { PLATFORM_ROLES, type PlatformRole } from "../data/platformRoles";
 import odinLogo from "../assets/odin-logo.png";
 
-interface RoleDef {
-  email: string;
-  label: string;
-  desc: string;
-  icon: LucideIcon;
-  color: string;
-}
+type RoleDef = PlatformRole;
 
-const ROLES: RoleDef[] = [
-  { email: "superadmin@club.com", label: "Super Admin", desc: "Plateforme · Clubs · Sécurité", icon: ShieldCheck, color: "#8B5CF6" },
-  { email: "admin@club.com", label: "Admin Club", desc: "Effectif · Staff · Infrastructures", icon: Building2, color: "#6366F1" },
-  { email: "responsable@club.com", label: "Responsable", desc: "Direction · Vue d'ensemble", icon: LayoutDashboard, color: "#EC4899" },
-  { email: "preparateur@club.com", label: "Préparateur Physique", desc: "Charge · Condition · Risques", icon: Dumbbell, color: "#EF4444" },
-  { email: "analyste@club.com", label: "Analyste Performance", desc: "Tactique 3D · IA · Patterns", icon: Brain, color: "#06B6D4" },
-  { email: "recruteur@club.com", label: "Recruteur", desc: "Talents · Négociations · Transferts", icon: Briefcase, color: "#A855F7" },
-  { email: "coach@club.com", label: "Coach", desc: "Tactique · Entraînements · Matchs", icon: Goal, color: "#F59E0B" },
-  { email: "medecin@club.com", label: "Médecin", desc: "Blessures · Suivi · Rééducation", icon: Stethoscope, color: "#22C55E" },
-  { email: "scout@club.com", label: "Scout", desc: "Recherche · Prospects · Rapports", icon: Radar, color: "#3B82F6" },
-  { email: "finance@club.com", label: "Finance", desc: "Budget · Salaires · Contrats", icon: Wallet, color: "#EAB308" },
-  { email: "joueur@club.com", label: "Joueur", desc: "Stats · Planning · Profil", icon: User, color: "#84CC16" },
-];
+const ROLES: RoleDef[] = PLATFORM_ROLES;
 
 const FLOATING_STATS = [
   { label: "Joueurs", end: 24, decimals: 0, prefix: "", suffix: "", x: "7%", y: "20%", color: "#3B82F6" },
@@ -462,9 +443,10 @@ function AuthOverlay({ role, onDone }: { role: RoleDef; onDone: () => void }) {
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { loginWithCredentials, loginDemo } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
   const [booted, setBooted] = useState(false);
   const [authRole, setAuthRole] = useState<RoleDef | null>(null);
   const [pending, setPending] = useState(false);
@@ -499,18 +481,41 @@ export function LoginPage() {
       "/dashboard";
   }
 
-  function startLogin(loginEmail: string) {
-    const role = login(loginEmail);
+  function startLogin(loginEmail: string, role: string, label?: string) {
     pendingDest.current = getDestination(role);
     const def = ROLES.find((r) => r.email === loginEmail.toLowerCase())
-      ?? { email: loginEmail, label: "Espace Club", desc: "", icon: LayoutDashboard, color: "#C0392B" };
+      ?? {
+        email: loginEmail,
+        label: label ?? "Espace Club",
+        desc: "",
+        icon: LayoutDashboard,
+        color: "#C0392B",
+      };
     setPending(true);
     setAuthRole(def);
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    startLogin(email || "responsable@club.com");
+    setLoginError("");
+    if (!email.trim() || !password) {
+      setLoginError("Email et mot de passe requis.");
+      return;
+    }
+    setPending(true);
+    try {
+      const role = await loginWithCredentials(email, password);
+      startLogin(email, role);
+    } catch (err) {
+      setPending(false);
+      setLoginError(err instanceof Error ? err.message : "Connexion impossible.");
+    }
+  }
+
+  function handleDemoLogin(loginEmail: string) {
+    setLoginError("");
+    const role = loginDemo(loginEmail);
+    startLogin(loginEmail, role);
   }
 
   return (
@@ -610,6 +615,9 @@ export function LoginPage() {
                   <>Se connecter <motion.span animate={{ x: [0, 3, 0] }} transition={{ duration: 1.4, repeat: Infinity }}><ArrowRight size={16} /></motion.span></>
                 )}
               </motion.button>
+              {loginError && (
+                <p className="text-center text-xs font-medium" style={{ color: "#EF4444" }}>{loginError}</p>
+              )}
             </form>
 
             <div className="my-5 flex items-center gap-3">
@@ -625,7 +633,7 @@ export function LoginPage() {
               animate={booted ? "show" : "hidden"}
             >
               {ROLES.map((role) => (
-                <RoleCard key={role.email} role={role} onClick={() => startLogin(role.email)} />
+                <RoleCard key={role.email} role={role} onClick={() => handleDemoLogin(role.email)} />
               ))}
             </motion.div>
 
@@ -647,7 +655,7 @@ export function LoginPage() {
             <p className="mt-5 text-center text-sm">
               Pas encore de compte ?{" "}
               <Link to="/register" className="font-semibold transition-opacity hover:opacity-80" style={{ color: "#F97316" }}>
-                Créer un compte
+                Créer votre organisation
               </Link>
             </p>
             <p className="mt-3 text-center text-sm">

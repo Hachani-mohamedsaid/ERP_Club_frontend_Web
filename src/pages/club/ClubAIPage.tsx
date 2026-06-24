@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { Bot, Send, Sparkles, AlertTriangle, Info, Zap, Calendar, FileSignature, Stethoscope } from "lucide-react";
 import { ClubPageTransition } from "../../components/club/ClubPageTransition";
 import { ClubKpiCard } from "../../components/club/ClubKpiCard";
-import { AI_CLUB_SUMMARY, AI_CLUB_QUESTIONS, AI_INSIGHTS, AI_SUGGESTED_ACTIONS, getClubAIResponse } from "../../data/clubAdminData";
+import { useClubDashboard } from "../../hooks/useClubDashboard";
+import { useAuth } from "../../contexts/AuthContext";
 
 function TypingText({ text }: { text: string }) {
   const [displayed, setDisplayed] = useState("");
@@ -36,8 +37,39 @@ const INSIGHT_STYLE = {
 
 const ACTION_ICONS = { "/club/calendrier": Calendar, "/club/contrats": FileSignature, "/club/sante": Stethoscope };
 
+const AI_CLUB_QUESTIONS = [
+  "Quel est l'état de l'effectif ?",
+  "Y a-t-il des contrats à renouveler ?",
+  "Résumé budget du club",
+];
+
+const AI_SUGGESTED_ACTIONS = [
+  { label: "Voir calendrier", path: "/club/calendrier" },
+  { label: "Gérer contrats", path: "/club/contrats" },
+  { label: "Suivi médical", path: "/club/sante" },
+];
+
+function getClubAIResponse(question: string, summary: string[]): string {
+  const q = question.toLowerCase();
+  if (q.includes("effectif") || q.includes("joueur")) return summary[0] ?? "Aucun joueur enregistré.";
+  if (q.includes("staff")) return summary[1] ?? "Aucun staff ajouté.";
+  if (q.includes("budget") || q.includes("finance")) return summary[2] ?? "Budget non configuré.";
+  return summary.join(" ") || "Ajoutez des données au club pour obtenir des insights.";
+}
+
 export function ClubAIPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { data: dashboard } = useClubDashboard();
+  const summary = (dashboard?.aiSummary as string[] | undefined) ?? [
+    "Aucun joueur enregistré.",
+    "Aucun staff ajouté.",
+    "Budget non configuré.",
+  ];
+  const insights = summary.map((text, i) => ({
+    text,
+    severity: (i === 0 ? "info" : "warning") as keyof typeof INSIGHT_STYLE,
+  }));
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
   const [chat, setChat] = useState<{ role: "user" | "ai"; text: string; typing?: boolean }[]>([]);
@@ -47,7 +79,7 @@ export function ClubAIPage() {
     setThinking(true);
     setTimeout(() => {
       setThinking(false);
-      setChat((prev) => [...prev, { role: "ai", text: getClubAIResponse(question), typing: true }]);
+      setChat((prev) => [...prev, { role: "ai", text: getClubAIResponse(question, summary), typing: true }]);
     }, 900);
   }
 
@@ -66,7 +98,7 @@ export function ClubAIPage() {
           <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>AI Insights</h3>
         </div>
         <div className="space-y-2">
-          {AI_INSIGHTS.map((insight) => {
+          {insights.map((insight) => {
             const style = INSIGHT_STYLE[insight.severity];
             const Icon = style.icon;
             return (
@@ -107,11 +139,11 @@ export function ClubAIPage() {
           </div>
           <div>
             <h2 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>Assistant IA Club</h2>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>FC Carthage — Analyse intelligente</p>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>{user?.organization?.clubName ?? "Mon club"} — Analyse intelligente</p>
           </div>
         </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-          {AI_CLUB_SUMMARY.map((line) => (
+          {summary.map((line) => (
             <p key={line} className="rounded-xl border px-4 py-3 text-sm" style={{ borderColor: "rgba(255,255,255,0.05)", color: "var(--text-secondary)" }}>
               {line}
             </p>

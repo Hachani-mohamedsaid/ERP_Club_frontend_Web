@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Badge } from "../components/ui/Badge";
 import { Users, UserCheck, UserX, Shield } from "lucide-react";
 import { SuperAdminPageTransition, SuperAdminPageHeader, SuperAdminGhostButton, SuperAdminKpiCard, SuperAdminKpiGrid, SuperAdminSection, SuperAdminSelectFilter, SuperAdminListRow, SuperAdminCard } from "../components/superadmin";
+import { PLATFORM_ROLE_FILTER_OPTIONS } from "../data/platformRoles";
 
 interface UserRecord {
   id: string;
@@ -15,9 +16,11 @@ interface UserRecord {
 
 const USERS: UserRecord[] = [
   { id: "u1", name: "Amine Mansour", email: "amine@club.com", role: "Coach", club: "FC Carthage", lastLogin: "18/06/2026", status: "Actif" },
-  { id: "u2", name: "Sarra Belhaj", email: "sarra@club.com", role: "Responsable Club", club: "ES Sahel", lastLogin: "17/06/2026", status: "Actif" },
+  { id: "u2", name: "Sarra Belhaj", email: "sarra@club.com", role: "Admin Club", club: "ES Sahel", lastLogin: "17/06/2026", status: "Actif" },
   { id: "u3", name: "Rami Saadi", email: "rami@club.com", role: "Scout", club: "CS Sfaxien", lastLogin: "16/06/2026", status: "Bloqué" },
   { id: "u4", name: "Nadia Khemiri", email: "nadia@club.com", role: "Finance", club: "US Monastir", lastLogin: "15/06/2026", status: "Inactif" },
+  { id: "u5", name: "Hichem Mansouri", email: "hichem@club.com", role: "Préparateur Physique", club: "FC Carthage", lastLogin: "14/06/2026", status: "Actif" },
+  { id: "u6", name: "Amal Gharbi", email: "amal@club.com", role: "Analyste Performance", club: "ES Sahel", lastLogin: "13/06/2026", status: "Actif" },
 ];
 
 export function SuperAdminUsers() {
@@ -33,7 +36,7 @@ export function SuperAdminUsers() {
     return true;
   });
 
-  const roles = ["Tous", ...new Set(USERS.map((u) => u.role))];
+  const roles = PLATFORM_ROLE_FILTER_OPTIONS;
   const statuses = ["Tous", "Actif", "Bloqué", "Inactif"];
   const clubs = ["Tous", ...new Set(USERS.map((u) => u.club))];
 

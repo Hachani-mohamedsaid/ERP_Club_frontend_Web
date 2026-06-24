@@ -9,6 +9,7 @@ import {
   SuperAdminGhostButton,
 } from "../components/superadmin";
 import { TrendingUp, Users, Globe, Sparkles, Zap } from "lucide-react";
+import { PLATFORM_ROLES_CHART } from "../data/platformRoles";
 
 const KPI_CARDS = [
   { label: "Clubs", value: "125", icon: Globe, color: "#3B82F6", trend: "+8 ce mois" },
@@ -35,13 +36,7 @@ const REVENUE_MONTHLY = [
   { month: "Juin", revenue: 24500 },
 ];
 
-const USERS_BY_ROLE = [
-  { name: "Responsable Club", value: 2200 },
-  { name: "Scout", value: 900 },
-  { name: "Coach", value: 800 },
-  { name: "Finance", value: 400 },
-  { name: "Médecin", value: 280 },
-];
+const USERS_BY_ROLE = PLATFORM_ROLES_CHART;
 
 const ACTIVITY_FEED = [
   "FC Carthage créé",

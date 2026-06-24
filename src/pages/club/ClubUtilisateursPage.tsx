@@ -2,6 +2,10 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ClubPageTransition } from "../../components/club/ClubPageTransition";
 import { ClubKpiCard } from "../../components/club/ClubKpiCard";
+import { ClubEmptyState } from "../../components/club/ClubEmptyState";
+import { clubApi } from "../../lib/api/club";
+import { useClubResource } from "../../hooks/useClubResource";
+import { usePermissions } from "../../hooks/usePermissions";
 import {
   Plus, Search, Edit2, Trash2, Ban, KeyRound,
   Users, UserCheck, UserX, Shield, X, Save, ChevronDown,
@@ -22,15 +26,6 @@ interface ClubUser {
 }
 
 /* ── Mock data ──────────────────────────────────────────────────── */
-const INITIAL_USERS: ClubUser[] = [
-  { id: "u1", name: "Mohamed Hachani",  email: "m.hachani@fc-carthage.tn",  role: "Club Admin",            status: "Actif",    lastLogin: "18/06 09:32", createdAt: "01/01/2024" },
-  { id: "u2", name: "Sonia Khelil",     email: "s.khelil@fc-carthage.tn",   role: "Coach",                 status: "Actif",    lastLogin: "18/06 07:50", createdAt: "15/03/2024" },
-  { id: "u3", name: "Tarek Bouzid",     email: "t.bouzid@fc-carthage.tn",   role: "Scout",                 status: "Actif",    lastLogin: "17/06 19:21", createdAt: "20/04/2024" },
-  { id: "u4", name: "Ines Makni",       email: "i.makni@fc-carthage.tn",    role: "Médecin",               status: "Inactif",  lastLogin: "10/06 14:00", createdAt: "05/05/2024" },
-  { id: "u5", name: "Khaled Trabelsi",  email: "k.trabelsi@fc-carthage.tn", role: "Responsable Financier", status: "Actif",    lastLogin: "17/06 11:00", createdAt: "12/02/2024" },
-  { id: "u6", name: "Amal Gharbi",      email: "a.gharbi@fc-carthage.tn",   role: "Analyste",              status: "Suspendu", lastLogin: "01/06 09:00", createdAt: "18/03/2024" },
-];
-
 const ROLES: Role[] = ["Club Admin", "Coach", "Médecin", "Responsable Financier", "Scout", "Analyste"];
 
 const ROLE_COLOR: Record<Role, string> = {
@@ -187,7 +182,9 @@ function UserModal({
 
 /* ── Main page ──────────────────────────────────────────────────── */
 export function ClubUtilisateursPage() {
-  const [users, setUsers] = useState<ClubUser[]>(INITIAL_USERS);
+  const { can } = usePermissions();
+  const { data: members, loading, error, reload } = useClubResource(() => clubApi.getMembers() as Promise<ClubUser[]>);
+  const users = members ?? [];
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<"Tous" | Role>("Tous");
   const [modalUser, setModalUser] = useState<Partial<ClubUser> | null | undefined>(undefined);
@@ -209,32 +206,41 @@ export function ClubUtilisateursPage() {
     roles: new Set(users.map((u) => u.role)).size,
   }), [users]);
 
-  function handleSave(form: Partial<ClubUser>) {
-    if (form.id) {
-      setUsers((prev) => prev.map((u) => (u.id === form.id ? { ...u, ...form } as ClubUser : u)));
-    } else {
-      const newUser: ClubUser = {
-        id: `u${Date.now()}`,
-        name: form.name ?? "",
-        email: form.email ?? "",
-        role: form.role ?? "Coach",
-        status: "Actif",
-        lastLogin: "—",
-        createdAt: new Date().toLocaleDateString("fr-FR"),
-      };
-      setUsers((prev) => [newUser, ...prev]);
+  async function handleSave(form: Partial<ClubUser>) {
+    try {
+      if (form.id) {
+        await clubApi.updateMember(form.id, {
+          fullName: form.name,
+          email: form.email,
+          clubRole: form.role,
+          status: form.status,
+        });
+      } else {
+        await clubApi.createMember({
+          fullName: form.name,
+          email: form.email,
+          clubRole: form.role,
+        });
+      }
+      await reload();
+      setModalUser(undefined);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Erreur");
     }
-    setModalUser(undefined);
   }
 
-  function toggleStatus(id: string) {
-    setUsers((prev) => prev.map((u) =>
-      u.id === id ? { ...u, status: u.status === "Actif" ? "Suspendu" : "Actif" } : u
-    ));
+  async function toggleStatus(id: string) {
+    const u = users.find((x) => x.id === id);
+    if (!u) return;
+    const next = u.status === "Actif" ? "Suspendu" : "Actif";
+    await clubApi.updateMember(id, { status: next });
+    await reload();
   }
 
-  function deleteUser(id: string) {
-    setUsers((prev) => prev.filter((u) => u.id !== id));
+  async function deleteUser(id: string) {
+    if (!confirm("Supprimer cet utilisateur ?")) return;
+    await clubApi.deleteMember(id);
+    await reload();
   }
 
   return (
@@ -247,6 +253,7 @@ export function ClubUtilisateursPage() {
             <h1 className="mt-1 text-xl font-extrabold" style={{ color: "var(--text-primary)" }}>Gestion des utilisateurs</h1>
             <p className="text-sm" style={{ color: "var(--text-muted)" }}>Ajout, rôles et accès de l'équipe du club.</p>
           </div>
+          {can("Parametres", "créer") && (
           <motion.button
             type="button" onClick={() => setModalUser({})}
             className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
@@ -255,6 +262,7 @@ export function ClubUtilisateursPage() {
           >
             <Plus size={15} /> Ajouter utilisateur
           </motion.button>
+          )}
         </div>
       </ClubKpiCard>
 
@@ -309,6 +317,11 @@ export function ClubUtilisateursPage() {
 
       {/* User table */}
       <ClubKpiCard hover={false}>
+        {loading && <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement…</p>}
+        {error && <p className="text-sm text-red-400">{error}</p>}
+        {!loading && !error && filtered.length === 0 && (
+          <ClubEmptyState title="Aucun utilisateur" description="Ajoutez des membres de l'équipe via le bouton +." />
+        )}
         <div className="space-y-3">
           <AnimatePresence>
             {filtered.map((user, i) => (

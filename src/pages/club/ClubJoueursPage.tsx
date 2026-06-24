@@ -1,28 +1,37 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Eye, Pencil, Ban, ArrowRightLeft, FileSignature, X, GitCompareArrows } from "lucide-react";
+import { Search, Eye, Pencil, Ban, ArrowRightLeft, FileSignature, X, GitCompareArrows, Plus } from "lucide-react";
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Legend } from "recharts";
 import { ClubPageTransition } from "../../components/club/ClubPageTransition";
 import { ClubKpiCard } from "../../components/club/ClubKpiCard";
+import { ClubEmptyState } from "../../components/club/ClubEmptyState";
+import { ClubFormModal } from "../../components/club/ClubFormModal";
 import { PlayerDetailDrawer } from "../../components/club/PlayerDetailDrawer";
 import { PlayerAvatar } from "../../components/player/PlayerAvatar";
-import { SQUAD_PLAYERS, type SquadPlayer } from "../../data/joueurMockData";
+import { clubApi } from "../../lib/api/club";
+import { useClubResource } from "../../hooks/useClubResource";
+import { usePermissions } from "../../hooks/usePermissions";
+import type { SquadPlayer } from "../../data/joueurMockData";
 
 const STATUS_COLORS: Record<string, string> = {
   Disponible: "#22C55E", Blessé: "#EF4444", "Fin contrat": "#F59E0B", Limité: "#6366F1",
 };
 
 export function ClubJoueursPage() {
+  const { can } = usePermissions();
+  const { data: players, loading, error, reload } = useClubResource(() => clubApi.getPlayers() as Promise<SquadPlayer[]>);
+  const squad = players ?? [];
   const [search, setSearch] = useState("");
   const [compareOpen, setCompareOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [drawerPlayer, setDrawerPlayer] = useState<SquadPlayer | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
 
-  const filtered = SQUAD_PLAYERS.filter((p) =>
+  const filtered = squad.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase()) || p.position.toLowerCase().includes(search.toLowerCase())
   );
 
-  const comparePlayers = selected.map((id) => SQUAD_PLAYERS.find((p) => p.id === id)).filter(Boolean);
+  const comparePlayers = selected.map((id) => squad.find((p) => p.id === id)).filter(Boolean);
   const radarData = comparePlayers.length === 2
     ? Object.keys(comparePlayers[0]!.radar).map((key) => ({
         stat: key.charAt(0).toUpperCase() + key.slice(1),
@@ -57,7 +66,20 @@ export function ClubJoueursPage() {
         >
           <GitCompareArrows size={16} /> Comparer ({selected.length}/2)
         </button>
+        {can("Joueurs", "créer") && (
+          <button type="button" onClick={() => setShowAdd(true)}
+            className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+            style={{ background: "linear-gradient(135deg,#FF6B57,#E65240)" }}>
+            <Plus size={16} /> Ajouter joueur
+          </button>
+        )}
       </div>
+
+      {loading && <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement…</p>}
+      {error && <p className="text-sm text-red-400">{error}</p>}
+      {!loading && !error && squad.length === 0 && (
+        <ClubEmptyState title="Aucun joueur" description="Ajoutez votre premier joueur via le bouton +." />
+      )}
 
       <ClubKpiCard hover={false} className="overflow-hidden p-0">
         <div className="overflow-x-auto">
@@ -150,6 +172,32 @@ export function ClubJoueursPage() {
               </ResponsiveContainer>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showAdd && (
+          <ClubFormModal
+            title="Ajouter un joueur"
+            fields={[
+              { key: "fullName", label: "Nom complet" },
+              { key: "position", label: "Poste", placeholder: "MC" },
+              { key: "age", label: "Âge", type: "number" },
+              { key: "ovr", label: "OVR", type: "number" },
+              { key: "salaryMonthly", label: "Salaire mensuel (DT)", type: "number" },
+            ]}
+            onClose={() => setShowAdd(false)}
+            onSubmit={async (v) => {
+              await clubApi.createPlayer({
+                fullName: v.fullName,
+                position: v.position || "MC",
+                age: Number(v.age) || 0,
+                ovr: Number(v.ovr) || 0,
+                salaryMonthly: Number(v.salaryMonthly) || 0,
+              });
+              await reload();
+            }}
+          />
         )}
       </AnimatePresence>
     </ClubPageTransition>

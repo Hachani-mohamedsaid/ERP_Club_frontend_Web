@@ -12,6 +12,8 @@ import { JoueurChatDrawer } from "../player/JoueurChatDrawer";
 import { getPlayerById } from "../../data/joueurMockData";
 import { FinanceNotificationsDropdown } from "../finance/FinanceNotificationsDropdown";
 import { FinanceGlobalSearch } from "../finance/FinanceGlobalSearch";
+import { useClubProfile } from "../../hooks/useClubProfile";
+import { ClubLogo } from "../club/ClubLogo";
 
 const JOUEUR_STATIC = ["performances", "medical", "planning", "profil", "ia", "messages"];
 
@@ -59,7 +61,7 @@ const TITLE_BY_PATH: Record<string, { title: string; subtitle: string }> = {
   "/joueurs/planning": { title: "Mon Planning", subtitle: "Matchs, entraînements et repos" },
   "/joueurs/ia": { title: "AI Coach", subtitle: "Assistant personnel intelligent" },
   "/joueurs/profil": { title: "Mon Profil", subtitle: "Informations, contrat et documents" },
-  "/club": { title: "Dashboard Club", subtitle: "Bonjour Mohamed — FC Carthage, Saison 2026" },
+  "/club": { title: "Dashboard Club", subtitle: "" },
   "/club/joueurs": { title: "Gestion Joueurs", subtitle: "Effectif, statuts et comparaisons" },
   "/club/staff": { title: "Staff Technique", subtitle: "Coach, médecin, scout et préparateurs" },
   "/club/finances": { title: "Finances Club", subtitle: "Budget, dépenses et revenus" },
@@ -536,6 +538,7 @@ function ResponsableGlobalSearch() {
 export function Topbar() {
   const location = useLocation();
   const { user } = useAuth();
+  const { adminName, clubName, season, logoUrl } = useClubProfile();
   const [chatOpen, setChatOpen] = useState(false);
   const isMedical = user?.role === "medical";
   const isJoueur = user?.role === "joueur";
@@ -543,6 +546,7 @@ export function Topbar() {
   const isSuperAdmin = location.pathname.startsWith("/superadmin");
   const isResponsable = user?.role === "responsable";
   const isFinance = user?.role === "finance" || location.pathname.startsWith("/finance");
+  const isClubAdmin = user?.role === "adminclub";
 
   const profileMatch = location.pathname.match(/^\/joueurs\/([^/]+)$/);
   const profileId = profileMatch?.[1];
@@ -588,15 +592,25 @@ export function Topbar() {
         : TITLE_BY_PATH[location.pathname]))
     ?? TITLE_BY_PATH["/dashboard"];
 
+  const clubSubtitle = `Bonjour ${adminName} — ${clubName}, Saison ${season}`;
+  const pageMeta = isClubAdmin && location.pathname.startsWith("/club")
+    ? {
+        title: current.title,
+        subtitle: location.pathname === "/club"
+          ? clubSubtitle
+          : `${clubName} · Saison ${season}`,
+      }
+    : current;
+
   return (
     <header className="flex items-center justify-between gap-4 px-8 py-5">
       {location.pathname !== "/players" && (
         <div>
           <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
-            {current.title}
+            {pageMeta.title}
           </h1>
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            {current.subtitle}
+            {pageMeta.subtitle}
           </p>
         </div>
       )}
@@ -652,14 +666,18 @@ export function Topbar() {
         )}
 
         <button className="glass-input flex items-center gap-2 py-2 pl-2 pr-3">
-          <div
-            className="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold"
-            style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
-          >
-            FC
-          </div>
+          {isClubAdmin ? (
+            <ClubLogo name={clubName} logoUrl={logoUrl} size="xs" />
+          ) : (
+            <div
+              className="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold"
+              style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+            >
+              FC
+            </div>
+          )}
           <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-            FC Carthage
+            {isClubAdmin ? clubName : "FC Carthage"}
           </span>
           <ChevronDown size={14} style={{ color: "var(--text-muted)" }} />
         </button>

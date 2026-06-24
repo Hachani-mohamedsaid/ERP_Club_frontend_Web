@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ClubPageTransition } from "../../components/club/ClubPageTransition";
 import { ClubKpiCard } from "../../components/club/ClubKpiCard";
+import { clubApi } from "../../lib/api/club";
+import { useClubResource } from "../../hooks/useClubResource";
 import {
   Palette, Shield, Bell, Upload, Save, CheckCircle2,
   Building2, MapPin, Phone, Mail, Globe, Eye, EyeOff,
@@ -9,12 +11,14 @@ import {
 } from "lucide-react";
 
 /* ── Helper components ──────────────────────────────────────────── */
-function Field({ label, value, type = "text", placeholder = "" }: { label: string; value?: string; type?: string; placeholder?: string }) {
+function Field({ label, value, onChange, type = "text", placeholder = "" }: {
+  label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string;
+}) {
   return (
     <div>
       <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>{label}</label>
       <input
-        type={type} defaultValue={value} placeholder={placeholder}
+        type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
         className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
         style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}
         onFocus={e => { e.target.style.borderColor = "rgba(255,107,87,0.5)"; }}
@@ -24,8 +28,12 @@ function Field({ label, value, type = "text", placeholder = "" }: { label: strin
   );
 }
 
-function Toggle({ label, description, defaultOn = true }: { label: string; description?: string; defaultOn?: boolean }) {
-  const [on, setOn] = useState(defaultOn);
+function Toggle({ label, description, on, onChange, defaultOn = true }: {
+  label: string; description?: string; on?: boolean; onChange?: (v: boolean) => void; defaultOn?: boolean;
+}) {
+  const [local, setLocal] = useState(defaultOn);
+  const isOn = on ?? local;
+  const toggle = () => (onChange ? onChange(!isOn) : setLocal(!local));
   return (
     <div className="flex items-center justify-between gap-4 rounded-2xl border p-4"
       style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
@@ -34,13 +42,13 @@ function Toggle({ label, description, defaultOn = true }: { label: string; descr
         {description && <p className="text-xs" style={{ color: "var(--text-muted)" }}>{description}</p>}
       </div>
       <button
-        type="button" onClick={() => setOn(!on)}
+        type="button" onClick={toggle}
         className="relative h-6 w-11 shrink-0 rounded-full transition-all"
-        style={{ background: on ? "linear-gradient(135deg,#FF6B57,#E65240)" : "rgba(255,255,255,0.1)" }}
+        style={{ background: isOn ? "linear-gradient(135deg,#FF6B57,#E65240)" : "rgba(255,255,255,0.1)" }}
       >
         <motion.div
           className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow"
-          animate={{ left: on ? "calc(100% - 22px)" : "2px" }}
+          animate={{ left: isOn ? "calc(100% - 22px)" : "2px" }}
           transition={{ type: "spring", stiffness: 400, damping: 28 }}
         />
       </button>
@@ -66,22 +74,17 @@ function PasswordField({ label }: { label: string }) {
   );
 }
 
-function SaveRow() {
+function SaveRow({ onSave }: { onSave: () => Promise<void> }) {
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   return (
     <div className="flex justify-end gap-3 border-t pt-4" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-      <motion.button type="button"
-        className="rounded-xl border px-4 py-2.5 text-sm font-medium"
-        style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
-        whileHover={{ borderColor: "#FF6B57", color: "#FF6B57" }}>
-        Annuler
-      </motion.button>
       <motion.button
-        type="button" onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 2500); }}
+        type="button" onClick={async () => { setSaving(true); try { await onSave(); setSaved(true); setTimeout(() => setSaved(false), 2500); } finally { setSaving(false); } }}
         className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
         style={{ background: saved ? "linear-gradient(135deg,#22C55E,#16A34A)" : "linear-gradient(135deg,#FF6B57,#E65240)", boxShadow: `0 0 20px ${saved ? "rgba(34,197,94,0.4)" : "rgba(255,107,87,0.35)"}` }}
         whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-        {saved ? <><CheckCircle2 size={14} /> Sauvegardé!</> : <><Save size={14} /> Sauvegarder</>}
+        {saved ? <><CheckCircle2 size={14} /> Sauvegardé!</> : <><Save size={14} /> {saving ? "Enregistrement…" : "Sauvegarder"}</>}
       </motion.button>
     </div>
   );
@@ -99,9 +102,65 @@ type Tab = (typeof TABS)[number]["key"];
 
 /* ── Main page ──────────────────────────────────────────────────── */
 export function ClubParametresPage() {
+  const { data: profile, loading, reload } = useClubResource(() => clubApi.getProfile() as Promise<Record<string, unknown>>);
   const [activeTab, setActiveTab] = useState<Tab>("general");
   const [primaryColor, setPrimaryColor] = useState("#FF6B57");
   const [secondaryColor, setSecondaryColor] = useState("#3B82F6");
+  const [form, setForm] = useState({
+    clubName: "", abbreviation: "", officialEmail: "", phone: "", website: "",
+    stadium: "", address: "", city: "", country: "", slogan: "",
+    notifyEmail: true, notifySms: false, notifyPush: true,
+  });
+
+  useEffect(() => {
+    if (!profile) return;
+    setForm({
+      clubName: String(profile.clubName ?? ""),
+      abbreviation: String(profile.abbreviation ?? ""),
+      officialEmail: String(profile.officialEmail ?? ""),
+      phone: String(profile.phone ?? ""),
+      website: String(profile.website ?? ""),
+      stadium: String(profile.stadium ?? ""),
+      address: String(profile.address ?? ""),
+      city: String(profile.city ?? ""),
+      country: String(profile.country ?? ""),
+      slogan: String(profile.slogan ?? ""),
+      notifyEmail: profile.notifyEmail !== false,
+      notifySms: Boolean(profile.notifySms),
+      notifyPush: profile.notifyPush !== false,
+    });
+    if (profile.primaryColor) setPrimaryColor(String(profile.primaryColor));
+    if (profile.secondaryColor) setSecondaryColor(String(profile.secondaryColor));
+  }, [profile]);
+
+  async function saveProfile() {
+    await clubApi.updateProfile({
+      officialEmail: form.officialEmail,
+      phone: form.phone,
+      website: form.website,
+      stadium: form.stadium,
+      address: form.address,
+      city: form.city,
+      abbreviation: form.abbreviation,
+      primaryColor,
+      secondaryColor,
+      slogan: form.slogan,
+      notifyEmail: form.notifyEmail,
+      notifySms: form.notifySms,
+      notifyPush: form.notifyPush,
+    });
+    await reload();
+  }
+
+  const set = (key: keyof typeof form) => (v: string | boolean) => setForm((f) => ({ ...f, [key]: v }));
+
+  if (loading && !profile) {
+    return (
+      <ClubPageTransition>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement des paramètres…</p>
+      </ClubPageTransition>
+    );
+  }
 
   return (
     <ClubPageTransition>
@@ -148,26 +207,26 @@ export function ClubParametresPage() {
             <ClubKpiCard hover={false}>
               <h2 className="mb-5 text-sm font-bold" style={{ color: "var(--text-primary)" }}>Informations générales</h2>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field label="Nom du club" value="FC Carthage" />
-                <Field label="Abréviation" value="FCC" />
-                <Field label="Email officiel" value="contact@fc-carthage.tn" type="email" />
-                <Field label="Téléphone" value="+216 71 000 000" type="tel" />
-                <Field label="Site web" value="https://fc-carthage.tn" />
-                <Field label="Stade" value="Stade de Radès" />
+                <Field label="Nom du club" value={form.clubName} onChange={set("clubName")} />
+                <Field label="Abréviation" value={form.abbreviation} onChange={set("abbreviation")} />
+                <Field label="Email officiel" value={form.officialEmail} onChange={set("officialEmail")} type="email" />
+                <Field label="Téléphone" value={form.phone} onChange={set("phone")} type="tel" />
+                <Field label="Site web" value={form.website} onChange={set("website")} />
+                <Field label="Stade" value={form.stadium} onChange={set("stadium")} />
               </div>
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Adresse</label>
-                  <textarea rows={3} defaultValue="Rue du Stade, Radès, Ben Arous 2040, Tunisie"
+                  <textarea rows={3} value={form.address} onChange={(e) => set("address")(e.target.value)}
                     className="w-full resize-none rounded-xl border px-4 py-2.5 text-sm outline-none"
                     style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }} />
                 </div>
                 <div className="space-y-3">
-                  <Field label="Ville" value="Radès" />
-                  <Field label="Pays" value="Tunisie" />
+                  <Field label="Ville" value={form.city} onChange={set("city")} />
+                  <Field label="Pays" value={form.country} onChange={set("country")} />
                 </div>
               </div>
-              <SaveRow />
+              <SaveRow onSave={saveProfile} />
             </ClubKpiCard>
           )}
 
@@ -182,7 +241,7 @@ export function ClubParametresPage() {
                 <div className="flex items-center gap-4">
                   <div className="flex h-20 w-20 items-center justify-center rounded-2xl text-2xl font-black text-white"
                     style={{ background: `linear-gradient(135deg,${primaryColor},${secondaryColor})` }}>
-                    FC
+                    {form.abbreviation.slice(0, 2).toUpperCase() || "CL"}
                   </div>
                   <label className="cursor-pointer">
                     <motion.div
@@ -228,10 +287,10 @@ export function ClubParametresPage() {
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl text-xs font-bold text-white"
                     style={{ background: `linear-gradient(135deg,${primaryColor},${secondaryColor})` }}>
-                    FC
+                    {form.abbreviation.slice(0, 2).toUpperCase() || "CL"}
                   </div>
                   <div>
-                    <p className="font-bold" style={{ color: "var(--text-primary)" }}>FC Carthage</p>
+                    <p className="font-bold" style={{ color: "var(--text-primary)" }}>{form.clubName || "Mon club"}</p>
                     <div className="flex gap-2 mt-1">
                       <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-white" style={{ background: primaryColor }}>Enterprise</span>
                       <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-white" style={{ background: secondaryColor }}>Actif</span>
@@ -240,9 +299,9 @@ export function ClubParametresPage() {
                 </div>
               </div>
 
-              <Field label="Slogan du club" value="La fierté de Carthage" />
+              <Field label="Slogan du club" value={form.slogan} onChange={set("slogan")} />
               <div className="mt-4" />
-              <SaveRow />
+              <SaveRow onSave={saveProfile} />
             </ClubKpiCard>
           )}
 
@@ -254,7 +313,7 @@ export function ClubParametresPage() {
                 <PasswordField label="Mot de passe actuel" />
                 <PasswordField label="Nouveau mot de passe" />
                 <PasswordField label="Confirmer le mot de passe" />
-                <Field label="Session timeout (min)" value="30" />
+                <Field label="Session timeout (min)" value="30" onChange={() => {}} />
               </div>
               <div className="mb-6 space-y-3">
                 <Toggle label="Authentification 2FA" description="Code envoyé par email à chaque connexion." />
@@ -270,7 +329,7 @@ export function ClubParametresPage() {
                 </div>
               </div>
               <div className="mt-4" />
-              <SaveRow />
+              <SaveRow onSave={saveProfile} />
             </ClubKpiCard>
           )}
 
@@ -279,21 +338,11 @@ export function ClubParametresPage() {
             <ClubKpiCard hover={false}>
               <h2 className="mb-5 text-sm font-bold" style={{ color: "var(--text-primary)" }}>Préférences de notifications</h2>
               <div className="mb-6 space-y-3">
-                <Toggle label="Notifications email" description="Recevoir les alertes par email." />
-                <Toggle label="Notifications SMS" description="Alertes critiques par SMS." defaultOn={false} />
-                <Toggle label="Push navigateur" description="Notifications dans le navigateur." />
+                <Toggle label="Notifications email" description="Recevoir les alertes par email." on={form.notifyEmail} onChange={set("notifyEmail")} />
+                <Toggle label="Notifications SMS" description="Alertes critiques par SMS." on={form.notifySms} onChange={set("notifySms")} />
+                <Toggle label="Push navigateur" description="Notifications dans le navigateur." on={form.notifyPush} onChange={set("notifyPush")} />
               </div>
-              <h3 className="mb-3 text-xs font-bold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Catégories</h3>
-              <div className="space-y-3">
-                <Toggle label="Contrats expirants" description="30 jours avant l'expiration." />
-                <Toggle label="Budget dépassé" description="Alerte à 80% de consommation." />
-                <Toggle label="Joueur blessé" description="Notification immédiate." />
-                <Toggle label="Nouveaux paiements" description="Confirmation des transactions." />
-                <Toggle label="Rapports disponibles" description="Quand un rapport est généré." defaultOn={false} />
-                <Toggle label="Alertes sécurité" description="Connexions suspectes, 2FA, etc." />
-              </div>
-              <div className="mt-4" />
-              <SaveRow />
+              <SaveRow onSave={saveProfile} />
             </ClubKpiCard>
           )}
         </motion.div>
