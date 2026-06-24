@@ -4,10 +4,16 @@ import { ClubPageTransition } from "../../components/club/ClubPageTransition";
 import { ClubKpiCard } from "../../components/club/ClubKpiCard";
 import { clubApi } from "../../lib/api/club";
 import { useClubResource } from "../../hooks/useClubResource";
+import {
+  CLUB_MEMBER_ROLE_LABELS,
+  CLUB_MEMBER_ROLE_COLORS,
+  buildDefaultClubMatrix,
+  type ClubMemberRoleLabel,
+} from "../../data/clubMemberRoles";
 import { Shield, Save, CheckCircle2, Info } from "lucide-react";
 
 /* ── Types ──────────────────────────────────────────────────────── */
-type Role = "Club Admin" | "Coach" | "Médecin" | "Responsable Financier" | "Scout" | "Analyste";
+type Role = ClubMemberRoleLabel;
 type Action = "lire" | "créer" | "modifier" | "supprimer";
 
 interface Permission {
@@ -19,23 +25,12 @@ interface Permission {
 
 type Matrix = Record<string, Record<Role, Permission>>;
 
-const ROLES: Role[] = ["Club Admin", "Coach", "Médecin", "Responsable Financier", "Scout", "Analyste"];
+const ROLES = CLUB_MEMBER_ROLE_LABELS;
 const ACTIONS: Action[] = ["lire", "créer", "modifier", "supprimer"];
 
-const ROLE_COLOR: Record<Role, string> = {
-  "Club Admin":            "#FF6B57",
-  "Coach":                 "#3B82F6",
-  "Médecin":               "#10B981",
-  "Responsable Financier": "#F59E0B",
-  "Scout":                 "#8B5CF6",
-  "Analyste":              "#EC4899",
-};
+const ROLE_COLOR = CLUB_MEMBER_ROLE_COLORS as Record<Role, string>;
 
 /* ── Default permissions matrix ─────────────────────────────────── */
-function defaultPerm(lire = false, créer = false, modifier = false, supprimer = false): Permission {
-  return { lire, créer, modifier, supprimer };
-}
-
 const MODULES = [
   { key: "Joueurs",    label: "Gestion Joueurs",   icon: "⚽" },
   { key: "Equipes",    label: "Gestion Équipes",    icon: "🛡️" },
@@ -49,29 +44,7 @@ const MODULES = [
   { key: "Parametres", label: "Paramètres",         icon: "⚙️" },
 ];
 
-const INITIAL_MATRIX: Matrix = Object.fromEntries(
-  MODULES.map(({ key }) => [
-    key,
-    {
-      "Club Admin":            defaultPerm(true,  true,  true,  true),
-      "Coach":                 key === "Joueurs" || key === "Equipes" || key === "Calendrier" || key === "Analytics"
-                                 ? defaultPerm(true, true, true, false)
-                                 : defaultPerm(true, false, false, false),
-      "Médecin":               key === "Sante" || key === "Joueurs"
-                                 ? defaultPerm(true, true, true, false)
-                                 : defaultPerm(true, false, false, false),
-      "Responsable Financier": key === "Finances" || key === "Contrats"
-                                 ? defaultPerm(true, true, true, true)
-                                 : defaultPerm(true, false, false, false),
-      "Scout":                 key === "Recrutement" || key === "Joueurs" || key === "Analytics"
-                                 ? defaultPerm(true, true, true, false)
-                                 : defaultPerm(false, false, false, false),
-      "Analyste":              key === "Analytics" || key === "Joueurs" || key === "Equipes"
-                                 ? defaultPerm(true, false, false, false)
-                                 : defaultPerm(false, false, false, false),
-    } as Record<Role, Permission>,
-  ])
-);
+const INITIAL_MATRIX: Matrix = buildDefaultClubMatrix() as Matrix;
 
 /* ── Checkbox cell ───────────────────────────────────────────────── */
 function PermCheckbox({

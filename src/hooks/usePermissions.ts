@@ -6,14 +6,18 @@ type Action = "lire" | "créer" | "modifier" | "supprimer";
 
 type PermMatrix = Record<string, Record<string, { lire: boolean; créer: boolean; modifier: boolean; supprimer: boolean }>>;
 
-const ROLE_MAP: Record<string, string> = {
+/** Map auth role → libellé matrice RBAC backend */
+const MATRIX_ROLE: Record<string, string> = {
   adminclub: "Club Admin",
   coach: "Coach",
   medical: "Médecin",
-  finance: "Responsable Financier",
+  finance: "Finance",
   scout: "Scout",
-  analyste: "Analyste",
-  responsable: "Club Admin",
+  analyste: "Analyste Performance",
+  preparateur: "Préparateur Physique",
+  recruteur: "Recruteur",
+  responsable: "Responsable",
+  joueur: "Joueur",
 };
 
 export function usePermissions() {
@@ -21,16 +25,22 @@ export function usePermissions() {
   const { data, loading } = useClubPermissions();
   const matrix = (data as { matrix?: PermMatrix } | null)?.matrix;
 
-  const roleLabel = useMemo(() => {
-    const r = user?.role ?? "";
-    return ROLE_MAP[r] ?? "Club Admin";
-  }, [user?.role]);
+  const matrixRole = useMemo(
+    () => user?.clubMemberRole ?? MATRIX_ROLE[user?.role ?? ""] ?? "Club Admin",
+    [user?.clubMemberRole, user?.role],
+  );
+
+  const isClubAdmin =
+    user?.clubMemberRole === "Club Admin" ||
+    (!user?.clubMemberRole && user?.role === "adminclub");
 
   function can(module: string, action: Action): boolean {
-    if (roleLabel === "Club Admin") return true;
-    if (!matrix?.[module]?.[roleLabel]) return false;
-    return matrix[module][roleLabel][action];
+    if (isClubAdmin) return true;
+    if (loading || !matrix) return false;
+    const perm = matrix[module]?.[matrixRole];
+    if (!perm) return false;
+    return perm[action];
   }
 
-  return { can, loading, roleLabel, matrix };
+  return { can, loading, roleLabel: matrixRole, matrix, isClubAdmin };
 }
