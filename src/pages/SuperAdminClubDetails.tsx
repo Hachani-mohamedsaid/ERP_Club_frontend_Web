@@ -101,10 +101,11 @@ const CLUBS: ClubDetail[] = [
 ];
 
 const CLUB_USERS = [
-  { name: "Amine Mansour", role: "Responsable Club", lastLogin: "18/06 09:32", status: "Actif" },
-  { name: "Sonia Khelil", role: "Coach Principal", lastLogin: "18/06 07:50", status: "Actif" },
+  { name: "Amine Mansour", role: "Admin Club", lastLogin: "18/06 09:32", status: "Actif" },
+  { name: "Sonia Khelil", role: "Coach", lastLogin: "18/06 07:50", status: "Actif" },
   { name: "Tarek Bouzid", role: "Scout", lastLogin: "17/06 19:21", status: "Actif" },
   { name: "Ines Makni", role: "Finance", lastLogin: "16/06 14:00", status: "Inactif" },
+  { name: "Hichem Mansouri", role: "Préparateur Physique", lastLogin: "15/06 10:00", status: "Actif" },
 ];
 
 const PAYMENTS = [

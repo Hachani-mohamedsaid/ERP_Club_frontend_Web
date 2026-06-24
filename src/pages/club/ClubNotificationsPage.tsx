@@ -2,6 +2,9 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ClubPageTransition } from "../../components/club/ClubPageTransition";
 import { ClubKpiCard } from "../../components/club/ClubKpiCard";
+import { ClubEmptyState } from "../../components/club/ClubEmptyState";
+import { clubApi } from "../../lib/api/club";
+import { useClubResource } from "../../hooks/useClubResource";
 import {
   Bell, CheckCheck, Trash2, AlertTriangle, TrendingDown,
   Stethoscope, ScrollText, Settings, Info, DollarSign,
@@ -23,19 +26,6 @@ interface Notification {
 }
 
 /* ── Mock data ──────────────────────────────────────────────────── */
-const INITIAL_NOTIFS: Notification[] = [
-  { id: "n1",  title: "Contrat expirant",      description: "Le contrat d'Ahmed Ben Salah expire dans 30 jours (31/07/2026).",      type: "Contrats", level: "warning",  date: "19/06 10:00", read: false },
-  { id: "n2",  title: "Budget dépassé",         description: "Le budget marketing du club a dépassé 85% de l'allocation mensuelle.", type: "Finance",  level: "critical", date: "19/06 09:15", read: false },
-  { id: "n3",  title: "Joueur blessé",          description: "Youssef Maatoug blessé à l'entraînement – suspendu 2 semaines.",       type: "Médical",  level: "warning",  date: "18/06 16:30", read: false },
-  { id: "n4",  title: "Paiement reçu",          description: "Facture F-2026-05 payée – 20 400 DT par virement.",                    type: "Finance",  level: "success",  date: "18/06 14:00", read: false },
-  { id: "n5",  title: "Mise à jour système",    description: "ODIN ERP v2.4.1 déployée avec succès – nouvelles fonctionnalités.",    type: "Système",  level: "info",     date: "17/06 08:00", read: true  },
-  { id: "n6",  title: "Contrat renouvelé",      description: "Contrat de Sonia Khelil renouvelé jusqu'au 31/12/2027.",               type: "Contrats", level: "success",  date: "16/06 11:45", read: true  },
-  { id: "n7",  title: "Joueur à risque",        description: "Karim Gharbi présente une fatigue musculaire élevée (score: 8.2/10).", type: "Médical",  level: "critical", date: "16/06 09:20", read: true  },
-  { id: "n8",  title: "Facture en retard",      description: "Facture F-2026-03 non payée depuis 45 jours. Relance automatique.",    type: "Finance",  level: "critical", date: "15/06 17:00", read: false },
-  { id: "n9",  title: "Nouveau prospect",       description: "Mehdi Kacem (SC Sfaxien) ajouté à la shortlist de recrutement.",       type: "Info",     level: "info",     date: "15/06 13:30", read: true  },
-  { id: "n10", title: "Rapport mensuel prêt",   description: "Rapport performance Mai 2026 généré et disponible au téléchargement.", type: "Info",     level: "info",     date: "14/06 10:00", read: true  },
-];
-
 const TYPE_TABS = ["Toutes", "Contrats", "Finance", "Médical", "Système", "Info"] as const;
 type TypeTab = (typeof TYPE_TABS)[number];
 
@@ -71,7 +61,8 @@ const TYPE_COLOR: Record<NotifType, string> = {
 
 /* ── Main page ──────────────────────────────────────────────────── */
 export function ClubNotificationsPage() {
-  const [notifs, setNotifs] = useState<Notification[]>(INITIAL_NOTIFS);
+  const { data, loading, error, reload } = useClubResource(() => clubApi.getNotifications() as Promise<Notification[]>);
+  const notifs = data ?? [];
   const [activeTab, setActiveTab] = useState<TypeTab>("Toutes");
 
   const filtered = useMemo(
@@ -82,20 +73,19 @@ export function ClubNotificationsPage() {
   const unreadCount = notifs.filter((n) => !n.read).length;
   const criticalCount = notifs.filter((n) => n.level === "critical" && !n.read).length;
 
-  function markAllRead() {
-    setNotifs((prev) => prev.map((n) => ({ ...n, read: true })));
+  async function markAllRead() {
+    await clubApi.markNotificationsRead();
+    await reload();
   }
 
-  function markRead(id: string) {
-    setNotifs((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+  async function markRead(id: string) {
+    await clubApi.markNotificationsRead([id]);
+    await reload();
   }
 
-  function dismiss(id: string) {
-    setNotifs((prev) => prev.filter((n) => n.id !== id));
-  }
-
-  function clearRead() {
-    setNotifs((prev) => prev.filter((n) => !n.read));
+  async function clearRead() {
+    await clubApi.deleteReadNotifications();
+    await reload();
   }
 
   return (
@@ -196,6 +186,11 @@ export function ClubNotificationsPage() {
 
       {/* Notifications list */}
       <div className="space-y-3">
+        {loading && <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement…</p>}
+        {error && <p className="text-sm text-red-400">{error}</p>}
+        {!loading && !error && filtered.length === 0 && (
+          <ClubEmptyState title="Aucune notification" description="Les alertes du club apparaîtront ici." />
+        )}
         <AnimatePresence>
           {filtered.map((notif, i) => {
             const Icon = TYPE_ICON[notif.type];
@@ -259,7 +254,7 @@ export function ClubNotificationsPage() {
                         <CheckCircle2 size={11} /> Marquer lu
                       </motion.button>
                     )}
-                    <motion.button type="button" onClick={() => dismiss(notif.id)}
+                    <motion.button type="button" onClick={() => markRead(notif.id)}
                       className="flex items-center gap-1 text-[11px] font-medium"
                       style={{ color: "var(--text-muted)" }}
                       whileHover={{ color: "#EF4444", scale: 1.05 }}>

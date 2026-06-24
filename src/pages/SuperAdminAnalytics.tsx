@@ -2,6 +2,7 @@ import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Toolti
 import { Button } from "../components/ui/Button";
 import { Trophy, TrendingUp, Users, Clock } from "lucide-react";
 import { SuperAdminPageTransition, SuperAdminPageHeader, SuperAdminGhostButton, SuperAdminSection, SuperAdminListRow } from "../components/superadmin";
+import { PLATFORM_ROLES_CHART } from "../data/platformRoles";
 
 const TOP_CLUBS = [
   { club: "FC Carthage", users: 1200 },
@@ -19,13 +20,7 @@ const REVENUE_BY_MONTH = [
   { month: "Juin", revenue: 24500 },
 ];
 
-const ROLES = [
-  { name: "Responsable Club", value: 32 },
-  { name: "Scout", value: 24 },
-  { name: "Coach", value: 22 },
-  { name: "Finance", value: 14 },
-  { name: "Médecin", value: 8 },
-];
+const ROLES = PLATFORM_ROLES_CHART;
 
 const COLORS = ["#3B82F6", "#10B981", "#EF4444", "#8B5CF6", "#FF7A00"];
 

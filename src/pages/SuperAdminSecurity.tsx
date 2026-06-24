@@ -298,11 +298,16 @@ export function SuperAdminSecurity() {
                 <div className="space-y-4">
                   {[
                     { role: "Super Admin", pct: 100 },
-                    { role: "Responsable Club", pct: 82 },
+                    { role: "Admin Club", pct: 88 },
+                    { role: "Responsable", pct: 82 },
                     { role: "Coach", pct: 55 },
+                    { role: "Préparateur Physique", pct: 48 },
+                    { role: "Analyste Performance", pct: 44 },
+                    { role: "Recruteur", pct: 39 },
                     { role: "Scout", pct: 41 },
                     { role: "Finance", pct: 75 },
                     { role: "Médecin", pct: 30 },
+                    { role: "Joueur", pct: 12 },
                   ].map(({ role, pct }) => (
                     <div key={role}>
                       <div className="mb-1.5 flex justify-between text-xs">

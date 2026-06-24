@@ -2,6 +2,9 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ClubPageTransition } from "../../components/club/ClubPageTransition";
 import { ClubKpiCard } from "../../components/club/ClubKpiCard";
+import { ClubEmptyState } from "../../components/club/ClubEmptyState";
+import { clubApi } from "../../lib/api/club";
+import { useClubResource } from "../../hooks/useClubResource";
 import {
   History, Search, Download, Filter, Edit, Plus, Trash2,
   LogIn, Shield, Settings, FileText, UserCheck,
@@ -24,19 +27,6 @@ interface AuditLog {
 }
 
 /* ── Mock data ──────────────────────────────────────────────────── */
-const LOGS: AuditLog[] = [
-  { id: "AL-001", user: "Mohamed Hachani",  role: "Club Admin",  action: "Modification contrat", entity: "Ahmed Ben Salah",   details: "Salaire modifié 2500→3000 DT",      type: "Modification", date: "19/06/2026", time: "10:45", ip: "197.0.22.14" },
-  { id: "AL-002", user: "Sonia Khelil",     role: "Coach",       action: "Ajout joueur",          entity: "Youssef Maatoug",   details: "Ajouté à l'équipe B",               type: "Création",     date: "19/06/2026", time: "09:30", ip: "197.0.22.20" },
-  { id: "AL-003", user: "Khaled Trabelsi",  role: "Fin.",        action: "Export rapport",        entity: "Rapport Q2 2026",   details: "Export PDF finances trimestriel",   type: "Export",       date: "18/06/2026", time: "17:15", ip: "197.0.22.8"  },
-  { id: "AL-004", user: "Tarek Bouzid",     role: "Scout",       action: "Connexion",             entity: "—",                 details: "Connexion réussie depuis Chrome",   type: "Connexion",    date: "18/06/2026", time: "14:00", ip: "197.0.55.1"  },
-  { id: "AL-005", user: "Mohamed Hachani",  role: "Club Admin",  action: "Suppression",           entity: "Ines Makni",        details: "Compte utilisateur désactivé",      type: "Suppression",  date: "18/06/2026", time: "11:20", ip: "197.0.22.14" },
-  { id: "AL-006", user: "Amal Gharbi",      role: "Analyste",    action: "Modification permission","entity": "Rôle Scout",     details: "Accès Analytics retiré",            type: "Permission",   date: "17/06/2026", time: "16:50", ip: "197.0.22.33" },
-  { id: "AL-007", user: "Sonia Khelil",     role: "Coach",       action: "Modification",          entity: "Séance entraîn.",   details: "Séance du 20/06 annulée",           type: "Modification", date: "17/06/2026", time: "08:30", ip: "197.0.22.20" },
-  { id: "AL-008", user: "Khaled Trabelsi",  role: "Fin.",        action: "Création",              entity: "Facture F-2026-06", details: "Nouvelle facture 20 400 DT",        type: "Création",     date: "16/06/2026", time: "15:00", ip: "197.0.22.8"  },
-  { id: "AL-009", user: "Mohamed Hachani",  role: "Club Admin",  action: "Connexion",             entity: "—",                 details: "Connexion depuis Safari / iPhone",  type: "Connexion",    date: "16/06/2026", time: "07:45", ip: "197.0.22.14" },
-  { id: "AL-010", user: "Tarek Bouzid",     role: "Scout",       action: "Création",              entity: "Dossier prospect",  details: "Nouveau prospect : Mehdi Kacem",    type: "Création",     date: "15/06/2026", time: "13:10", ip: "197.0.55.1"  },
-];
-
 const ACTION_COLOR: Record<ActionType, string> = {
   Connexion:   "#3B82F6",
   Création:    "#22C55E",
@@ -63,20 +53,27 @@ export function ClubAuditLogsPage() {
   const [typeFilter, setTypeFilter] = useState<"Tous" | ActionType>("Tous");
   const [dateFilter, setDateFilter] = useState("");
 
-  const filtered = useMemo(() => LOGS.filter((l) => {
-    const q = search.toLowerCase();
-    const matchQ = l.user.toLowerCase().includes(q) || l.action.toLowerCase().includes(q) || l.entity.toLowerCase().includes(q);
-    const matchType = typeFilter === "Tous" || l.type === typeFilter;
+  const { data: logs, loading, error } = useClubResource(
+    () => clubApi.getAuditLogs({
+      type: typeFilter !== "Tous" ? typeFilter : undefined,
+      search: search || undefined,
+    }) as Promise<AuditLog[]>,
+    [typeFilter, search],
+  );
+
+  const allLogs = logs ?? [];
+
+  const filtered = useMemo(() => allLogs.filter((l) => {
     const matchDate = !dateFilter || l.date.includes(dateFilter);
-    return matchQ && matchType && matchDate;
-  }), [search, typeFilter, dateFilter]);
+    return matchDate;
+  }), [allLogs, dateFilter]);
 
   const kpis = useMemo(() => ({
-    total: LOGS.length,
-    today: LOGS.filter((l) => l.date === "19/06/2026").length,
-    modifications: LOGS.filter((l) => l.type === "Modification").length,
-    suppressions: LOGS.filter((l) => l.type === "Suppression").length,
-  }), []);
+    total: allLogs.length,
+    today: allLogs.filter((l) => l.date === new Date().toLocaleDateString("fr-FR")).length,
+    modifications: allLogs.filter((l) => l.type === "Modification").length,
+    suppressions: allLogs.filter((l) => l.type === "Suppression").length,
+  }), [allLogs]);
 
   function exportCSV() {
     const rows = [
@@ -172,6 +169,11 @@ export function ClubAuditLogsPage() {
 
       {/* Timeline */}
       <ClubKpiCard hover={false}>
+        {loading && <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement…</p>}
+        {error && <p className="text-sm text-red-400">{error}</p>}
+        {!loading && !error && filtered.length === 0 && (
+          <ClubEmptyState title="Aucun journal" description="Les actions du club seront enregistrées ici." />
+        )}
         <div className="relative">
           {/* timeline rail */}
           <div className="absolute left-[22px] top-4 h-[calc(100%-32px)] w-px" style={{ background: "rgba(255,107,87,0.15)" }} />

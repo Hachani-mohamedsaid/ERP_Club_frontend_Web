@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ClubPageTransition } from "../../components/club/ClubPageTransition";
 import { ClubKpiCard } from "../../components/club/ClubKpiCard";
+import { clubApi } from "../../lib/api/club";
+import { useClubResource } from "../../hooks/useClubResource";
 import { Shield, Save, CheckCircle2, Info } from "lucide-react";
 
 /* ── Types ──────────────────────────────────────────────────────── */
@@ -105,9 +107,14 @@ function PermCheckbox({
 
 /* ── Main page ──────────────────────────────────────────────────── */
 export function ClubPermissionsPage() {
+  const { data: permData, loading, reload } = useClubResource(() => clubApi.getPermissions() as Promise<{ matrix: Matrix }>);
   const [matrix, setMatrix] = useState<Matrix>(INITIAL_MATRIX);
   const [activeRole, setActiveRole] = useState<Role>("Coach");
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (permData?.matrix) setMatrix(permData.matrix as Matrix);
+  }, [permData]);
 
   function toggle(module: string, role: Role, action: Action) {
     setMatrix((prev) => ({
@@ -122,9 +129,15 @@ export function ClubPermissionsPage() {
     }));
   }
 
-  function handleSave() {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+  async function handleSave() {
+    try {
+      await clubApi.updatePermissions({ matrix });
+      await reload();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Erreur");
+    }
   }
 
   return (
