@@ -4,7 +4,7 @@ import {
   motion, AnimatePresence, useMotionValue, useSpring, useTransform, type MotionValue,
 } from "framer-motion";
 import {
-  Sparkles, Bell, CheckCircle2, Cpu, ArrowRight, Loader2,
+  Sparkles, Bell, CheckCircle2, Cpu, ArrowRight, Loader2, Radar, LayoutDashboard,
 } from "lucide-react";
 import { GoogleIcon } from "../components/ui/GoogleIcon";
 import { useAuth } from "../contexts/AuthContext";
@@ -474,6 +474,7 @@ export function LoginPage() {
       role === "finance" ? "/comptabilite" :
       role === "superadmin" ? "/superadmin/dashboard" :
       role === "adminclub" ? "/club" :
+      role === "responsable" ? "/dashboard" :
       role === "preparateur" ? "/preparateur" :
       role === "analyste" ? "/analyste" :
       role === "recruteur" ? "/recruteur" :

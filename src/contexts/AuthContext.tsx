@@ -19,6 +19,7 @@ interface User {
   email: string;
   fullName?: string;
   role: Role;
+  clubMemberRole?: string;
   playerId?: string;
   organization?: OrganizationInfo | null;
 }
@@ -52,6 +53,19 @@ const BACKEND_ROLE_MAP: Record<string, Role> = {
   SUPER_ADMIN: "superadmin",
 };
 
+const CLUB_MEMBER_ROLE_MAP: Record<string, Role> = {
+  "Club Admin": "adminclub",
+  Responsable: "responsable",
+  "Préparateur Physique": "preparateur",
+  "Analyste Performance": "analyste",
+  Recruteur: "recruteur",
+  Coach: "coach",
+  Médecin: "medical",
+  Scout: "scout",
+  Finance: "finance",
+  Joueur: "joueur",
+};
+
 const PLAYER_ID_MAP: Record<string, string> = {
   "joueur@club.com": "1",
 };
@@ -76,12 +90,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function loginWithCredentials(email: string, password: string): Promise<Role> {
     const res = await loginUser(email, password);
     setAccessToken(res.accessToken);
-    const role = BACKEND_ROLE_MAP[res.user.role] ?? "adminclub";
+    const role =
+      res.user.role === "SUPER_ADMIN"
+        ? "superadmin"
+        : CLUB_MEMBER_ROLE_MAP[res.user.clubMemberRole ?? "Club Admin"] ?? "adminclub";
     const u: User = {
       id: res.user.id,
       email: res.user.email,
       fullName: res.user.fullName,
       role,
+      clubMemberRole: res.user.clubMemberRole,
       organization: res.organization,
     };
     setUser(u);

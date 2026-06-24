@@ -7,12 +7,17 @@ import { clubApi } from "../../lib/api/club";
 import { useClubResource } from "../../hooks/useClubResource";
 import { usePermissions } from "../../hooks/usePermissions";
 import {
+  CLUB_MEMBER_ROLE_LABELS,
+  CLUB_MEMBER_ROLE_COLORS,
+  type ClubMemberRoleLabel,
+} from "../../data/clubMemberRoles";
+import {
   Plus, Search, Edit2, Trash2, Ban, KeyRound,
-  Users, UserCheck, UserX, Shield, X, Save, ChevronDown,
+  Users, UserCheck, UserX, Shield, X, Save,
 } from "lucide-react";
 
 /* ── Types ──────────────────────────────────────────────────────── */
-type Role = "Club Admin" | "Coach" | "Médecin" | "Responsable Financier" | "Scout" | "Analyste";
+type Role = ClubMemberRoleLabel;
 type Status = "Actif" | "Suspendu" | "Inactif";
 
 interface ClubUser {
@@ -23,19 +28,11 @@ interface ClubUser {
   status: Status;
   lastLogin: string;
   createdAt: string;
+  password?: string;
 }
 
-/* ── Mock data ──────────────────────────────────────────────────── */
-const ROLES: Role[] = ["Club Admin", "Coach", "Médecin", "Responsable Financier", "Scout", "Analyste"];
-
-const ROLE_COLOR: Record<Role, string> = {
-  "Club Admin":            "#FF6B57",
-  "Coach":                 "#3B82F6",
-  "Médecin":               "#10B981",
-  "Responsable Financier": "#F59E0B",
-  "Scout":                 "#8B5CF6",
-  "Analyste":              "#EC4899",
-};
+const ROLES = CLUB_MEMBER_ROLE_LABELS;
+const ROLE_COLOR = CLUB_MEMBER_ROLE_COLORS as Record<Role, string>;
 
 const STATUS_COLOR: Record<Status, string> = {
   Actif:    "#22C55E",
@@ -111,17 +108,28 @@ function UserModal({
           ))}
 
           <div>
-            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Rôle</label>
-            <div className="relative">
-              <select
-                value={form.role ?? "Coach"}
-                onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
-                className="w-full appearance-none rounded-xl border px-4 py-2.5 text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
-              >
-                {ROLES.map((r) => <option key={r} value={r} style={{ background: "#0A1228" }}>{r}</option>)}
-              </select>
-              <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-muted)" }} />
+            <label className="mb-2 block text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Rôle</label>
+            <div className="grid max-h-48 grid-cols-2 gap-2 overflow-y-auto pr-1">
+              {ROLES.map((r) => {
+                const color = ROLE_COLOR[r];
+                const selected = form.role === r;
+                return (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setForm({ ...form, role: r })}
+                    className="rounded-xl border px-3 py-2 text-left text-xs font-semibold transition-all"
+                    style={{
+                      background: selected ? `${color}22` : "rgba(255,255,255,0.03)",
+                      borderColor: selected ? `${color}80` : "rgba(255,255,255,0.08)",
+                      color: selected ? color : "var(--text-muted)",
+                      boxShadow: selected ? `0 0 12px ${color}30` : "none",
+                    }}
+                  >
+                    {r}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -152,9 +160,13 @@ function UserModal({
               <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Mot de passe temporaire</label>
               <input
                 type="password"
+                value={form.password ?? ""}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
                 className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
                 style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
                 placeholder="••••••••••"
+                minLength={8}
+                required
               />
             </div>
           )}
@@ -216,10 +228,15 @@ export function ClubUtilisateursPage() {
           status: form.status,
         });
       } else {
+        if (!form.password || form.password.length < 8) {
+          alert("Le mot de passe temporaire doit contenir au moins 8 caractères.");
+          return;
+        }
         await clubApi.createMember({
           fullName: form.name,
           email: form.email,
           clubRole: form.role,
+          password: form.password,
         });
       }
       await reload();
