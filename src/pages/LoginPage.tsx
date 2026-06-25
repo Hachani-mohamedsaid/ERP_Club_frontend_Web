@@ -8,12 +8,12 @@ import {
 } from "lucide-react";
 import { GoogleIcon } from "../components/ui/GoogleIcon";
 import { useAuth } from "../contexts/AuthContext";
-import { PLATFORM_ROLES, type PlatformRole } from "../data/platformRoles";
+import { PLATFORM_ROLES, LOGIN_QUICK_ROLES, type PlatformRole } from "../data/platformRoles";
 import odinLogo from "../assets/odin-logo.png";
 
 type RoleDef = PlatformRole;
 
-const ROLES: RoleDef[] = PLATFORM_ROLES;
+const ROLES: RoleDef[] = LOGIN_QUICK_ROLES;
 
 const FLOATING_STATS = [
   { label: "Joueurs", end: 24, decimals: 0, prefix: "", suffix: "", x: "7%", y: "20%", color: "#3B82F6" },
