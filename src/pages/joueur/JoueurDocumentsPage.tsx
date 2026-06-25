@@ -20,11 +20,11 @@ interface DocWithData extends BackendDocument {
   dataUrl?: string;
 }
 
-function generatePDF(doc: BackendDocument, playerName: string): void {
+function generatePDF(doc: BackendDocument, playerName: string, clubName = "FC Carthage"): void {
   const pdf = new jsPDF();
   pdf.setFontSize(18);
   pdf.setTextColor(40, 40, 40);
-  pdf.text("FC Carthage — Document Officiel", 20, 20);
+  pdf.text(`${clubName} — Document Officiel`, 20, 20);
   pdf.setFontSize(12);
   pdf.setTextColor(80, 80, 80);
   pdf.line(20, 25, 190, 25);
@@ -38,14 +38,15 @@ function generatePDF(doc: BackendDocument, playerName: string): void {
   pdf.text(`Généré le : ${new Date().toLocaleString("fr-TN")}`, 20, 90);
   pdf.line(20, 95, 190, 95);
   pdf.setFontSize(9);
-  pdf.text("Ce document est confidentiel et réservé à l'usage interne de FC Carthage.", 20, 102);
+  pdf.text(`Ce document est confidentiel et réservé à l'usage interne de ${clubName}.`, 20, 102);
   pdf.save(doc.name.replace(/\s+/g, "_").replace(/\.pdf$/i, "") + ".pdf");
 }
 
 export function JoueurDocumentsPage() {
   const { player } = useCurrentPlayer();
-  const { documents, myPlayerId, refetchDocuments } = useJoueurBackendData();
+  const { documents, myPlayerId, refetchDocuments, orgProfile } = useJoueurBackendData();
   const playerName = player?.name ?? "Joueur";
+  const clubName = orgProfile?.clubName ?? "FC Carthage";
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -118,10 +119,10 @@ export function JoueurDocumentsPage() {
         a.click();
         document.body.removeChild(a);
       } else {
-        generatePDF(doc, playerName);
+        generatePDF(doc, playerName, clubName);
       }
     } catch {
-      generatePDF(doc, playerName);
+      generatePDF(doc, playerName, clubName);
     }
     showToast(`Téléchargement de "${doc.name}" lancé`);
   }
@@ -256,7 +257,7 @@ export function JoueurDocumentsPage() {
                   style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed rgba(255,255,255,0.1)" }}>
                   <FileText size={40} style={{ color: TYPE_COLORS[previewDoc.docType] ?? "var(--accent)", opacity: 0.6 }} />
                   <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>Aperçu — {previewDoc.docType}</p>
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Document confidentiel FC Carthage</p>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Document confidentiel {clubName}</p>
                 </div>
               )}
 

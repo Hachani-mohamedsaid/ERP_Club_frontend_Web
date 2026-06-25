@@ -81,6 +81,8 @@ export interface BackendMatchStat {
   passAccuracy: number;
   topSpeed: number;
   keyPasses: number;
+  yellowCards: number;
+  redCards: number;
   heatmapData: unknown;
 }
 

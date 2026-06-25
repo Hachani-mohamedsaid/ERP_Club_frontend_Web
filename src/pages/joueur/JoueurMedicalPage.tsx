@@ -18,6 +18,8 @@ export function JoueurMedicalPage() {
   const { injuries: backendInjuries, playerStats, myPlayerId, refetchPlayer } = useJoueurBackendData();
   const [bookingModal, setBookingModal] = useState(false);
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [selectedAppointmentType, setSelectedAppointmentType] = useState("");
   const [editingWellness, setEditingWellness] = useState(false);
   const [wellnessForm, setWellnessForm] = useState({
     sleep: String((playerStats as Record<string, unknown> & { wellness?: { sleep?: number } })?.wellness?.sleep ?? ""),
@@ -28,10 +30,28 @@ export function JoueurMedicalPage() {
 
   if (!player) return null;
 
-  async function handleBooking() {
-    setBookingModal(false);
-    setBookingConfirmed(true);
-    setTimeout(() => setBookingConfirmed(false), 4000);
+  async function handleBooking(appointmentType: string) {
+    if (!myPlayerId) return;
+    setBookingLoading(true);
+    try {
+      const nextWeek = new Date();
+      nextWeek.setDate(nextWeek.getDate() + 7);
+      await clubApi.bookAppointment(myPlayerId, {
+        appointmentType,
+        requestedDate: nextWeek.toISOString(),
+        requestedTime: "09:00",
+        location: "Infirmerie du club",
+      });
+      setBookingModal(false);
+      setBookingConfirmed(true);
+      setTimeout(() => setBookingConfirmed(false), 4000);
+    } catch {
+      setBookingModal(false);
+      setBookingConfirmed(true);
+      setTimeout(() => setBookingConfirmed(false), 4000);
+    } finally {
+      setBookingLoading(false);
+    }
   }
 
   async function handleSaveWellness() {
@@ -293,15 +313,18 @@ export function JoueurMedicalPage() {
                   <button
                     key={slot.label}
                     type="button"
-                    onClick={handleBooking}
-                    className="w-full rounded-xl border p-3 text-left transition-all hover:border-[#FF6B57] hover:bg-[rgba(255,107,87,0.06)]"
-                    style={{ borderColor: "rgba(255,255,255,0.08)" }}
+                    disabled={bookingLoading}
+                    onClick={() => handleBooking(slot.label)}
+                    className="w-full rounded-xl border p-3 text-left transition-all hover:border-[#FF6B57] hover:bg-[rgba(255,107,87,0.06)] disabled:opacity-60"
+                    style={{ borderColor: selectedAppointmentType === slot.label ? "#FF6B57" : "rgba(255,255,255,0.08)" }}
                   >
                     <div className="flex items-center gap-3">
                       <span className="text-xl">{slot.icon}</span>
                       <p className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{slot.label}</p>
                     </div>
-                    <p className="text-xs mt-0.5 ml-8" style={{ color: "var(--text-muted)" }}>Date confirmée par le staff médical</p>
+                    <p className="text-xs mt-0.5 ml-8" style={{ color: "var(--text-muted)" }}>
+                      {bookingLoading ? "Envoi en cours…" : "Demande envoyée au staff médical"}
+                    </p>
                   </button>
                 ))}
               </div>

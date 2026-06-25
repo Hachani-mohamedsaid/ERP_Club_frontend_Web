@@ -122,4 +122,8 @@ export const clubApi = {
   getChemistry: () => apiFetch("/club/chemistry").then(parse),
   updateChemistry: (id: string, chemistry: number) =>
     apiFetch(`/club/chemistry/${id}`, { method: "PATCH", body: JSON.stringify({ chemistry }) }).then(parse),
+
+  // ─── Medical Appointment (joueur self-request) ──────────────
+  bookAppointment: (playerId: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/players/${playerId}/appointment`, { method: "POST", body: JSON.stringify(body) }).then(parse),
 };

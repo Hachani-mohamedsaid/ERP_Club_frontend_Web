@@ -14,10 +14,10 @@ import { Target, Zap, Clock, Square } from "lucide-react";
 import { CountUpStat } from "../../components/player/CountUpStat";
 import jsPDF from "jspdf";
 
-function downloadPDF(playerName: string, filename: string) {
+function downloadPDF(playerName: string, filename: string, clubName = "FC Carthage") {
   const pdf = new jsPDF();
   pdf.setFontSize(18);
-  pdf.text("FC Carthage — Document Officiel", 20, 20);
+  pdf.text(`${clubName} — Document Officiel`, 20, 20);
   pdf.setFontSize(12);
   pdf.line(20, 25, 190, 25);
   pdf.text(`Joueur  : ${playerName}`, 20, 38);
@@ -25,7 +25,7 @@ function downloadPDF(playerName: string, filename: string) {
   pdf.text(`Date    : ${new Date().toLocaleString("fr-TN")}`, 20, 58);
   pdf.setFontSize(9);
   pdf.setTextColor(120, 120, 120);
-  pdf.text("Ce document est confidentiel et réservé à FC Carthage.", 20, 72);
+  pdf.text(`Ce document est confidentiel et réservé à ${clubName}.`, 20, 72);
   pdf.save(filename.replace(/\s+/g, "_") + ".pdf");
 }
 
@@ -33,18 +33,25 @@ interface PhysicalEdit {
   height: string;
   weight: string;
   strongFoot: string;
+  nationality: string;
+  birthDate: string;
+  jerseyNumber: string;
 }
 
 export function JoueurMonProfilPage() {
   const { player, photoUrl, handleFileChange, backendPlayer } = useCurrentPlayer();
   const { t } = useLocale();
-  const { awards, documents, matchStats, playerStats, myContract, myPlayerId, refetchPlayer } = useJoueurBackendData();
+  const { awards, documents, matchStats, playerStats, myContract, myPlayerId, refetchPlayer, orgProfile } = useJoueurBackendData();
+  const clubName = orgProfile?.clubName ?? "FC Carthage";
 
   const [editingPhysical, setEditingPhysical] = useState(false);
   const [physicalForm, setPhysicalForm] = useState<PhysicalEdit>({
     height: backendPlayer?.height ?? "",
     weight: backendPlayer?.weight ?? "",
     strongFoot: backendPlayer?.strongFoot ?? "Droit",
+    nationality: backendPlayer?.nationality ?? "",
+    birthDate: backendPlayer?.birthDate ?? "",
+    jerseyNumber: String(backendPlayer?.jerseyNumber ?? ""),
   });
   const [savingPhysical, setSavingPhysical] = useState(false);
   const [saveOk, setSaveOk] = useState(false);
@@ -70,6 +77,9 @@ export function JoueurMonProfilPage() {
         height: physicalForm.height,
         weight: physicalForm.weight,
         strongFoot: physicalForm.strongFoot,
+        nationality: physicalForm.nationality,
+        birthDate: physicalForm.birthDate,
+        jerseyNumber: physicalForm.jerseyNumber ? Number(physicalForm.jerseyNumber) : undefined,
       });
       setSaveOk(true);
       setTimeout(() => setSaveOk(false), 3000);
@@ -80,17 +90,22 @@ export function JoueurMonProfilPage() {
     }
   }
 
-  const displayHeight = backendPlayer?.height || physicalForm.height || "— cm";
-  const displayWeight = backendPlayer?.weight || physicalForm.weight || "— kg";
-  const displayFoot = backendPlayer?.strongFoot || physicalForm.strongFoot || "Droit";
-  const displayBirth = backendPlayer?.birthDate || (player.age ? `${new Date().getFullYear() - player.age}` : "—");
-  const jerseyNumber = backendPlayer?.jerseyNumber ?? player.jerseyNumber ?? 0;
+  const displayHeight = backendPlayer?.height || physicalForm.height || "—";
+  const displayWeight = backendPlayer?.weight || physicalForm.weight || "—";
+  const displayFoot = backendPlayer?.strongFoot || physicalForm.strongFoot || "—";
+  const displayBirth = backendPlayer?.birthDate || physicalForm.birthDate || "—";
+  const displayNationality = backendPlayer?.nationality || physicalForm.nationality || "—";
+  const jerseyNumber = backendPlayer?.jerseyNumber ?? (physicalForm.jerseyNumber ? Number(physicalForm.jerseyNumber) : 0);
+
+  const seasonYellow = matchStats.reduce((s, m) => s + (m.yellowCards ?? 0), 0);
+  const seasonRed = matchStats.reduce((s, m) => s + (m.redCards ?? 0), 0);
 
   const infoItems = [
-    { icon: Ruler, label: "Taille", value: displayHeight || "— cm" },
-    { icon: Scale, label: "Poids", value: displayWeight || "— kg" },
+    { icon: Ruler, label: "Taille", value: displayHeight },
+    { icon: Scale, label: "Poids", value: displayWeight },
     { icon: Footprints, label: "Pied fort", value: displayFoot },
     { icon: Calendar, label: "Naissance", value: displayBirth },
+    { icon: User, label: "Nationalité", value: displayNationality },
   ];
 
   return (
@@ -161,8 +176,8 @@ export function JoueurMonProfilPage() {
             { icon: Target,   label: "Buts",      value: seasonGoals,   color: "#FF6B57" },
             { icon: Zap,      label: "Assists",   value: seasonAssists, color: "#22C55E" },
             { icon: Clock,    label: "Minutes",   value: seasonMinutes, color: "#F59E0B" },
-            { icon: Square,   label: "🟨 Jaunes", value: playerStats?.seasonStats ? 0 : 0, color: "#EAB308" },
-            { icon: Square,   label: "🟥 Rouges", value: playerStats?.seasonStats ? 0 : 0, color: "#EF4444" },
+            { icon: Square,   label: "🟨 Jaunes", value: seasonYellow, color: "#EAB308" },
+            { icon: Square,   label: "🟥 Rouges", value: seasonRed,   color: "#EF4444" },
           ].map(({ icon: Icon, label, value, color }, idx) => (
             <motion.div key={label} className="rounded-2xl border p-3 text-center" style={{ borderColor: "rgba(255,255,255,0.06)", background: `${color}0c` }} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + idx * 0.05 }} whileHover={{ y: -4, borderColor: `${color}40` }}>
               <Icon size={15} className="mx-auto" style={{ color }} />
@@ -239,6 +254,9 @@ export function JoueurMonProfilPage() {
                     height: backendPlayer?.height ?? "",
                     weight: backendPlayer?.weight ?? "",
                     strongFoot: backendPlayer?.strongFoot ?? "Droit",
+                    nationality: backendPlayer?.nationality ?? "",
+                    birthDate: backendPlayer?.birthDate ?? "",
+                    jerseyNumber: String(backendPlayer?.jerseyNumber ?? ""),
                   });
                   setEditingPhysical(true);
                 }}
@@ -255,6 +273,9 @@ export function JoueurMonProfilPage() {
               {[
                 { label: "Taille (ex: 182 cm)", field: "height" as const },
                 { label: "Poids (ex: 77 kg)", field: "weight" as const },
+                { label: "Nationalité", field: "nationality" as const },
+                { label: "Date de naissance (ex: 1999-06-15)", field: "birthDate" as const },
+                { label: "Numéro de maillot", field: "jerseyNumber" as const },
               ].map(({ label, field }) => (
                 <div key={field}>
                   <label className="text-xs" style={{ color: "var(--text-muted)" }}>{label}</label>
@@ -343,7 +364,7 @@ export function JoueurMonProfilPage() {
               <button
                 key={doc.id}
                 type="button"
-                onClick={() => downloadPDF(player.name, doc.name)}
+                onClick={() => downloadPDF(player.name, doc.name, clubName)}
                 className="flex items-center gap-3 rounded-xl border p-4 text-left transition-all hover:scale-[1.02] active:scale-[0.98]"
                 style={{ borderColor: "rgba(255,255,255,0.08)" }}
                 title={`Télécharger ${doc.name}`}
