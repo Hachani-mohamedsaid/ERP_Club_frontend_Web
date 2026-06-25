@@ -17,8 +17,8 @@ const STADIUM_BG = "https://images.unsplash.com/photo-1574629810360-7efbbe195018
 const ACTIVITY_ICONS = { training: Activity, match: Target, medical: Zap };
 
 export function JoueurDashboard() {
-  const { player, photoUrl, handleFileChange } = useCurrentPlayer();
-  const { playerStats, matchStats, calendarEvents, injuries } = useJoueurBackendData();
+  const { player, photoUrl, handleFileChange, backendPlayer } = useCurrentPlayer();
+  const { playerStats, matchStats, calendarEvents, injuries, awards, orgProfile } = useJoueurBackendData();
   const { t } = useLocale();
 
   if (!player) return null;
@@ -69,12 +69,22 @@ export function JoueurDashboard() {
     })),
   ].slice(0, 4);
 
-  // Rewards from awards (latest 3)
-  const rewardsList = [
-    { id: "1", icon: "🏆", color: "#d99a1f", text: t.dashboard.playerOfMonth },
-    { id: "2", icon: "⚽", color: "#FF6B57", text: t.dashboard.topScorer },
-    { id: "3", icon: "🎯", color: "#22C55E", text: t.dashboard.winStreak },
-  ];
+  // Club name and league from org profile
+  const clubName = orgProfile?.clubName ?? "Mon Club";
+  const leagueName = orgProfile?.league ?? "Liga 1";
+
+  // Jersey number from backend player
+  const jerseyNumber = backendPlayer?.jerseyNumber ?? 0;
+
+  // Rewards from backend awards (first 3 award-type items)
+  const awardItems = awards.filter((a) => a.awardType === "award").slice(0, 3);
+  const rewardsList = awardItems.length > 0
+    ? awardItems.map((a) => ({ id: a.id, icon: a.icon, color: a.color ?? "#d99a1f", text: a.title }))
+    : [
+        { id: "placeholder-1", icon: "🏆", color: "#d99a1f", text: t.dashboard.playerOfMonth },
+        { id: "placeholder-2", icon: "⚽", color: "#FF6B57", text: t.dashboard.topScorer },
+        { id: "placeholder-3", icon: "🎯", color: "#22C55E", text: t.dashboard.winStreak },
+      ];
 
   return (
     <JoueurPageTransition>
@@ -104,7 +114,7 @@ export function JoueurDashboard() {
                 age={player.age}
                 flag={player.flag}
                 nationality={player.nationality}
-                number={String(player.ovr % 20 + 5)}
+                number={jerseyNumber > 0 ? String(jerseyNumber) : String(player.ovr % 20 + 5)}
                 radar={player.radar}
                 badge="forme"
                 cutoutUrl={photoUrl}
@@ -126,18 +136,18 @@ export function JoueurDashboard() {
             <div className="flex flex-col gap-4">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#FF6B57" }}>
-                  Saison 2025-26 · {player.position}
+                  Saison {new Date().getFullYear() - 1}-{String(new Date().getFullYear()).slice(2)} · {player.position}
                 </p>
                 <h2 className="text-2xl font-black" style={{ color: "var(--text-primary)" }}>{player.name}</h2>
                 <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-                  {player.flag} {player.nationality} · FC Carthage · {heroMarketValue}
+                  {player.flag} {player.nationality} · {clubName} · {heroMarketValue}
                 </p>
               </div>
 
               {/* Quick stats */}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
-                  { icon: Trophy, label: t.dashboard.positionRanking, value: `#${heroPosRanking}`, sub: "Liga 1", color: "#F59E0B" },
+                  { icon: Trophy, label: t.dashboard.positionRanking, value: `#${heroPosRanking}`, sub: leagueName, color: "#F59E0B" },
                   { icon: Euro, label: t.dashboard.marketValue, value: heroMarketValue, sub: `↗ ${heroMvTrend}`, color: "#22C55E" },
                   { icon: Star, label: t.dashboard.coachRating, value: `${heroCoachRating}`, sub: "/10", color: "#FF6B57" },
                   { icon: Target, label: t.dashboard.nextGoal, value: `${seasonGoals}/${goalTarget}`, sub: "buts", color: "#3B82F6" },

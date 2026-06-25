@@ -79,6 +79,13 @@ export const clubApi = {
   updatePlayerPhoto: (id: string, photoUrl: string) =>
     apiFetch(`/club/players/${id}/photo`, { method: "PATCH", body: JSON.stringify({ photoUrl }) }).then(parse),
 
+  // ─── Player Physical (self-edit by joueur) ──────────────────
+  updatePlayerPhysical: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/players/${id}/physical`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
+
+  // ─── Player Contract ────────────────────────────────────────
+  getPlayerContract: (id: string) => apiFetch(`/club/players/${id}/contract`).then(parse),
+
   // ─── Player Stats ───────────────────────────────────────────
   getPlayerStats: (id: string) => apiFetch(`/club/players/${id}/stats`).then(parse),
   updatePlayerStats: (id: string, body: Record<string, unknown>) =>

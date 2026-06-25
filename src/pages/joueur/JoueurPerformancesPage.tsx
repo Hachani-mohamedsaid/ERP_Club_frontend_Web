@@ -51,13 +51,21 @@ export function JoueurPerformancesPage() {
     { stat: "Vision", value: player.radar.vision },
   ];
 
-  const radarAvg = Math.round(teamAvgOvr * 0.95);
+  // Real team radar averages computed per attribute from squad players
+  function avgRadarAttr(attr: string): number {
+    const vals = squadPlayers
+      .map((p) => (p.radar as Record<string, number> | null)?.[attr])
+      .filter((v): v is number => typeof v === "number");
+    if (vals.length === 0) return Math.round(teamAvgOvr * 0.95);
+    return Math.round(vals.reduce((s, v) => s + v, 0) / vals.length);
+  }
+
   const compareTeamData = [
-    { stat: "Speed", Moi: player.radar.speed, Équipe: radarAvg + Math.round(Math.random() * 4 - 2) },
-    { stat: "Passing", Moi: player.radar.passing, Équipe: radarAvg + Math.round(Math.random() * 4 - 2) },
-    { stat: "Shooting", Moi: player.radar.shooting, Équipe: radarAvg + Math.round(Math.random() * 4 - 2) },
-    { stat: "Physical", Moi: player.radar.physical, Équipe: radarAvg + Math.round(Math.random() * 4 - 2) },
-    { stat: "Vision", Moi: player.radar.vision, Équipe: radarAvg + Math.round(Math.random() * 4 - 2) },
+    { stat: "Speed",    Moi: player.radar.speed,    Équipe: avgRadarAttr("speed") },
+    { stat: "Passing",  Moi: player.radar.passing,  Équipe: avgRadarAttr("passing") },
+    { stat: "Shooting", Moi: player.radar.shooting, Équipe: avgRadarAttr("shooting") },
+    { stat: "Physical", Moi: player.radar.physical, Équipe: avgRadarAttr("physical") },
+    { stat: "Vision",   Moi: player.radar.vision,   Équipe: avgRadarAttr("vision") },
   ];
 
   const topRadar = (topPlayer?.radar as Record<string, number> | null) ?? null;
@@ -78,12 +86,23 @@ export function JoueurPerformancesPage() {
   // Performance evolution
   const perfEvolution = playerStats?.performanceEvolution ?? [];
 
-  // Goal contribution pie
-  const pieData = (playerStats?.goalContribution ?? [
-    { name: "Buts", value: 45, color: "#FF6B57" },
-    { name: "Assists", value: 30, color: "#3B82F6" },
-    { name: "Chances", value: 25, color: "#22C55E" },
-  ]);
+  // Goal contribution pie — derived from real matchStats when backend data not available
+  const totalGoals = matchStats.reduce((s, m) => s + m.goals, 0);
+  const totalAssists = matchStats.reduce((s, m) => s + m.assists, 0);
+  const totalKeyPasses = matchStats.reduce((s, m) => s + m.keyPasses, 0);
+  const pieData = playerStats?.goalContribution ?? (
+    totalGoals + totalAssists + totalKeyPasses > 0
+      ? [
+          { name: "Buts", value: totalGoals || 1, color: "#FF6B57" },
+          { name: "Assists", value: totalAssists || 1, color: "#3B82F6" },
+          { name: "Passes clés", value: totalKeyPasses || 1, color: "#22C55E" },
+        ]
+      : [
+          { name: "Buts", value: 1, color: "#FF6B57" },
+          { name: "Assists", value: 1, color: "#3B82F6" },
+          { name: "Passes clés", value: 1, color: "#22C55E" },
+        ]
+  );
 
   // Last match for video section
   const lastMatch = matchStats[0];

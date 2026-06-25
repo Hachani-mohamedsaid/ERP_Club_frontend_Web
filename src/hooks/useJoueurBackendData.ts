@@ -13,6 +13,7 @@ export interface BackendPlayer {
   id: string;
   name: string;
   position: string;
+  positionFull: string;
   age: number;
   ovr: number;
   goals: number;
@@ -24,6 +25,29 @@ export interface BackendPlayer {
   photoUrl?: string | null;
   radar?: Record<string, number> | null;
   stats?: PlayerStatsPayload | null;
+  height?: string;
+  weight?: string;
+  strongFoot?: string;
+  birthDate?: string;
+  jerseyNumber?: number;
+  nationality?: string;
+}
+
+export interface BackendContract {
+  id: string;
+  startDate: string;
+  endDate: string;
+  salary: string;
+  releaseClause: string;
+  consumedPct: number;
+}
+
+export interface OrgProfile {
+  clubName: string;
+  league: string;
+  country: string;
+  logoUrl?: string | null;
+  stadium?: string | null;
 }
 
 export interface PlayerStatsPayload {
@@ -129,9 +153,12 @@ interface JoueurBackendData {
   chemistry: BackendChemistry[];
   calendarEvents: BackendCalendarEvent[];
   injuries: BackendInjury[];
+  orgProfile: OrgProfile | null;
+  myContract: BackendContract | null;
   loading: boolean;
   error: string | null;
   refetchDocuments: () => Promise<void>;
+  refetchPlayer: () => Promise<void>;
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -149,6 +176,8 @@ export function useJoueurBackendData(): JoueurBackendData {
   const [chemistry, setChemistry] = useState<BackendChemistry[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<BackendCalendarEvent[]>([]);
   const [injuries, setInjuries] = useState<BackendInjury[]>([]);
+  const [orgProfile, setOrgProfile] = useState<OrgProfile | null>(null);
+  const [myContract, setMyContract] = useState<BackendContract | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resolvedPlayerId, setResolvedPlayerId] = useState<string | null>(null);
@@ -166,6 +195,17 @@ export function useJoueurBackendData(): JoueurBackendData {
     if (resolvedPlayerId) await fetchDocuments(resolvedPlayerId);
   }, [resolvedPlayerId, fetchDocuments]);
 
+  const refetchPlayer = useCallback(async () => {
+    if (!resolvedPlayerId) return;
+    try {
+      const playersRaw = await clubApi.getPlayers().catch(() => []) as BackendPlayer[];
+      const players = Array.isArray(playersRaw) ? playersRaw : [];
+      const own = players.find((p) => p.id === resolvedPlayerId) ?? null;
+      setSquadPlayers(players);
+      if (own) setMyPlayer(own);
+    } catch { /* non-blocking */ }
+  }, [resolvedPlayerId]);
+
   useEffect(() => {
     if (!user) return;
 
@@ -174,6 +214,10 @@ export function useJoueurBackendData(): JoueurBackendData {
 
     (async () => {
       try {
+        // 0. Fetch org profile (club name, league)
+        const profileRaw = await clubApi.getProfile().catch(() => null) as OrgProfile | null;
+        if (!cancelled && profileRaw) setOrgProfile(profileRaw);
+
         // 1. Fetch squad list to resolve current player
         const playersRaw = await clubApi.getPlayers().catch(() => []) as BackendPlayer[];
         const players = Array.isArray(playersRaw) ? playersRaw : [];
@@ -195,7 +239,7 @@ export function useJoueurBackendData(): JoueurBackendData {
 
         // 2. Parallel fetch for player-scoped and org-scoped data
         if (pid) {
-          const [statsRaw, matchRaw, awardsRaw, docsRaw, calRaw, injRaw, transfRaw, chemRaw] =
+          const [statsRaw, matchRaw, awardsRaw, docsRaw, calRaw, injRaw, transfRaw, chemRaw, contractRaw] =
             await Promise.all([
               clubApi.getPlayerStats(pid).catch(() => null),
               clubApi.getMatchStats(pid).catch(() => []),
@@ -205,6 +249,7 @@ export function useJoueurBackendData(): JoueurBackendData {
               clubApi.getInjuries().catch(() => ({ injured: [] })),
               clubApi.getTransfers().catch(() => []),
               clubApi.getChemistry().catch(() => []),
+              clubApi.getPlayerContract(pid).catch(() => null),
             ]);
 
           if (cancelled) return;
@@ -218,6 +263,7 @@ export function useJoueurBackendData(): JoueurBackendData {
           setInjuries(injData?.injured ?? []);
           setTransfers(Array.isArray(transfRaw) ? (transfRaw as BackendTransfer[]) : []);
           setChemistry(Array.isArray(chemRaw) ? (chemRaw as BackendChemistry[]) : []);
+          setMyContract((contractRaw as BackendContract) ?? null);
         } else {
           // No player linked — fetch org-wide data still
           const [calRaw, injRaw, transfRaw, chemRaw] = await Promise.all([
@@ -257,8 +303,11 @@ export function useJoueurBackendData(): JoueurBackendData {
     chemistry,
     calendarEvents,
     injuries,
+    orgProfile,
+    myContract,
     loading,
     error,
     refetchDocuments,
+    refetchPlayer,
   };
 }

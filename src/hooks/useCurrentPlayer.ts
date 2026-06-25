@@ -1,20 +1,39 @@
 import { useAuth } from "../contexts/AuthContext";
 import { getPlayerById } from "../data/joueurMockData";
-import { getPlayerExtended } from "../data/joueurExtendedData";
 import { getPlayerIdForEmail } from "../data/joueurPersonalData";
 import { usePlayerPhoto } from "./usePlayerPhoto";
 import { useJoueurBackendData } from "./useJoueurBackendData";
+
+const NATIONALITY_FLAG: Record<string, string> = {
+  tunisie: "🇹🇳",
+  maroc: "🇲🇦",
+  algerie: "🇩🇿",
+  france: "🇫🇷",
+  sénégal: "🇸🇳",
+  senegal: "🇸🇳",
+  egypt: "🇪🇬",
+  egypte: "🇪🇬",
+  ghana: "🇬🇭",
+  mali: "🇲🇱",
+};
+
+function getFlag(nationality: string): string {
+  const key = (nationality ?? "").toLowerCase().trim();
+  return NATIONALITY_FLAG[key] ?? "🏳️";
+}
 
 export function useCurrentPlayer() {
   const { user } = useAuth();
   const playerId = user?.playerId ?? getPlayerIdForEmail(user?.email ?? "joueur@club.com");
   const basePlayer = getPlayerById(playerId);
-  const extended = getPlayerExtended(playerId);
   const { photoUrl: localPhotoUrl, setPhoto, handleFileChange } = usePlayerPhoto();
   const { myPlayer: backendPlayer, myPlayerId, playerStats } = useJoueurBackendData();
 
   // Photo: local upload takes priority, then backend photoUrl
   const photoUrl = localPhotoUrl ?? backendPlayer?.photoUrl ?? null;
+
+  const nationality = backendPlayer?.nationality || basePlayer?.nationality || "Tunisie";
+  const flag = getFlag(nationality);
 
   const player = basePlayer
     ? {
@@ -23,7 +42,14 @@ export function useCurrentPlayer() {
         ovr: backendPlayer?.ovr ?? playerStats?.form ?? basePlayer.ovr,
         marketValue: playerStats?.dashboardHero?.marketValue ?? backendPlayer?.marketValue ?? basePlayer.marketValue,
         availability: (backendPlayer?.availability ?? basePlayer.availability) as typeof basePlayer.availability,
-        // Radar from backend ClubPlayer.radar JSON if available
+        nationality,
+        flag,
+        positionFull: backendPlayer?.positionFull || backendPlayer?.position || basePlayer.positionFull,
+        jerseyNumber: backendPlayer?.jerseyNumber ?? basePlayer.ovr % 20 + 5,
+        height: backendPlayer?.height || "",
+        weight: backendPlayer?.weight || "",
+        strongFoot: backendPlayer?.strongFoot || "Droit",
+        birthDate: backendPlayer?.birthDate || "",
         radar: backendPlayer?.radar
           ? {
               speed: (backendPlayer.radar as Record<string, number>).speed ?? basePlayer.radar.speed,
@@ -40,7 +66,6 @@ export function useCurrentPlayer() {
   return {
     playerId: myPlayerId ?? playerId,
     player,
-    extended,
     photoUrl,
     setPhoto,
     handleFileChange,
