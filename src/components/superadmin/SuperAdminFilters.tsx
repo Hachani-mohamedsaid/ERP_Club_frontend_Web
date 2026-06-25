@@ -107,18 +107,25 @@ export function SuperAdminSearchInput({
 export function SuperAdminActionButton({
   children,
   onClick,
+  type = "button",
+  disabled,
+  className = "",
 }: {
   children: React.ReactNode;
   onClick?: () => void;
+  type?: "button" | "submit" | "reset";
+  disabled?: boolean;
+  className?: string;
 }) {
   return (
     <motion.button
-      type="button"
+      type={type}
+      disabled={disabled}
       onClick={onClick}
-      className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+      className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       style={{ background: "linear-gradient(135deg,#FF7A00,#E66000)", boxShadow: "0 0 24px rgba(255,122,0,0.4)" }}
-      whileHover={{ scale: 1.05, boxShadow: "0 0 32px rgba(255,122,0,0.6)" }}
-      whileTap={{ scale: 0.96 }}
+      whileHover={disabled ? undefined : { scale: 1.05, boxShadow: "0 0 32px rgba(255,122,0,0.6)" }}
+      whileTap={disabled ? undefined : { scale: 0.96 }}
     >
       {children}
     </motion.button>
@@ -130,16 +137,21 @@ export function SuperAdminGhostButton({
   children,
   onClick,
   className = "",
+  type = "button",
+  disabled,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   className?: string;
+  type?: "button" | "submit" | "reset";
+  disabled?: boolean;
 }) {
   return (
     <motion.button
-      type="button"
+      type={type}
+      disabled={disabled}
       onClick={onClick}
-      className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium ${className}`}
+      className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       style={{
         background: "transparent",
         borderColor: "rgba(255,255,255,0.08)",

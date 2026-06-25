@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState } from "react";
 import { loginUser } from "../lib/api/login";
-import { setAccessToken } from "../lib/api/authHeaders";
+import { setAccessToken, getAccessToken } from "../lib/api/authHeaders";
+import { platformApi } from "../lib/api/platform";
 
 /* eslint-disable react-refresh/only-export-components */
 
@@ -30,6 +31,9 @@ interface AuthContextValue {
   loginWithCredentials: (email: string, password: string) => Promise<Role>;
   loginDemo: (email: string) => Role;
   logout: () => void;
+  impersonateClub: (organizationId: string) => Promise<void>;
+  exitImpersonation: () => void;
+  isImpersonating: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -86,6 +90,9 @@ function persistUser(user: User) {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(getInitialUser());
   const [loading] = useState(false);
+  const isImpersonating = Boolean(
+    typeof sessionStorage !== "undefined" && sessionStorage.getItem("odin_impersonation"),
+  );
 
   async function loginWithCredentials(email: string, password: string): Promise<Role> {
     const res = await loginUser(email, password);
@@ -100,6 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       fullName: res.user.fullName,
       role,
       clubMemberRole: res.user.clubMemberRole,
+      playerId: res.user.playerId ?? undefined,
       organization: res.organization,
     };
     setUser(u);
@@ -118,13 +126,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   function logout() {
+    sessionStorage.removeItem("odin_impersonation");
+    sessionStorage.removeItem("odin_superadmin_token");
+    sessionStorage.removeItem("odin_superadmin_user");
     setUser(null);
     setAccessToken(null);
     localStorage.removeItem("odin_user");
   }
 
+  async function impersonateClub(organizationId: string) {
+    const res = await platformApi.impersonate(organizationId);
+    const currentToken = getAccessToken();
+    if (currentToken && user?.role === "superadmin") {
+      sessionStorage.setItem("odin_superadmin_token", currentToken);
+      sessionStorage.setItem("odin_superadmin_user", JSON.stringify(user));
+      sessionStorage.setItem("odin_impersonation", "1");
+    }
+    setAccessToken(res.accessToken);
+    const u: User = {
+      id: res.user.id,
+      email: res.user.email,
+      fullName: res.user.fullName,
+      role: "adminclub",
+      clubMemberRole: res.user.clubMemberRole,
+      organization: res.organization,
+    };
+    setUser(u);
+    persistUser(u);
+  }
+
+  function exitImpersonation() {
+    const token = sessionStorage.getItem("odin_superadmin_token");
+    const raw = sessionStorage.getItem("odin_superadmin_user");
+    if (!token || !raw) return;
+    setAccessToken(token);
+    const u = JSON.parse(raw) as User;
+    setUser(u);
+    persistUser(u);
+    sessionStorage.removeItem("odin_impersonation");
+    sessionStorage.removeItem("odin_superadmin_token");
+    sessionStorage.removeItem("odin_superadmin_user");
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, loginWithCredentials, loginDemo, logout }}>
+    <AuthContext.Provider value={{ user, loading, loginWithCredentials, loginDemo, logout, impersonateClub, exitImpersonation, isImpersonating }}>
       {children}
     </AuthContext.Provider>
   );

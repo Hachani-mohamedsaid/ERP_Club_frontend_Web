@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BodyInjuryViewer, type BodyZone } from "../medical/BodyInjuryViewer";
-import { CLUB_HEAT_ZONES, CLUB_BODY_ZONES } from "../../data/clubHeatInjuryData";
+import type { ClubHeatZone } from "../../lib/injuryNormalize";
 
 const SEVERITY_COLORS = {
   low: "#22C55E",
@@ -9,17 +9,31 @@ const SEVERITY_COLORS = {
   critical: "#EF4444",
 };
 
-export function ClubHeatInjuryMap({ zones = CLUB_BODY_ZONES }: { zones?: BodyZone[] }) {
-  const [activeId, setActiveId] = useState<string | null>("groin");
-  const heatZones = CLUB_HEAT_ZONES;
-  const active = heatZones.find((z) => z.id === activeId);
+interface ClubHeatInjuryMapProps {
+  clubName: string;
+  heatZones: ClubHeatZone[];
+  bodyZones: BodyZone[];
+}
+
+export function ClubHeatInjuryMap({ clubName, heatZones, bodyZones }: ClubHeatInjuryMapProps) {
+  const [activeId, setActiveId] = useState<string | null>(heatZones[0]?.id ?? null);
+
+  useEffect(() => {
+    if (heatZones.length === 0) {
+      setActiveId(null);
+    } else if (!activeId || !heatZones.some((z) => z.id === activeId)) {
+      setActiveId(heatZones[0].id);
+    }
+  }, [heatZones, activeId]);
+
+  const active = heatZones.find((z) => z.id === activeId) ?? heatZones[0];
 
   return (
     <div className="w-full">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Heat Injury Club</h3>
-          <p className="text-xs" style={{ color: "var(--text-muted)" }}>Zones à risque — effectif FC Carthage</p>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>Zones à risque — effectif {clubName}</p>
         </div>
         <div className="flex flex-wrap gap-3 text-[10px]">
           {[
@@ -45,7 +59,8 @@ export function ClubHeatInjuryMap({ zones = CLUB_BODY_ZONES }: { zones?: BodyZon
         <div className="grid grid-cols-1 items-center gap-6 lg:grid-cols-[1fr_200px]">
           <div className="flex justify-center">
             <BodyInjuryViewer
-              zones={zones}
+              zones={bodyZones}
+              selectedZoneId={activeId}
               onZoneClick={(zone) => setActiveId(zone.id)}
             />
           </div>
@@ -54,35 +69,41 @@ export function ClubHeatInjuryMap({ zones = CLUB_BODY_ZONES }: { zones?: BodyZon
             <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
               Hotspots
             </p>
-            {heatZones.map((zone) => {
-              const color = SEVERITY_COLORS[zone.severity];
-              const isActive = activeId === zone.id;
-              return (
-                <button
-                  key={zone.id}
-                  type="button"
-                  onClick={() => setActiveId(zone.id)}
-                  className="w-full rounded-xl border px-3 py-2.5 text-left transition-all"
-                  style={{
-                    borderColor: isActive ? `${color}60` : "rgba(255,255,255,0.06)",
-                    background: isActive ? `${color}15` : "rgba(255,255,255,0.02)",
-                    boxShadow: isActive ? `0 0 16px ${color}30` : "none",
-                  }}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold" style={{ color: isActive ? color : "var(--text-primary)" }}>
-                      {zone.label}
-                    </span>
-                    <span className="text-sm font-bold" style={{ color }}>{zone.count}</span>
-                  </div>
-                  {zone.players.length > 0 && (
-                    <p className="mt-0.5 truncate text-[10px]" style={{ color: "var(--text-muted)" }}>
-                      {zone.players.join(", ")}
-                    </p>
-                  )}
-                </button>
-              );
-            })}
+            {heatZones.length === 0 ? (
+              <p className="rounded-xl border px-3 py-4 text-center text-xs" style={{ borderColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)" }}>
+                Aucune zone à risque
+              </p>
+            ) : (
+              heatZones.map((zone) => {
+                const color = SEVERITY_COLORS[zone.severity];
+                const isActive = activeId === zone.id;
+                return (
+                  <button
+                    key={zone.id}
+                    type="button"
+                    onClick={() => setActiveId(zone.id)}
+                    className="w-full rounded-xl border px-3 py-2.5 text-left transition-all"
+                    style={{
+                      borderColor: isActive ? `${color}60` : "rgba(255,255,255,0.06)",
+                      background: isActive ? `${color}15` : "rgba(255,255,255,0.02)",
+                      boxShadow: isActive ? `0 0 16px ${color}30` : "none",
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold" style={{ color: isActive ? color : "var(--text-primary)" }}>
+                        {zone.label}
+                      </span>
+                      <span className="text-sm font-bold" style={{ color }}>{zone.count}</span>
+                    </div>
+                    {zone.players.length > 0 && (
+                      <p className="mt-0.5 truncate text-[10px]" style={{ color: "var(--text-muted)" }}>
+                        {zone.players.join(", ")}
+                      </p>
+                    )}
+                  </button>
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -105,7 +126,7 @@ export function ClubHeatInjuryMap({ zones = CLUB_BODY_ZONES }: { zones?: BodyZon
               >
                 {active.count}
               </div>
-              <div className="flex-1 min-w-[140px]">
+              <div className="min-w-[140px] flex-1">
                 <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{active.label}</p>
                 <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                   {active.players.length > 0 ? `Joueurs : ${active.players.join(", ")}` : "Surveillance préventive"}

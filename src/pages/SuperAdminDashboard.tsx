@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   SuperAdminPageTransition,
@@ -8,72 +10,119 @@ import {
   SuperAdminListRow,
   SuperAdminGhostButton,
 } from "../components/superadmin";
-import { TrendingUp, Users, Globe, Sparkles, Zap } from "lucide-react";
-import { PLATFORM_ROLES_CHART } from "../data/platformRoles";
+import { TrendingUp, Users, Globe, Sparkles, Zap, Loader2 } from "lucide-react";
+import { platformApi } from "../lib/api/platform";
+import { usePlatformResource } from "../hooks/usePlatformResource";
 
-const KPI_CARDS = [
-  { label: "Clubs", value: "125", icon: Globe, color: "#3B82F6", trend: "+8 ce mois" },
-  { label: "Users", value: "4 580", icon: Users, color: "#10B981", trend: "+120 actifs" },
-  { label: "Revenue", value: "245 000 DT", icon: TrendingUp, color: "#FF7A00", trend: "+12% MRR" },
-  { label: "Growth", value: "+12%", icon: Sparkles, color: "#8B5CF6", trend: "vs trimestre" },
-];
+const COLORS = ["#3B82F6", "#10B981", "#EF4444", "#8B5CF6", "#FF7A00", "#F59E0B", "#06B6D4"];
 
-const CLUBS_GROWTH = [
-  { month: "Jan", clubs: 90 },
-  { month: "Fév", clubs: 95 },
-  { month: "Mar", clubs: 105 },
-  { month: "Avr", clubs: 112 },
-  { month: "Mai", clubs: 118 },
-  { month: "Juin", clubs: 125 },
-];
+function fmt(n: number) {
+  return n.toLocaleString("fr-FR");
+}
 
-const REVENUE_MONTHLY = [
-  { month: "Jan", revenue: 12000 },
-  { month: "Fév", revenue: 18000 },
-  { month: "Mar", revenue: 23000 },
-  { month: "Avr", revenue: 19500 },
-  { month: "Mai", revenue: 22000 },
-  { month: "Juin", revenue: 24500 },
-];
-
-const USERS_BY_ROLE = PLATFORM_ROLES_CHART;
-
-const ACTIVITY_FEED = [
-  "FC Carthage créé",
-  "5 nouveaux utilisateurs",
-  "2 abonnements expirés",
-  "3 tickets ouverts",
-];
-
-const COLORS = ["#3B82F6", "#10B981", "#EF4444", "#8B5CF6", "#FF7A00"];
+function fmtDt(n: number) {
+  return `${fmt(n)} DT`;
+}
 
 export function SuperAdminDashboard() {
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const { data, loading, error, reload, refreshing } = usePlatformResource(
+    () => platformApi.getMetrics(),
+    [],
+  );
+
+  async function handleRefresh() {
+    await reload();
+    setLastUpdated(new Date());
+  }
+
+  useEffect(() => {
+    if (data && lastUpdated === null) setLastUpdated(new Date());
+  }, [data, lastUpdated]);
+
+  if (loading && !data) {
+    return (
+      <SuperAdminPageTransition>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement des métriques plateforme…</p>
+      </SuperAdminPageTransition>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <SuperAdminPageTransition>
+        {error && (
+          <div className="space-y-3">
+            <p className="text-sm text-red-400">{error}</p>
+            {error.includes("prisma db push") && (
+              <pre className="rounded-lg p-3 text-xs" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-secondary)" }}>
+                cd erp-club-backend{"\n"}npm run db:setup{"\n"}npm run start:dev
+              </pre>
+            )}
+            <SuperAdminGhostButton onClick={handleRefresh}>Réessayer</SuperAdminGhostButton>
+          </div>
+        )}
+      </SuperAdminPageTransition>
+    );
+  }
+
+  const { kpis, charts, activityFeed } = data;
+  const kpiCards = [
+    { label: "Clubs", value: fmt(kpis.totalClubs), icon: Globe, color: "#3B82F6", trend: `+${kpis.newClubsThisMonth} ce mois` },
+    { label: "Users", value: fmt(kpis.totalUsers), icon: Users, color: "#10B981", trend: `${fmt(kpis.activeUsers)} actifs` },
+    { label: "Revenue", value: fmtDt(kpis.mrr), icon: TrendingUp, color: "#FF7A00", trend: "MRR" },
+    { label: "Essais", value: fmt(kpis.trialSubscriptions), icon: Sparkles, color: "#8B5CF6", trend: `${kpis.trialClubs} clubs` },
+  ];
+
   return (
     <SuperAdminPageTransition>
       <SuperAdminHero
         badge="SaaS Control Center"
         title="ODIN ERP Control Center"
-        subtitle="Vue globale plateforme • Super Admin"
+        subtitle={
+          lastUpdated
+            ? `Vue globale plateforme — mis à jour à ${lastUpdated.toLocaleTimeString("fr-FR")}`
+            : "Vue globale plateforme • Super Admin"
+        }
         icon={Zap}
-        action={<SuperAdminGhostButton>Voir rapport complet</SuperAdminGhostButton>}
+        action={
+          <SuperAdminGhostButton onClick={handleRefresh} disabled={refreshing}>
+            {refreshing ? <Loader2 size={14} className="animate-spin" /> : null}
+            {refreshing ? "Actualisation…" : "Rafraîchir"}
+          </SuperAdminGhostButton>
+        }
         stats={[
-          { value: "245 000 DT", label: "MRR", color: "#FF7A00" },
-          { value: "2.94M DT", label: "ARR", color: "#3B82F6" },
-          { value: "+12%", label: "Growth", color: "#10B981" },
-          { value: "96.8%", label: "Retention", color: "#8B5CF6" },
+          { value: fmtDt(kpis.mrr), label: "MRR", color: "#FF7A00" },
+          { value: fmtDt(kpis.arr), label: "ARR", color: "#3B82F6" },
+          { value: `+${kpis.growthPct}%`, label: "Growth", color: "#10B981" },
+          { value: `${kpis.retentionPct}%`, label: "Retention", color: "#8B5CF6" },
         ]}
       />
 
+      {refreshing && (
+        <div className="mb-4 h-0.5 w-full overflow-hidden rounded-full" style={{ background: "rgba(255,122,0,0.15)" }}>
+          <motion.div
+            className="h-full rounded-full"
+            style={{ background: "linear-gradient(90deg,#FF7A00,#E66000)", width: "40%" }}
+            initial={{ x: "-100%" }}
+            animate={{ x: "250%" }}
+            transition={{ duration: 0.6, ease: "easeInOut", repeat: Infinity }}
+          />
+        </div>
+      )}
+
+      <div className={`space-y-6 ${refreshing ? "opacity-90 transition-opacity" : ""}`}>
       <SuperAdminKpiGrid>
-        {KPI_CARDS.map((item, i) => (
-          <SuperAdminKpiCard key={item.label} {...item} delay={i * 0.08} />
+        {kpiCards.map((item) => (
+          <SuperAdminKpiCard key={item.label} {...item} />
         ))}
       </SuperAdminKpiGrid>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <SuperAdminSection title="Clubs Growth" subtitle="Évolution des clubs actifs par mois." className="xl:col-span-2">
+          <div className="min-h-[280px]">
           <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={CLUBS_GROWTH}>
+            <LineChart data={charts.clubsGrowth}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
               <XAxis dataKey="month" tick={{ fill: "#94A3B8", fontSize: 11 }} />
               <YAxis tick={{ fill: "#94A3B8", fontSize: 11 }} />
@@ -81,26 +130,30 @@ export function SuperAdminDashboard() {
               <Line type="monotone" dataKey="clubs" stroke="#FF7A00" strokeWidth={3} dot={{ r: 4, fill: "#FF7A00" }} />
             </LineChart>
           </ResponsiveContainer>
+          </div>
         </SuperAdminSection>
 
         <SuperAdminSection title="Users by Role" subtitle="Répartition des rôles sur la plateforme.">
+          <div className="min-h-[280px]">
           <ResponsiveContainer width="100%" height={280}>
             <PieChart>
-              <Pie data={USERS_BY_ROLE} dataKey="value" nameKey="name" innerRadius={50} outerRadius={90} paddingAngle={4}>
-                {USERS_BY_ROLE.map((_, index) => (
+              <Pie data={charts.usersByRole} dataKey="value" nameKey="name" innerRadius={50} outerRadius={90} paddingAngle={4}>
+                {charts.usersByRole.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip contentStyle={{ background: "#0F1D3A", borderColor: "rgba(255,122,0,0.3)" }} />
             </PieChart>
           </ResponsiveContainer>
+          </div>
         </SuperAdminSection>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <SuperAdminSection title="Monthly Revenue" subtitle="Chiffre d'affaires mensuel en DT.">
+          <div className="min-h-[300px]">
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={REVENUE_MONTHLY}>
+            <BarChart data={charts.revenueMonthly}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
               <XAxis dataKey="month" tick={{ fill: "#94A3B8", fontSize: 11 }} />
               <YAxis tick={{ fill: "#94A3B8", fontSize: 11 }} />
@@ -108,17 +161,19 @@ export function SuperAdminDashboard() {
               <Bar dataKey="revenue" fill="#FF7A00" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
+          </div>
         </SuperAdminSection>
 
         <SuperAdminSection title="Activity Feed" subtitle="Dernières actions système.">
           <div className="space-y-3">
-            {ACTIVITY_FEED.map((item) => (
+            {activityFeed.map((item) => (
               <SuperAdminListRow key={item}>
                 <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{item}</p>
               </SuperAdminListRow>
             ))}
           </div>
         </SuperAdminSection>
+      </div>
       </div>
     </SuperAdminPageTransition>
   );

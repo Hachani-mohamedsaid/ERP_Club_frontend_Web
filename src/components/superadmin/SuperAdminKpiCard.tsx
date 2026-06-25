@@ -92,16 +92,13 @@ export function SuperAdminKpiCard({
         </motion.div>
       </div>
 
-      {/* animated number entrance */}
-      <motion.div
+      {/* value — pas de re-animation au refresh */}
+      <div
         className="mt-3 text-3xl font-extrabold"
         style={{ color: "var(--text-primary)" }}
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, ease: "backOut" }}
       >
         {value}
-      </motion.div>
+      </div>
 
       <div className="text-xs" style={{ color: "var(--text-muted)" }}>
         {label}

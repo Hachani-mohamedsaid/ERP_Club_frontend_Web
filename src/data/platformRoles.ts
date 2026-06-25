@@ -32,6 +32,11 @@ export const PLATFORM_ROLE_LABELS = PLATFORM_ROLES.map((r) => r.label);
 
 export const PLATFORM_ROLE_FILTER_OPTIONS = ["Tous", ...PLATFORM_ROLE_LABELS];
 
+/** Rôles visibles sur la page login (accès rapide démo). Super Admin exclu — connexion email/mot de passe uniquement. */
+export const LOGIN_QUICK_ROLES: PlatformRole[] = PLATFORM_ROLES.filter(
+  (r) => r.id !== "superadmin",
+);
+
 /** Répartition indicative pour les graphiques Super Admin. */
 export const PLATFORM_ROLES_CHART = [
   { name: "Admin Club", value: 820 },

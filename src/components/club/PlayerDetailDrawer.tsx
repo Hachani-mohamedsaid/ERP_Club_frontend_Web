@@ -16,15 +16,28 @@ interface PlayerDetailDrawerProps {
 export function PlayerDetailDrawer({ player, open, onClose }: PlayerDetailDrawerProps) {
   if (!player) return null;
 
-  const ovrEvolution = player.performanceHistory.map((p) => ({ month: p.month, ovr: p.score }));
-  const matchesPlayed = player.matches.length;
+  const stats = player.stats ?? { goals: 0, assists: 0, minutes: 0, passAccuracy: 0, distance: 0 };
+  const contract = {
+    salary: player.contract?.salary ?? "—",
+    bonus: player.contract?.bonus ?? "—",
+    clause: player.contract?.clause ?? "—",
+    expiration: player.contract?.expiration ?? "—",
+  };
+  const injuries = player.injuries ?? [];
+  const performanceHistory = player.performanceHistory ?? [];
+  const matches = player.matches ?? [];
+  const riskScore = player.riskScore ?? 0;
+  const availability = player.availability ?? "Disponible";
+
+  const ovrEvolution = performanceHistory.map((p) => ({ month: p.month, ovr: p.score }));
+  const matchesPlayed = matches.length;
 
   return (
     <ClubSlideDrawer
       open={open}
       onClose={onClose}
       title={player.name}
-      subtitle={`${player.positionFull} • OVR ${player.ovr}`}
+      subtitle={`${player.positionFull ?? player.position} • OVR ${player.ovr}`}
     >
       <div className="space-y-6">
         <div className="flex items-center gap-5">
@@ -34,9 +47,9 @@ export function PlayerDetailDrawer({ player, open, onClose }: PlayerDetailDrawer
             <p className="text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>OVR</p>
             <span
               className="mt-2 inline-block rounded-full px-3 py-1 text-xs font-medium"
-              style={{ background: `${STATUS_COLORS[player.availability]}20`, color: STATUS_COLORS[player.availability] }}
+              style={{ background: `${STATUS_COLORS[availability] ?? STATUS_COLORS.Disponible}20`, color: STATUS_COLORS[availability] ?? STATUS_COLORS.Disponible }}
             >
-              {player.availability}
+              {availability}
             </span>
           </div>
         </div>
@@ -44,8 +57,8 @@ export function PlayerDetailDrawer({ player, open, onClose }: PlayerDetailDrawer
         <div className="grid grid-cols-2 gap-3">
           {[
             { label: "Matchs joués", value: matchesPlayed },
-            { label: "Buts", value: player.stats.goals },
-            { label: "Passes D.", value: player.stats.assists },
+            { label: "Buts", value: stats.goals },
+            { label: "Passes D.", value: stats.assists },
             { label: "Valeur", value: player.marketValue },
           ].map((stat) => (
             <div key={stat.label} className="rounded-xl border p-3" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
@@ -58,17 +71,17 @@ export function PlayerDetailDrawer({ player, open, onClose }: PlayerDetailDrawer
         <div className="rounded-xl border p-4" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
           <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Contrat</h4>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span style={{ color: "var(--text-muted)" }}>Salaire</span><span style={{ color: "var(--text-primary)" }}>{player.contract.salary}</span></div>
-            <div className="flex justify-between"><span style={{ color: "var(--text-muted)" }}>Bonus</span><span style={{ color: "var(--text-primary)" }}>{player.contract.bonus}</span></div>
-            <div className="flex justify-between"><span style={{ color: "var(--text-muted)" }}>Clause</span><span style={{ color: "var(--text-primary)" }}>{player.contract.clause}</span></div>
-            <div className="flex justify-between"><span style={{ color: "var(--text-muted)" }}>Expiration</span><span style={{ color: "#F59E0B" }}>{player.contract.expiration}</span></div>
+            <div className="flex justify-between"><span style={{ color: "var(--text-muted)" }}>Salaire</span><span style={{ color: "var(--text-primary)" }}>{contract.salary}</span></div>
+            <div className="flex justify-between"><span style={{ color: "var(--text-muted)" }}>Bonus</span><span style={{ color: "var(--text-primary)" }}>{contract.bonus}</span></div>
+            <div className="flex justify-between"><span style={{ color: "var(--text-muted)" }}>Clause</span><span style={{ color: "var(--text-primary)" }}>{contract.clause}</span></div>
+            <div className="flex justify-between"><span style={{ color: "var(--text-muted)" }}>Expiration</span><span style={{ color: "#F59E0B" }}>{contract.expiration}</span></div>
           </div>
         </div>
 
         <div className="rounded-xl border p-4" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
           <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Statut médical</h4>
-          {player.injuries.length > 0 ? (
-            player.injuries.slice(0, 2).map((inj) => (
+          {injuries.length > 0 ? (
+            injuries.slice(0, 2).map((inj) => (
               <div key={inj.injury} className="flex justify-between text-sm">
                 <span style={{ color: "var(--text-secondary)" }}>{inj.injury}</span>
                 <span style={{ color: inj.status === "Récupéré" ? "#22C55E" : "#EF4444" }}>{inj.status}</span>
@@ -77,11 +90,12 @@ export function PlayerDetailDrawer({ player, open, onClose }: PlayerDetailDrawer
           ) : (
             <p className="text-sm" style={{ color: "#22C55E" }}>Aucune blessure active</p>
           )}
-          <p className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>Risk score : {player.riskScore}%</p>
+          <p className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>Risk score : {riskScore}%</p>
         </div>
 
         <div>
           <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Évolution OVR</h4>
+        {ovrEvolution.length > 0 ? (
           <ResponsiveContainer width="100%" height={160}>
             <LineChart data={ovrEvolution}>
               <XAxis dataKey="month" tick={{ fill: "var(--text-muted)", fontSize: 10 }} />
@@ -90,6 +104,9 @@ export function PlayerDetailDrawer({ player, open, onClose }: PlayerDetailDrawer
               <Line type="monotone" dataKey="ovr" stroke="#FF6B57" strokeWidth={2} dot={{ r: 3 }} animationDuration={1000} />
             </LineChart>
           </ResponsiveContainer>
+        ) : (
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>Aucune donnée d&apos;évolution disponible</p>
+        )}
         </div>
       </div>
     </ClubSlideDrawer>
