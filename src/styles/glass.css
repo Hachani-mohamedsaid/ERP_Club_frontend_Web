@@ -60,43 +60,57 @@
   color: var(--text-muted);
 }
 
-/* Ambient gradient backdrop, sits behind the whole app */
+/* Ambient gradient backdrop — même palette aurora que la page Login */
 .odin-backdrop {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: var(--surface-canvas);
   overflow: hidden;
-}
-
-.odin-backdrop::before,
-.odin-backdrop::after {
-  content: "";
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.35;
+  background:
+    radial-gradient(60% 80% at 15% 20%, rgba(139, 92, 246, 0.18), transparent 60%),
+    radial-gradient(50% 70% at 85% 15%, rgba(192, 57, 43, 0.20), transparent 60%),
+    radial-gradient(55% 75% at 75% 85%, rgba(58, 123, 213, 0.16), transparent 60%),
+    radial-gradient(50% 60% at 25% 90%, rgba(6, 182, 212, 0.14), transparent 60%),
+    var(--surface-canvas);
 }
 
 .odin-backdrop::before {
-  width: 38vw;
-  height: 38vw;
-  top: -10%;
-  right: -8%;
-  background: var(--accent);
+  content: "";
+  position: absolute;
+  inset: -40%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(139, 92, 246, 0.10),
+    rgba(192, 57, 43, 0.12),
+    rgba(58, 123, 213, 0.10),
+    rgba(6, 182, 212, 0.10),
+    rgba(139, 92, 246, 0.10)
+  );
+  filter: blur(80px);
+  animation: aurora-spin 18s linear infinite;
+  opacity: 1;
 }
 
 .odin-backdrop::after {
-  width: 30vw;
-  height: 30vw;
-  bottom: -5%;
-  left: -6%;
-  background: var(--color-ink-500);
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(circle at 50% 45%, black, transparent 75%);
+  -webkit-mask-image: radial-gradient(circle at 50% 45%, black, transparent 75%);
+  opacity: 1;
 }
 
-[data-theme="light"] .odin-backdrop::before,
+[data-theme="light"] .odin-backdrop::before {
+  opacity: 0.25;
+}
+
 [data-theme="light"] .odin-backdrop::after {
-  opacity: 0.14;
+  opacity: 0.4;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -115,4 +129,148 @@
 @keyframes odin-drift-b {
   from { transform: translate(0, 0) scale(1); }
   to { transform: translate(5%, -4%) scale(1.05); }
+}
+
+/* ============================================================
+   ANIMATION SYSTEM — Medical & Dashboard animations
+   ============================================================ */
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes glow-danger {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+  }
+}
+
+@keyframes glow-warning {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.6);
+  }
+}
+
+@keyframes glow-success {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
+  }
+}
+
+@keyframes blink-slow {
+  0%, 49%, 100% {
+    opacity: 1;
+  }
+  50%, 99% {
+    opacity: 0.3;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s infinite;
+}
+
+.animate-glow-danger {
+  animation: glow-danger 2s infinite;
+}
+
+.animate-glow-warning {
+  animation: glow-warning 2s infinite;
+}
+
+.animate-glow-success {
+  animation: glow-success 2s infinite;
+}
+
+.animate-blink-slow {
+  animation: blink-slow 3s infinite;
+}
+
+/* ============================================================
+   LOGIN — Premium SaaS (Vercel/Stripe-style) aurora + cursor
+   ============================================================ */
+
+.login-aurora {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(60% 80% at 15% 20%, rgba(139, 92, 246, 0.18), transparent 60%),
+    radial-gradient(50% 70% at 85% 15%, rgba(192, 57, 43, 0.20), transparent 60%),
+    radial-gradient(55% 75% at 75% 85%, rgba(58, 123, 213, 0.16), transparent 60%),
+    radial-gradient(50% 60% at 25% 90%, rgba(6, 182, 212, 0.14), transparent 60%),
+    var(--surface-canvas);
+}
+
+.login-aurora::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(139, 92, 246, 0.10),
+    rgba(192, 57, 43, 0.12),
+    rgba(58, 123, 213, 0.10),
+    rgba(6, 182, 212, 0.10),
+    rgba(139, 92, 246, 0.10)
+  );
+  filter: blur(80px);
+  animation: aurora-spin 18s linear infinite;
+}
+
+@keyframes aurora-spin {
+  from { transform: rotate(0deg) scale(1.1); }
+  to { transform: rotate(360deg) scale(1.1); }
+}
+
+.login-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(circle at 50% 45%, black, transparent 75%);
+  -webkit-mask-image: radial-gradient(circle at 50% 45%, black, transparent 75%);
+}
+
+.neon-cursor-dot,
+.neon-cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 100;
+  border-radius: 9999px;
+  mix-blend-mode: screen;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .neon-cursor-dot,
+  .neon-cursor-ring { display: none; }
+}
+
+/* App logo — glow + hover (Vercel/Linear feel) */
+.app-logo {
+  transition: transform 0.3s ease, filter 0.3s ease;
+  filter: drop-shadow(0 0 8px rgba(255, 122, 0, 0.35));
+}
+.app-logo:hover {
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 20px rgba(255, 122, 0, 0.8)) drop-shadow(0 0 40px rgba(255, 122, 0, 0.4));
 }

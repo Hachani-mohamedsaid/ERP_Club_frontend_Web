@@ -35,10 +35,10 @@ export function DocumentsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
-          Documents
+          Administration documentaire
         </h1>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-          Contrats, certificats et pièces administratives
+          Contrats, certificats et pièces réservées à l'administration
         </p>
       </div>
 

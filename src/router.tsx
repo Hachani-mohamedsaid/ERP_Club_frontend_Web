@@ -3,34 +3,351 @@ import { AppShell } from "./components/layout/AppShell";
 import { Dashboard } from "./components/dashboard/Dashboard";
 import { LoginPage } from "./pages/LoginPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
+import { RegisterPage } from "./pages/RegisterPage";
 import { PlayersPage } from "./pages/PlayersPage";
 import { TeamsPage } from "./pages/TeamsPage";
 import { TrainingPage } from "./pages/TrainingPage";
 import { MatchesPage } from "./pages/MatchesPage";
+import { PerformancePage } from "./pages/PerformancePage";
+import { RecruitmentRequestsPage } from "./pages/RecruitmentRequestsPage";
+import { ScoutingPage } from "./pages/ScoutingPage";
+import { ContractsPage } from "./pages/ContractsPage";
 import { MedicalPage } from "./pages/MedicalPage";
+import { MedicalDossiersPage } from "./pages/medical/MedicalDossiersPage";
+import { MedicalBlessuresPage } from "./pages/medical/MedicalBlessuresPage";
+import { MedicalReeducationPage } from "./pages/medical/MedicalReeducationPage";
+import { MedicalRendezVousPage } from "./pages/medical/MedicalRendezVousPage";
+import { MedicalDocumentsPage } from "./pages/medical/MedicalDocumentsPage";
+import { MedicalRapportsPage } from "./pages/medical/MedicalRapportsPage";
+import { MedicalRiskPage } from "./pages/medical/MedicalRiskPage";
+import { MedicalEffectifPage } from "./pages/medical/MedicalEffectifPage";
+import { MedicalAIPage } from "./pages/medical/MedicalAIPage";
 import { FinancePage } from "./pages/FinancePage";
 import { DocumentsPage } from "./pages/DocumentsPage";
+import { ReportsPage } from "./pages/ReportsPage";
+import { OdinAiPage } from "./pages/OdinAiPage";
+import { AIAssistantPage } from "./pages/AIAssistantPage";
 import { MessagesPage } from "./pages/MessagesPage";
+import { CoachPage } from "./pages/CoachPage";
+import { CoachEffectifPage } from "./pages/coach/CoachEffectifPage";
+import { CoachLineupPage } from "./pages/coach/CoachLineupPage";
+import { CoachPlayerDetailPage } from "./pages/coach/CoachPlayerDetailPage";
+import { CoachMedicalPage } from "./pages/coach/CoachMedicalPage";
+import { CoachAttendancePage } from "./pages/coach/CoachAttendancePage";
+import { CoachTrainingBuilderPage } from "./pages/coach/CoachTrainingBuilderPage";
+import { CoachTacticalPage } from "./pages/coach/CoachTacticalPage";
+import { CoachMatchAnalysisPage } from "./pages/coach/CoachMatchAnalysisPage";
+import { CoachAIPage } from "./pages/coach/CoachAIPage";
+import { CoachOpponentPage } from "./pages/coach/CoachOpponentPage";
+import { ScoutDashboard } from "./pages/scout/ScoutDashboard";
+import { ScoutSearchPage } from "./pages/scout/ScoutSearchPage";
+import { ScoutProspectPage } from "./pages/scout/ScoutProspectPage";
+import { ScoutReportPage } from "./pages/scout/ScoutReportPage";
+import { ScoutFavoritesPage } from "./pages/ScoutFavoritesPage";
+import { ScoutComparisonPage } from "./pages/ScoutComparisonPage";
+import { ScoutRecruitmentPage } from "./pages/scout/ScoutRecruitmentPage";
+import { ScoutWatchlistPage } from "./pages/scout/ScoutWatchlistPage";
+import { ScoutAIPage } from "./pages/scout/ScoutAIPage";
+import { PlayerProfilePage } from "./pages/PlayerProfilePage";
+import { FinanceComptabilite } from "./pages/FinanceComptabilite";
+import { ContratsFinance } from "./pages/ContratsFinance";
+import { SalairesFinance } from "./pages/SalairesFinance";
+import { TransfertsFinance } from "./pages/TransfertsFinance";
+import { SponsorsFinance } from "./pages/SponsorsFinance";
+import { GestionFinanciereFinance } from "./pages/GestionFinanciereFinance";
+import { RapportsFinance } from "./pages/RapportsFinance";
+import { FinanceAIPage } from "./pages/FinanceAIPage";
+import { TresorerieFinance } from "./pages/TresorerieFinance";
+import { SuperAdminDashboard } from "./pages/SuperAdminDashboard";
+import { SuperAdminClubs } from "./pages/SuperAdminClubs";
+import { SuperAdminClubDetails } from "./pages/SuperAdminClubDetails";
+import { SuperAdminUsers } from "./pages/SuperAdminUsers";
+import { SuperAdminUserDetails } from "./pages/SuperAdminUserDetails";
+import { SuperAdminSubscriptions } from "./pages/SuperAdminSubscriptions";
+import { SuperAdminAnalytics } from "./pages/SuperAdminAnalytics";
+import { SuperAdminRevenueAnalytics } from "./pages/SuperAdminRevenueAnalytics";
+import { SuperAdminSupport } from "./pages/SuperAdminSupport";
+import { SuperAdminSecurity } from "./pages/SuperAdminSecurity";
+import { SuperAdminPayments } from "./pages/SuperAdminPayments";
+import { SuperAdminBI } from "./pages/SuperAdminBI";
+import { SuperAdminSettings } from "./pages/SuperAdminSettings";
+import { SuperAdminIA } from "./pages/SuperAdminIA";
+import { JoueurDashboard } from "./pages/joueur/JoueurDashboard";
+import { JoueurListPage } from "./pages/joueur/JoueurListPage";
+import { JoueurComparePage } from "./pages/joueur/JoueurComparePage";
+import { JoueurFormationPage } from "./pages/joueur/JoueurFormationPage";
+import { JoueurTransfersPage } from "./pages/joueur/JoueurTransfersPage";
+import { JoueurDocumentsPage } from "./pages/joueur/JoueurDocumentsPage";
+import { JoueurAIPage } from "./pages/joueur/JoueurAIPage";
+import { JoueurTrainingPage } from "./pages/joueur/JoueurTrainingPage";
+import { JoueurMatchAnalysisPage } from "./pages/joueur/JoueurMatchAnalysisPage";
+import { JoueurAwardsPage } from "./pages/joueur/JoueurAwardsPage";
+import { JoueurChemistryPage } from "./pages/joueur/JoueurChemistryPage";
+import { JoueurPerformancesPage } from "./pages/joueur/JoueurPerformancesPage";
+import { JoueurMedicalPage } from "./pages/joueur/JoueurMedicalPage";
+import { JoueurPlanningPage } from "./pages/joueur/JoueurPlanningPage";
+import { JoueurMonProfilPage } from "./pages/joueur/JoueurMonProfilPage";
+import { JoueurMessagesPage } from "./pages/joueur/JoueurMessagesPage";
+import { ClubDashboard } from "./pages/club/ClubDashboard";
+import { ClubJoueursPage } from "./pages/club/ClubJoueursPage";
+import { ClubStaffPage } from "./pages/club/ClubStaffPage";
+import { ClubFinancesPage } from "./pages/club/ClubFinancesPage";
+import { ClubContratsPage } from "./pages/club/ClubContratsPage";
+import { ClubCalendrierPage } from "./pages/club/ClubCalendrierPage";
+import { ClubSantePage } from "./pages/club/ClubSantePage";
+import { ClubInfrastructuresPage } from "./pages/club/ClubInfrastructuresPage";
+import { ClubAnalyticsPage } from "./pages/club/ClubAnalyticsPage";
+import { ClubAIPage } from "./pages/club/ClubAIPage";
+import { ClubParametresPage } from "./pages/club/ClubParametresPage";
+import { ClubUtilisateursPage } from "./pages/club/ClubUtilisateursPage";
+import { ClubPermissionsPage } from "./pages/club/ClubPermissionsPage";
+import { ClubAuditLogsPage } from "./pages/club/ClubAuditLogsPage";
+import { ClubNotificationsPage } from "./pages/club/ClubNotificationsPage";
+import { PrepDashboard } from "./pages/preparateur/PrepDashboard";
+import { PrepChargePage } from "./pages/preparateur/PrepChargePage";
+import { PrepConditionPage } from "./pages/preparateur/PrepConditionPage";
+import { PrepRisquePage } from "./pages/preparateur/PrepRisquePage";
+import { PrepProgrammesPage } from "./pages/preparateur/PrepProgrammesPage";
+import { PrepRapportsPage } from "./pages/preparateur/PrepRapportsPage";
+import { PrepAIPage } from "./pages/preparateur/PrepAIPage";
+import { AnalysteDashboard } from "./pages/analyste/AnalysteDashboard";
+import { AnalysteTactiquePage } from "./pages/analyste/AnalysteTactiquePage";
+import { AnalysteReplayPage } from "./pages/analyste/AnalysteReplayPage";
+import { AnalysteAdversairePage } from "./pages/analyste/AnalysteAdversairePage";
+import { AnalysteBlessuresPage } from "./pages/analyste/AnalysteBlessuresPage";
+import { AnalysteEvolutionPage } from "./pages/analyste/AnalysteEvolutionPage";
+import { AnalysteValeurPage } from "./pages/analyste/AnalysteValeurPage";
+import { AnalysteScoutingPage } from "./pages/analyste/AnalysteScoutingPage";
+import { AnalystePatternsPage } from "./pages/analyste/AnalystePatternsPage";
+import { AnalysteTrainingPage } from "./pages/analyste/AnalysteTrainingPage";
+import { AnalysteVideoCoachPage } from "./pages/analyste/AnalysteVideoCoachPage";
+import { AnalysteExecutivePage } from "./pages/analyste/AnalysteExecutivePage";
+import { AnalysteMatchPredictionPage } from "./pages/analyste/AnalysteMatchPredictionPage";
+import { AnalystePPIPage } from "./pages/analyste/AnalystePPIPage";
+import { AnalysteChemistrePage } from "./pages/analyste/AnalysteChemistrePage";
+import { AnalysteTransferPage } from "./pages/analyste/AnalysteTransferPage";
+import { AnalysteInjuryForecastPage } from "./pages/analyste/AnalysteInjuryForecastPage";
+import { AnalysteLiveMatchPage } from "./pages/analyste/AnalysteLiveMatchPage";
+import { AnalysteFatigueHeatmapPage } from "./pages/analyste/AnalysteFatigueHeatmapPage";
+import { AnalysteVideoAnalysisPage } from "./pages/analyste/AnalysteVideoAnalysisPage";
+import { PrepHistoriquePage } from "./pages/preparateur/PrepHistoriquePage";
+import { PrepMatchReadinessPage } from "./pages/preparateur/PrepMatchReadinessPage";
+import { PrepFichePage } from "./pages/preparateur/PrepFichePage";
+import { PrepSeancesGestionPage } from "./pages/preparateur/PrepSeancesGestionPage";
+import { PrepCalendrierPage } from "./pages/preparateur/PrepCalendrierPage";
+import { PrepComparaisonPage } from "./pages/preparateur/PrepComparaisonPage";
+import { PrepWellnessPage } from "./pages/preparateur/PrepWellnessPage";
+import { PrepRecoveryPage } from "./pages/preparateur/PrepRecoveryPage";
+import { PrepNotificationsPage } from "./pages/preparateur/PrepNotificationsPage";
+import { RecruteurDashboard } from "./pages/recruteur/RecruteurDashboard";
+import { RecruteurDiscoveryPage } from "./pages/recruteur/RecruteurDiscoveryPage";
+import { RecruteurShortlistPage } from "./pages/recruteur/RecruteurShortlistPage";
+import { RecruteurAIPage } from "./pages/recruteur/RecruteurAIPage";
+import { RecruteurVideoPage } from "./pages/recruteur/RecruteurVideoPage";
+import { RecruteurComparePage } from "./pages/recruteur/RecruteurComparePage";
+import { RecruteurMarketPage } from "./pages/recruteur/RecruteurMarketPage";
+import { RecruteurNegotiationsPage } from "./pages/recruteur/RecruteurNegotiationsPage";
+import { RecruteurContractsPage } from "./pages/recruteur/RecruteurContractsPage";
+import { RecruteurTransfersPage } from "./pages/recruteur/RecruteurTransfersPage";
+import { RecruteurRequestsPage } from "./pages/recruteur/RecruteurRequestsPage";
+import { RecruteurReportsPage } from "./pages/recruteur/RecruteurReportsPage";
+import { RecruteurPlayerProfilePage } from "./pages/recruteur/RecruteurPlayerProfilePage";
+import { RecruteurScoutsPage } from "./pages/recruteur/RecruteurScoutsPage";
+import { RecruteurAgentsPage } from "./pages/recruteur/RecruteurAgentsPage";
+import { RecruteurPipelinePage } from "./pages/recruteur/RecruteurPipelinePage";
+import { RecruteurCalendarPage } from "./pages/recruteur/RecruteurCalendarPage";
+import { RecruteurNotificationsPage } from "./pages/recruteur/RecruteurNotificationsPage";
+import { RecruteurAuditPage } from "./pages/recruteur/RecruteurAuditPage";
+import { ValidationPage } from "./pages/responsable/ValidationPage";
+import { RecrutementPage } from "./pages/responsable/RecrutementPage";
+import { BudgetPage } from "./pages/responsable/BudgetPage";
+import { StaffPage } from "./pages/responsable/StaffPage";
+import { UtilisateursPage } from "./pages/responsable/UtilisateursPage";
+import { ParametresPage } from "./pages/responsable/ParametresPage";
+import { AuditPage } from "./pages/responsable/AuditPage";
+import { NotificationsPage as ResponsableNotificationsPage } from "./pages/responsable/NotificationsPage";
+import { DocumentsPage as ResponsableDocumentsPage } from "./pages/responsable/DocumentsPage";
+import { RequireRole } from "./components/auth/RequireRole";
+import { RoleBasedRedirect } from "./components/auth/RoleBasedRedirect";
 
 export function AppRouter() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
       <Route element={<AppShell />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/players" element={<PlayersPage />} />
+        <Route path="/dashboard" element={<RequireRole roles={["responsable"]}><Dashboard /></RequireRole>} />
+        <Route path="/responsable/validation" element={<RequireRole roles={["responsable"]}><ValidationPage /></RequireRole>} />
+        <Route path="/responsable/recrutement" element={<RequireRole roles={["responsable"]}><RecrutementPage /></RequireRole>} />
+        <Route path="/responsable/budget" element={<RequireRole roles={["responsable"]}><BudgetPage /></RequireRole>} />
+        <Route path="/responsable/staff" element={<RequireRole roles={["responsable"]}><StaffPage /></RequireRole>} />
+        <Route path="/responsable/utilisateurs" element={<RequireRole roles={["responsable"]}><UtilisateursPage /></RequireRole>} />
+        <Route path="/responsable/parametres" element={<RequireRole roles={["responsable"]}><ParametresPage /></RequireRole>} />
+        <Route path="/responsable/audit" element={<RequireRole roles={["responsable"]}><AuditPage /></RequireRole>} />
+        <Route path="/responsable/notifications" element={<RequireRole roles={["responsable"]}><ResponsableNotificationsPage /></RequireRole>} />
+        <Route path="/responsable/documents" element={<RequireRole roles={["responsable"]}><ResponsableDocumentsPage /></RequireRole>} />
+        <Route path="/players" element={<RequireRole roles={["responsable"]}><PlayersPage /></RequireRole>} />
+        <Route path="/players/:name" element={<RequireRole roles={["responsable","coach"]}><PlayerProfilePage /></RequireRole>} />
         <Route path="/teams" element={<TeamsPage />} />
-        <Route path="/training" element={<TrainingPage />} />
-        <Route path="/matches" element={<MatchesPage />} />
-        <Route path="/medical" element={<MedicalPage />} />
+        <Route path="/training" element={<RequireRole roles={["coach","responsable"]}><TrainingPage /></RequireRole>} />
+        <Route path="/matches" element={<RequireRole roles={["coach","responsable"]}><MatchesPage /></RequireRole>} />
+        <Route path="/performance" element={<RequireRole roles={["coach"]}><PerformancePage /></RequireRole>} />
+        <Route path="/recruitment" element={<RequireRole roles={["coach"]}><RecruitmentRequestsPage /></RequireRole>} />
+        <Route path="/coach" element={<RequireRole roles={["coach"]}><CoachPage /></RequireRole>} />
+        <Route path="/coach/effectif" element={<RequireRole roles={["coach"]}><CoachEffectifPage /></RequireRole>} />
+        <Route path="/coach/lineup" element={<RequireRole roles={["coach"]}><CoachLineupPage /></RequireRole>} />
+        <Route path="/coach/player/:id" element={<RequireRole roles={["coach"]}><CoachPlayerDetailPage /></RequireRole>} />
+        <Route path="/coach/medical" element={<RequireRole roles={["coach"]}><CoachMedicalPage /></RequireRole>} />
+        <Route path="/coach/attendance" element={<RequireRole roles={["coach"]}><CoachAttendancePage /></RequireRole>} />
+        <Route path="/coach/training-builder" element={<RequireRole roles={["coach"]}><CoachTrainingBuilderPage /></RequireRole>} />
+        <Route path="/coach/tactical" element={<RequireRole roles={["coach"]}><CoachTacticalPage /></RequireRole>} />
+        <Route path="/coach/match-analysis" element={<RequireRole roles={["coach"]}><CoachMatchAnalysisPage /></RequireRole>} />
+        <Route path="/coach/ai" element={<RequireRole roles={["coach"]}><CoachAIPage /></RequireRole>} />
+        <Route path="/coach/opponent" element={<RequireRole roles={["coach"]}><CoachOpponentPage /></RequireRole>} />
+        <Route path="/scouting" element={<RequireRole roles={["coach", "scout"]}><ScoutingPage /></RequireRole>} />
+        <Route path="/scout" element={<RequireRole roles={["scout"]}><ScoutDashboard /></RequireRole>} />
+        <Route path="/scout/search" element={<RequireRole roles={["scout"]}><ScoutSearchPage /></RequireRole>} />
+        <Route path="/scout/prospect/:id" element={<RequireRole roles={["scout"]}><ScoutProspectPage /></RequireRole>} />
+        <Route path="/scout/prospect" element={<RequireRole roles={["scout"]}><ScoutProspectPage /></RequireRole>} />
+        <Route path="/scout/watchlist" element={<RequireRole roles={["scout"]}><ScoutWatchlistPage /></RequireRole>} />
+        <Route path="/scout/recruitment" element={<RequireRole roles={["scout"]}><ScoutRecruitmentPage /></RequireRole>} />
+        <Route path="/scout/ai" element={<RequireRole roles={["scout"]}><ScoutAIPage /></RequireRole>} />
+        <Route path="/scout/report" element={<RequireRole roles={["scout"]}><ScoutReportPage /></RequireRole>} />
+        <Route path="/scout/favorites" element={<RequireRole roles={["scout"]}><ScoutFavoritesPage /></RequireRole>} />
+        <Route path="/scout/comparison" element={<RequireRole roles={["scout"]}><ScoutComparisonPage /></RequireRole>} />
+        <Route path="/player/:id" element={<RequireRole roles={["scout", "coach"]}><PlayerProfilePage /></RequireRole>} />
+        <Route path="/ai-scout" element={<RequireRole roles={["scout", "coach"]}><AIAssistantPage /></RequireRole>} />
+        <Route path="/contracts" element={<RequireRole roles={["coach","responsable"]}><ContractsPage /></RequireRole>} />
+        <Route path="/medical" element={<RequireRole roles={["medical"]}><MedicalPage /></RequireRole>} />
+        <Route path="/medical/dossiers" element={<RequireRole roles={["medical"]}><MedicalDossiersPage /></RequireRole>} />
+        <Route path="/medical/blessures" element={<RequireRole roles={["medical"]}><MedicalBlessuresPage /></RequireRole>} />
+        <Route path="/medical/reeducation" element={<RequireRole roles={["medical"]}><MedicalReeducationPage /></RequireRole>} />
+        <Route path="/medical/rendez-vous" element={<RequireRole roles={["medical"]}><MedicalRendezVousPage /></RequireRole>} />
+        <Route path="/medical/documents" element={<RequireRole roles={["medical"]}><MedicalDocumentsPage /></RequireRole>} />
+        <Route path="/medical/rapports" element={<RequireRole roles={["medical"]}><MedicalRapportsPage /></RequireRole>} />
+        <Route path="/medical/risque" element={<RequireRole roles={["medical"]}><MedicalRiskPage /></RequireRole>} />
+        <Route path="/medical/effectif" element={<RequireRole roles={["medical"]}><MedicalEffectifPage /></RequireRole>} />
+        <Route path="/medical/ia" element={<RequireRole roles={["medical"]}><MedicalAIPage /></RequireRole>} />
+        <Route path="/joueurs" element={<RequireRole roles={["joueur"]}><JoueurDashboard /></RequireRole>} />
+        <Route path="/joueurs/performances" element={<RequireRole roles={["joueur"]}><JoueurPerformancesPage /></RequireRole>} />
+        <Route path="/joueurs/medical" element={<RequireRole roles={["joueur"]}><JoueurMedicalPage /></RequireRole>} />
+        <Route path="/joueurs/planning" element={<RequireRole roles={["joueur"]}><JoueurPlanningPage /></RequireRole>} />
+        <Route path="/joueurs/ia" element={<RequireRole roles={["joueur"]}><JoueurAIPage /></RequireRole>} />
+        <Route path="/joueurs/profil" element={<RequireRole roles={["joueur"]}><JoueurMonProfilPage /></RequireRole>} />
+        <Route path="/joueurs/liste" element={<RequireRole roles={["joueur"]}><JoueurListPage /></RequireRole>} />
+        <Route path="/joueurs/comparer" element={<RequireRole roles={["joueur"]}><JoueurComparePage /></RequireRole>} />
+        <Route path="/joueurs/formation" element={<RequireRole roles={["joueur"]}><JoueurFormationPage /></RequireRole>} />
+        <Route path="/joueurs/transferts" element={<RequireRole roles={["joueur"]}><JoueurTransfersPage /></RequireRole>} />
+        <Route path="/joueurs/documents" element={<RequireRole roles={["joueur"]}><JoueurDocumentsPage /></RequireRole>} />
+        <Route path="/joueurs/entrainement" element={<RequireRole roles={["joueur"]}><JoueurTrainingPage /></RequireRole>} />
+        <Route path="/joueurs/analyse" element={<RequireRole roles={["joueur"]}><JoueurMatchAnalysisPage /></RequireRole>} />
+        <Route path="/joueurs/recompenses" element={<RequireRole roles={["joueur"]}><JoueurAwardsPage /></RequireRole>} />
+        <Route path="/joueurs/chimie" element={<RequireRole roles={["joueur"]}><JoueurChemistryPage /></RequireRole>} />
+        <Route path="/joueurs/messages" element={<RequireRole roles={["joueur"]}><JoueurMessagesPage /></RequireRole>} />
+        <Route path="/club" element={<RequireRole roles={["adminclub"]}><ClubDashboard /></RequireRole>} />
+        <Route path="/club/joueurs" element={<RequireRole roles={["adminclub"]}><ClubJoueursPage /></RequireRole>} />
+        <Route path="/club/staff" element={<RequireRole roles={["adminclub"]}><ClubStaffPage /></RequireRole>} />
+        <Route path="/club/finances" element={<RequireRole roles={["adminclub"]}><ClubFinancesPage /></RequireRole>} />
+        <Route path="/club/contrats" element={<RequireRole roles={["adminclub"]}><ClubContratsPage /></RequireRole>} />
+        <Route path="/club/calendrier" element={<RequireRole roles={["adminclub"]}><ClubCalendrierPage /></RequireRole>} />
+        <Route path="/club/sante" element={<RequireRole roles={["adminclub"]}><ClubSantePage /></RequireRole>} />
+        <Route path="/club/infrastructures" element={<RequireRole roles={["adminclub"]}><ClubInfrastructuresPage /></RequireRole>} />
+        <Route path="/club/analytics" element={<RequireRole roles={["adminclub"]}><ClubAnalyticsPage /></RequireRole>} />
+        <Route path="/club/ia" element={<RequireRole roles={["adminclub"]}><ClubAIPage /></RequireRole>} />
+        <Route path="/club/parametres" element={<RequireRole roles={["adminclub"]}><ClubParametresPage /></RequireRole>} />
+        <Route path="/club/utilisateurs" element={<RequireRole roles={["adminclub"]}><ClubUtilisateursPage /></RequireRole>} />
+        <Route path="/club/permissions" element={<RequireRole roles={["adminclub"]}><ClubPermissionsPage /></RequireRole>} />
+        <Route path="/club/audit-logs" element={<RequireRole roles={["adminclub"]}><ClubAuditLogsPage /></RequireRole>} />
+        <Route path="/club/notifications" element={<RequireRole roles={["adminclub"]}><ClubNotificationsPage /></RequireRole>} />
+        <Route path="/preparateur" element={<RequireRole roles={["preparateur"]}><PrepDashboard /></RequireRole>} />
+        <Route path="/preparateur/charge" element={<RequireRole roles={["preparateur"]}><PrepChargePage /></RequireRole>} />
+        <Route path="/preparateur/condition" element={<RequireRole roles={["preparateur"]}><PrepConditionPage /></RequireRole>} />
+        <Route path="/preparateur/risques" element={<RequireRole roles={["preparateur"]}><PrepRisquePage /></RequireRole>} />
+        <Route path="/preparateur/programmes" element={<RequireRole roles={["preparateur"]}><PrepProgrammesPage /></RequireRole>} />
+        <Route path="/preparateur/rapports" element={<RequireRole roles={["preparateur"]}><PrepRapportsPage /></RequireRole>} />
+        <Route path="/preparateur/historique" element={<RequireRole roles={["preparateur"]}><PrepHistoriquePage /></RequireRole>} />
+        <Route path="/preparateur/disponibilite" element={<RequireRole roles={["preparateur"]}><PrepMatchReadinessPage /></RequireRole>} />
+        <Route path="/preparateur/ia" element={<RequireRole roles={["preparateur"]}><PrepAIPage /></RequireRole>} />
+        <Route path="/preparateur/fiche/:id" element={<RequireRole roles={["preparateur"]}><PrepFichePage /></RequireRole>} />
+        <Route path="/preparateur/seances" element={<RequireRole roles={["preparateur"]}><PrepSeancesGestionPage /></RequireRole>} />
+        <Route path="/preparateur/calendrier" element={<RequireRole roles={["preparateur"]}><PrepCalendrierPage /></RequireRole>} />
+        <Route path="/preparateur/comparaison" element={<RequireRole roles={["preparateur"]}><PrepComparaisonPage /></RequireRole>} />
+        <Route path="/preparateur/wellness" element={<RequireRole roles={["preparateur"]}><PrepWellnessPage /></RequireRole>} />
+        <Route path="/preparateur/recovery" element={<RequireRole roles={["preparateur"]}><PrepRecoveryPage /></RequireRole>} />
+        <Route path="/preparateur/notifications" element={<RequireRole roles={["preparateur"]}><PrepNotificationsPage /></RequireRole>} />
+        <Route path="/analyste" element={<RequireRole roles={["analyste"]}><AnalysteDashboard /></RequireRole>} />
+        <Route path="/analyste/tactique" element={<RequireRole roles={["analyste"]}><AnalysteTactiquePage /></RequireRole>} />
+        <Route path="/analyste/replay" element={<RequireRole roles={["analyste"]}><AnalysteReplayPage /></RequireRole>} />
+        <Route path="/analyste/adversaire" element={<RequireRole roles={["analyste"]}><AnalysteAdversairePage /></RequireRole>} />
+        <Route path="/analyste/blessures" element={<RequireRole roles={["analyste"]}><AnalysteBlessuresPage /></RequireRole>} />
+        <Route path="/analyste/evolution" element={<RequireRole roles={["analyste"]}><AnalysteEvolutionPage /></RequireRole>} />
+        <Route path="/analyste/valeur" element={<RequireRole roles={["analyste"]}><AnalysteValeurPage /></RequireRole>} />
+        <Route path="/analyste/scouting" element={<RequireRole roles={["analyste"]}><AnalysteScoutingPage /></RequireRole>} />
+        <Route path="/analyste/patterns" element={<RequireRole roles={["analyste"]}><AnalystePatternsPage /></RequireRole>} />
+        <Route path="/analyste/training" element={<RequireRole roles={["analyste"]}><AnalysteTrainingPage /></RequireRole>} />
+        <Route path="/analyste/video-coach" element={<RequireRole roles={["analyste"]}><AnalysteVideoCoachPage /></RequireRole>} />
+        <Route path="/analyste/executive" element={<RequireRole roles={["analyste"]}><AnalysteExecutivePage /></RequireRole>} />
+        <Route path="/analyste/prediction" element={<RequireRole roles={["analyste"]}><AnalysteMatchPredictionPage /></RequireRole>} />
+        <Route path="/analyste/ppi" element={<RequireRole roles={["analyste"]}><AnalystePPIPage /></RequireRole>} />
+        <Route path="/analyste/chemistry" element={<RequireRole roles={["analyste"]}><AnalysteChemistrePage /></RequireRole>} />
+        <Route path="/analyste/transfer" element={<RequireRole roles={["analyste"]}><AnalysteTransferPage /></RequireRole>} />
+        <Route path="/analyste/injury-forecast" element={<RequireRole roles={["analyste"]}><AnalysteInjuryForecastPage /></RequireRole>} />
+        <Route path="/analyste/live-match" element={<RequireRole roles={["analyste"]}><AnalysteLiveMatchPage /></RequireRole>} />
+        <Route path="/analyste/fatigue-heatmap" element={<RequireRole roles={["analyste"]}><AnalysteFatigueHeatmapPage /></RequireRole>} />
+        <Route path="/analyste/video-analysis" element={<RequireRole roles={["analyste"]}><AnalysteVideoAnalysisPage /></RequireRole>} />
+        <Route path="/recruteur" element={<RequireRole roles={["recruteur"]}><RecruteurDashboard /></RequireRole>} />
+        <Route path="/recruteur/discovery" element={<RequireRole roles={["recruteur"]}><RecruteurDiscoveryPage /></RequireRole>} />
+        <Route path="/recruteur/shortlist" element={<RequireRole roles={["recruteur"]}><RecruteurShortlistPage /></RequireRole>} />
+        <Route path="/recruteur/ai" element={<RequireRole roles={["recruteur"]}><RecruteurAIPage /></RequireRole>} />
+        <Route path="/recruteur/video" element={<RequireRole roles={["recruteur"]}><RecruteurVideoPage /></RequireRole>} />
+        <Route path="/recruteur/compare" element={<RequireRole roles={["recruteur"]}><RecruteurComparePage /></RequireRole>} />
+        <Route path="/recruteur/market" element={<RequireRole roles={["recruteur"]}><RecruteurMarketPage /></RequireRole>} />
+        <Route path="/recruteur/negotiations" element={<RequireRole roles={["recruteur"]}><RecruteurNegotiationsPage /></RequireRole>} />
+        <Route path="/recruteur/contracts" element={<RequireRole roles={["recruteur"]}><RecruteurContractsPage /></RequireRole>} />
+        <Route path="/recruteur/transfers" element={<RequireRole roles={["recruteur"]}><RecruteurTransfersPage /></RequireRole>} />
+        <Route path="/recruteur/requests" element={<RequireRole roles={["recruteur"]}><RecruteurRequestsPage /></RequireRole>} />
+        <Route path="/recruteur/reports" element={<RequireRole roles={["recruteur"]}><RecruteurReportsPage /></RequireRole>} />
+        <Route path="/recruteur/player/:id" element={<RequireRole roles={["recruteur"]}><RecruteurPlayerProfilePage /></RequireRole>} />
+        <Route path="/recruteur/scouts" element={<RequireRole roles={["recruteur"]}><RecruteurScoutsPage /></RequireRole>} />
+        <Route path="/recruteur/agents" element={<RequireRole roles={["recruteur"]}><RecruteurAgentsPage /></RequireRole>} />
+        <Route path="/recruteur/pipeline" element={<RequireRole roles={["recruteur"]}><RecruteurPipelinePage /></RequireRole>} />
+        <Route path="/recruteur/calendar" element={<RequireRole roles={["recruteur"]}><RecruteurCalendarPage /></RequireRole>} />
+        <Route path="/recruteur/notifications" element={<RequireRole roles={["recruteur"]}><RecruteurNotificationsPage /></RequireRole>} />
+        <Route path="/recruteur/audit" element={<RequireRole roles={["recruteur"]}><RecruteurAuditPage /></RequireRole>} />
         <Route path="/finance" element={<FinancePage />} />
-        <Route path="/documents" element={<DocumentsPage />} />
+        <Route path="/comptabilite" element={<RequireRole roles={["finance"]}><FinanceComptabilite /></RequireRole>} />
+        <Route path="/finance/dashboard" element={<RequireRole roles={["finance"]}><FinanceComptabilite /></RequireRole>} />
+        <Route path="/finance/contrats" element={<RequireRole roles={["finance"]}><ContratsFinance /></RequireRole>} />
+        <Route path="/finance/salaires" element={<RequireRole roles={["finance"]}><SalairesFinance /></RequireRole>} />
+        <Route path="/finance/transferts" element={<RequireRole roles={["finance"]}><TransfertsFinance /></RequireRole>} />
+        <Route path="/finance/sponsors" element={<RequireRole roles={["finance"]}><SponsorsFinance /></RequireRole>} />
+        <Route path="/finance/factures" element={<RequireRole roles={["finance"]}><GestionFinanciereFinance /></RequireRole>} />
+        <Route path="/finance/tresorerie" element={<RequireRole roles={["finance"]}><TresorerieFinance /></RequireRole>} />
+        <Route path="/finance/rapports" element={<RequireRole roles={["finance"]}><RapportsFinance /></RequireRole>} />
+        <Route path="/finance/ia" element={<RequireRole roles={["finance"]}><FinanceAIPage /></RequireRole>} />
+        <Route path="/superadmin" element={<Navigate to="/superadmin/dashboard" replace />} />
+        <Route path="/superadmin/dashboard" element={<RequireRole roles={["superadmin"]}><SuperAdminDashboard /></RequireRole>} />
+        <Route path="/superadmin/clubs" element={<RequireRole roles={["superadmin"]}><SuperAdminClubs /></RequireRole>} />
+        <Route path="/superadmin/clubs/:id" element={<RequireRole roles={["superadmin"]}><SuperAdminClubDetails /></RequireRole>} />
+        <Route path="/superadmin/users" element={<RequireRole roles={["superadmin"]}><SuperAdminUsers /></RequireRole>} />
+        <Route path="/superadmin/users/:id" element={<RequireRole roles={["superadmin"]}><SuperAdminUserDetails /></RequireRole>} />
+        <Route path="/superadmin/payments" element={<RequireRole roles={["superadmin"]}><SuperAdminPayments /></RequireRole>} />
+        <Route path="/superadmin/bi" element={<RequireRole roles={["superadmin"]}><SuperAdminBI /></RequireRole>} />
+        <Route path="/superadmin/revenue-analytics" element={<RequireRole roles={["superadmin"]}><SuperAdminRevenueAnalytics /></RequireRole>} />
+        <Route path="/superadmin/subscriptions" element={<RequireRole roles={["superadmin"]}><SuperAdminSubscriptions /></RequireRole>} />
+        <Route path="/superadmin/analytics" element={<RequireRole roles={["superadmin"]}><SuperAdminAnalytics /></RequireRole>} />
+        <Route path="/superadmin/support" element={<RequireRole roles={["superadmin"]}><SuperAdminSupport /></RequireRole>} />
+        <Route path="/superadmin/security" element={<RequireRole roles={["superadmin"]}><SuperAdminSecurity /></RequireRole>} />
+        <Route path="/superadmin/settings" element={<RequireRole roles={["superadmin"]}><SuperAdminSettings /></RequireRole>} />
+        <Route path="/superadmin/ia" element={<RequireRole roles={["superadmin"]}><SuperAdminIA /></RequireRole>} />
+        <Route path="/reports" element={<RequireRole roles={["coach", "responsable"]}><ReportsPage /></RequireRole>} />
         <Route path="/messages" element={<MessagesPage />} />
+        <Route path="/administration/documents" element={<DocumentsPage />} />
       </Route>
 
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<RoleBasedRedirect />} />
     </Routes>
   );
 }

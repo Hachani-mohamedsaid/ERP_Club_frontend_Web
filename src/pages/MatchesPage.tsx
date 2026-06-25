@@ -1,5 +1,8 @@
 import { GlassCard } from "../components/ui/GlassCard";
 import { Badge } from "../components/ui/Badge";
+import { Button } from "../components/ui/Button";
+import { AICard } from "../components/coach/AICard";
+import { NotificationPanel } from "../components/coach/NotificationPanel";
 
 interface PastMatch {
   opponent: string;
@@ -18,6 +21,11 @@ interface UpcomingMatch {
   home: boolean;
 }
 
+interface MatchStat {
+  label: string;
+  value: string;
+}
+
 const PAST_MATCHES: PastMatch[] = [
   { opponent: "ES Sahel", score: "2 – 1", result: "V", date: "8 juin 2026", competition: "Ligue 1", home: true },
   { opponent: "Club Africain", score: "0 – 0", result: "N", date: "1 juin 2026", competition: "Ligue 1", home: false },
@@ -27,6 +35,21 @@ const UPCOMING_MATCHES: UpcomingMatch[] = [
   { opponent: "CS Sfaxien", date: "22 juin 2026", time: "18:00", competition: "Ligue 1", home: false },
   { opponent: "US Monastir", date: "29 juin 2026", time: "17:00", competition: "Ligue 1", home: true },
   { opponent: "Stade Tunisien", date: "6 juil. 2026", time: "20:00", competition: "Coupe de Tunisie", home: true },
+];
+
+const LINEUP = ["Titulaire", "Remplaçants"];
+
+const MATCH_STATS: MatchStat[] = [
+  { label: "Possession", value: "58%" },
+  { label: "Tirs", value: "14" },
+  { label: "Passes", value: "486" },
+  { label: "ODIN MVP", value: "Ahmed Ben Salah" },
+];
+
+const MATCH_RECOMMENDATIONS = [
+  "Points forts: transitions rapides",
+  "Points faibles: pression haute subie",
+  "Ajustement: compactage axial",
 ];
 
 const RESULT_TONE: Record<PastMatch["result"], "success" | "warning" | "danger"> = {
@@ -114,6 +137,63 @@ export function MatchesPage() {
           ))}
         </div>
       </GlassCard>
+
+      <div className="grid grid-cols-1 gap-4 items-start xl:grid-cols-3">
+        <GlassCard raised className="p-6 xl:col-span-2">
+          <h2 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+            Composition
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {LINEUP.map((item, index) => (
+              <Badge key={item} tone={index === 0 ? "success" : "neutral"}>
+                {item}
+              </Badge>
+            ))}
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            {MATCH_STATS.map((stat) => (
+              <div key={stat.label} className="rounded-[var(--radius-odin-md)] border px-4 py-3" style={{ borderColor: "var(--surface-panel-border)" }}>
+                <p className="text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>{stat.label}</p>
+                <p className="mt-2 text-lg font-semibold" style={{ color: "var(--text-primary)" }}>{stat.value}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Button type="button">Générer composition</Button>
+            <Button type="button" variant="ghost">Exporter feuille</Button>
+          </div>
+        </GlassCard>
+
+        <div className="space-y-4">
+          <AICard
+            title="Recommandation IA"
+            message="Yassine Brahmi est en forme optimale pour le prochain match."
+            accent="success"
+          />
+          <GlassCard className="p-6">
+            <h2 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+              Conseils tactiques
+            </h2>
+            <div className="space-y-3 text-sm" style={{ color: "var(--text-secondary)" }}>
+              {MATCH_RECOMMENDATIONS.map((item) => (
+                <p key={item}>{item}</p>
+              ))}
+            </div>
+          </GlassCard>
+          <AICard
+            title="Risque Blessure"
+            message="Ahmed Ben Salah : risque élevé 72% dans les 48 prochaines heures."
+            accent="warning"
+          />
+          <NotificationPanel
+            notifications={[
+              { title: "Joueur absent aujourd'hui", subtitle: "Walid Hammami - statuts manquants" },
+              { title: "Contrat expire dans 30 jours", subtitle: "Karim Sassi" },
+              { title: "Retour blessure prévu demain", subtitle: "Ali Ben Youssef" },
+            ]}
+          />
+        </div>
+      </div>
     </div>
   );
 }

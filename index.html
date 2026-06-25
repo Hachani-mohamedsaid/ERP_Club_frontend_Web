@@ -1,9 +1,26 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <script>
+      (function () {
+        var t = localStorage.getItem("odin-theme");
+        if (t !== "light" && t !== "dark") {
+          localStorage.setItem("odin-theme", "dark");
+          t = "dark";
+        }
+        document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "dark");
+      })();
+    </script>
+    <style>
+      html, body, #root {
+        background-color: #0d0d18;
+        color: #f4f5f7;
+      }
+    </style>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

@@ -4,39 +4,40 @@ import { Badge } from "../components/ui/Badge";
 
 interface PlayerRow {
   name: string;
-  position: string;
-  age: number;
-  number: number;
-  status: "Disponible" | "Blessé" | "En rééducation" | "Suspendu";
-  odinRating: number;
+  marketValue: string;
+  salary: string;
+  contractEnd: string;
+  odinScore: number;
+  transferStatus: "À vendre" | "Intransferable" | "Surveillance";
 }
 
 const PLAYERS: PlayerRow[] = [
-  { name: "Yassine Brahmi", position: "Attaquant", age: 26, number: 9, status: "Disponible", odinRating: 87 },
-  { name: "Karim Sassi", position: "Milieu", age: 24, number: 8, status: "Disponible", odinRating: 81 },
-  { name: "Mehdi Trabelsi", position: "Défenseur", age: 28, number: 4, status: "En rééducation", odinRating: 74 },
-  { name: "Anis Khelifi", position: "Gardien", age: 31, number: 1, status: "Disponible", odinRating: 79 },
-  { name: "Walid Hammami", position: "Attaquant", age: 23, number: 11, status: "Blessé", odinRating: 83 },
-  { name: "Sami Jendoubi", position: "Milieu", age: 22, number: 6, status: "Disponible", odinRating: 76 },
-  { name: "Hichem Bouazizi", position: "Défenseur", age: 27, number: 5, status: "Disponible", odinRating: 72 },
-  { name: "Rami Gharbi", position: "Attaquant", age: 20, number: 17, status: "Suspendu", odinRating: 68 },
-  { name: "Fares Msakni", position: "Milieu", age: 25, number: 10, status: "Disponible", odinRating: 80 },
-  { name: "Oussama Ben Youssef", position: "Défenseur", age: 29, number: 3, status: "Blessé", odinRating: 71 },
+  { name: "Yassine Brahmi", marketValue: "120 000 DT", salary: "18 000 DT", contractEnd: "12/05/2027", odinScore: 87, transferStatus: "Intransferable" },
+  { name: "Karim Sassi", marketValue: "98 000 DT", salary: "14 000 DT", contractEnd: "30/06/2028", odinScore: 81, transferStatus: "Intransferable" },
+  { name: "Mehdi Trabelsi", marketValue: "75 000 DT", salary: "11 000 DT", contractEnd: "15/01/2026", odinScore: 74, transferStatus: "Surveillance" },
+  { name: "Anis Khelifi", marketValue: "65 000 DT", salary: "9 500 DT", contractEnd: "20/08/2026", odinScore: 79, transferStatus: "Intransferable" },
+  { name: "Walid Hammami", marketValue: "110 000 DT", salary: "16 500 DT", contractEnd: "02/03/2027", odinScore: 83, transferStatus: "Surveillance" },
+  { name: "Sami Jendoubi", marketValue: "82 000 DT", salary: "10 200 DT", contractEnd: "25/09/2027", odinScore: 76, transferStatus: "À vendre" },
+  { name: "Hichem Bouazizi", marketValue: "61 000 DT", salary: "8 800 DT", contractEnd: "11/11/2026", odinScore: 72, transferStatus: "Surveillance" },
+  { name: "Rami Gharbi", marketValue: "54 000 DT", salary: "7 600 DT", contractEnd: "18/07/2026", odinScore: 68, transferStatus: "À vendre" },
+  { name: "Fares Msakni", marketValue: "104 000 DT", salary: "12 000 DT", contractEnd: "13/04/2027", odinScore: 80, transferStatus: "Intransferable" },
+  { name: "Oussama Ben Youssef", marketValue: "59 000 DT", salary: "8 200 DT", contractEnd: "30/06/2026", odinScore: 71, transferStatus: "Surveillance" },
 ];
 
-const STATUS_TONE: Record<PlayerRow["status"], "success" | "danger" | "warning" | "neutral"> = {
-  Disponible: "success",
-  Blessé: "danger",
-  "En rééducation": "warning",
-  Suspendu: "neutral",
+const TRANSFER_TONE: Record<PlayerRow["transferStatus"], "success" | "warning" | "info"> = {
+  "Intransferable": "success",
+  "À vendre": "info",
+  Surveillance: "warning",
 };
 
 const STATS = [
-  { label: "Effectif total", value: "27" },
-  { label: "Moyenne d'âge", value: "24,6 ans" },
-  { label: "Joueurs disponibles", value: "22" },
-  { label: "Blessés / indisponibles", value: "5" },
+  { label: "Valeur marchande", value: "120 000 DT" },
+  { label: "Salaire", value: "18 000 DT" },
+  { label: "Fin contrat", value: "12/05/2027" },
+  { label: "ODIN Score", value: "87/100" },
 ];
+
+const PLAYER_TABS = ["Vue Responsable Club", "Contrat", "Performance", "Historique"];
 
 export function PlayersPage() {
   return (
@@ -46,7 +47,7 @@ export function PlayersPage() {
           Joueurs
         </h1>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-          Effectif complet — Saison 2025/2026
+          Vue synthétique de l'effectif — Focus décisionnel
         </p>
       </div>
 
@@ -62,6 +63,32 @@ export function PlayersPage() {
           </GlassCard>
         ))}
       </div>
+
+      <GlassCard className="p-6">
+        <div className="flex flex-wrap gap-2">
+          {PLAYER_TABS.map((tab, index) => (
+            <Badge key={tab} tone={index === 0 ? "info" : "neutral"}>{tab}</Badge>
+          ))}
+        </div>
+        <div className="mt-5 grid gap-4 lg:grid-cols-3">
+          <div className="rounded-[var(--radius-odin-md)] border p-4" style={{ borderColor: "var(--surface-panel-border)" }}>
+            <p className="text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Valeur marchande</p>
+            <p className="mt-2 text-lg font-semibold" style={{ color: "var(--text-primary)" }}>120 000 DT</p>
+          </div>
+          <div className="rounded-[var(--radius-odin-md)] border p-4" style={{ borderColor: "var(--surface-panel-border)" }}>
+            <p className="text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Contrat</p>
+            <p className="mt-2 text-lg font-semibold" style={{ color: "var(--text-primary)" }}>Expire : 12/05/2027</p>
+          </div>
+          <div className="rounded-[var(--radius-odin-md)] border p-4" style={{ borderColor: "var(--surface-panel-border)" }}>
+            <p className="text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Équipe</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Badge tone="success">Senior</Badge>
+              <Badge tone="neutral">U21</Badge>
+              <Badge tone="neutral">U18</Badge>
+            </div>
+          </div>
+        </div>
+      </GlassCard>
 
       <GlassCard raised className="p-6">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -97,11 +124,11 @@ export function PlayersPage() {
             <thead>
               <tr style={{ color: "var(--text-muted)" }}>
                 <th className="pb-2 text-xs font-medium">Nom</th>
-                <th className="pb-2 text-xs font-medium">Poste</th>
-                <th className="pb-2 text-xs font-medium">Âge</th>
-                <th className="pb-2 text-xs font-medium">Numéro</th>
-                <th className="pb-2 text-xs font-medium">Statut</th>
-                <th className="pb-2 text-right text-xs font-medium">ODIN Rating</th>
+                <th className="pb-2 text-xs font-medium">Valeur marchande</th>
+                <th className="pb-2 text-xs font-medium">Salaire</th>
+                <th className="pb-2 text-xs font-medium">Contrat</th>
+                <th className="pb-2 text-xs font-medium">ODIN Score</th>
+                <th className="pb-2 text-xs font-medium">Statut transfert</th>
               </tr>
             </thead>
             <tbody>
@@ -114,19 +141,19 @@ export function PlayersPage() {
                     {player.name}
                   </td>
                   <td className="py-3" style={{ color: "var(--text-secondary)" }}>
-                    {player.position}
+                    {player.marketValue}
                   </td>
                   <td className="py-3" style={{ color: "var(--text-secondary)" }}>
-                    {player.age}
-                  </td>
-                  <td className="py-3" style={{ color: "var(--text-secondary)" }}>
-                    {player.number}
+                    {player.salary}
                   </td>
                   <td className="py-3">
-                    <Badge tone={STATUS_TONE[player.status]}>{player.status}</Badge>
+                    {player.contractEnd}
                   </td>
                   <td className="py-3 text-right font-semibold" style={{ color: "var(--accent)" }}>
-                    {player.odinRating}
+                    {player.odinScore}
+                  </td>
+                  <td className="py-3">
+                    <Badge tone={TRANSFER_TONE[player.transferStatus]}>{player.transferStatus}</Badge>
                   </td>
                 </tr>
               ))}
