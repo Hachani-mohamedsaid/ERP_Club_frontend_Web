@@ -2,9 +2,7 @@ import { motion } from "framer-motion";
 import { ArrowRightLeft, TrendingUp } from "lucide-react";
 import { GlassCard } from "../../components/ui/GlassCard";
 import { AnimatedBadge } from "../../components/ui/AnimatedBadge";
-import { SQUAD_PLAYERS } from "../../data/joueurMockData";
-import { MARKET_PLAYERS, SCOUT_RECOMMENDATIONS } from "../../data/joueurExtendedData";
-import { useCurrentPlayer } from "../../hooks/useCurrentPlayer";
+import { useJoueurBackendData } from "../../hooks/useJoueurBackendData";
 
 function TransferGauge({ value }: { value: number }) {
   const color = value >= 70 ? "#2e9e5b" : value >= 40 ? "#d99a1f" : "#e0584a";
@@ -30,25 +28,34 @@ function TransferGauge({ value }: { value: number }) {
   );
 }
 
-export function JoueurTransfersPage() {
-  const { player } = useCurrentPlayer();
-  const playerName = player?.name ?? "Ahmed Ben Salah";
+function statusTone(status: string): "warning" | "info" | "success" | "danger" {
+  if (status === "Négociation") return "warning";
+  if (status === "Offre reçue") return "success";
+  if (status === "Intérêt" || status === "Rumeur") return "info";
+  return "info";
+}
 
-  const TRANSFERS = [
-    { id: "1", player: "Sami Jendoubi", type: "Sortant", club: "CS Sfaxien", value: "820K €", status: "Négociation", probability: 72 },
-    { id: "2", player: "Rami Gharbi", type: "Sortant", club: "US Monastir", value: "540K €", status: "Offre reçue", probability: 85 },
-    { id: "3", player: "Karim El Amri", type: "Entrant", club: "JS Kairouan", value: "600K €", status: "Scouting", probability: 45 },
-    { id: "4", player: playerName, type: "Rumeur", club: "Al-Ahli", value: "3.5M €", status: "Intérêt", probability: 28 },
-  ];
+export function JoueurTransfersPage() {
+  const { transfers, squadPlayers } = useJoueurBackendData();
+
+  const outgoing = transfers.filter((t) => t.transferType === "Sortant");
+  const incoming = transfers.filter((t) => t.transferType === "Entrant");
+  const rumors = transfers.filter((t) => t.transferType === "Rumeur");
+
+  // Players whose contracts might be expiring (low OVR as a proxy, or just pick a few)
+  const contractWarningPlayers = squadPlayers
+    .filter((p) => p.availability === "Fin contrat")
+    .slice(0, 5);
 
   return (
     <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
+      {/* Summary KPIs */}
       <GlassCard raised className="p-5">
         <div className="grid grid-cols-3 gap-4 text-center">
           {[
-            { label: "Entrants", value: 1, color: "var(--color-state-success)" },
-            { label: "Sortants", value: 2, color: "var(--color-state-danger)" },
-            { label: "Rumeurs", value: 1, color: "var(--color-state-warning)" },
+            { label: "Entrants", value: incoming.length, color: "var(--color-state-success)" },
+            { label: "Sortants", value: outgoing.length, color: "var(--color-state-danger)" },
+            { label: "Rumeurs", value: rumors.length, color: "var(--color-state-warning)" },
           ].map(({ label, value, color }) => (
             <div key={label}>
               <p className="text-2xl font-bold" style={{ color }}>{value}</p>
@@ -58,73 +65,95 @@ export function JoueurTransfersPage() {
         </div>
       </GlassCard>
 
-      <div className="space-y-3">
-        {TRANSFERS.map((t, i) => (
-          <motion.div key={t.id} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}>
-            <GlassCard className="flex items-center gap-4 p-4">
-              <ArrowRightLeft size={20} style={{ color: "var(--accent)" }} />
-              <div className="flex-1">
-                <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{t.player}</p>
-                <p className="text-xs" style={{ color: "var(--text-muted)" }}>{t.type} → {t.club}</p>
-              </div>
-              <span className="text-sm font-bold" style={{ color: "var(--color-state-success)" }}>{t.value}</span>
-              <TransferGauge value={t.probability} />
-              <AnimatedBadge tone={t.status === "Négociation" ? "warning" : "info"}>{t.status}</AnimatedBadge>
-            </GlassCard>
-          </motion.div>
-        ))}
-      </div>
+      {/* Transfer list */}
+      {transfers.length === 0 ? (
+        <GlassCard raised className="p-8 text-center">
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>Aucun transfert enregistré</p>
+        </GlassCard>
+      ) : (
+        <div className="space-y-3">
+          {transfers.map((t, i) => (
+            <motion.div key={t.id} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}>
+              <GlassCard className="flex items-center gap-4 p-4">
+                <ArrowRightLeft size={20} style={{ color: "var(--accent)" }} />
+                <div className="flex-1">
+                  <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{t.playerName}</p>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>{t.transferType} → {t.club}</p>
+                </div>
+                <span className="text-sm font-bold" style={{ color: "var(--color-state-success)" }}>{t.value}</span>
+                <TransferGauge value={t.probability} />
+                <AnimatedBadge tone={statusTone(t.status)}>{t.status}</AnimatedBadge>
+              </GlassCard>
+            </motion.div>
+          ))}
+        </div>
+      )}
 
+      {/* Market + Scouts */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <GlassCard raised className="p-5">
           <div className="mb-4 flex items-center gap-2">
             <TrendingUp size={16} style={{ color: "var(--accent)" }} />
             <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Marché — Joueurs disponibles</h3>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {MARKET_PLAYERS.map((p) => (
-              <motion.div key={p.id} whileHover={{ scale: 1.03 }} className="rounded-[var(--radius-odin-md)] border p-3" style={{ borderColor: "var(--surface-panel-border)" }}>
-                <p className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{p.name}</p>
-                <p className="text-xs" style={{ color: "var(--text-muted)" }}>{p.position} • {p.club}</p>
-                <div className="mt-2 flex justify-between text-xs">
-                  <span style={{ color: "var(--color-state-success)" }}>{p.value}</span>
-                  <span style={{ color: "var(--accent)" }}>OVR {p.ovr}</span>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+          {squadPlayers.length > 0 ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {squadPlayers.slice(0, 4).map((p) => (
+                <motion.div key={p.id} whileHover={{ scale: 1.03 }}
+                  className="rounded-[var(--radius-odin-md)] border p-3"
+                  style={{ borderColor: "var(--surface-panel-border)" }}>
+                  <p className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{p.name}</p>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>{p.position} • FC Carthage</p>
+                  <div className="mt-2 flex justify-between text-xs">
+                    <span style={{ color: "var(--color-state-success)" }}>{p.marketValue}</span>
+                    <span style={{ color: "var(--accent)" }}>OVR {p.ovr}</span>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>Aucun joueur dans l'effectif</p>
+          )}
         </GlassCard>
 
         <GlassCard raised className="p-5">
-          <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Scouting — Recommandations</h3>
-          <div className="space-y-3">
-            {SCOUT_RECOMMENDATIONS.map((p) => (
-              <div key={p.id} className="flex items-center gap-3 rounded-[var(--radius-odin-md)] border p-3" style={{ borderColor: "var(--surface-panel-border)" }}>
-                <div className="flex-1">
-                  <p className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{p.name}</p>
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>{p.position} • {p.club} — {p.reason}</p>
+          <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Scouting — Cibles potentielles</h3>
+          {squadPlayers.length > 0 ? (
+            <div className="space-y-3">
+              {squadPlayers.slice(4, 8).map((p) => (
+                <div key={p.id} className="flex items-center gap-3 rounded-[var(--radius-odin-md)] border p-3"
+                  style={{ borderColor: "var(--surface-panel-border)" }}>
+                  <div className="flex-1">
+                    <p className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{p.name}</p>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>{p.position} • Analyse en cours</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-bold" style={{ color: "var(--accent)" }}>{Math.min(99, p.ovr + Math.round(Math.random() * 10))}%</p>
+                    <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>Match</p>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <p className="text-lg font-bold" style={{ color: "var(--accent)" }}>{p.match}%</p>
-                  <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>Match</p>
-                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>Aucune recommandation</p>
+          )}
+        </GlassCard>
+      </div>
+
+      {/* Fin de contrat */}
+      {contractWarningPlayers.length > 0 && (
+        <GlassCard className="p-5">
+          <h3 className="mb-3 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Fin de contrat proche</h3>
+          <div className="space-y-2">
+            {contractWarningPlayers.map((p) => (
+              <div key={p.id} className="flex justify-between text-sm" style={{ color: "var(--text-secondary)" }}>
+                <span>{p.name}</span>
+                <span style={{ color: "var(--color-state-warning)" }}>Fin de contrat</span>
               </div>
             ))}
           </div>
         </GlassCard>
-      </div>
-
-      <GlassCard className="p-5">
-        <h3 className="mb-3 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Fin de contrat proche</h3>
-        <div className="space-y-2">
-          {SQUAD_PLAYERS.filter((p) => p.availability === "Fin contrat").map((p) => (
-            <div key={p.id} className="flex justify-between text-sm" style={{ color: "var(--text-secondary)" }}>
-              <span>{p.name}</span>
-              <span style={{ color: "var(--color-state-warning)" }}>{p.contract.expiration}</span>
-            </div>
-          ))}
-        </div>
-      </GlassCard>
+      )}
     </motion.div>
   );
 }

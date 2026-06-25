@@ -5,16 +5,29 @@ import { JoueurPageTransition } from "../../components/player/JoueurPageTransiti
 import { JoueurKpiCard } from "../../components/player/JoueurKpiCard";
 import { MatchPreviewCard } from "../../components/player/MatchPreviewCard";
 import { useLocale } from "../../contexts/LocaleContext";
-import {
-  PLANNING_EVENTS,
-  PLANNING_TYPE_COLORS,
-  DAILY_TIMELINE,
-  MATCH_WEATHER,
-  TRAINING_LOAD_WEEK,
-  type PlanningEventType,
-  type PlanningEvent,
-} from "../../data/joueurPersonalData";
 import { useJoueurBackendData } from "../../hooks/useJoueurBackendData";
+
+type PlanningEventType = "match" | "training" | "medical" | "rest";
+interface PlanningEvent {
+  id: string;
+  title: string;
+  date: string;
+  day: number;
+  month: number;
+  year: number;
+  start: string;
+  end: string;
+  type: PlanningEventType;
+  location?: string;
+  description?: string;
+}
+
+const PLANNING_TYPE_COLORS: Record<PlanningEventType, string> = {
+  match: "#FF6B57",
+  training: "#3B82F6",
+  medical: "#22C55E",
+  rest: "#9CA3AF",
+};
 
 const TYPE_LABELS: Record<PlanningEventType, string> = {
   match: "Match",
@@ -53,11 +66,14 @@ export function JoueurPlanningPage() {
   const firstDay = getFirstDayOfMonth(year, month);
   const monthLabel = currentDate.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
 
-  const loadColor = TRAINING_LOAD_WEEK.load >= 80 ? "#EF4444" : TRAINING_LOAD_WEEK.load >= 60 ? "#F59E0B" : "#22C55E";
+  const { playerStats } = useJoueurBackendData();
+  const trainingLoad = playerStats?.trainingLoad ?? 65;
+  const sess = playerStats?.trainingSessions ?? { fatiguePredicted: 45 };
+  const loadColor = trainingLoad >= 80 ? "#EF4444" : trainingLoad >= 60 ? "#F59E0B" : "#22C55E";
 
-  // Merge real backend calendar events (if any) over mock data
+  // All events from backend
   const liveEvents: PlanningEvent[] = calendarEvents.length > 0
-    ? calendarEvents.map((e, idx) => {
+    ? calendarEvents.map((e) => {
         const d = new Date(e.eventDate);
         const type = EVENT_TYPE_MAP[e.eventType] ?? "training";
         return {
@@ -65,15 +81,16 @@ export function JoueurPlanningPage() {
           title: e.title,
           date: d.toLocaleDateString("fr-TN"),
           day: d.getDate(),
+          month: d.getMonth(),
+          year: d.getFullYear(),
           start: e.eventTime ?? "09:00",
           end: "—",
           type,
           location: e.location ?? "FC Carthage",
-          responsible: "Staff Technique",
-          logo: type === "match" ? "⚽" : type === "training" ? "🏃" : type === "medical" ? "🩺" : "😴",
+          description: e.location ?? undefined,
         };
       })
-    : PLANNING_EVENTS;
+    : [];
 
   const displayEvents = liveEvents;
 
@@ -90,19 +107,19 @@ export function JoueurPlanningPage() {
                 <BarChart3 size={16} style={{ color: loadColor }} />
                 <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{t.planning.trainingLoad}</h3>
               </div>
-              <span className="text-lg font-black" style={{ color: loadColor }}>{TRAINING_LOAD_WEEK.load}%</span>
+              <span className="text-lg font-black" style={{ color: loadColor }}>{trainingLoad}%</span>
             </div>
             <div className="h-2.5 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
               <motion.div className="h-full rounded-full" style={{ background: loadColor }}
-                initial={{ width: 0 }} animate={{ width: `${TRAINING_LOAD_WEEK.load}%` }} transition={{ duration: 1 }} />
+                initial={{ width: 0 }} animate={{ width: `${trainingLoad}%` }} transition={{ duration: 1 }} />
             </div>
             <p className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>
-              {TRAINING_LOAD_WEEK.sessionsCompleted}/{TRAINING_LOAD_WEEK.sessionsTotal} séances · Intensité {TRAINING_LOAD_WEEK.intensity}
+              {playerStats?.trainingSessions?.completed ?? 4}/{playerStats?.trainingSessions?.total ?? 5} séances · Intensité {playerStats?.trainingSessions?.intensity ?? "Moyenne"}
             </p>
             <div className="mt-3 flex gap-1">
-              {Array.from({ length: TRAINING_LOAD_WEEK.sessionsTotal }).map((_, i) => (
+              {Array.from({ length: playerStats?.trainingSessions?.total ?? 5 }).map((_, i) => (
                 <div key={i} className="h-1.5 flex-1 rounded-full"
-                  style={{ background: i < TRAINING_LOAD_WEEK.sessionsCompleted ? loadColor : "rgba(255,255,255,0.08)" }} />
+                  style={{ background: i < (playerStats?.trainingSessions?.completed ?? 4) ? loadColor : "rgba(255,255,255,0.08)" }} />
               ))}
             </div>
           </JoueurKpiCard>
@@ -113,11 +130,11 @@ export function JoueurPlanningPage() {
                 <Flame size={16} style={{ color: "#F59E0B" }} />
                 <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{t.planning.fatiguePredicted}</h3>
               </div>
-              <span className="text-lg font-black" style={{ color: "#F59E0B" }}>{TRAINING_LOAD_WEEK.fatiguePredicted}%</span>
+              <span className="text-lg font-black" style={{ color: "#F59E0B" }}>{sess.fatiguePredicted ?? 45}%</span>
             </div>
             <div className="h-2.5 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
               <motion.div className="h-full rounded-full" style={{ background: "#F59E0B" }}
-                initial={{ width: 0 }} animate={{ width: `${TRAINING_LOAD_WEEK.fatiguePredicted}%` }} transition={{ duration: 1, delay: 0.1 }} />
+                initial={{ width: 0 }} animate={{ width: `${sess.fatiguePredicted ?? 45}%` }} transition={{ duration: 1, delay: 0.1 }} />
             </div>
             <p className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>Prédiction IA · repos recommandé jeudi</p>
             <div className="mt-3 rounded-xl border px-3 py-2 text-xs" style={{ borderColor: "rgba(245,158,11,0.25)", background: "rgba(245,158,11,0.06)", color: "var(--text-secondary)" }}>
@@ -134,37 +151,40 @@ export function JoueurPlanningPage() {
               <Sun size={18} style={{ color: "#F59E0B" }} />
               <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{t.planning.weather}</h3>
             </div>
-            <p className="mt-3 text-4xl font-bold" style={{ color: "var(--text-primary)" }}>{MATCH_WEATHER.temp}°</p>
-            <p className="text-sm" style={{ color: "var(--text-muted)" }}>{MATCH_WEATHER.condition}</p>
+            <p className="mt-3 text-4xl font-bold" style={{ color: "var(--text-primary)" }}>28°</p>
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>Tunis — Partiellement nuageux</p>
             <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
-              <Wind size={12} />{MATCH_WEATHER.wind} • Humidité {MATCH_WEATHER.humidity}%
+              <Wind size={12} />15 km/h NE • Humidité 60%
             </div>
           </JoueurKpiCard>
 
           <JoueurKpiCard delay={0.12}>
             <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{t.planning.timeline}</h3>
             <div className="relative space-y-0">
-              {DAILY_TIMELINE.map((item, idx) => (
-                <motion.div
-                  key={item.time}
-                  className="flex gap-4 pb-6"
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.15 + idx * 0.1 }}
-                >
-                  <div className="flex flex-col items-center">
-                    <div className="h-3 w-3 rounded-full" style={{ background: PLANNING_TYPE_COLORS[item.type] }} />
-                    {idx < DAILY_TIMELINE.length - 1 && (
-                      <motion.div className="mt-1 w-0.5 flex-1" style={{ background: "rgba(255,255,255,0.1)", minHeight: 40 }} initial={{ height: 0 }} animate={{ height: 48 }} transition={{ delay: 0.25 + idx * 0.1 }} />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold" style={{ color: "#FF6B57" }}>{item.time}</p>
-                    <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{item.title}</p>
-                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>{item.subtitle}</p>
-                  </div>
-                </motion.div>
-              ))}
+              {displayEvents.filter((e) => e.month === month && e.year === year).slice(0, 5).length > 0
+                ? displayEvents.filter((e) => e.month === month && e.year === year).slice(0, 5).map((item, idx, arr) => (
+                  <motion.div
+                    key={item.id}
+                    className="flex gap-4 pb-6"
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.15 + idx * 0.1 }}
+                  >
+                    <div className="flex flex-col items-center">
+                      <div className="h-3 w-3 rounded-full" style={{ background: PLANNING_TYPE_COLORS[item.type] }} />
+                      {idx < arr.length - 1 && (
+                        <motion.div className="mt-1 w-0.5 flex-1" style={{ background: "rgba(255,255,255,0.1)", minHeight: 40 }} initial={{ height: 0 }} animate={{ height: 48 }} transition={{ delay: 0.25 + idx * 0.1 }} />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold" style={{ color: "#FF6B57" }}>{item.day} — {item.start}</p>
+                      <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{item.title}</p>
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>{item.location ?? TYPE_LABELS[item.type]}</p>
+                    </div>
+                  </motion.div>
+                ))
+                : <p className="text-sm" style={{ color: "var(--text-muted)" }}>Aucun événement ce mois</p>
+              }
             </div>
           </JoueurKpiCard>
         </div>
@@ -191,7 +211,7 @@ export function JoueurPlanningPage() {
               {Array.from({ length: firstDay }).map((_, i) => <div key={`e-${i}`} className="aspect-square" />)}
               {Array.from({ length: daysInMonth }).map((_, i) => {
                 const day = i + 1;
-                const events = displayEvents.filter((e) => e.day === day && new Date(e.date.split("/").reverse().join("-")).getMonth() === month);
+                const events = displayEvents.filter((e) => e.day === day && e.month === month && e.year === year);
                 const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
                 return (
                   <motion.button
@@ -240,7 +260,7 @@ export function JoueurPlanningPage() {
                     className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl"
                     style={{ background: `${PLANNING_TYPE_COLORS[ev.type]}22`, border: `1px solid ${PLANNING_TYPE_COLORS[ev.type]}44` }}
                   >
-                    {ev.logo}
+                    {ev.type === "match" ? "⚽" : ev.type === "training" ? "🏃" : ev.type === "medical" ? "🩺" : "😴"}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{ev.title}</p>
@@ -251,11 +271,7 @@ export function JoueurPlanningPage() {
                       </div>
                       <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
                         <MapPin size={12} style={{ color: PLANNING_TYPE_COLORS[ev.type] }} />
-                        {ev.location}
-                      </div>
-                      <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
-                        <User size={12} style={{ color: PLANNING_TYPE_COLORS[ev.type] }} />
-                        {ev.responsible}
+                        {ev.location ?? TYPE_LABELS[ev.type]}
                       </div>
                     </div>
                   </div>
@@ -286,9 +302,9 @@ export function JoueurPlanningPage() {
               exit={{ scale: 0.9, y: 20 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="mb-4 flex items-center justify-between">
+                <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="text-3xl">{selectedEvent.logo}</span>
+                  <span className="text-3xl">{selectedEvent.type === "match" ? "⚽" : selectedEvent.type === "training" ? "🏃" : selectedEvent.type === "medical" ? "🩺" : "😴"}</span>
                   <div>
                     <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: `${PLANNING_TYPE_COLORS[selectedEvent.type]}22`, color: PLANNING_TYPE_COLORS[selectedEvent.type] }}>
                       {TYPE_LABELS[selectedEvent.type]}
@@ -315,7 +331,7 @@ export function JoueurPlanningPage() {
                 </div>
                 <div className="flex items-center gap-3 rounded-xl border px-4 py-2.5" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
                   <User size={14} style={{ color: PLANNING_TYPE_COLORS[selectedEvent.type] }} />
-                  <span className="text-sm" style={{ color: "var(--text-primary)" }}>{selectedEvent.responsible}</span>
+                  <span className="text-sm" style={{ color: "var(--text-primary)" }}>Staff Technique</span>
                 </div>
               </div>
             </motion.div>

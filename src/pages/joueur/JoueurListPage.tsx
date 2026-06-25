@@ -1,21 +1,21 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, BarChart3 } from "lucide-react";
+import { Search, X, BarChart3, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { GlassCard } from "../../components/ui/GlassCard";
 import { PlayerSquadCard } from "../../components/player/PlayerSquadCard";
-import { SQUAD_PLAYERS, type PlayerAvailability, type SquadPlayer, getInitials, getAvailabilityTone } from "../../data/joueurMockData";
+import { getInitials, getAvailabilityTone, type PlayerAvailability } from "../../data/joueurMockData";
 import { AnimatedBadge } from "../../components/ui/AnimatedBadge";
 import { CountUpStat } from "../../components/player/CountUpStat";
-import { getPlayerExtended } from "../../data/joueurExtendedData";
-import { useJoueurBackendData } from "../../hooks/useJoueurBackendData";
+import { useJoueurBackendData, type BackendPlayer } from "../../hooks/useJoueurBackendData";
 
 const FILTERS: Array<"Tous" | PlayerAvailability> = ["Tous", "Disponible", "Blessé", "Limité", "Fin contrat"];
 
-function PlayerDetailDrawer({ player, onClose }: { player: SquadPlayer; onClose: () => void }) {
+function PlayerDetailDrawer({ player, onClose }: { player: BackendPlayer; onClose: () => void }) {
   const navigate = useNavigate();
-  const ext = getPlayerExtended(player.id);
-  const radarEntries = Object.entries(player.radar);
+  const radar = player.radar ?? { speed: 70, passing: 65, shooting: 60, physical: 72, vision: 68, defending: 55 };
+  const radarEntries = Object.entries(radar);
+
   return (
     <motion.div
       key="drawer"
@@ -38,12 +38,16 @@ function PlayerDetailDrawer({ player, onClose }: { player: SquadPlayer; onClose:
         <div className="mb-5 flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl text-lg font-black" style={{ background: "rgba(255,107,87,0.18)", color: "#FF6B57" }}>
-              {getInitials(player.name)}
+              {player.photoUrl
+                ? <img src={player.photoUrl} alt={player.name} className="h-full w-full rounded-2xl object-cover" />
+                : getInitials(player.name)}
             </div>
             <div>
               <p className="font-bold" style={{ color: "var(--text-primary)" }}>{player.name}</p>
-              <p className="text-sm" style={{ color: "var(--accent)" }}>{player.position}</p>
-              <AnimatedBadge tone={getAvailabilityTone(player.availability)}>{player.availability}</AnimatedBadge>
+              <p className="text-sm" style={{ color: "var(--accent)" }}>{player.position || "—"}</p>
+              <AnimatedBadge tone={getAvailabilityTone((player.availability || "Disponible") as PlayerAvailability)}>
+                {player.availability || "Disponible"}
+              </AnimatedBadge>
             </div>
           </div>
           <button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}>
@@ -53,10 +57,10 @@ function PlayerDetailDrawer({ player, onClose }: { player: SquadPlayer; onClose:
 
         <div className="grid grid-cols-2 gap-3 mb-4">
           {[
-            { label: "OVR", value: player.ovr, color: "#FF6B57" },
-            { label: "Age", value: player.age, color: "var(--text-primary)", suffix: " ans" },
-            { label: "Buts", value: player.stats.goals, color: "#22C55E" },
-            { label: "Assists", value: player.stats.assists, color: "#3B82F6" },
+            { label: "OVR", value: player.ovr ?? 70, color: "#FF6B57" },
+            { label: "Âge", value: player.age ?? 0, color: "var(--text-primary)", suffix: " ans" },
+            { label: "Buts", value: player.goals ?? 0, color: "#22C55E" },
+            { label: "Assists", value: player.stats?.seasonStats?.assists ?? 0, color: "#3B82F6" },
           ].map(({ label, value, color, suffix = "" }) => (
             <div key={label} className="rounded-xl border p-3 text-center" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
               <p className="text-xl font-black" style={{ color }}>
@@ -87,28 +91,28 @@ function PlayerDetailDrawer({ player, onClose }: { player: SquadPlayer; onClose:
         <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
           <div className="rounded-xl border p-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
             <p className="text-xs" style={{ color: "var(--text-muted)" }}>Valeur marché</p>
-            <p className="font-bold" style={{ color: "#22C55E" }}>{player.marketValue}</p>
+            <p className="font-bold" style={{ color: "#22C55E" }}>{player.marketValue || "—"}</p>
           </div>
           <div className="rounded-xl border p-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>Fin contrat</p>
-            <p className="font-bold" style={{ color: "var(--text-primary)" }}>{player.contract.expiration}</p>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>Salaire</p>
+            <p className="font-bold" style={{ color: "var(--text-primary)" }}>{player.contract?.salary || "—"}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
           <div className="rounded-xl border p-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-            <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Entraînement</p>
+            <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Forme actuelle</p>
             <div className="h-1.5 overflow-hidden rounded-full mb-1" style={{ background: "rgba(255,255,255,0.06)" }}>
-              <motion.div className="h-full rounded-full" style={{ background: "#3B82F6" }} initial={{ width: 0 }} animate={{ width: `${ext.training.presence}%` }} transition={{ duration: 0.8 }} />
+              <motion.div className="h-full rounded-full" style={{ background: "#3B82F6" }} initial={{ width: 0 }} animate={{ width: `${player.stats?.form ?? 70}%` }} transition={{ duration: 0.8 }} />
             </div>
-            <p className="text-xs font-semibold" style={{ color: "#3B82F6" }}>{ext.training.presence}% présence</p>
+            <p className="text-xs font-semibold" style={{ color: "#3B82F6" }}>{player.stats?.form ?? 70}%</p>
           </div>
           <div className="rounded-xl border p-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-            <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Nutrition</p>
+            <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Charge entraîn.</p>
             <div className="h-1.5 overflow-hidden rounded-full mb-1" style={{ background: "rgba(255,255,255,0.06)" }}>
-              <motion.div className="h-full rounded-full" style={{ background: "#22C55E" }} initial={{ width: 0 }} animate={{ width: `${ext.nutrition.hydration}%` }} transition={{ duration: 0.8, delay: 0.1 }} />
+              <motion.div className="h-full rounded-full" style={{ background: "#22C55E" }} initial={{ width: 0 }} animate={{ width: `${player.stats?.trainingLoad ?? 65}%` }} transition={{ duration: 0.8, delay: 0.1 }} />
             </div>
-            <p className="text-xs font-semibold" style={{ color: "#22C55E" }}>{ext.nutrition.hydration}% hydratation</p>
+            <p className="text-xs font-semibold" style={{ color: "#22C55E" }}>{player.stats?.trainingLoad ?? 65}%</p>
           </div>
         </div>
 
@@ -129,32 +133,50 @@ function PlayerDetailDrawer({ player, onClose }: { player: SquadPlayer; onClose:
 export function JoueurListPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"Tous" | PlayerAvailability>("Tous");
-  const [selectedPlayer, setSelectedPlayer] = useState<SquadPlayer | null>(null);
-  const { squadPlayers: backendSquad } = useJoueurBackendData();
+  const [selectedPlayer, setSelectedPlayer] = useState<BackendPlayer | null>(null);
+  const { squadPlayers, loading } = useJoueurBackendData();
 
-  // Use real backend squad when available, patching over mock data structure
-  const effectiveSquad: SquadPlayer[] = backendSquad.length > 0
-    ? backendSquad.map((bp, idx) => {
-        const mock = SQUAD_PLAYERS[idx % SQUAD_PLAYERS.length];
-        return {
-          ...mock,
-          id: bp.id,
-          name: bp.name,
-          position: bp.position || mock.position,
-          age: bp.age || mock.age,
-          ovr: bp.ovr || mock.ovr,
-          marketValue: bp.marketValue || mock.marketValue,
-          availability: (bp.availability as PlayerAvailability) || mock.availability,
-          stats: { ...mock.stats, goals: bp.goals ?? mock.stats.goals },
-        };
-      })
-    : SQUAD_PLAYERS;
-
-  const filtered = effectiveSquad.filter((p) => {
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.position.toLowerCase().includes(search.toLowerCase());
-    const matchFilter = filter === "Tous" || p.availability === filter;
+  const filtered = squadPlayers.filter((p) => {
+    const matchSearch =
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      (p.position ?? "").toLowerCase().includes(search.toLowerCase());
+    const matchFilter =
+      filter === "Tous" || p.availability === filter;
     return matchSearch && matchFilter;
   });
+
+  const squadForCard = filtered.map((bp) => ({
+    id: bp.id,
+    name: bp.name,
+    position: bp.position || "MIL",
+    positionFull: bp.position || "Milieu",
+    nationality: "Tunisie",
+    flag: "🇹🇳",
+    age: bp.age ?? 22,
+    marketValue: bp.marketValue || "—",
+    marketValueNum: 0,
+    availability: (bp.availability || "Disponible") as PlayerAvailability,
+    ovr: bp.ovr ?? 70,
+    preferredPosition: bp.position || "MIL",
+    secondaryPosition: "—",
+    photoUrl: bp.photoUrl ?? null,
+    stats: {
+      goals: bp.goals ?? 0,
+      assists: bp.stats?.seasonStats?.assists ?? 0,
+      minutes: bp.stats?.seasonStats?.matches ? bp.stats.seasonStats.matches * 85 : 0,
+      passAccuracy: bp.radar?.passing ?? 65,
+      distance: 0,
+    },
+    radar: bp.radar ?? {
+      speed: 70, passing: 65, shooting: 60, physical: 72, vision: 68, defending: 55,
+    },
+    performanceHistory: bp.stats?.performanceEvolution ?? [],
+    injuries: [],
+    riskScore: 0,
+    contract: { salary: bp.contract?.salary ?? "—", bonus: "—", clause: "—", expiration: "—", daysRemaining: 0, startYear: 2022, endYear: 2026 },
+    marketHistory: [],
+    matches: [],
+  }));
 
   return (
     <motion.div
@@ -192,20 +214,34 @@ export function JoueurListPage() {
         </div>
       </div>
 
-      <p className="text-sm" style={{ color: "var(--text-muted)" }}>{filtered.length} joueur(s) — cliquez pour voir les détails</p>
+      {loading ? (
+        <div className="flex items-center justify-center py-16 gap-3" style={{ color: "var(--text-muted)" }}>
+          <Loader2 size={20} className="animate-spin" />
+          <span className="text-sm">Chargement de l'effectif...</span>
+        </div>
+      ) : (
+        <>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>{filtered.length} joueur(s) — cliquez pour voir les détails</p>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {filtered.map((player, i) => (
-          <motion.div
-            key={player.id}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-          >
-            <PlayerSquadCard player={player} onSelect={setSelectedPlayer} />
-          </motion.div>
-        ))}
-      </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {squadForCard.map((player, i) => (
+              <motion.div
+                key={player.id}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+              >
+                <PlayerSquadCard player={player} onSelect={() => setSelectedPlayer(squadPlayers.find((p) => p.id === player.id) ?? null)} />
+              </motion.div>
+            ))}
+            {filtered.length === 0 && (
+              <p className="col-span-full text-center text-sm py-8" style={{ color: "var(--text-muted)" }}>
+                Aucun joueur trouvé
+              </p>
+            )}
+          </div>
+        </>
+      )}
 
       <AnimatePresence>
         {selectedPlayer && (

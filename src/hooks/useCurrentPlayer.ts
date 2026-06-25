@@ -10,30 +10,41 @@ export function useCurrentPlayer() {
   const playerId = user?.playerId ?? getPlayerIdForEmail(user?.email ?? "joueur@club.com");
   const basePlayer = getPlayerById(playerId);
   const extended = getPlayerExtended(playerId);
-  const { photoUrl, setPhoto, handleFileChange } = usePlayerPhoto();
-  const { myPlayer: backendPlayer } = useJoueurBackendData();
+  const { photoUrl: localPhotoUrl, setPhoto, handleFileChange } = usePlayerPhoto();
+  const { myPlayer: backendPlayer, myPlayerId, playerStats } = useJoueurBackendData();
 
-  // Merge: real backend data (name, position, ovr, marketValue) over mock fallback
+  // Photo: local upload takes priority, then backend photoUrl
+  const photoUrl = localPhotoUrl ?? backendPlayer?.photoUrl ?? null;
+
   const player = basePlayer
     ? {
         ...basePlayer,
-        // Name: prefer auth fullName (from JWT), then backend player record, then mock
         name: user?.fullName?.trim() || backendPlayer?.name || basePlayer.name,
-        // Stats that exist in backend: ovr, marketValue, availability
-        ovr: backendPlayer?.ovr ?? basePlayer.ovr,
-        marketValue: backendPlayer?.marketValue ?? basePlayer.marketValue,
+        ovr: backendPlayer?.ovr ?? playerStats?.form ?? basePlayer.ovr,
+        marketValue: playerStats?.dashboardHero?.marketValue ?? backendPlayer?.marketValue ?? basePlayer.marketValue,
         availability: (backendPlayer?.availability ?? basePlayer.availability) as typeof basePlayer.availability,
-        // Stats that only exist as mock (radar, etc.) come from basePlayer untouched
+        // Radar from backend ClubPlayer.radar JSON if available
+        radar: backendPlayer?.radar
+          ? {
+              speed: (backendPlayer.radar as Record<string, number>).speed ?? basePlayer.radar.speed,
+              shooting: (backendPlayer.radar as Record<string, number>).shooting ?? basePlayer.radar.shooting,
+              passing: (backendPlayer.radar as Record<string, number>).passing ?? basePlayer.radar.passing,
+              dribbling: (backendPlayer.radar as Record<string, number>).dribbling ?? basePlayer.radar.dribbling,
+              physical: (backendPlayer.radar as Record<string, number>).physical ?? basePlayer.radar.physical,
+              vision: (backendPlayer.radar as Record<string, number>).vision ?? basePlayer.radar.vision,
+            }
+          : basePlayer.radar,
       }
     : null;
 
   return {
-    playerId,
+    playerId: myPlayerId ?? playerId,
     player,
     extended,
     photoUrl,
     setPhoto,
     handleFileChange,
     backendPlayer,
+    playerStats,
   };
 }
