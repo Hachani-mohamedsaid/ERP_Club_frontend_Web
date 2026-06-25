@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   SuperAdminPageTransition,
@@ -7,41 +7,104 @@ import {
   SuperAdminActionButton,
   SuperAdminSection,
   SuperAdminListRow,
-  SuperAdminFilterPills,
 } from "../components/superadmin";
 import {
   SlidersHorizontal, Mail, Palette, HardDrive, Brain,
-  Shield, CreditCard, Save, Eye, EyeOff, CheckCircle2,
+  Shield, CreditCard, Save, CheckCircle2, AlertCircle,
 } from "lucide-react";
+import { platformApi } from "../lib/api/platform";
+import {
+  mergeSettings,
+  readLocalSettings,
+  type PlatformSettingsFull,
+} from "../lib/api/platform/settings";
+import { usePlatformResource } from "../hooks/usePlatformResource";
 
 const TABS = ["Général", "SMTP", "Branding", "Stockage", "IA", "Sécurité", "Billing"] as const;
 type Tab = (typeof TABS)[number];
 
-/* ── Generic input ────────────────────────────────────────────── */
-function SettingsInput({ label, value, type = "text", placeholder = "" }: { label: string; value: string; type?: string; placeholder?: string }) {
+const TIMEZONES = [
+  "Africa/Tunis",
+  "Europe/Paris",
+  "Europe/London",
+  "America/New_York",
+  "Asia/Dubai",
+];
+
+const inputClass =
+  "rounded-xl border px-4 py-2.5 text-sm outline-none w-full";
+const inputStyle = {
+  background: "rgba(255,255,255,0.04)",
+  borderColor: "rgba(255,255,255,0.08)",
+  color: "var(--text-primary)",
+};
+
+function ControlledInput({
+  label,
+  value,
+  onChange,
+  type = "text",
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+  placeholder?: string;
+}) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>{label}</label>
+      <label className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+        {label}
+      </label>
       <input
         type={type}
-        defaultValue={value}
+        value={value}
         placeholder={placeholder}
-        className="rounded-xl border px-4 py-2.5 text-sm outline-none transition-all"
-        style={{
-          background: "rgba(255,255,255,0.04)",
-          borderColor: "rgba(255,255,255,0.08)",
-          color: "var(--text-primary)",
-        }}
-        onFocus={e => { e.target.style.borderColor = "rgba(255,122,0,0.5)"; e.target.style.boxShadow = "0 0 0 2px rgba(255,122,0,0.1)"; }}
-        onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.08)"; e.target.style.boxShadow = "none"; }}
+        onChange={(e) => onChange(e.target.value)}
+        className={inputClass}
+        style={inputStyle}
       />
     </div>
   );
 }
 
-/* ── Toggle row ───────────────────────────────────────────────── */
-function SettingsToggle({ label, description, defaultValue = true }: { label: string; description?: string; defaultValue?: boolean }) {
-  const [enabled, setEnabled] = useState(defaultValue);
+function ControlledSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+        {label}
+      </label>
+      <select className={inputClass} style={inputStyle} value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function SettingsToggle({
+  label,
+  description,
+  enabled,
+  onChange,
+}: {
+  label: string;
+  description?: string;
+  enabled: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
     <SuperAdminListRow>
       <div className="flex items-center justify-between gap-4">
@@ -51,8 +114,8 @@ function SettingsToggle({ label, description, defaultValue = true }: { label: st
         </div>
         <button
           type="button"
-          onClick={() => setEnabled(!enabled)}
-          className="relative h-6 w-11 shrink-0 rounded-full transition-all"
+          onClick={() => onChange(!enabled)}
+          className="relative h-6 w-11 shrink-0 rounded-full"
           style={{ background: enabled ? "linear-gradient(135deg,#FF7A00,#E66000)" : "rgba(255,255,255,0.1)" }}
         >
           <motion.div
@@ -66,81 +129,89 @@ function SettingsToggle({ label, description, defaultValue = true }: { label: st
   );
 }
 
-/* ── Password input ───────────────────────────────────────────── */
-function PasswordInput({ label, placeholder }: { label: string; placeholder?: string }) {
-  const [show, setShow] = useState(false);
+function SaveBar({
+  saving,
+  saved,
+  saveError,
+  onCancel,
+  onSave,
+}: {
+  saving: boolean;
+  saved: boolean;
+  saveError: string | null;
+  onCancel: () => void;
+  onSave: () => void;
+}) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>{label}</label>
-      <div className="relative">
-        <input
-          type={show ? "text" : "password"}
-          placeholder={placeholder ?? "••••••••••"}
-          className="w-full rounded-xl border py-2.5 pl-4 pr-10 text-sm outline-none"
-          style={{
-            background: "rgba(255,255,255,0.04)",
-            borderColor: "rgba(255,255,255,0.08)",
-            color: "var(--text-primary)",
-          }}
-        />
-        <button
-          type="button"
-          onClick={() => setShow(!show)}
-          className="absolute right-3 top-1/2 -translate-y-1/2"
-          style={{ color: "var(--text-muted)" }}
-        >
-          {show ? <EyeOff size={14} /> : <Eye size={14} />}
-        </button>
+    <div className="mt-4 space-y-2 border-t pt-4" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+      {saveError && (
+        <p className="flex items-center gap-1.5 text-sm text-red-400">
+          <AlertCircle size={14} /> {saveError}
+        </p>
+      )}
+      <div className="flex justify-end gap-3">
+        <SuperAdminGhostButton onClick={onCancel}>Annuler</SuperAdminGhostButton>
+        <SuperAdminActionButton onClick={onSave} disabled={saving}>
+          {saved ? <><CheckCircle2 size={14} /> Sauvegardé!</> : <><Save size={14} /> Sauvegarder</>}
+        </SuperAdminActionButton>
       </div>
     </div>
   );
 }
 
-/* ── Textarea ─────────────────────────────────────────────────── */
-function SettingsTextarea({ label, value, rows = 3 }: { label: string; value: string; rows?: number }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>{label}</label>
-      <textarea
-        defaultValue={value}
-        rows={rows}
-        className="rounded-xl border px-4 py-2.5 text-sm outline-none resize-none"
-        style={{
-          background: "rgba(255,255,255,0.04)",
-          borderColor: "rgba(255,255,255,0.08)",
-          color: "var(--text-primary)",
-        }}
-      />
-    </div>
-  );
-}
-
-/* ── Save bar ─────────────────────────────────────────────────── */
-function SaveBar() {
-  const [saved, setSaved] = useState(false);
-  return (
-    <div className="flex justify-end gap-3 border-t pt-4" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-      <SuperAdminGhostButton>Annuler</SuperAdminGhostButton>
-      <SuperAdminActionButton onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 2500); }}>
-        {saved ? <><CheckCircle2 size={14} /> Sauvegardé!</> : <><Save size={14} /> Sauvegarder</>}
-      </SuperAdminActionButton>
-    </div>
-  );
-}
-
-/* ── Main component ───────────────────────────────────────────── */
 export function SuperAdminSettings() {
   const [activeTab, setActiveTab] = useState<Tab>("Général");
+  const [form, setForm] = useState<PlatformSettingsFull>(() => readLocalSettings());
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const { data, loading, reload } = usePlatformResource(() => platformApi.getSettings(), []);
+
+  useEffect(() => {
+    if (data) setForm(mergeSettings(data as Record<string, unknown>));
+  }, [data]);
+
+  function patch<K extends keyof PlatformSettingsFull>(key: K, value: PlatformSettingsFull[K]) {
+    setForm((f) => ({ ...f, [key]: value }));
+    setSaved(false);
+    setSaveError(null);
+  }
+
+  function handleCancel() {
+    if (data) setForm(mergeSettings(data as Record<string, unknown>));
+    else setForm(readLocalSettings());
+    setSaveError(null);
+    setSaved(false);
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const result = await platformApi.updateSettings(form as unknown as Record<string, unknown>);
+      setForm(mergeSettings(result as Record<string, unknown>));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+      await reload();
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Erreur lors de la sauvegarde.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const saveBar = (
+    <SaveBar saving={saving} saved={saved} saveError={saveError} onCancel={handleCancel} onSave={handleSave} />
+  );
 
   return (
     <SuperAdminPageTransition>
       <SuperAdminPageHeader
         title="Paramètres Plateforme"
         subtitle="Administration système, intégrations et configuration globale."
-        action={<SuperAdminGhostButton>Réinitialiser tout</SuperAdminGhostButton>}
       />
 
-      {/* Tab icons row */}
       <div className="flex flex-wrap gap-3">
         {[
           { label: "Général", icon: SlidersHorizontal },
@@ -162,10 +233,7 @@ export function SuperAdminSettings() {
                 background: active ? "linear-gradient(135deg,#FF7A00,#E66000)" : "rgba(255,255,255,0.04)",
                 color: active ? "white" : "var(--text-muted)",
                 border: active ? "none" : "1px solid rgba(255,255,255,0.08)",
-                boxShadow: active ? "0 0 20px rgba(255,122,0,0.35)" : "none",
               }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
             >
               <Icon size={14} />
               {label}
@@ -174,201 +242,167 @@ export function SuperAdminSettings() {
         })}
       </div>
 
+      {loading && <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement…</p>}
+
       <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.28 }}
-        >
-          {/* ── Général ── */}
+        <motion.div key={activeTab} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
           {activeTab === "Général" && (
             <SuperAdminSection title="Configuration générale" subtitle="Paramètres globaux de la plateforme.">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <SettingsInput label="Nom de la plateforme" value="ODIN ERP" />
-                <SettingsInput label="URL de la plateforme" value="https://odin.erp.tn" />
-                <SettingsInput label="Email de contact" value="admin@odin.erp.tn" type="email" />
-                <SettingsInput label="Téléphone support" value="+216 71 000 000" />
-                <SettingsInput label="Fuseau horaire" value="GMT+1 Africa/Tunis" />
-                <SettingsInput label="Langue par défaut" value="Français" />
+                <ControlledInput label="Nom de la plateforme" value={form.platformName} onChange={(v) => patch("platformName", v)} />
+                <ControlledInput label="URL de la plateforme" value={form.platformUrl} onChange={(v) => patch("platformUrl", v)} />
+                <ControlledInput label="Email de contact" value={form.contactEmail} onChange={(v) => patch("contactEmail", v)} type="email" />
+                <ControlledInput label="Téléphone support" value={form.supportPhone} onChange={(v) => patch("supportPhone", v)} />
+                <ControlledSelect
+                  label="Fuseau horaire"
+                  value={form.timezone}
+                  onChange={(v) => patch("timezone", v)}
+                  options={TIMEZONES.map((tz) => ({ value: tz, label: tz }))}
+                />
+                <ControlledSelect
+                  label="Langue par défaut"
+                  value={form.defaultLanguage}
+                  onChange={(v) => patch("defaultLanguage", v)}
+                  options={[
+                    { value: "fr", label: "Français" },
+                    { value: "en", label: "English" },
+                    { value: "ar", label: "العربية" },
+                  ]}
+                />
+                <ControlledInput label="Devise" value={form.currency} onChange={(v) => patch("currency", v)} />
+                <ControlledInput
+                  label="Jours d'essai gratuit"
+                  value={String(form.trialDays)}
+                  onChange={(v) => patch("trialDays", Number(v) || 14)}
+                  type="number"
+                />
               </div>
               <div className="mt-4 grid grid-cols-1 gap-3">
-                <SettingsToggle label="Mode maintenance" description="Désactive l'accès aux utilisateurs non-admins." defaultValue={false} />
-                <SettingsToggle label="Inscriptions ouvertes" description="Permet la création de nouveaux comptes clubs." />
-                <SettingsToggle label="Mode debug" description="Active les logs étendus pour le diagnostic." defaultValue={false} />
+                <SettingsToggle label="Mode maintenance" description="Désactive l'accès aux utilisateurs non-admins." enabled={form.maintenanceMode} onChange={(v) => patch("maintenanceMode", v)} />
+                <SettingsToggle label="Inscriptions ouvertes" description="Permet la création de nouveaux comptes clubs." enabled={form.openRegistration} onChange={(v) => patch("openRegistration", v)} />
+                <SettingsToggle label="Mode debug" description="Active les logs étendus pour le diagnostic." enabled={form.debugMode} onChange={(v) => patch("debugMode", v)} />
               </div>
-              <SaveBar />
+              {saveBar}
             </SuperAdminSection>
           )}
 
-          {/* ── SMTP ── */}
           {activeTab === "SMTP" && (
-            <SuperAdminSection title="Configuration SMTP" subtitle="Serveur d'envoi des emails transactionnels.">
+            <SuperAdminSection title="Configuration SMTP" subtitle="Envoi d'emails transactionnels et notifications.">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <SettingsInput label="Hôte SMTP" value="smtp.mailgun.org" />
-                <SettingsInput label="Port" value="587" />
-                <SettingsInput label="Email expéditeur" value="noreply@odin.erp.tn" type="email" />
-                <SettingsInput label="Nom expéditeur" value="ODIN ERP Platform" />
-                <SettingsInput label="Nom d'utilisateur" value="postmaster@odin.erp.tn" />
-                <PasswordInput label="Mot de passe SMTP" />
+                <ControlledInput label="Serveur SMTP" value={form.smtpHost} onChange={(v) => patch("smtpHost", v)} placeholder="smtp.gmail.com" />
+                <ControlledInput label="Port" value={String(form.smtpPort)} onChange={(v) => patch("smtpPort", Number(v) || 587)} type="number" />
+                <ControlledInput label="Utilisateur SMTP" value={form.smtpUser} onChange={(v) => patch("smtpUser", v)} />
+                <ControlledInput label="Mot de passe SMTP" value={form.smtpPassword} onChange={(v) => patch("smtpPassword", v)} type="password" />
+                <ControlledInput label="Nom expéditeur" value={form.smtpFromName} onChange={(v) => patch("smtpFromName", v)} />
+                <ControlledInput label="Email expéditeur" value={form.smtpFromEmail} onChange={(v) => patch("smtpFromEmail", v)} type="email" />
               </div>
-              <div className="mt-4 grid grid-cols-1 gap-3">
-                <SettingsToggle label="Chiffrement TLS" description="Recommandé pour la sécurité des emails." />
-                <SettingsToggle label="Authentification DKIM" description="Signature des emails pour éviter le spam." />
+              <div className="mt-4">
+                <SettingsToggle label="Connexion sécurisée (TLS)" description="Recommandé pour la production." enabled={form.smtpSecure} onChange={(v) => patch("smtpSecure", v)} />
               </div>
-              <div className="mt-4 flex gap-3">
-                <SuperAdminGhostButton><Mail size={14} /> Tester la connexion SMTP</SuperAdminGhostButton>
-              </div>
-              <SaveBar />
+              {saveBar}
             </SuperAdminSection>
           )}
 
-          {/* ── Branding ── */}
           {activeTab === "Branding" && (
-            <SuperAdminSection title="Branding & Identité visuelle" subtitle="Personnalisation de la plateforme.">
+            <SuperAdminSection title="Identité visuelle" subtitle="Logo, couleurs et apparence de la plateforme.">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <SettingsInput label="Nom du produit" value="ODIN ERP" />
-                <SettingsInput label="Slogan" value="The Football SaaS Platform" />
-                <SettingsInput label="URL Logo principal" value="/assets/logo.svg" placeholder="https://..." />
-                <SettingsInput label="URL Favicon" value="/assets/favicon.ico" placeholder="https://..." />
+                <ControlledInput label="Couleur principale" value={form.primaryColor} onChange={(v) => patch("primaryColor", v)} placeholder="#FF7A00" />
+                <ControlledInput label="Slogan / Tagline" value={form.tagline} onChange={(v) => patch("tagline", v)} />
+                <ControlledInput label="URL du logo" value={form.logoUrl} onChange={(v) => patch("logoUrl", v)} placeholder="https://..." />
+                <ControlledInput label="URL favicon" value={form.faviconUrl} onChange={(v) => patch("faviconUrl", v)} placeholder="https://..." />
               </div>
-              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Couleur principale</label>
-                  <div className="flex items-center gap-3">
-                    <input type="color" defaultValue="#FF7A00"
-                      className="h-10 w-14 cursor-pointer rounded-lg border"
-                      style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)" }}
-                    />
-                    <span className="font-mono text-sm" style={{ color: "var(--text-primary)" }}>#FF7A00</span>
+              {form.logoUrl && (
+                <div className="mt-4 flex items-center gap-4 rounded-xl border p-4" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+                  <img src={form.logoUrl} alt="Logo preview" className="h-12 w-12 rounded-lg object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: form.primaryColor }}>{form.platformName}</p>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>{form.tagline}</p>
                   </div>
                 </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Couleur secondaire</label>
-                  <div className="flex items-center gap-3">
-                    <input type="color" defaultValue="#3B82F6"
-                      className="h-10 w-14 cursor-pointer rounded-lg border"
-                      style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)" }}
-                    />
-                    <span className="font-mono text-sm" style={{ color: "var(--text-primary)" }}>#3B82F6</span>
-                  </div>
-                </div>
-              </div>
+              )}
               <div className="mt-4">
-                <SettingsTextarea label="CSS personnalisé" value="/* Custom styles */" rows={4} />
+                <SettingsToggle label="Mode sombre par défaut" description="Appliqué aux nouveaux utilisateurs." enabled={form.darkModeDefault} onChange={(v) => patch("darkModeDefault", v)} />
               </div>
-              <SaveBar />
+              {saveBar}
             </SuperAdminSection>
           )}
 
-          {/* ── Stockage ── */}
           {activeTab === "Stockage" && (
-            <SuperAdminSection title="Stockage & Médias" subtitle="Configuration du stockage de fichiers.">
-              <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {[
-                  { label: "Stockage utilisé", value: "42 GB / 200 GB", pct: 21, color: "#22C55E" },
-                  { label: "Fichiers totaux", value: "12 480", pct: null, color: "#3B82F6" },
-                  { label: "Dernier backup", value: "18/06 03:00", pct: null, color: "#FF7A00" },
-                ].map(({ label, value, pct, color }) => (
-                  <SuperAdminListRow key={label}>
-                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>{label}</p>
-                    <p className="mt-1 font-bold" style={{ color }}>{value}</p>
-                    {pct !== null && (
-                      <div className="mt-2 h-1.5 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
-                        <motion.div className="h-full rounded-full" style={{ background: color }}
-                          initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.8 }}
-                        />
-                      </div>
-                    )}
-                  </SuperAdminListRow>
-                ))}
-              </div>
+            <SuperAdminSection title="Stockage & CDN" subtitle="Fichiers, médias et limites d'upload.">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <SettingsInput label="Provider de stockage" value="AWS S3" />
-                <SettingsInput label="Bucket / Conteneur" value="odin-erp-prod" />
-                <SettingsInput label="Région" value="eu-west-3 (Paris)" />
-                <SettingsInput label="Taille max upload (MB)" value="50" />
-                <PasswordInput label="Access Key ID" placeholder="AKIA..." />
-                <PasswordInput label="Secret Access Key" />
+                <ControlledSelect
+                  label="Fournisseur"
+                  value={form.storageProvider}
+                  onChange={(v) => patch("storageProvider", v as PlatformSettingsFull["storageProvider"])}
+                  options={[
+                    { value: "local", label: "Local (serveur)" },
+                    { value: "s3", label: "Amazon S3" },
+                    { value: "cloudinary", label: "Cloudinary" },
+                  ]}
+                />
+                <ControlledInput label="Taille max upload (Mo)" value={String(form.maxUploadMb)} onChange={(v) => patch("maxUploadMb", Number(v) || 25)} type="number" />
+                <ControlledInput label="Bucket S3" value={form.s3Bucket} onChange={(v) => patch("s3Bucket", v)} />
+                <ControlledInput label="Région S3" value={form.s3Region} onChange={(v) => patch("s3Region", v)} />
+                <ControlledInput label="URL CDN" value={form.cdnUrl} onChange={(v) => patch("cdnUrl", v)} placeholder="https://cdn.odin.erp.tn" />
               </div>
-              <div className="mt-4 grid grid-cols-1 gap-3">
-                <SettingsToggle label="CDN activé" description="CloudFront pour accélérer les médias." />
-                <SettingsToggle label="Backup automatique quotidien" description="Sauvegarde à 3h00 chaque nuit." />
-                <SettingsToggle label="Compression automatique des images" />
-              </div>
-              <SaveBar />
+              {saveBar}
             </SuperAdminSection>
           )}
 
-          {/* ── IA ── */}
           {activeTab === "IA" && (
-            <SuperAdminSection title="Configuration IA" subtitle="Paramètres des modules d'intelligence artificielle.">
+            <SuperAdminSection title="Configuration IA" subtitle="Modèles, clés API et limites ODIN AI.">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <SettingsInput label="Fournisseur IA" value="OpenAI" />
-                <SettingsInput label="Modèle par défaut" value="gpt-4o" />
-                <PasswordInput label="Clé API OpenAI" placeholder="sk-..." />
-                <SettingsInput label="Tokens max par requête" value="4096" />
-                <SettingsInput label="Température" value="0.7" />
-                <SettingsInput label="Langue de génération" value="Français" />
+                <ControlledSelect
+                  label="Fournisseur IA"
+                  value={form.aiProvider}
+                  onChange={(v) => patch("aiProvider", v as PlatformSettingsFull["aiProvider"])}
+                  options={[
+                    { value: "openai", label: "OpenAI" },
+                    { value: "anthropic", label: "Anthropic" },
+                    { value: "local", label: "Modèle local" },
+                  ]}
+                />
+                <ControlledInput label="Modèle" value={form.aiModel} onChange={(v) => patch("aiModel", v)} placeholder="gpt-4o-mini" />
+                <ControlledInput label="Max tokens" value={String(form.aiMaxTokens)} onChange={(v) => patch("aiMaxTokens", Number(v) || 4096)} type="number" />
+                <ControlledInput label="Clé API" value={form.aiApiKey} onChange={(v) => patch("aiApiKey", v)} type="password" placeholder="sk-..." />
               </div>
               <div className="mt-4">
-                <SettingsTextarea label="Prompt système global" value="Tu es ODIN AI, l'assistant intelligent de la plateforme football ERP. Tu aides les clubs à analyser leurs données, optimiser leurs performances et prendre de meilleures décisions." rows={4} />
+                <SettingsToggle label="IA activée" description="Active les assistants IA sur toute la plateforme." enabled={form.aiEnabled} onChange={(v) => patch("aiEnabled", v)} />
               </div>
-              <div className="mt-4 grid grid-cols-1 gap-3">
-                <SettingsToggle label="Module IA activé" description="Active les fonctionnalités d'analyse intelligente." />
-                <SettingsToggle label="Suggestions automatiques" description="Recommandations proactives sur le dashboard." />
-                <SettingsToggle label="Analyse de performance joueurs" />
-                <SettingsToggle label="Prédictions financières" />
-              </div>
-              <SaveBar />
+              {saveBar}
             </SuperAdminSection>
           )}
 
-          {/* ── Sécurité ── */}
           {activeTab === "Sécurité" && (
-            <SuperAdminSection title="Paramètres de sécurité" subtitle="Politiques d'accès et de protection.">
+            <SuperAdminSection title="Sécurité & Accès" subtitle="Authentification, sessions et politique mots de passe.">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <SettingsInput label="Durée de session (minutes)" value="30" />
-                <SettingsInput label="Tentatives max avant blocage" value="5" />
-                <SettingsInput label="Durée de blocage (minutes)" value="15" />
-                <SettingsInput label="Longueur minimale mot de passe" value="12" />
-                <SettingsInput label="JWT secret rotation (jours)" value="30" />
-                <SettingsInput label="Whitelist IPs admins" value="" placeholder="192.168.1.0/24" />
+                <ControlledInput label="Timeout session (minutes)" value={String(form.sessionTimeoutMin)} onChange={(v) => patch("sessionTimeoutMin", Number(v) || 480)} type="number" />
+                <ControlledInput label="Tentatives login max" value={String(form.maxLoginAttempts)} onChange={(v) => patch("maxLoginAttempts", Number(v) || 5)} type="number" />
+                <ControlledInput label="Longueur min. mot de passe" value={String(form.passwordMinLength)} onChange={(v) => patch("passwordMinLength", Number(v) || 8)} type="number" />
               </div>
               <div className="mt-4 grid grid-cols-1 gap-3">
-                <SettingsToggle label="2FA obligatoire pour Super Admin" />
-                <SettingsToggle label="2FA obligatoire pour Responsables Club" defaultValue={false} />
-                <SettingsToggle label="Audit logs activés" />
-                <SettingsToggle label="Notifications de connexion suspecte" />
-                <SettingsToggle label="HTTPS forcé" />
-                <SettingsToggle label="CORS restrictif" />
+                <SettingsToggle label="2FA obligatoire (admins)" description="Exige l'authentification à deux facteurs." enabled={form.mfaRequired} onChange={(v) => patch("mfaRequired", v)} />
+                <SettingsToggle label="Blocage IP automatique" description="Bloque les IPs après échecs répétés." enabled={form.ipBlockEnabled} onChange={(v) => patch("ipBlockEnabled", v)} />
+                <SettingsToggle label="Mot de passe fort requis" description="Majuscules, chiffres et caractères spéciaux." enabled={form.requireStrongPassword} onChange={(v) => patch("requireStrongPassword", v)} />
               </div>
-              <SaveBar />
+              {saveBar}
             </SuperAdminSection>
           )}
 
-          {/* ── Billing ── */}
           {activeTab === "Billing" && (
-            <SuperAdminSection title="Facturation & Paiements" subtitle="Intégration Stripe et configuration des plans.">
+            <SuperAdminSection title="Facturation SaaS" subtitle="Stripe, taxes et politique de suspension.">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <PasswordInput label="Clé publique Stripe" placeholder="pk_live_..." />
-                <PasswordInput label="Clé secrète Stripe" placeholder="sk_live_..." />
-                <PasswordInput label="Webhook secret Stripe" placeholder="whsec_..." />
-                <SettingsInput label="Devise par défaut" value="TND" />
-                <SettingsInput label="Email facturation" value="billing@odin.erp.tn" type="email" />
-                <SettingsInput label="Pays fiscal" value="Tunisie" />
+                <ControlledInput label="Préfixe facture" value={form.invoicePrefix} onChange={(v) => patch("invoicePrefix", v)} placeholder="INV" />
+                <ControlledInput label="Taux TVA (%)" value={String(form.taxRate)} onChange={(v) => patch("taxRate", Number(v) || 0)} type="number" />
+                <ControlledInput label="Période de grâce (jours)" value={String(form.gracePeriodDays)} onChange={(v) => patch("gracePeriodDays", Number(v) || 7)} type="number" />
+                <ControlledInput label="Clé publique Stripe" value={form.stripePublicKey} onChange={(v) => patch("stripePublicKey", v)} placeholder="pk_live_..." />
+                <ControlledInput label="Clé secrète Stripe" value={form.stripeSecretKey} onChange={(v) => patch("stripeSecretKey", v)} type="password" placeholder="sk_live_..." />
               </div>
               <div className="mt-4 grid grid-cols-1 gap-3">
-                <SettingsToggle label="Mode test Stripe" description="Utiliser les clés de test pour les transactions." defaultValue={false} />
-                <SettingsToggle label="Facturation automatique" description="Prélèvement automatique à la date d'échéance." />
-                <SettingsToggle label="Envoi de factures PDF" />
-                <SettingsToggle label="Relances de paiement automatiques" />
+                <SettingsToggle label="Stripe activé" description="Paiements en ligne automatiques." enabled={form.stripeEnabled} onChange={(v) => patch("stripeEnabled", v)} />
+                <SettingsToggle label="Suspension auto si impayé" description={`Suspend le club après ${form.gracePeriodDays}j de retard.`} enabled={form.autoSuspendOnFailure} onChange={(v) => patch("autoSuspendOnFailure", v)} />
               </div>
-              <div className="mt-4 flex gap-3">
-                <SuperAdminGhostButton><CreditCard size={14} /> Tester webhook Stripe</SuperAdminGhostButton>
-              </div>
-              <SaveBar />
+              {saveBar}
             </SuperAdminSection>
           )}
         </motion.div>

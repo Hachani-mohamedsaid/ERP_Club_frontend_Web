@@ -11,6 +11,8 @@ import { JoueurNotificationsDropdown } from "../player/JoueurNotificationsDropdo
 import { JoueurChatDrawer } from "../player/JoueurChatDrawer";
 import { getPlayerById } from "../../data/joueurMockData";
 import { FinanceNotificationsDropdown } from "../finance/FinanceNotificationsDropdown";
+import { ClubNotificationsDropdown } from "../club/ClubNotificationsDropdown";
+import { SuperAdminNotificationsDropdown } from "../superadmin/SuperAdminNotificationsDropdown";
 import { FinanceGlobalSearch } from "../finance/FinanceGlobalSearch";
 import { useClubProfile } from "../../hooks/useClubProfile";
 import { ClubLogo } from "../club/ClubLogo";
@@ -281,6 +283,7 @@ function SuperAdminGlobalSearch() {
 
 /* ─── Super Admin Quick Actions ─────────────────────────────────── */
 function SuperAdminQuickActions() {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -293,10 +296,15 @@ function SuperAdminQuickActions() {
   }, []);
 
   const actions = [
-    { icon: Building2, label: "Nouveau Club", color: "#3B82F6" },
-    { icon: Users, label: "Nouvel Utilisateur", color: "#10B981" },
-    { icon: CreditCard, label: "Abonnement", color: "#FF7A00" },
-  ];
+    { icon: Building2, label: "Nouveau Club", color: "#3B82F6", path: "/superadmin/clubs", stateKey: "openCreate" },
+    { icon: Users, label: "Nouvel Utilisateur", color: "#10B981", path: "/superadmin/users", stateKey: "openCreate" },
+    { icon: CreditCard, label: "Abonnement", color: "#FF7A00", path: "/superadmin/payments", stateKey: "openForm" },
+  ] as const;
+
+  function handleAction(path: string, stateKey: string) {
+    setOpen(false);
+    navigate(path, { state: { [stateKey]: true } });
+  }
 
   return (
     <div ref={ref} className="relative">
@@ -334,7 +342,7 @@ function SuperAdminQuickActions() {
             }}
           >
             <p className="mb-1.5 px-2 text-[10px] uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>Créer</p>
-            {actions.map(({ icon: Icon, label, color }, i) => (
+            {actions.map(({ icon: Icon, label, color, path, stateKey }, i) => (
               <motion.button
                 key={label}
                 type="button"
@@ -344,7 +352,7 @@ function SuperAdminQuickActions() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05 }}
                 whileHover={{ background: `${color}14`, color }}
-                onClick={() => setOpen(false)}
+                onClick={() => handleAction(path, stateKey)}
               >
                 <div className="flex h-6 w-6 items-center justify-center rounded-lg" style={{ background: `${color}1f` }}>
                   <Icon size={12} style={{ color }} />
@@ -537,13 +545,14 @@ function ResponsableGlobalSearch() {
 /* ─── Main Topbar ───────────────────────────────────────────────── */
 export function Topbar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { adminName, clubName, season, logoUrl } = useClubProfile();
   const [chatOpen, setChatOpen] = useState(false);
   const isMedical = user?.role === "medical";
   const isJoueur = user?.role === "joueur";
   const isPreparateur = user?.role === "preparateur";
-  const isSuperAdmin = location.pathname.startsWith("/superadmin");
+  const isSuperAdmin = location.pathname.startsWith("/superadmin") || user?.role === "superadmin";
   const isResponsable = user?.role === "responsable";
   const isFinance = user?.role === "finance" || location.pathname.startsWith("/finance");
   const isClubAdmin = user?.role === "adminclub";
@@ -641,14 +650,28 @@ export function Topbar() {
 
         {isMedical ? (
           <MedicalNotificationsDropdown />
+        ) : isSuperAdmin ? (
+          <SuperAdminNotificationsDropdown />
         ) : isJoueur ? (
           <JoueurNotificationsDropdown />
         ) : isPreparateur ? (
           <PrepNotificationsDropdown />
         ) : isFinance ? (
           <FinanceNotificationsDropdown />
+        ) : isClubAdmin ? (
+          <ClubNotificationsDropdown />
         ) : (
-          <button className="glass-input relative flex h-10 w-10 items-center justify-center">
+          <button
+            type="button"
+            className="glass-input relative flex h-10 w-10 items-center justify-center"
+            onClick={() => {
+              const path =
+                user?.role === "responsable" ? "/responsable/notifications"
+                : user?.role === "recruteur" ? "/recruteur/notifications"
+                : null;
+              if (path) navigate(path);
+            }}
+          >
             <Bell size={16} style={{ color: "var(--text-secondary)" }} />
             <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full" style={{ background: "var(--accent)" }} />
           </button>
@@ -666,18 +689,29 @@ export function Topbar() {
         )}
 
         <button className="glass-input flex items-center gap-2 py-2 pl-2 pr-3">
-          {isClubAdmin ? (
+          {isSuperAdmin ? (
+            <div
+              className="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold"
+              style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+            >
+              SA
+            </div>
+          ) : isClubAdmin ? (
             <ClubLogo name={clubName} logoUrl={logoUrl} size="xs" />
           ) : (
             <div
               className="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold"
               style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
             >
-              FC
+              {(user?.fullName ?? user?.email ?? "U").slice(0, 2).toUpperCase()}
             </div>
           )}
           <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-            {isClubAdmin ? clubName : "FC Carthage"}
+            {isSuperAdmin
+              ? (user?.fullName ?? "Super Admin")
+              : isClubAdmin
+                ? clubName
+                : (user?.fullName ?? "Utilisateur")}
           </span>
           <ChevronDown size={14} style={{ color: "var(--text-muted)" }} />
         </button>

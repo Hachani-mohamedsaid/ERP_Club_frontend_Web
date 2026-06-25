@@ -10,7 +10,12 @@ import {
   buildDefaultClubMatrix,
   type ClubMemberRoleLabel,
 } from "../../data/clubMemberRoles";
-import { Shield, Save, CheckCircle2, Info } from "lucide-react";
+import {
+  Save, CheckCircle2, Info, UserCircle,
+  Users, Shield, Wallet, ScrollText, Calendar, Stethoscope,
+  BarChart3, UserSearch, FolderOpen, Settings,
+  type LucideIcon,
+} from "lucide-react";
 
 /* ── Types ──────────────────────────────────────────────────────── */
 type Role = ClubMemberRoleLabel;
@@ -31,17 +36,17 @@ const ACTIONS: Action[] = ["lire", "créer", "modifier", "supprimer"];
 const ROLE_COLOR = CLUB_MEMBER_ROLE_COLORS as Record<Role, string>;
 
 /* ── Default permissions matrix ─────────────────────────────────── */
-const MODULES = [
-  { key: "Joueurs",    label: "Gestion Joueurs",   icon: "⚽" },
-  { key: "Equipes",    label: "Gestion Équipes",    icon: "🛡️" },
-  { key: "Finances",   label: "Finances",           icon: "💰" },
-  { key: "Contrats",   label: "Contrats",           icon: "📜" },
-  { key: "Calendrier", label: "Calendrier",         icon: "📅" },
-  { key: "Sante",      label: "Santé & Médical",    icon: "🏥" },
-  { key: "Analytics",  label: "Analytics",          icon: "📊" },
-  { key: "Recrutement",label: "Recrutement",        icon: "🔍" },
-  { key: "Documents",  label: "Documents",          icon: "📁" },
-  { key: "Parametres", label: "Paramètres",         icon: "⚙️" },
+const MODULES: { key: string; label: string; icon: LucideIcon; color: string }[] = [
+  { key: "Joueurs",     label: "Gestion Joueurs",  icon: Users,       color: "#FF6B57" },
+  { key: "Equipes",     label: "Gestion Équipes",  icon: Shield,      color: "#6366F1" },
+  { key: "Finances",    label: "Finances",         icon: Wallet,      color: "#22C55E" },
+  { key: "Contrats",    label: "Contrats",         icon: ScrollText,  color: "#F59E0B" },
+  { key: "Calendrier",  label: "Calendrier",       icon: Calendar,    color: "#3B82F6" },
+  { key: "Sante",       label: "Santé & Médical",  icon: Stethoscope, color: "#EF4444" },
+  { key: "Analytics",   label: "Analytics",        icon: BarChart3,   color: "#8B5CF6" },
+  { key: "Recrutement", label: "Recrutement",      icon: UserSearch,  color: "#14B8A6" },
+  { key: "Documents",   label: "Documents",        icon: FolderOpen,  color: "#94A3B8" },
+  { key: "Parametres",  label: "Paramètres",       icon: Settings,    color: "#64748B" },
 ];
 
 const INITIAL_MATRIX: Matrix = buildDefaultClubMatrix() as Matrix;
@@ -70,7 +75,7 @@ function PermCheckbox({
             initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
             transition={{ type: "spring", stiffness: 400, damping: 20 }}
           >
-            <CheckCircle2 size={13} style={{ color: "#FF6B57" }} />
+            <UserCircle size={13} style={{ color: "#FF6B57" }} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -180,7 +185,7 @@ export function ClubPermissionsPage() {
               </tr>
             </thead>
             <tbody>
-              {MODULES.map(({ key, label, icon }, i) => {
+              {MODULES.map(({ key, label, icon: Icon, color }, i) => {
                 const isAdmin = activeRole === "Club Admin";
                 const perm = matrix[key][activeRole];
                 return (
@@ -193,8 +198,16 @@ export function ClubPermissionsPage() {
                     style={{ borderColor: "rgba(255,255,255,0.04)" }}
                   >
                     <td className="py-3 pr-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-base">{icon}</span>
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border"
+                          style={{
+                            background: `${color}14`,
+                            borderColor: `${color}30`,
+                          }}
+                        >
+                          <Icon size={15} style={{ color }} />
+                        </div>
                         <span className="font-medium" style={{ color: "var(--text-primary)" }}>{label}</span>
                       </div>
                     </td>
@@ -224,7 +237,7 @@ export function ClubPermissionsPage() {
             <div key={label} className="flex items-center gap-2">
               <div className="flex h-5 w-5 items-center justify-center rounded-md border"
                 style={{ background: `${color}20`, borderColor: color }}>
-                {label === "Accordé" && <CheckCircle2 size={11} style={{ color }} />}
+                {label === "Accordé" && <UserCircle size={11} style={{ color }} />}
               </div>
               <span className="text-xs" style={{ color: "var(--text-muted)" }}>{label}</span>
             </div>

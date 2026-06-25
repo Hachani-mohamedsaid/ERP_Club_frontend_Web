@@ -1,30 +1,19 @@
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Button } from "../components/ui/Button";
 import { Trophy, TrendingUp, Users, Clock } from "lucide-react";
 import { SuperAdminPageTransition, SuperAdminPageHeader, SuperAdminGhostButton, SuperAdminSection, SuperAdminListRow } from "../components/superadmin";
-import { PLATFORM_ROLES_CHART } from "../data/platformRoles";
-
-const TOP_CLUBS = [
-  { club: "FC Carthage", users: 1200 },
-  { club: "ES Sahel", users: 900 },
-  { club: "CS Sfaxien", users: 760 },
-  { club: "US Monastir", users: 540 },
-];
-
-const REVENUE_BY_MONTH = [
-  { month: "Jan", revenue: 12000 },
-  { month: "Fév", revenue: 18000 },
-  { month: "Mar", revenue: 21000 },
-  { month: "Avr", revenue: 24000 },
-  { month: "Mai", revenue: 22500 },
-  { month: "Juin", revenue: 24500 },
-];
-
-const ROLES = PLATFORM_ROLES_CHART;
+import { platformApi } from "../lib/api/platform";
+import { usePlatformResource } from "../hooks/usePlatformResource";
 
 const COLORS = ["#3B82F6", "#10B981", "#EF4444", "#8B5CF6", "#FF7A00"];
 
 export function SuperAdminAnalytics() {
+  const { data: metrics } = usePlatformResource(() => platformApi.getMetrics(), []);
+  const { data: orgs } = usePlatformResource(() => platformApi.getOrganizations(), []);
+
+  const topClubs = [...(orgs ?? [])].sort((a, b) => b.users - a.users).slice(0, 5);
+  const roles = metrics?.charts.usersByRole ?? [];
+  const revenue = metrics?.charts.revenueMonthly ?? [];
+
   return (
     <SuperAdminPageTransition>
       <SuperAdminPageHeader
@@ -36,10 +25,10 @@ export function SuperAdminAnalytics() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <SuperAdminSection title="Top Clubs" subtitle="Classement par utilisateurs." icon={Trophy}>
           <div className="space-y-3">
-            {TOP_CLUBS.map((club) => (
-              <SuperAdminListRow key={club.club}>
+            {topClubs.map((club) => (
+              <SuperAdminListRow key={club.id}>
                 <div className="flex items-center justify-between">
-                  <span style={{ color: "var(--text-primary)" }}>{club.club}</span>
+                  <span style={{ color: "var(--text-primary)" }}>{club.name}</span>
                   <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{club.users}</span>
                 </div>
               </SuperAdminListRow>
@@ -50,8 +39,8 @@ export function SuperAdminAnalytics() {
         <SuperAdminSection title="User Roles" subtitle="Répartition par rôle." icon={Users}>
           <ResponsiveContainer width="100%" height={280}>
             <PieChart>
-              <Pie data={ROLES} dataKey="value" nameKey="name" innerRadius={50} outerRadius={90} paddingAngle={4}>
-                {ROLES.map((_, index) => (
+              <Pie data={roles} dataKey="value" nameKey="name" innerRadius={50} outerRadius={90} paddingAngle={4}>
+                {roles.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
@@ -65,7 +54,7 @@ export function SuperAdminAnalytics() {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <SuperAdminSection title="Revenue by Month" subtitle="Performance mensuelle." icon={TrendingUp} className="xl:col-span-2">
           <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={REVENUE_BY_MONTH} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+            <BarChart data={revenue} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-panel-border)" />
               <XAxis dataKey="month" stroke="var(--text-muted)" />
               <YAxis stroke="var(--text-muted)" />
