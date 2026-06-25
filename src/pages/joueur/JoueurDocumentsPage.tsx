@@ -20,7 +20,7 @@ interface DocWithData extends BackendDocument {
   dataUrl?: string;
 }
 
-function generatePDF(doc: BackendDocument, playerName: string, clubName = "FC Carthage"): void {
+function generatePDF(doc: BackendDocument, playerName: string, clubName = "—"): void {
   const pdf = new jsPDF();
   pdf.setFontSize(18);
   pdf.setTextColor(40, 40, 40);
@@ -46,13 +46,14 @@ export function JoueurDocumentsPage() {
   const { player } = useCurrentPlayer();
   const { documents, myPlayerId, refetchDocuments, orgProfile } = useJoueurBackendData();
   const playerName = player?.name ?? "Joueur";
-  const clubName = orgProfile?.clubName ?? "FC Carthage";
+  const clubName = orgProfile?.clubName ?? "—";
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [previewDoc, setPreviewDoc] = useState<DocWithData | null>(null);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [selectedDocType, setSelectedDocType] = useState("Personnel");
 
   function showToast(msg: string) {
     setToast(msg);
@@ -70,7 +71,7 @@ export function JoueurDocumentsPage() {
       try {
         await clubApi.createDocument(myPlayerId, {
           name: file.name,
-          docType: "Personnel",
+          docType: selectedDocType,
           docDate: new Date().toLocaleDateString("fr-TN"),
           size,
           fileData: dataUrl,
@@ -141,15 +142,27 @@ export function JoueurDocumentsPage() {
         }}
       />
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>{documents.length} document(s)</p>
-        <Button onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-          {uploading ? (
-            <span className="flex items-center gap-2"><FilePlus size={16} className="animate-pulse" /> Envoi…</span>
-          ) : (
-            <span className="flex items-center gap-2"><Upload size={16} /> Upload document</span>
-          )}
-        </Button>
+        <div className="flex items-center gap-2">
+          <select
+            value={selectedDocType}
+            onChange={(e) => setSelectedDocType(e.target.value)}
+            className="glass-input py-2 px-3 text-sm rounded-xl"
+            style={{ minWidth: 120 }}
+          >
+            {Object.keys(TYPE_COLORS).map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+          <Button onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+            {uploading ? (
+              <span className="flex items-center gap-2"><FilePlus size={16} className="animate-pulse" /> Envoi…</span>
+            ) : (
+              <span className="flex items-center gap-2"><Upload size={16} /> Upload document</span>
+            )}
+          </Button>
+        </div>
       </div>
 
       {documents.length === 0 ? (

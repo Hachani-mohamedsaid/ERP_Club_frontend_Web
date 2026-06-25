@@ -14,7 +14,7 @@ import { Target, Zap, Clock, Square } from "lucide-react";
 import { CountUpStat } from "../../components/player/CountUpStat";
 import jsPDF from "jspdf";
 
-function downloadPDF(playerName: string, filename: string, clubName = "FC Carthage") {
+function downloadPDF(playerName: string, filename: string, clubName = "—") {
   const pdf = new jsPDF();
   pdf.setFontSize(18);
   pdf.text(`${clubName} — Document Officiel`, 20, 20);
@@ -42,7 +42,7 @@ export function JoueurMonProfilPage() {
   const { player, photoUrl, handleFileChange, backendPlayer } = useCurrentPlayer();
   const { t } = useLocale();
   const { awards, documents, matchStats, playerStats, myContract, myPlayerId, refetchPlayer, orgProfile } = useJoueurBackendData();
-  const clubName = orgProfile?.clubName ?? "FC Carthage";
+  const clubName = orgProfile?.clubName ?? "—";
 
   const [editingPhysical, setEditingPhysical] = useState(false);
   const [physicalForm, setPhysicalForm] = useState<PhysicalEdit>({
@@ -128,7 +128,14 @@ export function JoueurMonProfilPage() {
               </div>
               <p className="mt-1 text-sm" style={{ color: "var(--accent)" }}>{player.position} — {player.positionFull}</p>
               <p className="text-sm" style={{ color: "var(--text-muted)" }}>{player.flag} {player.nationality} • {player.age} ans</p>
-              <AnimatedBadge tone="success" animated={false}>{t.profile.available}</AnimatedBadge>
+              {backendPlayer?.availability && (
+                <AnimatedBadge
+                  tone={backendPlayer.availability === "Blessé" ? "danger" : backendPlayer.availability === "Limité" ? "warning" : "success"}
+                  animated={false}
+                >
+                  {backendPlayer.availability}
+                </AnimatedBadge>
+              )}
             </div>
             <OVRRing value={player.ovr} size={100} />
           </div>
@@ -227,7 +234,7 @@ export function JoueurMonProfilPage() {
                   {idx < careerTimeline.length - 1 && <div className="mt-1 w-0.5 flex-1" style={{ background: "rgba(255,255,255,0.1)", minHeight: 32 }} />}
                 </div>
                 <div>
-                  <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{step.club ?? "FC Carthage"}</p>
+                  <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{step.club ?? clubName}</p>
                   <p className="text-xs" style={{ color: "var(--text-muted)" }}>{step.event ?? step.title}</p>
                 </div>
               </motion.div>

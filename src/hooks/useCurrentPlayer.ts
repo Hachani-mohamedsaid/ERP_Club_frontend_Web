@@ -32,8 +32,8 @@ export function useCurrentPlayer() {
   // Photo: local upload takes priority, then backend photoUrl
   const photoUrl = localPhotoUrl ?? backendPlayer?.photoUrl ?? null;
 
-  const nationality = backendPlayer?.nationality || basePlayer?.nationality || "Tunisie";
-  const flag = getFlag(nationality);
+  const nationality = backendPlayer?.nationality || basePlayer?.nationality || "—";
+  const flag = nationality && nationality !== "—" ? getFlag(nationality) : "";
 
   const player = basePlayer
     ? {
@@ -45,10 +45,10 @@ export function useCurrentPlayer() {
         nationality,
         flag,
         positionFull: backendPlayer?.positionFull || backendPlayer?.position || basePlayer.positionFull,
-        jerseyNumber: backendPlayer?.jerseyNumber ?? basePlayer.ovr % 20 + 5,
+        jerseyNumber: backendPlayer?.jerseyNumber ?? 0,
         height: backendPlayer?.height || "",
         weight: backendPlayer?.weight || "",
-        strongFoot: backendPlayer?.strongFoot || "Droit",
+        strongFoot: backendPlayer?.strongFoot || "—",
         birthDate: backendPlayer?.birthDate || "",
         radar: backendPlayer?.radar
           ? {

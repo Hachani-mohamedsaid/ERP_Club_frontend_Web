@@ -69,22 +69,15 @@ export function JoueurDashboard() {
     })),
   ].slice(0, 4);
 
-  // Club name and league from org profile
-  const clubName = orgProfile?.clubName ?? "Mon Club";
-  const leagueName = orgProfile?.league ?? "Liga 1";
+  const clubName = orgProfile?.clubName ?? "—";
+  const leagueName = orgProfile?.league ?? "—";
 
   // Jersey number from backend player
   const jerseyNumber = backendPlayer?.jerseyNumber ?? 0;
 
   // Rewards from backend awards (first 3 award-type items)
   const awardItems = awards.filter((a) => a.awardType === "award").slice(0, 3);
-  const rewardsList = awardItems.length > 0
-    ? awardItems.map((a) => ({ id: a.id, icon: a.icon, color: a.color ?? "#d99a1f", text: a.title }))
-    : [
-        { id: "placeholder-1", icon: "🏆", color: "#d99a1f", text: t.dashboard.playerOfMonth },
-        { id: "placeholder-2", icon: "⚽", color: "#FF6B57", text: t.dashboard.topScorer },
-        { id: "placeholder-3", icon: "🎯", color: "#22C55E", text: t.dashboard.winStreak },
-      ];
+  const rewardsList = awardItems.map((a) => ({ id: a.id, icon: a.icon, color: a.color ?? "#d99a1f", text: a.title }));
 
   return (
     <JoueurPageTransition>
@@ -114,21 +107,28 @@ export function JoueurDashboard() {
                 age={player.age}
                 flag={player.flag}
                 nationality={player.nationality}
-                number={jerseyNumber > 0 ? String(jerseyNumber) : String(player.ovr % 20 + 5)}
+                number={jerseyNumber > 0 ? String(jerseyNumber) : "—"}
                 radar={player.radar}
                 badge="forme"
                 cutoutUrl={photoUrl}
                 onPhotoUpload={handleFileChange}
               />
               <div className="flex flex-wrap justify-center gap-2">
-                <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold"
-                  style={{ background: "rgba(255,107,87,0.15)", color: "#FF6B57" }}>
-                  🔥 {t.dashboard.formExcellent}
-                </div>
-                <div className="flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold"
-                  style={{ background: "rgba(34,197,94,0.12)", color: "#22C55E" }}>
-                  {stats?.form ?? player.ovr}% forme
-                </div>
+                {stats?.form !== undefined && (
+                  <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold"
+                    style={{
+                      background: stats.form >= 75 ? "rgba(255,107,87,0.15)" : "rgba(245,158,11,0.15)",
+                      color: stats.form >= 75 ? "#FF6B57" : "#F59E0B",
+                    }}>
+                    {stats.form >= 80 ? "🔥" : stats.form >= 65 ? "📈" : "📉"} {stats.form >= 80 ? t.dashboard.formExcellent : stats.form >= 65 ? "Bonne forme" : "Forme à améliorer"}
+                  </div>
+                )}
+                {stats?.form !== undefined && (
+                  <div className="flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold"
+                    style={{ background: "rgba(34,197,94,0.12)", color: "#22C55E" }}>
+                    {stats.form}% forme
+                  </div>
+                )}
               </div>
             </div>
 
@@ -275,16 +275,20 @@ export function JoueurDashboard() {
 
         <JoueurKpiCard delay={0.15}>
           <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>🏆 {t.dashboard.rewards}</h3>
-          <motion.div className="space-y-2" variants={staggerContainer} initial="initial" animate="animate">
-            {rewardsList.map((r) => (
-              <motion.div key={r.id} variants={staggerItem}
-                className="flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all hover:scale-[1.02]"
-                style={{ borderColor: "rgba(255,255,255,0.06)", background: `${r.color}11` }}>
-                <span className="text-xl">{r.icon}</span>
-                <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{r.text}</span>
-              </motion.div>
-            ))}
-          </motion.div>
+          {rewardsList.length > 0 ? (
+            <motion.div className="space-y-2" variants={staggerContainer} initial="initial" animate="animate">
+              {rewardsList.map((r) => (
+                <motion.div key={r.id} variants={staggerItem}
+                  className="flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all hover:scale-[1.02]"
+                  style={{ borderColor: "rgba(255,255,255,0.06)", background: `${r.color}11` }}>
+                  <span className="text-xl">{r.icon}</span>
+                  <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{r.text}</span>
+                </motion.div>
+              ))}
+            </motion.div>
+          ) : (
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>Aucune récompense — ajoutée par le responsable</p>
+          )}
         </JoueurKpiCard>
       </div>
 

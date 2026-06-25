@@ -15,7 +15,7 @@ import { clubApi } from "../../lib/api/club";
 export function JoueurMedicalPage() {
   const { player } = useCurrentPlayer();
   const { t } = useLocale();
-  const { injuries: backendInjuries, playerStats, myPlayerId, refetchPlayer } = useJoueurBackendData();
+  const { injuries: backendInjuries, playerStats, myPlayerId, refetchPlayer, calendarEvents } = useJoueurBackendData();
   const [bookingModal, setBookingModal] = useState(false);
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
@@ -252,25 +252,40 @@ export function JoueurMedicalPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <MedicalTimeline title={t.medical.history} events={timelineEvents} />
         <JoueurKpiCard delay={0.18}>
-          <p className="text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{t.medical.nextAppt}</p>
-          <div className="mt-3 rounded-xl border p-4" style={{ borderColor: "rgba(255,107,87,0.3)", background: "rgba(255,107,87,0.06)" }}>
-            <div className="flex items-center gap-2">
-              <Calendar size={16} style={{ color: "#FF6B57" }} />
-              <span className="font-semibold" style={{ color: "var(--text-primary)" }}>Bilan médical périodique</span>
-            </div>
-            <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
-              Prochain RDV — à planifier par le staff médical
-            </p>
-            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>Dr. Équipe médicale</p>
-            <button
-              type="button"
-              onClick={() => setBookingModal(true)}
-              className="mt-3 w-full rounded-xl py-2 text-xs font-semibold transition-all hover:opacity-80 active:scale-[0.98]"
-              style={{ background: "#FF6B57", color: "white" }}
-            >
-              Réserver / Confirmer RDV
-            </button>
-          </div>
+          {(() => {
+            const nextMedical = calendarEvents
+              .filter((ev) => ev.eventType === "MEDICAL" && new Date(ev.eventDate) >= new Date())
+              .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())[0];
+            return (
+              <>
+                <p className="text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{t.medical.nextAppt}</p>
+                <div className="mt-3 rounded-xl border p-4" style={{ borderColor: "rgba(255,107,87,0.3)", background: "rgba(255,107,87,0.06)" }}>
+                  <div className="flex items-center gap-2">
+                    <Calendar size={16} style={{ color: "#FF6B57" }} />
+                    <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
+                      {nextMedical?.title ?? "Aucun RDV planifié"}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
+                    {nextMedical
+                      ? `${new Date(nextMedical.eventDate).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}${nextMedical.eventTime ? ` à ${nextMedical.eventTime}` : ""}`
+                      : "À planifier par le staff médical"}
+                  </p>
+                  {nextMedical?.location && (
+                    <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{nextMedical.location}</p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setBookingModal(true)}
+                    className="mt-3 w-full rounded-xl py-2 text-xs font-semibold transition-all hover:opacity-80 active:scale-[0.98]"
+                    style={{ background: "#FF6B57", color: "white" }}
+                  >
+                    Réserver / Confirmer RDV
+                  </button>
+                </div>
+              </>
+            );
+          })()}
         </JoueurKpiCard>
       </div>
 

@@ -37,7 +37,7 @@ function statusTone(status: string): "warning" | "info" | "success" | "danger" {
 
 export function JoueurTransfersPage() {
   const { transfers, squadPlayers, orgProfile } = useJoueurBackendData();
-  const clubName = (orgProfile as OrgProfile | null)?.clubName ?? "FC Carthage";
+  const clubName = (orgProfile as OrgProfile | null)?.clubName ?? "—";
 
   const outgoing = transfers.filter((t) => t.transferType === "Sortant");
   const incoming = transfers.filter((t) => t.transferType === "Entrant");
