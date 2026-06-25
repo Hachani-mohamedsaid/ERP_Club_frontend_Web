@@ -48,6 +48,8 @@ export const clubApi = {
   getStaff: () => apiFetch("/club/staff").then(parse),
   createStaff: (body: Record<string, unknown>) =>
     apiFetch("/club/staff", { method: "POST", body: JSON.stringify(body) }).then(parse),
+  updateStaff: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/staff/${id}`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
   deleteStaff: (id: string) =>
     apiFetch(`/club/staff/${id}`, { method: "DELETE" }).then(parse),
 
@@ -66,6 +68,8 @@ export const clubApi = {
   getInjuries: () => apiFetch("/club/injuries").then(parse),
   createInjury: (body: Record<string, unknown>) =>
     apiFetch("/club/injuries", { method: "POST", body: JSON.stringify(body) }).then(parse),
+
+  getAnalytics: () => apiFetch("/club/analytics").then(parse),
 
   getInfrastructures: () => apiFetch("/club/infrastructures").then(parse),
   createInfrastructure: (body: Record<string, unknown>) =>

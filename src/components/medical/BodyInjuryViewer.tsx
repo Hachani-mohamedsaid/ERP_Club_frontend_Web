@@ -20,6 +20,7 @@ export interface BodyZone {
 
 interface BodyInjuryViewerProps {
   zones?: BodyZone[];
+  selectedZoneId?: string | null;
   onZoneClick?: (zone: BodyZone) => void;
 }
 
@@ -105,16 +106,17 @@ function ZonePopup({ zone, position }: { zone: BodyZone; position: { cx: number;
   );
 }
 
-export function BodyInjuryViewer({ zones = DEFAULT_ZONES, onZoneClick }: BodyInjuryViewerProps) {
+export function BodyInjuryViewer({ zones = DEFAULT_ZONES, selectedZoneId, onZoneClick }: BodyInjuryViewerProps) {
   const [hoveredZone, setHoveredZone] = useState<string | null>(null);
-  const [selectedZone, setSelectedZone] = useState<string | null>(null);
+  const [internalSelected, setInternalSelected] = useState<string | null>(null);
 
+  const selectedZone = selectedZoneId !== undefined ? selectedZoneId : internalSelected;
   const activeZoneId = hoveredZone ?? selectedZone;
   const activeZone = activeZoneId ? zones.find((z) => z.id === activeZoneId) : null;
   const activePos = activeZoneId ? ZONE_POSITIONS[activeZoneId] : null;
 
   const handleZoneClick = (zone: BodyZone) => {
-    setSelectedZone(zone.id);
+    if (selectedZoneId === undefined) setInternalSelected(zone.id);
     onZoneClick?.(zone);
   };
 
@@ -169,7 +171,10 @@ export function BodyInjuryViewer({ zones = DEFAULT_ZONES, onZoneClick }: BodyInj
                     strokeWidth={isSelected ? 3 : isHovered ? 2.5 : 2}
                     fill={colors.fill}
                     style={{ filter: colors.glow !== "none" ? `drop-shadow(${colors.glow})` : "none" }}
-                    animate={{ r: isHovered || isSelected ? pos.r * 1.25 : pos.r, opacity: zone.severity === "none" ? 0.4 : 1 }}
+                    animate={{
+                      r: isHovered || isSelected ? pos.r * 1.25 : pos.r,
+                      opacity: zone.severity === "none" && !isSelected && !isHovered ? 0.4 : 1,
+                    }}
                     transition={{ duration: 0.2 }}
                   />
                 </motion.g>

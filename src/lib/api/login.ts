@@ -9,6 +9,7 @@ export interface LoginResponse {
     fullName: string;
     role: "ADMIN_CLUB" | "SUPER_ADMIN";
     clubMemberRole?: string;
+    playerId?: string | null;
   };
   organization: {
     id: string;

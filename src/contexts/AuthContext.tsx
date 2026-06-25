@@ -100,6 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       fullName: res.user.fullName,
       role,
       clubMemberRole: res.user.clubMemberRole,
+      playerId: res.user.playerId ?? undefined,
       organization: res.organization,
     };
     setUser(u);

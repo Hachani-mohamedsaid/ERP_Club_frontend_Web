@@ -8,7 +8,7 @@ import { ClubHeatInjuryMap } from "../../components/club/ClubHeatInjuryMap";
 import { PlayerAvatar } from "../../components/player/PlayerAvatar";
 import { INJURY_RISKS, getRiskColor, getPlayerDetail } from "../../data/preparateurData";
 import { PrepPlayerDrawer } from "../../components/preparateur/PrepPlayerDrawer";
-import { CLUB_BODY_ZONES } from "../../data/clubHeatInjuryData";
+import { CLUB_HEAT_ZONES, CLUB_BODY_ZONES } from "../../data/clubHeatInjuryData";
 
 export function PrepRisquePage() {
   const [search, setSearch] = useState("");
@@ -45,7 +45,7 @@ export function PrepRisquePage() {
       <PrepToolbar search={search} onSearchChange={setSearch} onExportCsv={exportCsv} onExportPdf={exportPdf} placeholder="Rechercher joueur ou zone..." />
 
       <PrepKpiCard hover={false}>
-        <ClubHeatInjuryMap zones={CLUB_BODY_ZONES} />
+        <ClubHeatInjuryMap clubName="FC Carthage" heatZones={CLUB_HEAT_ZONES} bodyZones={CLUB_BODY_ZONES} />
       </PrepKpiCard>
 
       <PrepKpiCard hover={false} delay={0.1}>

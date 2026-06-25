@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { Search, Eye, Pencil, Ban, ArrowRightLeft, FileSignature, X, GitCompareArrows, Plus } from "lucide-react";
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Legend } from "recharts";
 import { ClubPageTransition } from "../../components/club/ClubPageTransition";
@@ -13,19 +14,161 @@ import { useClubResource } from "../../hooks/useClubResource";
 import { usePermissions } from "../../hooks/usePermissions";
 import type { SquadPlayer } from "../../data/joueurMockData";
 
+interface SquadPlayerRow extends SquadPlayer {
+  hasAccount?: boolean;
+  accountEmail?: string | null;
+}
+
 const STATUS_COLORS: Record<string, string> = {
   Disponible: "#22C55E", Blessé: "#EF4444", "Fin contrat": "#F59E0B", Limité: "#6366F1",
 };
 
+const PLAYER_FIELDS = [
+  { key: "fullName", label: "Nom complet" },
+  { key: "position", label: "Poste", placeholder: "MC" },
+  { key: "age", label: "Âge", type: "number" },
+  { key: "ovr", label: "OVR", type: "number" },
+  { key: "marketValue", label: "Valeur marchande", placeholder: "0" },
+  { key: "salaryMonthly", label: "Salaire mensuel (DT)", type: "number" },
+] as const;
+
+function parseSalary(s?: string) {
+  const n = parseInt(String(s ?? "").replace(/\D/g, ""), 10);
+  return Number.isNaN(n) ? 0 : n;
+}
+
+function playerToForm(player: SquadPlayer): Record<string, string> {
+  return {
+    fullName: player.name,
+    position: player.position,
+    age: String(player.age),
+    ovr: String(player.ovr),
+    marketValue: player.marketValue ?? "0",
+    salaryMonthly: String(parseSalary(player.contract?.salary)),
+  };
+}
+
+function buildPlayerPayload(v: Record<string, string>) {
+  return {
+    fullName: v.fullName,
+    position: v.position || "MC",
+    age: Number(v.age) || 0,
+    ovr: Number(v.ovr) || 0,
+    marketValue: v.marketValue || "0",
+    salaryMonthly: Number(v.salaryMonthly) || 0,
+  };
+}
+
+function PlayerAddModal({
+  onClose,
+  onSubmit,
+}: {
+  onClose: () => void;
+  onSubmit: (values: Record<string, string>) => Promise<void>;
+}) {
+  const [form, setForm] = useState({
+    fullName: "",
+    position: "MC",
+    age: "",
+    ovr: "",
+    marketValue: "0",
+    salaryMonthly: "",
+    accountEmail: "",
+    accountPassword: "",
+  });
+  const [saving, setSaving] = useState(false);
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      onClick={onClose}
+    >
+      <motion.div
+        className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-[24px] border p-6"
+        style={{ background: "rgba(10,18,40,0.98)", borderColor: "rgba(255,107,87,0.25)" }}
+        initial={{ scale: 0.92, y: 20 }} animate={{ scale: 1, y: 0 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="mb-4 text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>Ajouter un joueur</h2>
+        <div className="space-y-3">
+          {PLAYER_FIELDS.map((f) => (
+            <div key={f.key}>
+              <label className="mb-1 block text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>{f.label}</label>
+              <input
+                type={f.type ?? "text"}
+                value={form[f.key as keyof typeof form]}
+                onChange={(e) => setForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
+                style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+              />
+            </div>
+          ))}
+          <div className="rounded-xl border p-3" style={{ borderColor: "rgba(132,204,22,0.25)", background: "rgba(132,204,22,0.06)" }}>
+            <p className="mb-2 text-xs font-semibold" style={{ color: "#84CC16" }}>Compte joueur (requis)</p>
+            <label className="mb-1 block text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Email Gmail</label>
+            <input
+              type="email"
+              value={form.accountEmail}
+              onChange={(e) => setForm((prev) => ({ ...prev, accountEmail: e.target.value }))}
+              placeholder="joueur@gmail.com"
+              className="mb-3 w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
+              style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+            />
+            <label className="mb-1 block text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Mot de passe temporaire</label>
+            <input
+              type="password"
+              value={form.accountPassword}
+              onChange={(e) => setForm((prev) => ({ ...prev, accountPassword: e.target.value }))}
+              placeholder="8 caractères minimum"
+              className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
+              style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+            />
+          </div>
+        </div>
+        <div className="mt-5 flex gap-2">
+          <button type="button" onClick={onClose} className="flex-1 rounded-xl border py-2.5 text-sm" style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}>Annuler</button>
+          <button
+            type="button"
+            disabled={saving}
+            onClick={async () => {
+              if (!form.fullName.trim()) { alert("Nom requis."); return; }
+              if (!form.accountEmail.trim()) { alert("Email Gmail requis pour le compte joueur."); return; }
+              if (form.accountPassword.length < 8) { alert("Mot de passe : 8 caractères minimum."); return; }
+              setSaving(true);
+              try {
+                await onSubmit(form);
+                onClose();
+              } catch (err) {
+                alert(err instanceof Error ? err.message : "Erreur");
+              } finally {
+                setSaving(false);
+              }
+            }}
+            className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white"
+            style={{ background: "linear-gradient(135deg,#FF6B57,#E65240)" }}
+          >
+            {saving ? "Enregistrement…" : "Enregistrer"}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export function ClubJoueursPage() {
+  const navigate = useNavigate();
   const { can } = usePermissions();
-  const { data: players, loading, error, reload } = useClubResource(() => clubApi.getPlayers() as Promise<SquadPlayer[]>);
+  const { data: players, loading, error, reload } = useClubResource(() => clubApi.getPlayers() as Promise<SquadPlayerRow[]>);
   const squad = players ?? [];
   const [search, setSearch] = useState("");
   const [compareOpen, setCompareOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [drawerPlayer, setDrawerPlayer] = useState<SquadPlayer | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [editPlayer, setEditPlayer] = useState<SquadPlayer | null>(null);
+  const [transferPlayer, setTransferPlayer] = useState<SquadPlayer | null>(null);
 
   const filtered = squad.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase()) || p.position.toLowerCase().includes(search.toLowerCase())
@@ -43,6 +186,18 @@ export function ClubJoueursPage() {
   function toggleCompare(id: string) {
     setSelected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 2 ? [...prev, id] : [prev[1], id]);
   }
+
+  async function toggleInjuryStatus(player: SquadPlayer) {
+    const next = player.availability === "Blessé" ? "DISPONIBLE" : "BLESSE";
+    try {
+      await clubApi.updatePlayer(player.id, { status: next });
+      await reload();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Erreur");
+    }
+  }
+
+  const canEdit = can("Joueurs", "modifier");
 
   return (
     <ClubPageTransition>
@@ -86,7 +241,7 @@ export function ClubJoueursPage() {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                {["", "Nom", "Poste", "Âge", "OVR", "Valeur", "Salaire", "Statut", "Actions"].map((h) => (
+                {["", "Nom", "Poste", "Âge", "OVR", "Valeur", "Salaire", "Statut", "Compte", "Actions"].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{h}</th>
                 ))}
               </tr>
@@ -117,22 +272,70 @@ export function ClubJoueursPage() {
                   <td className="px-4 py-3" style={{ color: "var(--text-secondary)" }}>{player.age}</td>
                   <td className="px-4 py-3 font-bold" style={{ color: "#FF6B57" }}>{player.ovr}</td>
                   <td className="px-4 py-3" style={{ color: "var(--text-secondary)" }}>{player.marketValue}</td>
-                  <td className="px-4 py-3" style={{ color: "var(--text-secondary)" }}>{player.contract.salary}</td>
+                  <td className="px-4 py-3" style={{ color: "var(--text-secondary)" }}>{player.contract?.salary ?? "—"}</td>
                   <td className="px-4 py-3">
-                    <span className="rounded-full px-2.5 py-0.5 text-xs font-medium" style={{ background: `${STATUS_COLORS[player.availability]}20`, color: STATUS_COLORS[player.availability] }}>
-                      {player.availability}
+                    <span className="rounded-full px-2.5 py-0.5 text-xs font-medium" style={{ background: `${STATUS_COLORS[player.availability] ?? STATUS_COLORS.Disponible}20`, color: STATUS_COLORS[player.availability] ?? STATUS_COLORS.Disponible }}>
+                      {player.availability ?? "Disponible"}
                     </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {player.hasAccount ? (
+                      <span className="text-xs font-medium" style={{ color: "#22C55E" }} title={player.accountEmail ?? undefined}>Compte actif</span>
+                    ) : (
+                      <span className="text-xs" style={{ color: "var(--text-muted)" }}>Sans compte</span>
+                    )}
                   </td>
                   <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                     <div className="flex gap-1">
-                      <button type="button" onClick={() => setDrawerPlayer(player)} className="rounded-lg p-1.5 transition-colors hover:bg-white/5" style={{ color: "#FF6B57" }}>
+                      <button
+                        type="button"
+                        title="Voir la fiche"
+                        onClick={() => setDrawerPlayer(player)}
+                        className="rounded-lg p-1.5 transition-colors hover:bg-white/5"
+                        style={{ color: "#FF6B57" }}
+                      >
                         <Eye size={14} />
                       </button>
-                      {[Pencil, Ban, ArrowRightLeft, FileSignature].map((Icon, idx) => (
-                        <button key={idx} type="button" className="rounded-lg p-1.5 transition-colors hover:bg-white/5" style={{ color: "var(--text-muted)" }}>
-                          <Icon size={14} />
-                        </button>
-                      ))}
+                      {canEdit && (
+                        <>
+                          <button
+                            type="button"
+                            title="Modifier"
+                            onClick={() => setEditPlayer(player)}
+                            className="rounded-lg p-1.5 transition-colors hover:bg-white/5"
+                            style={{ color: "var(--text-muted)" }}
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            title={player.availability === "Blessé" ? "Marquer disponible" : "Marquer blessé"}
+                            onClick={() => toggleInjuryStatus(player)}
+                            className="rounded-lg p-1.5 transition-colors hover:bg-white/5"
+                            style={{ color: player.availability === "Blessé" ? "#FF6B57" : "var(--text-muted)" }}
+                          >
+                            <Ban size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            title="Changer de poste"
+                            onClick={() => setTransferPlayer(player)}
+                            className="rounded-lg p-1.5 transition-colors hover:bg-white/5"
+                            style={{ color: "var(--text-muted)" }}
+                          >
+                            <ArrowRightLeft size={14} />
+                          </button>
+                        </>
+                      )}
+                      <button
+                        type="button"
+                        title="Voir les contrats"
+                        onClick={() => navigate("/club/contrats", { state: { playerName: player.name } })}
+                        className="rounded-lg p-1.5 transition-colors hover:bg-white/5"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        <FileSignature size={14} />
+                      </button>
                     </div>
                   </td>
                 </motion.tr>
@@ -177,24 +380,52 @@ export function ClubJoueursPage() {
 
       <AnimatePresence>
         {showAdd && (
-          <ClubFormModal
-            title="Ajouter un joueur"
-            fields={[
-              { key: "fullName", label: "Nom complet" },
-              { key: "position", label: "Poste", placeholder: "MC" },
-              { key: "age", label: "Âge", type: "number" },
-              { key: "ovr", label: "OVR", type: "number" },
-              { key: "salaryMonthly", label: "Salaire mensuel (DT)", type: "number" },
-            ]}
+          <PlayerAddModal
             onClose={() => setShowAdd(false)}
             onSubmit={async (v) => {
-              await clubApi.createPlayer({
-                fullName: v.fullName,
-                position: v.position || "MC",
-                age: Number(v.age) || 0,
-                ovr: Number(v.ovr) || 0,
-                salaryMonthly: Number(v.salaryMonthly) || 0,
-              });
+              const created = await clubApi.createPlayer(buildPlayerPayload(v)) as Record<string, unknown>;
+              const playerId = String(created.id ?? "");
+              if (playerId && v.accountEmail && v.accountPassword) {
+                await clubApi.createMember({
+                  fullName: v.fullName,
+                  email: v.accountEmail.trim(),
+                  clubRole: "Joueur",
+                  password: v.accountPassword,
+                  clubPlayerId: playerId,
+                });
+              }
+              await reload();
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {editPlayer && (
+          <ClubFormModal
+            title={`Modifier — ${editPlayer.name}`}
+            fields={[...PLAYER_FIELDS]}
+            initialValues={playerToForm(editPlayer)}
+            submitLabel="Sauvegarder"
+            onClose={() => setEditPlayer(null)}
+            onSubmit={async (v) => {
+              await clubApi.updatePlayer(editPlayer.id, buildPlayerPayload(v));
+              await reload();
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {transferPlayer && (
+          <ClubFormModal
+            title={`Changer de poste — ${transferPlayer.name}`}
+            fields={[{ key: "position", label: "Nouveau poste", placeholder: "MC, ST, DC…" }]}
+            initialValues={{ position: transferPlayer.position }}
+            submitLabel="Appliquer"
+            onClose={() => setTransferPlayer(null)}
+            onSubmit={async (v) => {
+              await clubApi.updatePlayer(transferPlayer.id, { position: v.position || transferPlayer.position });
               await reload();
             }}
           />
