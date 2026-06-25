@@ -17,6 +17,7 @@ import type { SquadPlayer } from "../../data/joueurMockData";
 interface SquadPlayerRow extends SquadPlayer {
   hasAccount?: boolean;
   accountEmail?: string | null;
+  goals?: number;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -261,7 +262,7 @@ export function ClubJoueursPage() {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                {["", "Nom", "Poste", "Âge", "OVR", "Valeur", "Salaire", "Statut", "Compte", "Actions"].map((h) => (
+                {["", "Nom", "Poste", "Âge", "OVR", "Buts", "Valeur", "Salaire", "Statut", "Compte", "Actions"].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{h}</th>
                 ))}
               </tr>
@@ -291,6 +292,7 @@ export function ClubJoueursPage() {
                   <td className="px-4 py-3" style={{ color: "var(--text-secondary)" }}>{player.position}</td>
                   <td className="px-4 py-3" style={{ color: "var(--text-secondary)" }}>{player.age}</td>
                   <td className="px-4 py-3 font-bold" style={{ color: "#FF6B57" }}>{player.ovr}</td>
+                  <td className="px-4 py-3 font-semibold" style={{ color: "var(--text-primary)" }}>{player.goals ?? 0}</td>
                   <td className="px-4 py-3" style={{ color: "var(--text-secondary)" }}>{player.marketValue}</td>
                   <td className="px-4 py-3" style={{ color: "var(--text-secondary)" }}>{player.contract?.salary ?? "—"}</td>
                   <td className="px-4 py-3">

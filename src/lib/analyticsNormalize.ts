@@ -6,6 +6,7 @@ export interface TeamRadarPoint {
 export interface BestXiPlayer {
   name: string;
   position: string;
+  playerPosition?: string;
   x: number;
   y: number;
 }

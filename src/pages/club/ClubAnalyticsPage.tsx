@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip,
   LineChart, Line, XAxis, YAxis, CartesianGrid,
@@ -10,16 +11,27 @@ import { ClubBestXIPitch } from "../../components/club/ClubBestXIPitch";
 import { clubApi } from "../../lib/api/club";
 import { useClubResource } from "../../hooks/useClubResource";
 import { useClubProfile } from "../../hooks/useClubProfile";
-import { normalizeAnalytics } from "../../lib/analyticsNormalize";
+import {
+  buildClubAnalyticsFromPlayers,
+  normalizePlayerForAnalytics,
+  normalizeCalendarForAnalytics,
+} from "../../lib/clubAnalyticsBuilder";
 
 const ACCENT = "#FF6B57";
 
 export function ClubAnalyticsPage() {
   const { clubName, season } = useClubProfile();
-  const { data, loading, error } = useClubResource(async () => {
-    const raw = (await clubApi.getAnalytics()) as Record<string, unknown>;
-    return normalizeAnalytics(raw);
-  });
+  const location = useLocation();
+
+  const { data, loading, error, reload } = useClubResource(async () => {
+    const [playersRaw, eventsRaw] = await Promise.all([
+      clubApi.getPlayers() as Promise<Record<string, unknown>[]>,
+      clubApi.getCalendar() as Promise<Record<string, unknown>[]>,
+    ]);
+    const players = playersRaw.map(normalizePlayerForAnalytics);
+    const events = eventsRaw.map(normalizeCalendarForAnalytics);
+    return buildClubAnalyticsFromPlayers(players, events);
+  }, [location.key]);
 
   const analytics = data;
   const hasData = (analytics?.playersCount ?? 0) > 0;
@@ -42,9 +54,19 @@ export function ClubAnalyticsPage() {
 
   return (
     <ClubPageTransition>
-      <p className="mb-5 text-sm" style={{ color: "var(--text-muted)" }}>
-        {clubName} · Saison {season}
-      </p>
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+          {clubName} · Saison {season}
+        </p>
+        <button
+          type="button"
+          onClick={() => reload()}
+          className="rounded-lg border px-3 py-1.5 text-xs font-semibold"
+          style={{ borderColor: "rgba(255,255,255,0.1)", color: "var(--text-muted)" }}
+        >
+          Actualiser
+        </button>
+      </div>
 
       {loading && (
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement…</p>
@@ -131,7 +153,7 @@ export function ClubAnalyticsPage() {
             </h3>
             {topScorers.length === 0 ? (
               <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-                Aucun but enregistré — renseignez les buts dans Gestion Joueurs.
+                Aucun but enregistré — modifiez un joueur dans Gestion Joueurs et renseignez « Buts (saison) ».
               </p>
             ) : (
               <ul className="space-y-3">

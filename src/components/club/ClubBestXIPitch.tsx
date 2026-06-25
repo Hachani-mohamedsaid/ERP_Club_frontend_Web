@@ -41,7 +41,7 @@ export function ClubBestXIPitch({
 
         {players.map((player, i) => (
           <div
-            key={`${player.position}-${i}`}
+            key={`${player.position}-${player.name}-${i}`}
             className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center"
             style={{ left: `${player.x}%`, top: `${player.y}%` }}
           >
@@ -53,7 +53,7 @@ export function ClubBestXIPitch({
                 boxShadow: `0 0 12px ${ACCENT}55`,
               }}
             >
-              {player.position}
+              {player.playerPosition ?? player.position}
             </div>
             <span
               className="mt-1 max-w-[72px] truncate text-center text-[10px] font-semibold"
