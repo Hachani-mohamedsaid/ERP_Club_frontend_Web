@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Camera } from "lucide-react";
 import { getFifaAttributes, PLAYER_CUTOUT_URL } from "../../data/joueurPersonalData";
 import { getInitials } from "../../data/joueurMockData";
 
@@ -22,6 +23,7 @@ interface FifaPlayerCardProps {
   radar: { speed: number; passing: number; shooting: number; physical: number; vision: number; defending: number };
   cutoutUrl?: string | null;
   badge?: "forme" | "totw" | null;
+  onPhotoUpload?: (file: File) => void;
 }
 
 const CARD_CLIP = "polygon(6% 2%, 94% 2%, 100% 7%, 100% 67%, 50% 100%, 0% 67%, 0% 7%)";
@@ -137,12 +139,15 @@ export function FifaPlayerCard({
   radar,
   cutoutUrl,
   badge = "forme",
+  onPhotoUpload,
 }: FifaPlayerCardProps) {
   const attr = getFifaAttributes(radar);
   const displayName = formatFifaName(name);
   const initials = getInitials(name);
   const photoUrl = resolvePhotoUrl(cutoutUrl);
   const [photoFailed, setPhotoFailed] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const showPhoto = Boolean(photoUrl) && !photoFailed;
 
   const statRows = [
@@ -167,6 +172,8 @@ export function FifaPlayerCard({
       animate={{ opacity: 1, rotateY: 0, scale: 1 }}
       transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
       whileHover={{ rotateY: 8, scale: 1.03, y: -4 }}
+      onHoverStart={() => setHovered(true)}
+      onHoverEnd={() => setHovered(false)}
     >
       <div
         className="fifa-card-shine-hover pointer-events-none absolute inset-0 z-[25] opacity-0"
@@ -239,6 +246,54 @@ export function FifaPlayerCard({
           <PlayerSilhouette initials={initials} />
         )}
       </div>
+
+      {/* Camera upload overlay — visible on hover when onPhotoUpload provided */}
+      {onPhotoUpload && (
+        <>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                onPhotoUpload(file);
+                setPhotoFailed(false);
+              }
+              e.target.value = "";
+            }}
+          />
+          <AnimatePresence>
+            {hovered && (
+              <motion.button
+                key="cam"
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.18 }}
+                className="absolute z-40 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold shadow-lg"
+                style={{
+                  bottom: 48,
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  background: "rgba(14,14,28,0.88)",
+                  color: "#FF6B57",
+                  border: "1px solid rgba(255,107,87,0.45)",
+                  backdropFilter: "blur(8px)",
+                  whiteSpace: "nowrap",
+                }}
+                title="Changer la photo (PNG recommandé)"
+              >
+                <Camera size={13} />
+                Photo
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </>
+      )}
 
       <div className="relative z-10 flex h-full flex-col" style={{ clipPath: CARD_CLIP }}>
         {/* OVR — dominant */}

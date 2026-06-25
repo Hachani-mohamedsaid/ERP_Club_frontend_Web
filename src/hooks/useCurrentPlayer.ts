@@ -2,12 +2,49 @@ import { useAuth } from "../contexts/AuthContext";
 import { getPlayerById } from "../data/joueurMockData";
 import { getPlayerExtended } from "../data/joueurExtendedData";
 import { getPlayerIdForEmail } from "../data/joueurPersonalData";
+import { usePlayerPhoto } from "./usePlayerPhoto";
+import { useJoueurBackendData } from "./useJoueurBackendData";
 
 export function useCurrentPlayer() {
   const { user } = useAuth();
   const playerId = user?.playerId ?? getPlayerIdForEmail(user?.email ?? "joueur@club.com");
-  const player = getPlayerById(playerId);
+  const basePlayer = getPlayerById(playerId);
   const extended = getPlayerExtended(playerId);
+  const { photoUrl: localPhotoUrl, setPhoto, handleFileChange } = usePlayerPhoto();
+  const { myPlayer: backendPlayer, myPlayerId, playerStats } = useJoueurBackendData();
 
-  return { playerId, player, extended };
+  // Photo: local upload takes priority, then backend photoUrl
+  const photoUrl = localPhotoUrl ?? backendPlayer?.photoUrl ?? null;
+
+  const player = basePlayer
+    ? {
+        ...basePlayer,
+        name: user?.fullName?.trim() || backendPlayer?.name || basePlayer.name,
+        ovr: backendPlayer?.ovr ?? playerStats?.form ?? basePlayer.ovr,
+        marketValue: playerStats?.dashboardHero?.marketValue ?? backendPlayer?.marketValue ?? basePlayer.marketValue,
+        availability: (backendPlayer?.availability ?? basePlayer.availability) as typeof basePlayer.availability,
+        // Radar from backend ClubPlayer.radar JSON if available
+        radar: backendPlayer?.radar
+          ? {
+              speed: (backendPlayer.radar as Record<string, number>).speed ?? basePlayer.radar.speed,
+              shooting: (backendPlayer.radar as Record<string, number>).shooting ?? basePlayer.radar.shooting,
+              passing: (backendPlayer.radar as Record<string, number>).passing ?? basePlayer.radar.passing,
+              dribbling: (backendPlayer.radar as Record<string, number>).dribbling ?? basePlayer.radar.dribbling,
+              physical: (backendPlayer.radar as Record<string, number>).physical ?? basePlayer.radar.physical,
+              vision: (backendPlayer.radar as Record<string, number>).vision ?? basePlayer.radar.vision,
+            }
+          : basePlayer.radar,
+      }
+    : null;
+
+  return {
+    playerId: myPlayerId ?? playerId,
+    player,
+    extended,
+    photoUrl,
+    setPhoto,
+    handleFileChange,
+    backendPlayer,
+    playerStats,
+  };
 }

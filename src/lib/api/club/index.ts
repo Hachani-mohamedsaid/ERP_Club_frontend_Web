@@ -74,4 +74,45 @@ export const clubApi = {
   getInfrastructures: () => apiFetch("/club/infrastructures").then(parse),
   createInfrastructure: (body: Record<string, unknown>) =>
     apiFetch("/club/infrastructures", { method: "POST", body: JSON.stringify(body) }).then(parse),
+
+  // ─── Player Photo ───────────────────────────────────────────
+  updatePlayerPhoto: (id: string, photoUrl: string) =>
+    apiFetch(`/club/players/${id}/photo`, { method: "PATCH", body: JSON.stringify({ photoUrl }) }).then(parse),
+
+  // ─── Player Stats ───────────────────────────────────────────
+  getPlayerStats: (id: string) => apiFetch(`/club/players/${id}/stats`).then(parse),
+  updatePlayerStats: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/players/${id}/stats`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
+
+  // ─── Match Stats ────────────────────────────────────────────
+  getMatchStats: (id: string) => apiFetch(`/club/players/${id}/match-stats`).then(parse),
+  createMatchStat: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/players/${id}/match-stats`, { method: "POST", body: JSON.stringify(body) }).then(parse),
+
+  // ─── Awards ─────────────────────────────────────────────────
+  getAwards: (id: string) => apiFetch(`/club/players/${id}/awards`).then(parse),
+  createAward: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/players/${id}/awards`, { method: "POST", body: JSON.stringify(body) }).then(parse),
+  deleteAward: (awardId: string) =>
+    apiFetch(`/club/awards/${awardId}`, { method: "DELETE" }).then(parse),
+
+  // ─── Documents ──────────────────────────────────────────────
+  getDocuments: (id: string) => apiFetch(`/club/players/${id}/documents`).then(parse),
+  getDocumentFile: (docId: string) => apiFetch(`/club/documents/${docId}/file`).then(parse),
+  createDocument: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/players/${id}/documents`, { method: "POST", body: JSON.stringify(body) }).then(parse),
+  deleteDocument: (docId: string) =>
+    apiFetch(`/club/documents/${docId}`, { method: "DELETE" }).then(parse),
+
+  // ─── Transfers ──────────────────────────────────────────────
+  getTransfers: () => apiFetch("/club/transfers").then(parse),
+  createTransfer: (body: Record<string, unknown>) =>
+    apiFetch("/club/transfers", { method: "POST", body: JSON.stringify(body) }).then(parse),
+  deleteTransfer: (id: string) =>
+    apiFetch(`/club/transfers/${id}`, { method: "DELETE" }).then(parse),
+
+  // ─── Chemistry ──────────────────────────────────────────────
+  getChemistry: () => apiFetch("/club/chemistry").then(parse),
+  updateChemistry: (id: string, chemistry: number) =>
+    apiFetch(`/club/chemistry/${id}`, { method: "PATCH", body: JSON.stringify({ chemistry }) }).then(parse),
 };
