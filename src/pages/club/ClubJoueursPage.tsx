@@ -23,11 +23,14 @@ const STATUS_COLORS: Record<string, string> = {
   Disponible: "#22C55E", Blessé: "#EF4444", "Fin contrat": "#F59E0B", Limité: "#6366F1",
 };
 
+const PLAYER_POSITIONS = ["GB", "DG", "DC", "DD", "MC", "MOC", "MDF", "AG", "AD", "BU", "ST"] as const;
+
 const PLAYER_FIELDS = [
   { key: "fullName", label: "Nom complet" },
-  { key: "position", label: "Poste", placeholder: "MC" },
+  { key: "position", label: "Poste", type: "select" as const, options: [...PLAYER_POSITIONS] },
   { key: "age", label: "Âge", type: "number" },
   { key: "ovr", label: "OVR", type: "number" },
+  { key: "goals", label: "Buts (saison)", type: "number" },
   { key: "marketValue", label: "Valeur marchande", placeholder: "0" },
   { key: "salaryMonthly", label: "Salaire mensuel (DT)", type: "number" },
 ] as const;
@@ -37,12 +40,13 @@ function parseSalary(s?: string) {
   return Number.isNaN(n) ? 0 : n;
 }
 
-function playerToForm(player: SquadPlayer): Record<string, string> {
+function playerToForm(player: SquadPlayer & { goals?: number }): Record<string, string> {
   return {
     fullName: player.name,
-    position: player.position,
+    position: player.position.toUpperCase(),
     age: String(player.age),
     ovr: String(player.ovr),
+    goals: String(player.goals ?? 0),
     marketValue: player.marketValue ?? "0",
     salaryMonthly: String(parseSalary(player.contract?.salary)),
   };
@@ -51,9 +55,10 @@ function playerToForm(player: SquadPlayer): Record<string, string> {
 function buildPlayerPayload(v: Record<string, string>) {
   return {
     fullName: v.fullName,
-    position: v.position || "MC",
+    position: (v.position || "MC").toUpperCase(),
     age: Number(v.age) || 0,
     ovr: Number(v.ovr) || 0,
+    goals: Number(v.goals) || 0,
     marketValue: v.marketValue || "0",
     salaryMonthly: Number(v.salaryMonthly) || 0,
   };
@@ -71,6 +76,7 @@ function PlayerAddModal({
     position: "MC",
     age: "",
     ovr: "",
+    goals: "0",
     marketValue: "0",
     salaryMonthly: "",
     accountEmail: "",
@@ -96,13 +102,27 @@ function PlayerAddModal({
           {PLAYER_FIELDS.map((f) => (
             <div key={f.key}>
               <label className="mb-1 block text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>{f.label}</label>
-              <input
-                type={f.type ?? "text"}
-                value={form[f.key as keyof typeof form]}
-                onChange={(e) => setForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
-                className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
-              />
+              {f.type === "select" ? (
+                <select
+                  value={form[f.key as keyof typeof form]}
+                  onChange={(e) => setForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                  className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
+                  style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                >
+                  {f.options?.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type={f.type ?? "text"}
+                  value={form[f.key as keyof typeof form]}
+                  onChange={(e) => setForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                  placeholder={"placeholder" in f ? f.placeholder : undefined}
+                  className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
+                  style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                />
+              )}
             </div>
           ))}
           <div className="rounded-xl border p-3" style={{ borderColor: "rgba(132,204,22,0.25)", background: "rgba(132,204,22,0.06)" }}>

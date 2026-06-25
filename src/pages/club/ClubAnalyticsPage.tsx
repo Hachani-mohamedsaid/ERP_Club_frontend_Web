@@ -131,7 +131,7 @@ export function ClubAnalyticsPage() {
             </h3>
             {topScorers.length === 0 ? (
               <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-                Aucun buteur enregistré pour le moment.
+                Aucun but enregistré — renseignez les buts dans Gestion Joueurs.
               </p>
             ) : (
               <ul className="space-y-3">
