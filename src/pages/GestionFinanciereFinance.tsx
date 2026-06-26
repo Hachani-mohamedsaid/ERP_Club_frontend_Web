@@ -3,7 +3,8 @@ import { GlassCard } from "../components/ui/GlassCard";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { FileText, Clock, AlertCircle, TrendingDown, Plus, X, RefreshCw, Trash2 } from "lucide-react";
-import { useFinanceBackendData, BackendInvoice } from "../hooks/useFinanceBackendData";
+import { useFinanceBackendData } from "../hooks/useFinanceBackendData";
+import type { BackendInvoice } from "../hooks/useFinanceBackendData";
 import { clubApi } from "../lib/api/club";
 
 const STATUS_TONE: Record<string, "success" | "warning" | "danger"> = {

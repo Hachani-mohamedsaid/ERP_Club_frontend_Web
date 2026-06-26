@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, AlertCircle, XCircle, FileText, Plus, Download, RefreshCw, Clock, X } from "lucide-react";
-import { useFinanceBackendData, BackendContract } from "../hooks/useFinanceBackendData";
+import { useFinanceBackendData } from "../hooks/useFinanceBackendData";
+import type { BackendContract } from "../hooks/useFinanceBackendData";
 import { clubApi } from "../lib/api/club";
 
 const F = { primary: "#FF7A00", success: "#22C55E", danger: "#EF4444", info: "#3B82F6", warning: "#F59E0B" };
