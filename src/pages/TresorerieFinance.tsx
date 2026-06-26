@@ -97,7 +97,7 @@ export function TresorerieFinance() {
               <YAxis stroke="var(--text-muted)" label={{ value: "M DT", angle: -90, position: "insideLeft" }} />
               <Tooltip
                 contentStyle={{ background: "var(--surface-panel)", border: "1px solid var(--surface-panel-border)", color: "var(--text-primary)", borderRadius: "8px" }}
-                formatter={(v: number) => [`${v.toFixed(2)} M DT`]}
+                formatter={(v) => [`${Number(v).toFixed(2)} M DT`]}
               />
               <Legend />
               <Bar dataKey="entrees" fill="#10B981" name="Entrées (M DT)" radius={[8, 8, 0, 0]} />

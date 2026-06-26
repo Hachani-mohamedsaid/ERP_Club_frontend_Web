@@ -1,7 +1,7 @@
 import { TrendingUp, TrendingDown, ArrowRightLeft, RefreshCw } from "lucide-react";
 import { GlassCard } from "../components/ui/GlassCard";
 import { Badge } from "../components/ui/Badge";
-import { useFinanceBackendData, BackendTransfer } from "../hooks/useFinanceBackendData";
+import { useFinanceBackendData, type BackendTransfer } from "../hooks/useFinanceBackendData";
 
 type TransferBadgeTone = "danger" | "success" | "info" | "warning" | "neutral";
 
@@ -24,7 +24,7 @@ function getTransferLabel(t: BackendTransfer) {
 }
 
 export function TransfertsFinance() {
-  const { transfers, loading, report } = useFinanceBackendData();
+  const { transfers, loading } = useFinanceBackendData();
 
   const achats = transfers.filter(t => (t.transferType ?? "").toUpperCase() === "ACHAT");
   const ventes = transfers.filter(t => (t.transferType ?? "").toUpperCase() === "VENTE");
