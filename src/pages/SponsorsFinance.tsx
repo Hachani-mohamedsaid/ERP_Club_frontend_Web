@@ -2,7 +2,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TrendingUp, DollarSign, AlertCircle, RefreshCw, Eye, Plus, X, Trash2 } from "lucide-react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
-import { useFinanceBackendData, BackendSponsor } from "../hooks/useFinanceBackendData";
+import { useFinanceBackendData } from "../hooks/useFinanceBackendData";
+import type { BackendSponsor } from "../hooks/useFinanceBackendData";
 import { clubApi } from "../lib/api/club";
 
 const F = { primary: "#FF7A00", success: "#22C55E", danger: "#EF4444", info: "#3B82F6", warning: "#F59E0B" };

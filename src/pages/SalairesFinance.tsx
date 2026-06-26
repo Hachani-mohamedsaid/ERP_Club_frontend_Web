@@ -2,7 +2,8 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Users, TrendingUp, DollarSign, BarChart3, Crown, Download, RefreshCw } from "lucide-react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
-import { useFinanceBackendData, BackendContract } from "../hooks/useFinanceBackendData";
+import { useFinanceBackendData } from "../hooks/useFinanceBackendData";
+import type { BackendContract } from "../hooks/useFinanceBackendData";
 import jsPDF from "jspdf";
 
 const F = { primary: "#FF7A00", success: "#22C55E", danger: "#EF4444", info: "#3B82F6", warning: "#F59E0B" };
