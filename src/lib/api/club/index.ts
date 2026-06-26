@@ -79,6 +79,13 @@ export const clubApi = {
   updatePlayerPhoto: (id: string, photoUrl: string) =>
     apiFetch(`/club/players/${id}/photo`, { method: "PATCH", body: JSON.stringify({ photoUrl }) }).then(parse),
 
+  // ─── Player Physical (self-edit by joueur) ──────────────────
+  updatePlayerPhysical: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/players/${id}/physical`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
+
+  // ─── Player Contract ────────────────────────────────────────
+  getPlayerContract: (id: string) => apiFetch(`/club/players/${id}/contract`).then(parse),
+
   // ─── Player Stats ───────────────────────────────────────────
   getPlayerStats: (id: string) => apiFetch(`/club/players/${id}/stats`).then(parse),
   updatePlayerStats: (id: string, body: Record<string, unknown>) =>
@@ -115,4 +122,8 @@ export const clubApi = {
   getChemistry: () => apiFetch("/club/chemistry").then(parse),
   updateChemistry: (id: string, chemistry: number) =>
     apiFetch(`/club/chemistry/${id}`, { method: "PATCH", body: JSON.stringify({ chemistry }) }).then(parse),
+
+  // ─── Medical Appointment (joueur self-request) ──────────────
+  bookAppointment: (playerId: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/players/${playerId}/appointment`, { method: "POST", body: JSON.stringify(body) }).then(parse),
 };

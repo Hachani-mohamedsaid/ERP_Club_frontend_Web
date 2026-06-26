@@ -86,7 +86,7 @@ export function JoueurPlanningPage() {
           start: e.eventTime ?? "09:00",
           end: "—",
           type,
-          location: e.location ?? "FC Carthage",
+          location: e.location ?? undefined,
           description: e.location ?? undefined,
         };
       })
@@ -136,10 +136,16 @@ export function JoueurPlanningPage() {
               <motion.div className="h-full rounded-full" style={{ background: "#F59E0B" }}
                 initial={{ width: 0 }} animate={{ width: `${sess.fatiguePredicted ?? 45}%` }} transition={{ duration: 1, delay: 0.1 }} />
             </div>
-            <p className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>Prédiction IA · repos recommandé jeudi</p>
-            <div className="mt-3 rounded-xl border px-3 py-2 text-xs" style={{ borderColor: "rgba(245,158,11,0.25)", background: "rgba(245,158,11,0.06)", color: "var(--text-secondary)" }}>
-              ⚠️ Charge élevée avant match EST — réduire intensité vendredi
-            </div>
+            <p className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>
+              {playerStats?.trainingSessions?.intensity
+                ? `Intensité ${playerStats.trainingSessions.intensity} — voir programme`
+                : "Prédiction basée sur les entraînements"}
+            </p>
+            {(sess.fatiguePredicted ?? 45) >= 70 && (
+              <div className="mt-3 rounded-xl border px-3 py-2 text-xs" style={{ borderColor: "rgba(245,158,11,0.25)", background: "rgba(245,158,11,0.06)", color: "var(--text-secondary)" }}>
+                ⚠️ Charge élevée — repos recommandé avant prochain match
+              </div>
+            )}
           </JoueurKpiCard>
         </div>
       </div>
@@ -151,10 +157,10 @@ export function JoueurPlanningPage() {
               <Sun size={18} style={{ color: "#F59E0B" }} />
               <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{t.planning.weather}</h3>
             </div>
-            <p className="mt-3 text-4xl font-bold" style={{ color: "var(--text-primary)" }}>28°</p>
-            <p className="text-sm" style={{ color: "var(--text-muted)" }}>Tunis — Partiellement nuageux</p>
+            <p className="mt-3 text-4xl font-bold" style={{ color: "var(--text-primary)" }}>—°</p>
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>Données météo non disponibles</p>
             <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
-              <Wind size={12} />15 km/h NE • Humidité 60%
+              <Wind size={12} />Service météo non connecté
             </div>
           </JoueurKpiCard>
 
