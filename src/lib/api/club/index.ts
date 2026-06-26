@@ -126,4 +126,38 @@ export const clubApi = {
   // ─── Medical Appointment (joueur self-request) ──────────────
   bookAppointment: (playerId: string, body: Record<string, unknown>) =>
     apiFetch(`/club/players/${playerId}/appointment`, { method: "POST", body: JSON.stringify(body) }).then(parse),
+
+  // ─── Finance Extensions ──────────────────────────────────────
+  getFinanceReport: () => apiFetch("/club/finance/report").then(parse),
+  seedFinance: () => apiFetch("/club/finance/seed", { method: "POST" }).then(parse),
+  updateFinanceEntry: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/finance/${id}`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
+  deleteFinanceEntry: (id: string) =>
+    apiFetch(`/club/finance/${id}`, { method: "DELETE" }).then(parse),
+
+  // ─── Contracts Extensions ────────────────────────────────────
+  updateContract: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/contracts/${id}`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
+  deleteContract: (id: string) =>
+    apiFetch(`/club/contracts/${id}`, { method: "DELETE" }).then(parse),
+
+  // ─── Sponsors ────────────────────────────────────────────────
+  getSponsors: () => apiFetch("/club/sponsors").then(parse),
+  createSponsor: (body: Record<string, unknown>) =>
+    apiFetch("/club/sponsors", { method: "POST", body: JSON.stringify(body) }).then(parse),
+  updateSponsor: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/sponsors/${id}`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
+  deleteSponsor: (id: string) =>
+    apiFetch(`/club/sponsors/${id}`, { method: "DELETE" }).then(parse),
+
+  // ─── Invoices ────────────────────────────────────────────────
+  getInvoices: () => apiFetch("/club/invoices").then(parse),
+  createInvoice: (body: Record<string, unknown>) =>
+    apiFetch("/club/invoices", { method: "POST", body: JSON.stringify(body) }).then(parse),
+  updateInvoice: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/invoices/${id}`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
+  markInvoicePaid: (id: string) =>
+    apiFetch(`/club/invoices/${id}/pay`, { method: "PATCH" }).then(parse),
+  deleteInvoice: (id: string) =>
+    apiFetch(`/club/invoices/${id}`, { method: "DELETE" }).then(parse),
 };
