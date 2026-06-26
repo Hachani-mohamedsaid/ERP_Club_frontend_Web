@@ -65,6 +65,11 @@ export const clubApi = {
   createCalendarEvent: (body: Record<string, unknown>) =>
     apiFetch("/club/calendar", { method: "POST", body: JSON.stringify(body) }).then(parse),
 
+  // Calendrier accessible au rôle Préparateur Physique
+  getPreparateurCalendar: () => apiFetch("/club/preparateur/calendar").then(parse),
+  createPreparateurCalendarEvent: (body: Record<string, unknown>) =>
+    apiFetch("/club/preparateur/calendar", { method: "POST", body: JSON.stringify(body) }).then(parse),
+
   getInjuries: () => apiFetch("/club/injuries").then(parse),
   createInjury: (body: Record<string, unknown>) =>
     apiFetch("/club/injuries", { method: "POST", body: JSON.stringify(body) }).then(parse),
@@ -74,4 +79,82 @@ export const clubApi = {
   getInfrastructures: () => apiFetch("/club/infrastructures").then(parse),
   createInfrastructure: (body: Record<string, unknown>) =>
     apiFetch("/club/infrastructures", { method: "POST", body: JSON.stringify(body) }).then(parse),
+
+  // ─── Préparateur ──────────────────────────────────────────────
+  getPhysicalCondition: () => apiFetch("/club/preparateur/condition").then(parse),
+  getPreparateurDashboard: () => apiFetch("/club/preparateur/dashboard").then(parse),
+  getInjuryRisks: () => apiFetch("/club/preparateur/injury-risks").then(parse),
+  createInjuryRisk: (body: Record<string, unknown>) =>
+    apiFetch("/club/preparateur/injury-risks", { method: "POST", body: JSON.stringify(body) }).then(parse),
+  updateInjuryRisk: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/preparateur/injury-risks/${id}`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
+  deleteInjuryRisk: (id: string) =>
+    apiFetch(`/club/preparateur/injury-risks/${id}`, { method: "DELETE" }).then(parse),
+
+  getChargeEquipe: () => apiFetch("/club/preparateur/charge").then(parse),
+  reducePlayerLoad: (playerId: string) =>
+    apiFetch(`/club/preparateur/charge/${playerId}/reduce`, { method: "PATCH" }).then(parse),
+  increasePlayerLoad: (playerId: string) =>
+    apiFetch(`/club/preparateur/charge/${playerId}/increase`, { method: "PATCH" }).then(parse),
+  setPlayerLoad: (
+    playerId: string,
+    body: { loadScore: number; fatigueScore: number; recoveryScore?: number; notes?: string },
+  ) =>
+    apiFetch(`/club/preparateur/charge/${playerId}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }).then(parse),
+  getPlayerLoadHistory: (playerId: string) =>
+    apiFetch(`/club/preparateur/charge/${playerId}/history`).then(parse),
+
+  getComparisonPlayers: () => apiFetch("/club/preparateur/comparison").then(parse),
+
+  getMatchReadiness: () => apiFetch("/club/preparateur/match-readiness").then(parse),
+  updateMatchReadiness: (playerId: string, readinessStatus: string) =>
+    apiFetch(`/club/preparateur/match-readiness/${playerId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ readinessStatus }),
+    }).then(parse),
+
+  getPrograms: () => apiFetch("/club/preparateur/programs").then(parse),
+  createProgram: (body: Record<string, unknown>) =>
+    apiFetch("/club/preparateur/programs", { method: "POST", body: JSON.stringify(body) }).then(parse),
+  updateProgram: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/preparateur/programs/${id}`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
+  deleteProgram: (id: string) =>
+    apiFetch(`/club/preparateur/programs/${id}`, { method: "DELETE" }).then(parse),
+
+  getPrepNotifications: () => apiFetch("/club/preparateur/notifications").then(parse),
+  markPrepNotificationRead: (id: string) =>
+    apiFetch(`/club/preparateur/notifications/${id}/read`, { method: "PATCH" }).then(parse),
+  markAllPrepNotificationsRead: () =>
+    apiFetch("/club/preparateur/notifications/read-all", { method: "PATCH" }).then(parse),
+  deletePrepNotification: (id: string) =>
+    apiFetch(`/club/preparateur/notifications/${id}`, { method: "DELETE" }).then(parse),
+
+  getReports: () => apiFetch("/club/preparateur/reports").then(parse),
+
+  getRecoverySessions: () => apiFetch("/club/preparateur/recovery").then(parse),
+  createRecoverySession: (body: Record<string, unknown>) =>
+    apiFetch("/club/preparateur/recovery", { method: "POST", body: JSON.stringify(body) }).then(parse),
+  updateRecoverySession: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/preparateur/recovery/${id}`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
+  deleteRecoverySession: (id: string) =>
+    apiFetch(`/club/preparateur/recovery/${id}`, { method: "DELETE" }).then(parse),
+
+  getWellness: () => apiFetch("/club/preparateur/wellness").then(parse),
+  upsertWellness: (playerId: string, body: { sommeil: number; fatigue: number; stress: number; douleur: number; humeur: number }) =>
+    apiFetch(`/club/preparateur/wellness/${playerId}`, { method: "PUT", body: JSON.stringify(body) }).then(parse),
+
+  getSessions: () => apiFetch("/club/preparateur/sessions").then(parse),
+  createSession: (body: Record<string, unknown>) =>
+    apiFetch("/club/preparateur/sessions", { method: "POST", body: JSON.stringify(body) }).then(parse),
+  updateSession: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/preparateur/sessions/${id}`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
+  deleteSession: (id: string) =>
+    apiFetch(`/club/preparateur/sessions/${id}`, { method: "DELETE" }).then(parse),
+
+  getPresence: () => apiFetch("/club/preparateur/presence").then(parse),
+  updatePresence: (playerId: string, status: string) =>
+    apiFetch(`/club/preparateur/presence/${playerId}`, { method: "PATCH", body: JSON.stringify({ status }) }).then(parse),
 };
