@@ -6,7 +6,6 @@ import {
 import {
   Sparkles, Bell, CheckCircle2, Cpu, ArrowRight, Loader2, Radar, LayoutDashboard,
 } from "lucide-react";
-import { GoogleIcon } from "../components/ui/GoogleIcon";
 import { useAuth } from "../contexts/AuthContext";
 import { PLATFORM_ROLES, LOGIN_QUICK_ROLES, type PlatformRole } from "../data/platformRoles";
 import odinLogo from "../assets/odin-logo.png";
@@ -637,21 +636,6 @@ export function LoginPage() {
                 <RoleCard key={role.email} role={role} onClick={() => handleDemoLogin(role.email)} />
               ))}
             </motion.div>
-
-            <div className="my-5 flex items-center gap-3">
-              <div className="h-px flex-1" style={{ background: "var(--surface-panel-border)" }} />
-              <span className="text-xs" style={{ color: "var(--text-muted)" }}>ou</span>
-              <div className="h-px flex-1" style={{ background: "var(--surface-panel-border)" }} />
-            </div>
-
-            <button
-              type="button"
-              onClick={() => console.log("Google sign-in - not implemented")}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-medium transition-colors hover:bg-white/5"
-              style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
-            >
-              <GoogleIcon /> Continuer avec Google
-            </button>
 
             <p className="mt-5 text-center text-sm">
               Pas encore de compte ?{" "}

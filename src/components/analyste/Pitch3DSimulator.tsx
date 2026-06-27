@@ -1,8 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Zap, RefreshCw, Users, Sparkles } from "lucide-react";
-import type { PitchPlayer, FormationId, TacticalMetrics } from "../../data/analysteData";
-import { computeTacticalMetrics, applyFormation, chemistryColor, fifaOvrColor, TACTICAL_SUGGESTIONS, BENCH_PLAYERS } from "../../data/analysteData";
+import type { PitchPlayer, FormationId, TacticalMetrics, TacticalSuggestion } from "../../data/analysteData";
+import { computeTacticalMetrics, applyFormation, chemistryColor, fifaOvrColor } from "../../data/analysteData";
 import { PlayerCard } from "./PlayerCard";
 import { PlayerInsightDrawer } from "./PlayerInsightDrawer";
 
@@ -33,13 +33,20 @@ function AnimatedNumber({ value, decimals = 0, suffix = "" }: { value: number; d
 
 interface Pitch3DSimulatorProps {
   initialPlayers: PitchPlayer[];
+  initialBench: PitchPlayer[];
+  suggestions: TacticalSuggestion[];
   initialFormation?: FormationId;
 }
 
-export function Pitch3DSimulator({ initialPlayers, initialFormation = "4-3-3" }: Pitch3DSimulatorProps) {
+export function Pitch3DSimulator({
+  initialPlayers,
+  initialBench,
+  suggestions,
+  initialFormation = "4-3-3",
+}: Pitch3DSimulatorProps) {
   const [formation, setFormation] = useState<FormationId>(initialFormation);
   const [players, setPlayers] = useState<PitchPlayer[]>(() => applyFormation(initialPlayers, initialFormation));
-  const [bench, setBench] = useState<PitchPlayer[]>(BENCH_PLAYERS);
+  const [bench, setBench] = useState<PitchPlayer[]>(initialBench);
   const [metrics, setMetrics] = useState<TacticalMetrics>(() => computeTacticalMetrics(initialPlayers, initialFormation));
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -58,7 +65,7 @@ export function Pitch3DSimulator({ initialPlayers, initialFormation = "4-3-3" }:
   function resetFormation() {
     const fresh = applyFormation(initialPlayers, formation);
     setPlayers(fresh);
-    setBench(BENCH_PLAYERS);
+    setBench(initialBench);
     setMetrics(computeTacticalMetrics(fresh, formation));
   }
 
@@ -369,7 +376,7 @@ export function Pitch3DSimulator({ initialPlayers, initialFormation = "4-3-3" }:
               <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: "#8B5CF6" }}>AI Suggestions</h3>
             </div>
             <div className="space-y-2">
-              {TACTICAL_SUGGESTIONS.map((s, i) => (
+              {suggestions.map((s, i) => (
                 <motion.div
                   key={s.id}
                   initial={{ opacity: 0, x: 20 }}

@@ -1,8 +1,15 @@
 import { Film } from "lucide-react";
 import { AnalystePageTransition } from "../../components/analyste/AnalystePageTransition";
+import { AnalystePageLoader } from "../../components/analyste/AnalystePageLoader";
 import { MatchReplayTimeline } from "../../components/analyste/MatchReplayTimeline";
+import { useAnalysteReplay } from "../../hooks/useAnalysteResource";
 
 export function AnalysteReplayPage() {
+  const { data, loading } = useAnalysteReplay();
+  if (loading && !data) return <AnalystePageLoader />;
+
+  const { events, videoDuration } = data!;
+
   return (
     <AnalystePageTransition>
       <div className="flex items-center gap-3">
@@ -12,7 +19,7 @@ export function AnalysteReplayPage() {
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>Détection automatique · Timeline Netflix · Jump vidéo</p>
         </div>
       </div>
-      <MatchReplayTimeline />
+      <MatchReplayTimeline events={events} videoDuration={videoDuration} />
     </AnalystePageTransition>
   );
 }

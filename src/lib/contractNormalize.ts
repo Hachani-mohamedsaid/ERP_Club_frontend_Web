@@ -73,7 +73,7 @@ export function buildTimeline(contracts: ContractRow[]) {
 }
 
 export function buildAiRecommendations(contracts: ContractRow[]) {
-  const recs: { action: string; player: string; reason: string; color: string }[] = [];
+  const recs: { action: string; player: string; reason: string; color: string; contractId?: string }[] = [];
 
   const renew = contracts
     .filter((c) => c.daysLeft > 0 && c.daysLeft <= 30)
@@ -84,6 +84,7 @@ export function buildAiRecommendations(contracts: ContractRow[]) {
       player: renew.holderName,
       reason: `Contrat expire dans ${renew.daysLeft} jour${renew.daysLeft > 1 ? "s" : ""} — priorité renouvellement`,
       color: "#22C55E",
+      contractId: renew.id,
     });
   }
 
@@ -96,6 +97,7 @@ export function buildAiRecommendations(contracts: ContractRow[]) {
       player: sell.holderName,
       reason: `Contrat consommé à ${sell.consumedPct}% — évaluer transfert`,
       color: "#EF4444",
+      contractId: sell.id,
     });
   }
 
@@ -107,8 +109,20 @@ export function buildAiRecommendations(contracts: ContractRow[]) {
       player: loan.holderName,
       reason: "Temps de jeu limité, potentiel à développer en prêt",
       color: "#6366F1",
+      contractId: loan.id,
     });
   }
 
   return recs.slice(0, 3);
+}
+
+export function extendContractEndDate(endDate: string, years = 1) {
+  const d = new Date(endDate);
+  if (Number.isNaN(d.getTime())) {
+    const fallback = new Date();
+    fallback.setFullYear(fallback.getFullYear() + years);
+    return fallback.toISOString().split("T")[0];
+  }
+  d.setFullYear(d.getFullYear() + years);
+  return d.toISOString().split("T")[0];
 }

@@ -6,38 +6,15 @@ import {
 } from "recharts";
 import { UserPlus, Star, TrendingUp, DollarSign, Target, Filter, CheckCircle2 } from "lucide-react";
 import { AnalystePageTransition } from "../../components/analyste/AnalystePageTransition";
+import { AnalystePageLoader } from "../../components/analyste/AnalystePageLoader";
+import { useAnalysteTransfer } from "../../hooks/useAnalysteResource";
+import type { TransferTarget } from "../../data/analysteExtendedData";
 
 const TOOLTIP_STYLE = {
   contentStyle: { background: "rgba(5,8,22,0.96)", border: "1px solid rgba(139,92,246,0.3)", color: "white", borderRadius: 12 },
 };
 
-interface Transfer {
-  id: string; name: string; club: string; position: string; age: number;
-  cost: string; compatibility: number; xgGain: string; ppiScore: number;
-  speed: number; pressing: number; stamina: number; vision: number; dribbling: number;
-  reason: string; risk: "Faible" | "Moyen" | "Élevé";
-  contract: string; nationality: string;
-}
-
-const TRANSFERS: Transfer[] = [
-  { id: "t1", name: "Hamza Lahmar",    club: "ES Tunis",    position: "BU",  age: 23, cost: "1.2M€", compatibility: 89, xgGain: "+14%",
-    ppiScore: 87, speed: 90, pressing: 84, stamina: 78, vision: 76, dribbling: 82,
-    reason: "Profil similaire Ahmed Ben Salah · Faible fatigue · xG élevé", risk: "Faible", contract: "18 mois", nationality: "TUN" },
-  { id: "t2", name: "Ramzi Fejlaoui",  club: "Club Africain", position: "MC", age: 25, cost: "850K€", compatibility: 82, xgGain: "+9%",
-    ppiScore: 81, speed: 76, pressing: 88, stamina: 85, vision: 82, dribbling: 70,
-    reason: "Vision de jeu · Compatible Karim Dridi · Leadership", risk: "Faible", contract: "12 mois", nationality: "TUN" },
-  { id: "t3", name: "Yassine Bouali",  club: "US Monastir", position: "DD", age: 27, cost: "600K€", compatibility: 78, xgGain: "+6%",
-    ppiScore: 76, speed: 74, pressing: 75, stamina: 88, vision: 68, dribbling: 60,
-    reason: "Solide défensivement · Bon pressing haut · Contrat court", risk: "Moyen", contract: "6 mois", nationality: "TUN" },
-  { id: "t4", name: "Fares Chammam",   club: "Sfax CS",     position: "MOC",age: 21, cost: "380K€", compatibility: 74, xgGain: "+11%",
-    ppiScore: 72, speed: 82, pressing: 71, stamina: 73, vision: 85, dribbling: 80,
-    reason: "Jeune talent · Excellent xG · Potentiel élevé", risk: "Moyen", contract: "24 mois", nationality: "TUN" },
-  { id: "t5", name: "Bilel Ifa",       club: "Étranger",    position: "AG", age: 24, cost: "2.1M€", compatibility: 91, xgGain: "+18%",
-    ppiScore: 90, speed: 92, pressing: 87, stamina: 81, vision: 79, dribbling: 89,
-    reason: "Meilleure compatibilité équipe · Vitesse exceptionnelle · Boost xG immédiat", risk: "Élevé", contract: "36 mois", nationality: "TUN" },
-];
-
-const RISK_COLOR: Record<Transfer["risk"], string> = {
+const RISK_COLOR: Record<TransferTarget["risk"], string> = {
   Faible: "#22C55E", Moyen: "#FF7A00", Élevé: "#EF4444",
 };
 
@@ -64,8 +41,13 @@ function CompatBar({ value }: { value: number }) {
 }
 
 export function AnalysteTransferPage() {
-  const [selected, setSelected] = useState<Transfer | null>(null);
+  const { data, loading } = useAnalysteTransfer();
+  const [selected, setSelected] = useState<TransferTarget | null>(null);
   const [posFilter, setPosFilter] = useState("Tous");
+
+  if (loading && !data) return <AnalystePageLoader />;
+
+  const { transfers: TRANSFERS, summary } = data!;
   const positions = ["Tous", ...Array.from(new Set(TRANSFERS.map(t => t.position)))];
 
   const filtered = posFilter === "Tous" ? TRANSFERS : TRANSFERS.filter(t => t.position === posFilter);
@@ -84,10 +66,10 @@ export function AnalysteTransferPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: "Joueurs ciblés",         value: String(TRANSFERS.length),                    color: "#8B5CF6", icon: UserPlus     },
-          { label: "Compatibilité moyenne",  value: `${Math.round(TRANSFERS.reduce((s,t) => s+t.compatibility,0)/TRANSFERS.length)}%`, color: "#22C55E", icon: Target },
-          { label: "Gain xG maximal",        value: "+18%",                                      color: "#F59E0B", icon: TrendingUp   },
-          { label: "Budget estimé total",    value: "5.1M€",                                     color: "#3B82F6", icon: DollarSign  },
+          { label: "Joueurs ciblés",         value: String(summary.targeted),                    color: "#8B5CF6", icon: UserPlus     },
+          { label: "Compatibilité moyenne",  value: `${summary.avgCompatibility}%`, color: "#22C55E", icon: Target },
+          { label: "Gain xG maximal",        value: summary.maxXgGain,                                      color: "#F59E0B", icon: TrendingUp   },
+          { label: "Budget estimé total",    value: summary.totalBudget,                                     color: "#3B82F6", icon: DollarSign  },
         ].map(({ label, value, color, icon: Icon }, i) => (
           <motion.div key={label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
             <div className="rounded-[16px] border p-4" style={{ background: "rgba(5,8,22,0.7)", borderColor: "rgba(255,255,255,0.06)" }}>

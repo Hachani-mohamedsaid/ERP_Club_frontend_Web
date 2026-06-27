@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -6,44 +6,12 @@ import {
 } from "recharts";
 import { Activity, TrendingDown, AlertTriangle, Clock } from "lucide-react";
 import { AnalystePageTransition } from "../../components/analyste/AnalystePageTransition";
+import { AnalystePageLoader } from "../../components/analyste/AnalystePageLoader";
+import { useAnalysteFatigue } from "../../hooks/useAnalysteResource";
 
 const TOOLTIP_STYLE = {
   contentStyle: { background: "rgba(5,8,22,0.96)", border: "1px solid rgba(139,92,246,0.3)", color: "white", borderRadius: 12 },
 };
-
-const INTERVALS = ["0-15", "15-30", "30-45", "45-60", "60-75", "75-90"];
-
-const TEAM_FATIGUE_BY_MIN = [
-  { interval: "0-15",  fatigue: 18, actions: 142, intensity: 92, goals: 1, errors: 0 },
-  { interval: "15-30", fatigue: 32, actions: 138, intensity: 88, goals: 0, errors: 1 },
-  { interval: "30-45", fatigue: 50, actions: 128, intensity: 82, goals: 0, errors: 1 },
-  { interval: "45-60", fatigue: 58, actions: 135, intensity: 85, goals: 1, errors: 0 },
-  { interval: "60-75", fatigue: 74, actions: 112, intensity: 72, goals: 0, errors: 2 },
-  { interval: "75-90", fatigue: 89, actions: 94,  intensity: 61, goals: 0, errors: 3 },
-];
-
-interface PlayerHeatmap {
-  name: string;
-  data: { interval: string; fatigue: number; sprints: number }[];
-}
-
-const PLAYER_HEATMAPS: PlayerHeatmap[] = [
-  { name: "Ahmed Ben Salah", data: [
-      { interval: "0-15", fatigue: 15, sprints: 8 }, { interval: "15-30", fatigue: 30, sprints: 9 },
-      { interval: "30-45", fatigue: 50, sprints: 7 }, { interval: "45-60", fatigue: 65, sprints: 6 },
-      { interval: "60-75", fatigue: 82, sprints: 4 }, { interval: "75-90", fatigue: 95, sprints: 2 },
-  ]},
-  { name: "Karim Dridi", data: [
-      { interval: "0-15", fatigue: 20, sprints: 6 }, { interval: "15-30", fatigue: 35, sprints: 7 },
-      { interval: "30-45", fatigue: 52, sprints: 6 }, { interval: "45-60", fatigue: 65, sprints: 5 },
-      { interval: "60-75", fatigue: 78, sprints: 3 }, { interval: "75-90", fatigue: 88, sprints: 2 },
-  ]},
-  { name: "Ali Mansouri", data: [
-      { interval: "0-15", fatigue: 10, sprints: 9 }, { interval: "15-30", fatigue: 20, sprints: 10 },
-      { interval: "30-45", fatigue: 32, sprints: 9 }, { interval: "45-60", fatigue: 42, sprints: 8 },
-      { interval: "60-75", fatigue: 54, sprints: 7 }, { interval: "75-90", fatigue: 62, sprints: 6 },
-  ]},
-];
 
 function fatigueColor(v: number) {
   if (v >= 80) return "#EF4444";
@@ -73,21 +41,28 @@ const ACard = ({ children, className = "" }: { children: React.ReactNode; classN
 );
 
 export function AnalysteFatigueHeatmapPage() {
+  const { data, loading } = useAnalysteFatigue();
   const [view, setView] = useState<"team" | "individual">("team");
-  const [selectedPlayer, setSelectedPlayer] = useState(PLAYER_HEATMAPS[0].name);
+  const [selectedPlayer, setSelectedPlayer] = useState("");
 
-  const playerData = PLAYER_HEATMAPS.find(p => p.name === selectedPlayer)!;
-  const crashInterval = TEAM_FATIGUE_BY_MIN.reduce((max, d) => d.fatigue > max.fatigue ? d : max, TEAM_FATIGUE_BY_MIN[0]);
+  useEffect(() => {
+    if (data?.playerHeatmaps[0]) setSelectedPlayer(data.playerHeatmaps[0].name);
+  }, [data]);
+
+  if (loading && !data) return <AnalystePageLoader />;
+
+  const { teamFatigue: TEAM_FATIGUE_BY_MIN, playerHeatmaps: PLAYER_HEATMAPS, summary } = data!;
+  const playerData = PLAYER_HEATMAPS.find(p => p.name === selectedPlayer) ?? PLAYER_HEATMAPS[0];
 
   return (
     <AnalystePageTransition>
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: "Fatigue max équipe",       value: `${TEAM_FATIGUE_BY_MIN[5].fatigue}%`, color: "#EF4444", icon: Activity },
-          { label: "Effondrement physique",     value: crashInterval.interval,               color: "#FF7A00", icon: TrendingDown },
-          { label: "Erreurs période critique",  value: `${crashInterval.errors} erreurs`,    color: "#8B5CF6", icon: AlertTriangle },
-          { label: "Actions 75-90 vs 0-15",    value: `-${142 - 94}`,                       color: "#F59E0B", icon: Clock },
+          { label: "Fatigue max équipe",       value: `${summary.maxFatigue}%`, color: "#EF4444", icon: Activity },
+          { label: "Effondrement physique",     value: summary.collapseRange,               color: "#FF7A00", icon: TrendingDown },
+          { label: "Erreurs période critique",  value: `${summary.criticalErrors} erreurs`,    color: "#8B5CF6", icon: AlertTriangle },
+          { label: "Actions 75-90 vs 0-15",    value: `${summary.actionsDelta}`,                       color: "#F59E0B", icon: Clock },
         ].map(({ label, value, color, icon: Icon }, i) => (
           <motion.div key={label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
             <div className="rounded-[16px] border p-4" style={{ background: "rgba(5,8,22,0.7)", borderColor: "rgba(255,255,255,0.06)" }}>
