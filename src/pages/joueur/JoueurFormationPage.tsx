@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Loader2 } from "lucide-react";
 import { GlassCard } from "../../components/ui/GlassCard";
 import { Button } from "../../components/ui/Button";
-import { SQUAD_PLAYERS, getInitials } from "../../data/joueurMockData";
-import { CHEMISTRY_PAIRS } from "../../data/joueurExtendedData";
+import { getInitials } from "../../data/joueurMockData";
+import { useJoueurBackendData } from "../../hooks/useJoueurBackendData";
 
 const FORMATION_433 = [
   { id: "gb", label: "GB", x: 50, y: 88 },
@@ -20,23 +20,21 @@ const FORMATION_433 = [
   { id: "ad", label: "AD", x: 82, y: 22 },
 ];
 
-const BEST_XI: Record<string, string> = {
-  gb: "5", dg: "4", dc1: "3", dc2: "3", dd: "4",
-  mc1: "2", moc: "2", mc2: "6", ag: "7", bu: "1", ad: "6",
-};
-
-function getChemistry(player1Id: string, player2Id: string): number {
-  const pair = CHEMISTRY_PAIRS.find(
-    (p) => (p.player1Id === player1Id && p.player2Id === player2Id) || (p.player1Id === player2Id && p.player2Id === player1Id)
-  );
-  return pair?.chemistry ?? 65;
-}
-
 export function JoueurFormationPage() {
+  const { squadPlayers, chemistry, loading } = useJoueurBackendData();
   const [assignments, setAssignments] = useState<Record<string, string>>({});
   const [dragging, setDragging] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [chemistryScore, setChemistryScore] = useState<number | null>(null);
+
+  function getChemistryScore(player1Id: string, player2Id: string): number {
+    const pair = chemistry.find(
+      (c) =>
+        (c.player1Id === player1Id && c.player2Id === player2Id) ||
+        (c.player1Id === player2Id && c.player2Id === player1Id)
+    );
+    return pair?.chemistry ?? 65;
+  }
 
   function assignPlayer(slotId: string, playerId: string) {
     setAssignments((prev) => {
@@ -54,7 +52,7 @@ export function JoueurFormationPage() {
     let count = 0;
     for (let i = 0; i < ids.length; i++) {
       for (let j = i + 1; j < ids.length; j++) {
-        total += getChemistry(ids[i], ids[j]);
+        total += getChemistryScore(ids[i], ids[j]);
         count++;
       }
     }
@@ -62,16 +60,31 @@ export function JoueurFormationPage() {
   }
 
   function generateBestXI() {
+    if (squadPlayers.length === 0) return;
     setGenerating(true);
     setTimeout(() => {
-      setAssignments(BEST_XI);
-      updateChemistry(BEST_XI);
+      const bestXI: Record<string, string> = {};
+      FORMATION_433.forEach((slot, idx) => {
+        const player = squadPlayers[idx % squadPlayers.length];
+        if (player) bestXI[slot.id] = player.id;
+      });
+      setAssignments(bestXI);
+      updateChemistry(bestXI);
       setGenerating(false);
     }, 1200);
   }
 
   const assignedIds = new Set(Object.values(assignments));
-  const bench = SQUAD_PLAYERS.filter((p) => !assignedIds.has(p.id));
+  const bench = squadPlayers.filter((p) => !assignedIds.has(p.id));
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16 gap-3" style={{ color: "var(--text-muted)" }}>
+        <Loader2 size={20} className="animate-spin" />
+        <span className="text-sm">Chargement de l'effectif...</span>
+      </div>
+    );
+  }
 
   return (
     <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
@@ -89,7 +102,7 @@ export function JoueurFormationPage() {
               <p className="text-xl font-bold" style={{ color: chemistryScore >= 80 ? "#2e9e5b" : "#d99a1f" }}>{chemistryScore}%</p>
             </motion.div>
           )}
-          <Button onClick={generateBestXI} disabled={generating}>
+          <Button onClick={generateBestXI} disabled={generating || squadPlayers.length === 0}>
             <Sparkles size={16} className="mr-2" />
             {generating ? "Génération..." : "Generate Best XI"}
           </Button>
@@ -98,7 +111,7 @@ export function JoueurFormationPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
         <GlassCard className="p-4 lg:col-span-1">
-          <p className="mb-3 text-xs font-medium" style={{ color: "var(--text-muted)" }}>Joueurs disponibles</p>
+          <p className="mb-3 text-xs font-medium" style={{ color: "var(--text-muted)" }}>Joueurs disponibles ({bench.length})</p>
           <div className="max-h-[500px] space-y-2 overflow-y-auto">
             {bench.map((player) => (
               <motion.button
@@ -111,13 +124,18 @@ export function JoueurFormationPage() {
                 style={{ borderColor: dragging === player.id ? "var(--accent)" : "var(--surface-panel-border)", opacity: dragging === player.id ? 0.5 : 1 }}
                 whileHover={{ scale: 1.02 }}
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold" style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
-                  {getInitials(player.name)}
+                <span className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold overflow-hidden" style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
+                  {player.photoUrl
+                    ? <img src={player.photoUrl} alt={player.name} className="h-full w-full rounded-full object-cover" />
+                    : getInitials(player.name)}
                 </span>
                 <span style={{ color: "var(--text-primary)" }}>{player.name.split(" ").pop()}</span>
-                <span className="ml-auto" style={{ color: "var(--text-muted)" }}>{player.position}</span>
+                <span className="ml-auto" style={{ color: "var(--text-muted)" }}>{player.position || "—"}</span>
               </motion.button>
             ))}
+            {bench.length === 0 && (
+              <p className="text-xs text-center py-3" style={{ color: "var(--text-muted)" }}>Tous les joueurs sont positionnés</p>
+            )}
           </div>
         </GlassCard>
 
@@ -131,7 +149,7 @@ export function JoueurFormationPage() {
 
             {FORMATION_433.map((slot) => {
               const playerId = assignments[slot.id];
-              const player = playerId ? SQUAD_PLAYERS.find((p) => p.id === playerId) : null;
+              const player = playerId ? squadPlayers.find((p) => p.id === playerId) : null;
 
               return (
                 <div
@@ -142,7 +160,7 @@ export function JoueurFormationPage() {
                   onDrop={() => dragging && assignPlayer(slot.id, dragging)}
                 >
                   <motion.div
-                    className="flex h-12 w-12 flex-col items-center justify-center rounded-full border-2 text-[9px] font-bold cursor-pointer"
+                    className="flex h-12 w-12 flex-col items-center justify-center rounded-full border-2 text-[9px] font-bold cursor-pointer overflow-hidden"
                     style={{
                       borderColor: player ? "var(--accent)" : "rgba(255,255,255,0.2)",
                       background: player ? "var(--accent)" : "rgba(255,255,255,0.05)",
@@ -151,9 +169,18 @@ export function JoueurFormationPage() {
                     }}
                     animate={player ? { scale: [1, 1.08, 1] } : {}}
                     transition={{ duration: 0.3 }}
-                    onClick={() => playerId && setAssignments((prev) => { const n = { ...prev }; delete n[slot.id]; updateChemistry(n); return n; })}
+                    onClick={() => playerId && setAssignments((prev) => {
+                      const n = { ...prev };
+                      delete n[slot.id];
+                      updateChemistry(n);
+                      return n;
+                    })}
                   >
-                    {player ? getInitials(player.name) : slot.label}
+                    {player
+                      ? (player.photoUrl
+                          ? <img src={player.photoUrl} alt={player.name} className="h-full w-full object-cover" />
+                          : getInitials(player.name))
+                      : slot.label}
                   </motion.div>
                 </div>
               );

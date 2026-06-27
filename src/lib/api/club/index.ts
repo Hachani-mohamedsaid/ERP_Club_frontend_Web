@@ -80,4 +80,90 @@ export const clubApi = {
   getInfrastructures: () => apiFetch("/club/infrastructures").then(parse),
   createInfrastructure: (body: Record<string, unknown>) =>
     apiFetch("/club/infrastructures", { method: "POST", body: JSON.stringify(body) }).then(parse),
+
+  // ─── Player Photo ───────────────────────────────────────────
+  updatePlayerPhoto: (id: string, photoUrl: string) =>
+    apiFetch(`/club/players/${id}/photo`, { method: "PATCH", body: JSON.stringify({ photoUrl }) }).then(parse),
+
+  // ─── Player Physical (self-edit by joueur) ──────────────────
+  updatePlayerPhysical: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/players/${id}/physical`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
+
+  // ─── Player Contract ────────────────────────────────────────
+  getPlayerContract: (id: string) => apiFetch(`/club/players/${id}/contract`).then(parse),
+
+  // ─── Player Stats ───────────────────────────────────────────
+  getPlayerStats: (id: string) => apiFetch(`/club/players/${id}/stats`).then(parse),
+  updatePlayerStats: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/players/${id}/stats`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
+
+  // ─── Match Stats ────────────────────────────────────────────
+  getMatchStats: (id: string) => apiFetch(`/club/players/${id}/match-stats`).then(parse),
+  createMatchStat: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/players/${id}/match-stats`, { method: "POST", body: JSON.stringify(body) }).then(parse),
+
+  // ─── Awards ─────────────────────────────────────────────────
+  getAwards: (id: string) => apiFetch(`/club/players/${id}/awards`).then(parse),
+  createAward: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/players/${id}/awards`, { method: "POST", body: JSON.stringify(body) }).then(parse),
+  deleteAward: (awardId: string) =>
+    apiFetch(`/club/awards/${awardId}`, { method: "DELETE" }).then(parse),
+
+  // ─── Documents ──────────────────────────────────────────────
+  getDocuments: (id: string) => apiFetch(`/club/players/${id}/documents`).then(parse),
+  getDocumentFile: (docId: string) => apiFetch(`/club/documents/${docId}/file`).then(parse),
+  createDocument: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/players/${id}/documents`, { method: "POST", body: JSON.stringify(body) }).then(parse),
+  deleteDocument: (docId: string) =>
+    apiFetch(`/club/documents/${docId}`, { method: "DELETE" }).then(parse),
+
+  // ─── Transfers ──────────────────────────────────────────────
+  getTransfers: () => apiFetch("/club/transfers").then(parse),
+  createTransfer: (body: Record<string, unknown>) =>
+    apiFetch("/club/transfers", { method: "POST", body: JSON.stringify(body) }).then(parse),
+  deleteTransfer: (id: string) =>
+    apiFetch(`/club/transfers/${id}`, { method: "DELETE" }).then(parse),
+
+  // ─── Chemistry ──────────────────────────────────────────────
+  getChemistry: () => apiFetch("/club/chemistry").then(parse),
+  updateChemistry: (id: string, chemistry: number) =>
+    apiFetch(`/club/chemistry/${id}`, { method: "PATCH", body: JSON.stringify({ chemistry }) }).then(parse),
+
+  // ─── Medical Appointment (joueur self-request) ──────────────
+  bookAppointment: (playerId: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/players/${playerId}/appointment`, { method: "POST", body: JSON.stringify(body) }).then(parse),
+
+  // ─── Finance Extensions ──────────────────────────────────────
+  getFinanceReport: () => apiFetch("/club/finance/report").then(parse),
+  seedFinance: () => apiFetch("/club/finance/seed", { method: "POST" }).then(parse),
+  updateFinanceEntry: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/finance/${id}`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
+  deleteFinanceEntry: (id: string) =>
+    apiFetch(`/club/finance/${id}`, { method: "DELETE" }).then(parse),
+
+  // ─── Contracts Extensions ────────────────────────────────────
+  updateContract: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/contracts/${id}`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
+  deleteContract: (id: string) =>
+    apiFetch(`/club/contracts/${id}`, { method: "DELETE" }).then(parse),
+
+  // ─── Sponsors ────────────────────────────────────────────────
+  getSponsors: () => apiFetch("/club/sponsors").then(parse),
+  createSponsor: (body: Record<string, unknown>) =>
+    apiFetch("/club/sponsors", { method: "POST", body: JSON.stringify(body) }).then(parse),
+  updateSponsor: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/sponsors/${id}`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
+  deleteSponsor: (id: string) =>
+    apiFetch(`/club/sponsors/${id}`, { method: "DELETE" }).then(parse),
+
+  // ─── Invoices ────────────────────────────────────────────────
+  getInvoices: () => apiFetch("/club/invoices").then(parse),
+  createInvoice: (body: Record<string, unknown>) =>
+    apiFetch("/club/invoices", { method: "POST", body: JSON.stringify(body) }).then(parse),
+  updateInvoice: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/invoices/${id}`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
+  markInvoicePaid: (id: string) =>
+    apiFetch(`/club/invoices/${id}/pay`, { method: "PATCH" }).then(parse),
+  deleteInvoice: (id: string) =>
+    apiFetch(`/club/invoices/${id}`, { method: "DELETE" }).then(parse),
 };
