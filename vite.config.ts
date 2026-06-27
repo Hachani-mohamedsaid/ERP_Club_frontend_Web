@@ -9,6 +9,15 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss()],
+    optimizeDeps: {
+      include: [
+        'three',
+        '@react-three/fiber',
+        '@react-three/drei',
+        '@react-three/postprocessing',
+        'three/examples/jsm/libs/meshopt_decoder.module.js',
+      ],
+    },
     server: {
       proxy: {
         '/api': {

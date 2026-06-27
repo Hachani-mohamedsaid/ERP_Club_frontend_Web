@@ -1,6 +1,5 @@
-import { useMemo, useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Plus, RefreshCw, TrendingDown, ArrowRightLeft, Sparkles, Save, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Plus, RefreshCw, TrendingDown, ArrowRightLeft, Sparkles } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { ClubPageTransition } from "../../components/club/ClubPageTransition";
 import { ClubKpiCard } from "../../components/club/ClubKpiCard";
@@ -8,157 +7,22 @@ import { ClubEmptyState } from "../../components/club/ClubEmptyState";
 import { clubApi } from "../../lib/api/club";
 import { useClubResource } from "../../hooks/useClubResource";
 import { usePermissions } from "../../hooks/usePermissions";
+import { useAuth } from "../../contexts/AuthContext";
 import {
   normalizeContracts,
   buildTimeline,
   buildAiRecommendations,
   getAlertLevel,
+  extendContractEndDate,
+  type ContractRow,
 } from "../../lib/contractNormalize";
 
-const CONTRACT_EXTRA_FIELDS = [
-  { key: "startDate", label: "Date début", type: "date" },
-  { key: "endDate", label: "Date fin", type: "date" },
-  { key: "salaryMonthly", label: "Salaire mensuel (DT)", type: "number" },
-  { key: "bonus", label: "Bonus (DT)", type: "number", placeholder: "5000" },
-  { key: "releaseClause", label: "Clause libératoire", placeholder: "15M €" },
-] as const;
-
-interface RosterEntry {
-  name: string;
-  salaryMonthly: number;
-}
+import { ContractFormModal, type RosterEntry } from "../../components/club/ContractFormModal";
+import { AnimatePresence, motion } from "framer-motion";
 
 function parseSalaryFromContract(s?: string) {
   const n = parseInt(String(s ?? "").replace(/\D/g, ""), 10);
   return Number.isNaN(n) ? 0 : n;
-}
-
-function ContractFormModal({
-  holders,
-  defaultHolder,
-  onClose,
-  onSubmit,
-}: {
-  holders: RosterEntry[];
-  defaultHolder?: string;
-  onClose: () => void;
-  onSubmit: (values: Record<string, string>) => Promise<void>;
-}) {
-  const [holderName, setHolderName] = useState(defaultHolder ?? "");
-  const [form, setForm] = useState({
-    startDate: "",
-    endDate: "",
-    salaryMonthly: "",
-    bonus: "",
-    releaseClause: "",
-  });
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (defaultHolder && holders.some((h) => h.name === defaultHolder)) {
-      setHolderName(defaultHolder);
-      const entry = holders.find((h) => h.name === defaultHolder);
-      if (entry?.salaryMonthly) {
-        setForm((f) => ({ ...f, salaryMonthly: String(entry.salaryMonthly) }));
-      }
-    }
-  }, [defaultHolder, holders]);
-
-  function onHolderChange(name: string) {
-    setHolderName(name);
-    const entry = holders.find((h) => h.name === name);
-    if (entry?.salaryMonthly) {
-      setForm((f) => ({ ...f, salaryMonthly: String(entry.salaryMonthly) }));
-    }
-  }
-
-  return (
-    <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      onClick={onClose}
-    >
-      <motion.div
-        className="w-full max-w-md rounded-[24px] border p-6"
-        style={{ background: "rgba(10,18,40,0.98)", borderColor: "rgba(255,107,87,0.25)" }}
-        initial={{ scale: 0.92, y: 20 }} animate={{ scale: 1, y: 0 }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>Nouveau contrat</h2>
-          <button type="button" onClick={onClose} className="rounded-xl p-2 hover:bg-white/10"><X size={18} /></button>
-        </div>
-        <div className="space-y-4">
-          <div>
-            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-              Titulaire
-            </label>
-            {holders.length > 0 ? (
-              <select
-                value={holderName}
-                onChange={(e) => onHolderChange(e.target.value)}
-                className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
-              >
-                <option value="">Sélectionner un joueur ou staff…</option>
-                {holders.map((h) => (
-                  <option key={h.name} value={h.name}>{h.name}</option>
-                ))}
-              </select>
-            ) : (
-              <input
-                value={holderName}
-                onChange={(e) => setHolderName(e.target.value)}
-                placeholder="Nom du joueur"
-                className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
-              />
-            )}
-            {holders.length === 0 && (
-              <p className="mt-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
-                Ajoutez des joueurs dans Gestion Joueurs pour les sélectionner ici.
-              </p>
-            )}
-          </div>
-          {CONTRACT_EXTRA_FIELDS.map((f) => (
-            <div key={f.key}>
-              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-                {f.label}
-              </label>
-              <input
-                type={f.type ?? "text"}
-                value={form[f.key as keyof typeof form] ?? ""}
-                onChange={(e) => setForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
-                placeholder={"placeholder" in f ? f.placeholder : undefined}
-                className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
-              />
-            </div>
-          ))}
-        </div>
-        <motion.button
-          type="button"
-          disabled={saving}
-          onClick={async () => {
-            setSaving(true);
-            try {
-              await onSubmit({ holderName, ...form });
-              onClose();
-            } catch (err) {
-              alert(err instanceof Error ? err.message : "Erreur");
-            } finally {
-              setSaving(false);
-            }
-          }}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white"
-          style={{ background: "linear-gradient(135deg,#FF6B57,#E65240)" }}
-        >
-          <Save size={14} /> {saving ? "Enregistrement…" : "Enregistrer"}
-        </motion.button>
-      </motion.div>
-    </motion.div>
-  );
 }
 
 const AI_ICONS = {
@@ -173,13 +37,20 @@ function formatDate(iso: string) {
 }
 
 export function ClubContratsPage() {
-  const { can } = usePermissions();
+  const { user } = useAuth();
+  const { can, isClubAdmin } = usePermissions();
+  const canManageContracts =
+    isClubAdmin || user?.role === "responsable" || can("Contrats", "créer") || can("Contrats", "modifier");
   const location = useLocation();
   const playerFilter = (location.state as { playerName?: string } | null)?.playerName;
   const { data, loading, error, reload } = useClubResource(() => clubApi.getContracts());
   const { data: playersData } = useClubResource(() => clubApi.getPlayers());
   const { data: staffData } = useClubResource(() => clubApi.getStaff());
   const [showAdd, setShowAdd] = useState(false);
+  const [renewContract, setRenewContract] = useState<ContractRow | null>(null);
+  const [appliedRecs, setAppliedRecs] = useState<Set<string>>(new Set());
+  const [toast, setToast] = useState<string | null>(null);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
 
   const holders = useMemo((): RosterEntry[] => {
     const map = new Map<string, RosterEntry>();
@@ -206,6 +77,41 @@ export function ClubContratsPage() {
   const timeline = useMemo(() => buildTimeline(contracts), [contracts]);
   const aiRecs = useMemo(() => buildAiRecommendations(contracts), [contracts]);
 
+  function showToast(message: string) {
+    setToast(message);
+    window.setTimeout(() => setToast(null), 4000);
+  }
+
+  function recKey(rec: { action: string; player: string }) {
+    return `${rec.action}-${rec.player}`;
+  }
+
+  function applyRecommendation(rec: (typeof aiRecs)[number]) {
+    const contract = contracts.find((c) => c.id === rec.contractId || c.holderName === rec.player);
+    if (!contract) {
+      alert("Contrat introuvable pour cette recommandation.");
+      return;
+    }
+
+    if (rec.action === "Renouveler") {
+      if (!canManageContracts) {
+        alert("Vous n'avez pas la permission de modifier les contrats.");
+        return;
+      }
+      setRenewContract(contract);
+      return;
+    }
+
+    setAppliedRecs((prev) => new Set(prev).add(recKey(rec)));
+    setHighlightId(contract.id);
+    showToast(
+      rec.action === "Vendre"
+        ? `${rec.player} — dossier transfert ouvert. Suivi activé dans le tableau.`
+        : `${rec.player} — prêt recommandé enregistré. Suivi activé dans le tableau.`,
+    );
+    window.setTimeout(() => setHighlightId(null), 3000);
+  }
+
   return (
     <ClubPageTransition>
       <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
@@ -214,7 +120,7 @@ export function ClubContratsPage() {
           <h1 className="text-xl font-extrabold" style={{ color: "var(--text-primary)" }}>Contrats</h1>
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>Alertes et renouvellements.</p>
         </div>
-        {can("Contrats", "créer") && (
+        {canManageContracts && (
           <button
             type="button"
             onClick={() => setShowAdd(true)}
@@ -228,6 +134,17 @@ export function ClubContratsPage() {
 
       {loading && <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement…</p>}
       {error && <p className="text-sm text-red-400">{error}</p>}
+
+      {toast && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4 rounded-xl border px-4 py-3 text-sm font-medium"
+          style={{ background: "rgba(34,197,94,0.12)", borderColor: "rgba(34,197,94,0.35)", color: "#22C55E" }}
+        >
+          {toast}
+        </motion.div>
+      )}
 
       {/* Timeline expiration */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -258,6 +175,7 @@ export function ClubContratsPage() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             {aiRecs.map((rec) => {
               const Icon = AI_ICONS[rec.action as keyof typeof AI_ICONS] ?? RefreshCw;
+              const applied = appliedRecs.has(recKey(rec));
               return (
                 <ClubKpiCard key={`${rec.action}-${rec.player}`}>
                   <div className="flex items-start gap-3">
@@ -276,10 +194,12 @@ export function ClubContratsPage() {
                       </p>
                       <button
                         type="button"
-                        className="mt-3 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-white/5"
+                        disabled={applied}
+                        onClick={() => applyRecommendation(rec)}
+                        className="mt-3 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-white/5 disabled:opacity-50"
                         style={{ borderColor: `${rec.color}50`, color: rec.color }}
                       >
-                        Appliquer
+                        {applied ? "Appliqué ✓" : "Appliquer"}
                       </button>
                     </div>
                   </div>
@@ -318,10 +238,14 @@ export function ClubContratsPage() {
                   return (
                     <motion.tr
                       key={c.id}
+                      id={`contract-row-${c.id}`}
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.03 }}
-                      style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                      style={{
+                        borderBottom: "1px solid rgba(255,255,255,0.04)",
+                        background: highlightId === c.id ? "rgba(34,197,94,0.08)" : undefined,
+                      }}
                       className="hover:bg-white/[0.02]"
                     >
                       <td className="px-4 py-3 font-semibold" style={{ color: "var(--text-primary)" }}>
@@ -367,6 +291,40 @@ export function ClubContratsPage() {
           </div>
         )}
       </ClubKpiCard>
+
+      <AnimatePresence>
+        {renewContract && (
+          <ContractFormModal
+            holders={holders}
+            defaultHolder={renewContract.holderName}
+            lockHolder
+            title={`Renouveler contrat — ${renewContract.holderName}`}
+            initialValues={{
+              startDate: renewContract.startDate,
+              endDate: extendContractEndDate(renewContract.endDate),
+              salaryMonthly: String(renewContract.salaryMonthly),
+              bonus: String(renewContract.bonus),
+              releaseClause: renewContract.releaseClause ?? "",
+            }}
+            onClose={() => setRenewContract(null)}
+            onSubmit={async (v) => {
+              if (!v.endDate) throw new Error("La date de fin est requise.");
+              await clubApi.updateContract(renewContract.id, {
+                startDate: v.startDate || renewContract.startDate,
+                endDate: v.endDate,
+                salaryMonthly: Number(v.salaryMonthly) || renewContract.salaryMonthly,
+                bonus: Number(v.bonus) || 0,
+                releaseClause: v.releaseClause || null,
+              });
+              setAppliedRecs((prev) => new Set(prev).add(`Renouveler-${renewContract.holderName}`));
+              setHighlightId(renewContract.id);
+              showToast(`Contrat de ${renewContract.holderName} renouvelé jusqu'au ${formatDate(v.endDate)}.`);
+              window.setTimeout(() => setHighlightId(null), 3000);
+              await reload();
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showAdd && (

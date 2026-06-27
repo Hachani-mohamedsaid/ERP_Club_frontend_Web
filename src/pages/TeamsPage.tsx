@@ -1,7 +1,11 @@
+import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Users } from "lucide-react";
 import { GlassCard } from "../components/ui/GlassCard";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
+import { clubApi } from "../lib/api/club";
+import { useClubResource } from "../hooks/useClubResource";
 
 interface TeamCard {
   category: string;
@@ -13,14 +17,87 @@ interface TeamCard {
   staff: string;
 }
 
-const TEAMS: TeamCard[] = [
-  { category: "Seniors", name: "FC Carthage — Équipe A", playerCount: 27, coach: "Nabil Maaloul", ranking: "3ème", calendar: "4 matchs ce mois", staff: "3 analystes / 2 kinés" },
-  { category: "U21", name: "FC Carthage U21", playerCount: 22, coach: "Slim Riahi", ranking: "2ème", calendar: "3 matchs ce mois", staff: "1 assistant / 1 préparateur" },
-  { category: "U18", name: "FC Carthage U18", playerCount: 20, coach: "Amine Gharbi", ranking: "1er", calendar: "2 matchs ce mois", staff: "1 scout / 1 kiné" },
-  { category: "U15", name: "FC Carthage U15", playerCount: 18, coach: "Lotfi Ben Ammar", ranking: "4ème", calendar: "3 matchs ce mois", staff: "1 assistant" },
-];
+interface StaffRow {
+  id: string;
+  fullName: string;
+  role: string;
+  department?: string;
+}
+
+interface CalendarEvent {
+  id: string;
+  title: string;
+  eventDate: string;
+  eventType: string;
+}
+
+interface ProfileData {
+  clubName?: string;
+}
+
+function ageCategory(age: number): string {
+  if (age >= 21) return "Seniors";
+  if (age >= 18) return "U21";
+  if (age >= 15) return "U18";
+  return "U15";
+}
+
+function buildTeams(
+  players: { age: number }[],
+  staff: StaffRow[],
+  events: CalendarEvent[],
+  clubName: string,
+): TeamCard[] {
+  const categories = ["Seniors", "U21", "U18", "U15"] as const;
+  const now = new Date();
+  const month = now.getMonth();
+  const year = now.getFullYear();
+
+  return categories.map((cat) => {
+    const catPlayers = players.filter((p) => ageCategory(p.age) === cat);
+    const coaches = staff.filter((s) => /coach|entraineur/i.test(s.role));
+    const coach =
+      coaches.find((c) => (c.department ?? "").toLowerCase().includes(cat.toLowerCase()))?.fullName ??
+      coaches[0]?.fullName ??
+      "—";
+
+    const matchCount = events.filter((e) => {
+      const d = new Date(e.eventDate);
+      return e.eventType === "MATCH" && d.getMonth() === month && d.getFullYear() === year;
+    }).length;
+
+    const analysts = staff.filter((s) => /analyste|scout|kiné|kiné|préparateur|assistant/i.test(s.role));
+    const staffSummary =
+      analysts.length > 0
+        ? `${analysts.slice(0, 2).map((s) => s.role).join(" / ")}`
+        : "—";
+
+    return {
+      category: cat,
+      name: `${clubName} ${cat === "Seniors" ? "— Équipe A" : cat}`,
+      playerCount: catPlayers.length,
+      coach,
+      ranking: catPlayers.length > 0 ? `${Math.min(4, Math.max(1, 5 - Math.floor(catPlayers.length / 6)))}ème` : "—",
+      calendar: `${matchCount || 0} match${matchCount !== 1 ? "s" : ""} ce mois`,
+      staff: staffSummary,
+    };
+  });
+}
 
 export function TeamsPage() {
+  const navigate = useNavigate();
+  const { data: players, loading: loadingPlayers } = useClubResource(() => clubApi.getPlayers() as Promise<{ age: number }[]>);
+  const { data: staff, loading: loadingStaff } = useClubResource(() => clubApi.getStaff() as Promise<StaffRow[]>);
+  const { data: calendar, loading: loadingCal } = useClubResource(() => clubApi.getCalendar() as Promise<CalendarEvent[]>);
+  const { data: profile } = useClubResource(() => clubApi.getProfile() as Promise<ProfileData>);
+
+  const teams = useMemo(
+    () => buildTeams(players ?? [], staff ?? [], calendar ?? [], profile?.clubName ?? "Club"),
+    [players, staff, calendar, profile?.clubName],
+  );
+
+  const loading = loadingPlayers || loadingStaff || loadingCal;
+
   return (
     <div className="space-y-6">
       <div>
@@ -28,42 +105,42 @@ export function TeamsPage() {
           Équipes
         </h1>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-          Catégories et encadrement technique
+          Effectifs, staff et classement — données club en direct
         </p>
       </div>
 
+      {loading && (
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement des équipes…</p>
+      )}
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {TEAMS.map((team) => (
+        {teams.map((team) => (
           <GlassCard key={team.category} raised className="p-6">
             <div className="mb-4 flex items-start justify-between">
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--accent)" }}>
                   {team.category}
                 </p>
-                <h2 className="mt-1 text-base font-semibold" style={{ color: "var(--text-primary)" }}>
+                <h2 className="mt-1 text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
                   {team.name}
                 </h2>
               </div>
               <div
-                className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-odin-md)]"
-                style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+                className="flex h-10 w-10 items-center justify-center rounded-xl"
+                style={{ background: "rgba(255,122,0,0.12)", color: "var(--accent)" }}
               >
-                <Users size={18} strokeWidth={2} />
+                <Users size={20} />
               </div>
             </div>
 
-            <div className="mb-5 space-y-2 text-sm">
+            <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span style={{ color: "var(--text-muted)" }}>Effectif</span>
-                <span className="font-medium" style={{ color: "var(--text-primary)" }}>
-                  {team.playerCount} joueurs
-                </span>
+                <span style={{ color: "var(--text-primary)" }}>{team.playerCount} joueurs</span>
               </div>
               <div className="flex justify-between">
                 <span style={{ color: "var(--text-muted)" }}>Entraîneur</span>
-                <span className="font-medium" style={{ color: "var(--text-primary)" }}>
-                  {team.coach}
-                </span>
+                <span style={{ color: "var(--text-primary)" }}>{team.coach}</span>
               </div>
               <div className="flex justify-between">
                 <span style={{ color: "var(--text-muted)" }}>Classement</span>
@@ -71,15 +148,19 @@ export function TeamsPage() {
               </div>
               <div className="flex justify-between">
                 <span style={{ color: "var(--text-muted)" }}>Calendrier</span>
-                <span className="font-medium" style={{ color: "var(--text-primary)" }}>{team.calendar}</span>
+                <span style={{ color: "var(--text-primary)" }}>{team.calendar}</span>
               </div>
               <div className="flex justify-between">
                 <span style={{ color: "var(--text-muted)" }}>Staff technique</span>
-                <span className="font-medium" style={{ color: "var(--text-primary)" }}>{team.staff}</span>
+                <span className="text-right" style={{ color: "var(--text-primary)" }}>{team.staff}</span>
               </div>
             </div>
 
-            <Button type="button" variant="ghost">
+            <Button
+              variant="ghost"
+              className="mt-5 w-full"
+              onClick={() => navigate("/players")}
+            >
               Voir l'effectif
             </Button>
           </GlassCard>

@@ -2,7 +2,8 @@ import { motion } from "framer-motion";
 import { BarChart3, TrendingUp, TrendingDown, UserPlus, RefreshCw, Tag } from "lucide-react";
 import { AnalystePageTransition } from "../../components/analyste/AnalystePageTransition";
 import { AnalysteKpiCard } from "../../components/analyste/AnalysteKpiCard";
-import { EXECUTIVE_KPIS, EXECUTIVE_AI_RECO } from "../../data/analysteData";
+import { AnalystePageLoader } from "../../components/analyste/AnalystePageLoader";
+import { useAnalysteExecutive } from "../../hooks/useAnalysteResource";
 
 const RECO_CONFIG = {
   sell: { icon: Tag, color: "#F59E0B", label: "Joueur à vendre" },
@@ -11,6 +12,11 @@ const RECO_CONFIG = {
 };
 
 export function AnalysteExecutivePage() {
+  const { data, loading } = useAnalysteExecutive();
+  if (loading && !data) return <AnalystePageLoader />;
+
+  const { kpis, recommendations } = data!;
+
   return (
     <AnalystePageTransition>
       <div className="flex items-center gap-3">
@@ -27,7 +33,7 @@ export function AnalysteExecutivePage() {
         animate="animate"
         variants={{ animate: { transition: { staggerChildren: 0.07 } } }}
       >
-        {EXECUTIVE_KPIS.map((kpi) => (
+        {kpis.map((kpi) => (
           <motion.div key={kpi.label} variants={{ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } }}>
             <AnalysteKpiCard>
               <p className="text-[10px] uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{kpi.label}</p>
@@ -44,7 +50,7 @@ export function AnalysteExecutivePage() {
       <AnalysteKpiCard glow delay={0.2}>
         <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Recommandations IA — Direction</h3>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          {EXECUTIVE_AI_RECO.map((reco, i) => {
+          {recommendations.map((reco, i) => {
             const cfg = RECO_CONFIG[reco.type];
             const Icon = cfg.icon;
             return (

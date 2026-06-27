@@ -4,7 +4,7 @@ import { Brain, Target, User, AlertTriangle, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { TypewriterText } from "./TypewriterText";
 import { PulseRiskBadge } from "./PulseRiskBadge";
-import { AI_TACTICAL_CENTER } from "../../data/analysteData";
+import type { AITacticalCenterData } from "../../data/analysteData";
 
 function AnimatedNumber({ target, suffix = "" }: { target: number; suffix?: string }) {
   const [val, setVal] = useState(0);
@@ -21,8 +21,8 @@ function AnimatedNumber({ target, suffix = "" }: { target: number; suffix?: stri
   return <>{val}{suffix}</>;
 }
 
-export function AITacticalCenter() {
-  const ai = AI_TACTICAL_CENTER;
+export function AITacticalCenter({ data }: { data: AITacticalCenterData }) {
+  const ai = data;
   const navigate = useNavigate();
   const [activeRec, setActiveRec] = useState(0);
 

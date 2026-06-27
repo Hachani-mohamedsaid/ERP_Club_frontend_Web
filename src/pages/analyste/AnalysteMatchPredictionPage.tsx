@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -6,58 +6,14 @@ import {
 } from "recharts";
 import { Brain, ChevronDown, Swords, TrendingUp, Target, RefreshCw, Zap } from "lucide-react";
 import { AnalystePageTransition } from "../../components/analyste/AnalystePageTransition";
+import { AnalystePageLoader } from "../../components/analyste/AnalystePageLoader";
+import { useAnalystePredictionTeams } from "../../hooks/useAnalysteResource";
+import { analysteApi } from "../../lib/api/analyste";
+import type { MatchPredictionResult } from "../../lib/api/analyste";
 
 const TOOLTIP_STYLE = {
   contentStyle: { background: "rgba(5,8,22,0.96)", border: "1px solid rgba(139,92,246,0.3)", color: "white", borderRadius: 12 },
 };
-
-const TEAMS = ["FC Carthage", "EST", "CA", "CSS", "ESS", "ST", "CS Sfax", "OB"];
-
-interface Prediction {
-  win: number; draw: number; loss: number;
-  scores: { score: string; prob: number }[];
-  xgHome: number; xgAway: number;
-  models: { name: string; win: number; draw: number; loss: number }[];
-  factors: { label: string; home: number; away: number }[];
-  keyPlayers: { name: string; impact: string; color: string }[];
-}
-
-function predict(home: string, away: string): Prediction {
-  const seed = (home.charCodeAt(0) + away.charCodeAt(1)) % 100;
-  const win  = 30 + (seed % 30);
-  const draw = 20 + ((seed * 7) % 18);
-  const loss = 100 - win - draw;
-  return {
-    win, draw, loss,
-    scores: [
-      { score: "2-1", prob: 14 + (seed % 8) },
-      { score: "1-0", prob: 11 + (seed % 7) },
-      { score: "2-0", prob: 10 + (seed % 6) },
-      { score: "1-1", prob: 13 + (seed % 5) },
-      { score: "2-2", prob: 7  + (seed % 4) },
-    ],
-    xgHome: parseFloat((1.6 + (seed % 10) / 10).toFixed(1)),
-    xgAway: parseFloat((1.1 + ((seed * 3) % 10) / 10).toFixed(1)),
-    models: [
-      { name: "Random Forest", win: win + 2,  draw: draw - 1, loss: loss - 1 },
-      { name: "XGBoost",       win: win - 1,  draw: draw + 2, loss: loss - 1 },
-      { name: "CatBoost",      win: win + 1,  draw: draw - 2, loss: loss + 1 },
-    ],
-    factors: [
-      { label: "Forme récente",   home: 72 + (seed % 12), away: 58 + ((seed * 2) % 15) },
-      { label: "xG moyen",        home: 68 + (seed % 10), away: 52 + ((seed * 3) % 12) },
-      { label: "Défense",         home: 75 + (seed % 8),  away: 64 + ((seed * 4) % 10) },
-      { label: "Domicile",        home: 82 + (seed % 6),  away: 45 + ((seed * 5) % 8)  },
-      { label: "Blessures",       home: 88 - (seed % 10), away: 70 - ((seed * 2) % 12) },
-      { label: "Momentum",        home: 65 + (seed % 15), away: 60 + ((seed * 6) % 12) },
-    ],
-    keyPlayers: [
-      { name: "Ahmed Ben Salah", impact: "+8% xG",      color: "#22C55E"  },
-      { name: "Karim Dridi",    impact: "-5% pressing", color: "#FF7A00"  },
-      { name: "Ali Mansouri",   impact: "+12% dribbles",color: "#3B82F6"  },
-    ],
-  };
-}
 
 function OutcomeBar({ label, value, color, total }: { label: string; value: number; color: string; total: number }) {
   const pct = (value / total) * 100;
@@ -87,18 +43,32 @@ const ACard = ({ children, className = "", glow = false }: { children: React.Rea
 );
 
 export function AnalysteMatchPredictionPage() {
-  const [home, setHome] = useState("FC Carthage");
-  const [away, setAway] = useState("EST");
-  const [pred, setPred] = useState<Prediction | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { data: teamsData, loading: teamsLoading } = useAnalystePredictionTeams();
+  const [home, setHome] = useState("");
+  const [away, setAway] = useState("");
+  const [pred, setPred] = useState<MatchPredictionResult | null>(null);
+  const [predicting, setPredicting] = useState(false);
 
-  function runPrediction() {
-    setLoading(true);
+  useEffect(() => {
+    if (teamsData?.teams.length) {
+      setHome(teamsData.teams[0]);
+      setAway(teamsData.teams[1] ?? teamsData.teams[0]);
+    }
+  }, [teamsData]);
+
+  if (teamsLoading && !teamsData) return <AnalystePageLoader />;
+
+  const teams = teamsData!.teams;
+
+  async function runPrediction() {
+    setPredicting(true);
     setPred(null);
-    setTimeout(() => {
-      setPred(predict(home, away));
-      setLoading(false);
-    }, 1400);
+    try {
+      const result = await analysteApi.predictMatch(home, away);
+      setPred(result.prediction);
+    } finally {
+      setPredicting(false);
+    }
   }
 
   const radarData = pred?.factors.map(f => ({
@@ -128,7 +98,7 @@ export function AnalysteMatchPredictionPage() {
               <select value={home} onChange={e => setHome(e.target.value)}
                 className="appearance-none cursor-pointer rounded-xl border px-4 py-2.5 pr-8 text-sm font-bold outline-none"
                 style={{ background: "rgba(255,122,0,0.12)", borderColor: "rgba(255,122,0,0.35)", color: "#FF7A00" }}>
-                {TEAMS.map(t => <option key={t} value={t}>{t}</option>)}
+                {teams.map((t: string) => <option key={t} value={t}>{t}</option>)}
               </select>
               <ChevronDown size={12} className="pointer-events-none absolute right-2.5 top-3.5" style={{ color: "#FF7A00" }} />
             </div>
@@ -138,27 +108,27 @@ export function AnalysteMatchPredictionPage() {
               <select value={away} onChange={e => setAway(e.target.value)}
                 className="appearance-none cursor-pointer rounded-xl border px-4 py-2.5 pr-8 text-sm font-bold outline-none"
                 style={{ background: "rgba(59,130,246,0.12)", borderColor: "rgba(59,130,246,0.35)", color: "#3B82F6" }}>
-                {TEAMS.filter(t => t !== home).map(t => <option key={t} value={t}>{t}</option>)}
+                {teams.filter((t: string) => t !== home).map((t: string) => <option key={t} value={t}>{t}</option>)}
               </select>
               <ChevronDown size={12} className="pointer-events-none absolute right-2.5 top-3.5" style={{ color: "#3B82F6" }} />
             </div>
-            <motion.button type="button" onClick={runPrediction} disabled={loading}
+            <motion.button type="button" onClick={runPrediction} disabled={predicting}
               className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white"
               style={{ background: "linear-gradient(135deg,#8B5CF6,#6D28D9)", boxShadow: "0 0 18px rgba(139,92,246,0.35)" }}
               whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              {loading ? (
+              {predicting ? (
                 <motion.span animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}>
                   <RefreshCw size={14} />
                 </motion.span>
               ) : <Brain size={14} />}
-              {loading ? "Calcul ML..." : "Prédire"}
+              {predicting ? "Calcul ML..." : "Prédire"}
             </motion.button>
           </div>
         </div>
       </ACard>
 
       <AnimatePresence mode="wait">
-        {loading && (
+        {predicting && (
           <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="flex flex-col items-center justify-center py-20">
             <motion.div className="flex h-20 w-20 items-center justify-center rounded-full mb-4"
@@ -174,7 +144,7 @@ export function AnalysteMatchPredictionPage() {
           </motion.div>
         )}
 
-        {pred && !loading && (
+        {pred && !predicting && (
           <motion.div key="result" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
             {/* Main prediction */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -300,7 +270,7 @@ export function AnalysteMatchPredictionPage() {
           </motion.div>
         )}
 
-        {!pred && !loading && (
+        {!pred && !predicting && (
           <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             className="flex flex-col items-center justify-center py-20">
             <motion.div className="flex h-20 w-20 items-center justify-center rounded-full mb-4"

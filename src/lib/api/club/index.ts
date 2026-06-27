@@ -38,6 +38,7 @@ export const clubApi = {
   },
 
   getPlayers: () => apiFetch("/club/players").then(parse),
+  getPlayer: (id: string) => apiFetch(`/club/players/${id}`).then(parse),
   createPlayer: (body: Record<string, unknown>) =>
     apiFetch("/club/players", { method: "POST", body: JSON.stringify(body) }).then(parse),
   updatePlayer: (id: string, body: Record<string, unknown>) =>
@@ -60,10 +61,15 @@ export const clubApi = {
   getContracts: () => apiFetch("/club/contracts").then(parse),
   createContract: (body: Record<string, unknown>) =>
     apiFetch("/club/contracts", { method: "POST", body: JSON.stringify(body) }).then(parse),
+  updateContract: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/contracts/${id}`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
 
   getCalendar: () => apiFetch("/club/calendar").then(parse),
+  getTraining: () => apiFetch("/club/training").then(parse),
   createCalendarEvent: (body: Record<string, unknown>) =>
     apiFetch("/club/calendar", { method: "POST", body: JSON.stringify(body) }).then(parse),
+
+  getSessionPresence: () => apiFetch("/club/preparateur/presence").then(parse),
 
   getInjuries: () => apiFetch("/club/injuries").then(parse),
   createInjury: (body: Record<string, unknown>) =>

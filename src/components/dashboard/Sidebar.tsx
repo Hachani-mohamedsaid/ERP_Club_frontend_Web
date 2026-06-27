@@ -67,6 +67,7 @@ import {
   BookMarked,
   Stethoscope as StethoscopeIcon,
   Clipboard,
+  Watch,
   PenTool,
   Map,
   Video,
@@ -120,7 +121,7 @@ const NAV_ITEMS: NavItem[] = [
           { label: "Gestion Budget", icon: Wallet, path: "/responsable/budget" },
           { label: "Entraînements", icon: CalendarDays, path: "/training" },
           { label: "Matchs", icon: Swords, path: "/matches" },
-          { label: "Contrats", icon: ScrollText, path: "/contracts" },
+          { label: "Contrats", icon: ScrollText, path: "/responsable/contrats" },
         ],
       },
       {
@@ -134,7 +135,7 @@ const NAV_ITEMS: NavItem[] = [
       {
         label: "RAPPORTS & SYSTÈME",
         items: [
-          { label: "Reports", icon: ChartColumn, path: "/reports" },
+          { label: "Reports", icon: ChartColumn, path: "/responsable/reports" },
           { label: "Journal Activité", icon: History, path: "/responsable/audit" },
           { label: "Notifications", icon: Bell, path: "/responsable/notifications" },
           { label: "Paramètres Club", icon: Settings, path: "/responsable/parametres" },
@@ -316,6 +317,7 @@ const NAV_ITEMS: NavItem[] = [
       {
         label: "SANTÉ & MARCHÉ",
         items: [
+          { label: "WHOOP Wearables",       icon: Watch,            path: "/analyste/whoop" },
           { label: "Injury Lab",            icon: Bandage,          path: "/analyste/blessures" },
           { label: "Injury Forecast",       icon: TrendingUp,       path: "/analyste/injury-forecast" },
           { label: "Transfer Engine",       icon: UserPlus,         path: "/analyste/transfer" },

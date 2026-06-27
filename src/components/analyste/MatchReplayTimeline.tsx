@@ -2,17 +2,16 @@ import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Play, Upload, Goal, AlertCircle, Zap, Swords } from "lucide-react";
 import type { MatchEvent } from "../../data/analysteData";
-import { MATCH_EVENTS } from "../../data/analysteData";
 
 const EVENT_ICONS = { tir: Zap, but: Goal, faute: AlertCircle, occasion: Swords, contre: Play };
 const EVENT_COLORS = { tir: "#6366F1", but: "#22C55E", faute: "#F59E0B", occasion: "#8B5CF6", contre: "#FF6B57" };
 
 interface MatchReplayTimelineProps {
-  events?: MatchEvent[];
+  events: MatchEvent[];
   videoDuration?: number;
 }
 
-export function MatchReplayTimeline({ events = MATCH_EVENTS, videoDuration = 5400 }: MatchReplayTimelineProps) {
+export function MatchReplayTimeline({ events, videoDuration = 5400 }: MatchReplayTimelineProps) {
   const [activeId, setActiveId] = useState<string | null>(events[0]?.id ?? null);
   const [currentTime, setCurrentTime] = useState(events[0]?.timestamp ?? 0);
   const [playing, setPlaying] = useState(false);

@@ -3,11 +3,15 @@ import { Shield, Target, Users, AlertTriangle } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from "recharts";
 import { AnalystePageTransition } from "../../components/analyste/AnalystePageTransition";
 import { AnalysteKpiCard } from "../../components/analyste/AnalysteKpiCard";
+import { AnalystePageLoader } from "../../components/analyste/AnalystePageLoader";
 import { TypewriterText } from "../../components/analyste/TypewriterText";
-import { OPPONENT_INTEL } from "../../data/analysteData";
+import { useAnalysteOpponent } from "../../hooks/useAnalysteResource";
 
 export function AnalysteAdversairePage() {
-  const intel = OPPONENT_INTEL;
+  const { data, loading } = useAnalysteOpponent();
+  if (loading && !data) return <AnalystePageLoader />;
+
+  const intel = data!.intel;
   const attackData = [
     { zone: "Gauche", pct: intel.leftPct, color: "#EF4444" },
     { zone: "Centre", pct: intel.centerPct, color: "#F59E0B" },
