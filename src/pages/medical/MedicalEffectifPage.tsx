@@ -1,13 +1,49 @@
-import { useState } from "react";
-import { CheckCircle, AlertCircle, XCircle } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { CheckCircle, AlertCircle, XCircle, Loader2 } from "lucide-react";
 import { GlassCard } from "../../components/ui/GlassCard";
-import { PLAYERS, getInitials, getAvailabilityColor, type AvailabilityStatus } from "../../data/medicalMockData";
+import { getInitials, getAvailabilityColor, type AvailabilityStatus } from "../../data/medicalMockData";
+import { clubApi } from "../../lib/api/club";
+
+interface DisplayPlayer {
+  id: string;
+  name: string;
+  position: string;
+  backendStatus: string;
+}
 
 const COLUMNS: { status: AvailabilityStatus; icon: typeof CheckCircle; color: string; emoji: string }[] = [
   { status: "Disponible", icon: CheckCircle, color: "var(--color-state-success)", emoji: "🟢" },
   { status: "Partiellement disponible", icon: AlertCircle, color: "var(--color-state-warning)", emoji: "🟠" },
   { status: "Indisponible", icon: XCircle, color: "var(--color-state-danger)", emoji: "🔴" },
 ];
+
+function normalizePlayers(raw: unknown): DisplayPlayer[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((item, i) => {
+    const row = item as Record<string, unknown>;
+    return {
+      id: String(row.id ?? `player-${i}`),
+      name: String(row.fullName ?? row.name ?? ""),
+      position: String(row.position ?? "—"),
+      backendStatus: String(row.status ?? "DISPONIBLE"),
+    };
+  });
+}
+
+function backendToDisplay(status: string): AvailabilityStatus {
+  const upper = status.trim().toUpperCase();
+  if (upper === "DISPONIBLE") return "Disponible";
+  if (upper === "BLESSE" || upper === "LIMITE") return "Partiellement disponible";
+  if (upper === "FIN_CONTRAT") return "Indisponible";
+  return "Disponible";
+}
+
+function displayToBackend(status: AvailabilityStatus): string {
+  if (status === "Disponible") return "DISPONIBLE";
+  if (status === "Partiellement disponible") return "LIMITE";
+  if (status === "Indisponible") return "BLESSE";
+  return "DISPONIBLE";
+}
 
 function PlayerMiniCard({
   name,
@@ -52,21 +88,81 @@ function PlayerMiniCard({
 }
 
 export function MedicalEffectifPage() {
-  const [availability, setAvailability] = useState<Record<string, AvailabilityStatus>>(
-    Object.fromEntries(PLAYERS.map((p) => [p.id, p.availability]))
-  );
+  const [players, setPlayers] = useState<DisplayPlayer[]>([]);
+  const [availability, setAvailability] = useState<Record<string, AvailabilityStatus>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
-  function updateStatus(id: string, status: AvailabilityStatus) {
+  const loadPlayers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await clubApi.getPlayers();
+      const normalized = normalizePlayers(res);
+      setPlayers(normalized);
+      setAvailability(
+        Object.fromEntries(normalized.map((player) => [player.id, backendToDisplay(player.backendStatus)])),
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur de chargement.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadPlayers();
+  }, [loadPlayers]);
+
+  async function updateStatus(id: string, status: AvailabilityStatus) {
+    const previous = availability[id];
     setAvailability((prev) => ({ ...prev, [id]: status }));
+    try {
+      await clubApi.updatePlayer(id, { status: displayToBackend(status) });
+      setToast("Statut mis à jour");
+      window.setTimeout(() => setToast(null), 2000);
+    } catch {
+      setAvailability((prev) => ({ ...prev, [id]: previous }));
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <Loader2 size={24} className="animate-spin" style={{ color: "var(--accent)" }} />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <p className="text-sm" style={{ color: "var(--color-state-danger)" }}>{error}</p>
+      </div>
+    );
   }
 
   const counts = COLUMNS.map((col) => ({
     ...col,
-    count: PLAYERS.filter((p) => availability[p.id] === col.status).length,
+    count: players.filter((p) => availability[p.id] === col.status).length,
   }));
 
   return (
     <div className="space-y-6">
+      {toast ? (
+        <div
+          className="fixed bottom-6 right-6 z-50 rounded-[var(--radius-odin-md)] border px-4 py-3 text-sm shadow-lg"
+          style={{
+            background: "var(--surface-panel-solid)",
+            borderColor: "var(--surface-panel-border)",
+            color: "var(--text-primary)",
+          }}
+        >
+          {toast}
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-3 gap-4">
         {counts.map(({ status, emoji, color, count }) => (
           <GlassCard key={status} className="p-4 text-center">
@@ -79,7 +175,7 @@ export function MedicalEffectifPage() {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {COLUMNS.map(({ status, emoji, color }) => {
-          const players = PLAYERS.filter((p) => availability[p.id] === status);
+          const columnPlayers = players.filter((p) => availability[p.id] === status);
           return (
             <GlassCard key={status} raised className="flex flex-col p-4" style={{ borderTop: `3px solid ${color}` }}>
               <div className="mb-4 flex items-center gap-2">
@@ -89,11 +185,11 @@ export function MedicalEffectifPage() {
                   className="ml-auto flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold"
                   style={{ background: `${color}33`, color }}
                 >
-                  {players.length}
+                  {columnPlayers.length}
                 </span>
               </div>
               <div className="flex flex-1 flex-col gap-2">
-                {players.map((p) => (
+                {columnPlayers.map((p) => (
                   <PlayerMiniCard
                     key={p.id}
                     name={p.name}
@@ -102,7 +198,7 @@ export function MedicalEffectifPage() {
                     onStatusChange={(s) => updateStatus(p.id, s)}
                   />
                 ))}
-                {players.length === 0 && (
+                {columnPlayers.length === 0 && (
                   <p className="py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>Aucun joueur</p>
                 )}
               </div>

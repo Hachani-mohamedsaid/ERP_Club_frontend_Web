@@ -1,8 +1,132 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { AlertTriangle, TrendingUp, Activity, Zap } from "lucide-react";
+import { AlertTriangle, TrendingUp, Activity, Zap, Loader2 } from "lucide-react";
 import { GlassCard } from "../../components/ui/GlassCard";
 import { AnimatedBadge } from "../../components/ui/AnimatedBadge";
-import { RISK_PLAYERS, getInitials } from "../../data/medicalMockData";
+import { getInitials } from "../../data/medicalMockData";
+import { clubApi } from "../../lib/api/club";
+
+type RiskLevel = "HIGH RISK" | "MEDIUM RISK" | "LOW RISK";
+
+interface ApiPlayer {
+  id: string;
+  fullName: string;
+  position: string;
+}
+
+interface InjuredRow {
+  id: string;
+  name: string;
+  injury: string;
+  riskIA: number;
+  returnDate: string;
+}
+
+interface RiskPlayer {
+  id: string;
+  name: string;
+  position: string;
+  riskScore: number;
+  level: RiskLevel;
+  reasons: { label: string; impact: number }[];
+}
+
+function normalizePlayers(raw: unknown): ApiPlayer[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((item, i) => {
+    const row = item as Record<string, unknown>;
+    return {
+      id: String(row.id ?? `player-${i}`),
+      fullName: String(row.fullName ?? row.name ?? ""),
+      position: String(row.position ?? "—"),
+    };
+  });
+}
+
+function normalizeInjured(raw: unknown): InjuredRow[] {
+  if (!raw || typeof raw !== "object") return [];
+  const data = raw as Record<string, unknown>;
+  const list = Array.isArray(data.injured) ? data.injured : [];
+  return list.map((item, i) => {
+    const row = item as Record<string, unknown>;
+    return {
+      id: String(row.id ?? `inj-${i}`),
+      name: String(row.name ?? ""),
+      injury: String(row.injury ?? row.injuryType ?? ""),
+      riskIA: Number(row.riskIA ?? 0),
+      returnDate: String(row.returnDate ?? ""),
+    };
+  });
+}
+
+function parseReturnDate(returnDate: string): Date | null {
+  if (!returnDate || returnDate === "—") return null;
+  if (returnDate.includes("/")) {
+    const parts = returnDate.split("/").map(Number);
+    if (parts.length === 3 && parts.every((n) => !Number.isNaN(n))) {
+      const [day, month, year] = parts;
+      return new Date(year, month - 1, day);
+    }
+  }
+  const isoMatch = returnDate.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    const [, year, month, day] = isoMatch.map(Number);
+    return new Date(year, month - 1, day);
+  }
+  const parsed = new Date(returnDate);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function calcDaysRemaining(returnDate: string): number | null {
+  const target = parseReturnDate(returnDate);
+  if (!target) return null;
+  return Math.max(0, Math.ceil((target.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+}
+
+function findPlayerPosition(name: string, players: ApiPlayer[]): string {
+  const key = name.trim().toLowerCase();
+  const match = players.find((player) => player.fullName.trim().toLowerCase() === key);
+  return match?.position || "—";
+}
+
+function buildRiskLevel(riskScore: number): RiskLevel {
+  if (riskScore >= 75) return "HIGH RISK";
+  if (riskScore >= 50) return "MEDIUM RISK";
+  return "LOW RISK";
+}
+
+function buildReasons(injury: InjuredRow): { label: string; impact: number }[] {
+  const reasons: { label: string; impact: number }[] = [
+    { label: injury.injury, impact: injury.riskIA * 8 },
+  ];
+
+  const daysRemaining = calcDaysRemaining(injury.returnDate);
+  if (daysRemaining !== null && daysRemaining > 20) {
+    reasons.push({ label: "Blessure longue durée", impact: 25 });
+  } else if (daysRemaining !== null && daysRemaining <= 5) {
+    reasons.push({ label: "Retour imminent", impact: 15 });
+  } else {
+    reasons.push({ label: "Surveillance recommandée", impact: 18 });
+  }
+
+  return reasons;
+}
+
+function buildRiskPlayers(injured: InjuredRow[], players: ApiPlayer[]): RiskPlayer[] {
+  return injured
+    .map((row) => {
+      const riskScore = row.riskIA * 10;
+      return {
+        id: row.id,
+        name: row.name,
+        position: findPlayerPosition(row.name, players),
+        riskScore,
+        level: buildRiskLevel(riskScore),
+        reasons: buildReasons(row),
+      };
+    })
+    .sort((a, b) => b.riskScore - a.riskScore);
+}
 
 function RiskGauge({ score }: { score: number }) {
   const color = score >= 75 ? "#c0392b" : score >= 50 ? "#d99a1f" : "#2e9e5b";
@@ -56,12 +180,67 @@ function HeatmapCell({ value, label }: { value: number; label: string }) {
 }
 
 export function MedicalRiskPage() {
-  const topPlayer = RISK_PLAYERS[0];
+  const [riskPlayers, setRiskPlayers] = useState<RiskPlayer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [injuriesRes, playersRes] = await Promise.all([
+        clubApi.getInjuries(),
+        clubApi.getPlayers(),
+      ]);
+      const injured = normalizeInjured(injuriesRes);
+      const players = normalizePlayers(playersRes);
+      setRiskPlayers(buildRiskPlayers(injured, players));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur de chargement.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const topPlayer = useMemo(
+    () => riskPlayers[0] ?? null,
+    [riskPlayers],
+  );
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <Loader2 size={24} className="animate-spin" style={{ color: "var(--accent)" }} />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <p className="text-sm" style={{ color: "var(--color-state-danger)" }}>{error}</p>
+      </div>
+    );
+  }
+
+  if (riskPlayers.length === 0) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <p className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>
+          Aucun joueur à risque
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {RISK_PLAYERS.map((player, idx) => (
+        {riskPlayers.map((player, idx) => (
           <motion.div
             key={player.id}
             initial={{ opacity: 0, y: 20 }}
@@ -122,9 +301,9 @@ export function MedicalRiskPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <GlassCard raised className="flex flex-col items-center p-6">
           <h3 className="mb-4 self-start text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-            Gauge — {topPlayer.name}
+            Gauge — {topPlayer?.name}
           </h3>
-          <RiskGauge score={topPlayer.riskScore} />
+          <RiskGauge score={topPlayer?.riskScore ?? 0} />
           <div className="mt-4 flex gap-4 text-xs" style={{ color: "var(--text-muted)" }}>
             <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-green-500" /> Faible</span>
             <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-yellow-500" /> Moyen</span>
@@ -153,7 +332,7 @@ export function MedicalRiskPage() {
           {[
             { icon: Activity, label: "Charge moyenne", value: "847 UA" },
             { icon: TrendingUp, label: "Tendance", value: "+12% cette semaine" },
-            { icon: Zap, label: "Alertes actives", value: "4 joueurs" },
+            { icon: Zap, label: "Alertes actives", value: `${riskPlayers.length} joueur${riskPlayers.length > 1 ? "s" : ""}` },
           ].map(({ icon: Icon, label, value }) => (
             <div key={label} className="flex items-center gap-3">
               <Icon size={18} style={{ color: "var(--accent)" }} />
