@@ -23,7 +23,6 @@ import { MedicalAIPage } from "./pages/medical/MedicalAIPage";
 import { FinancePage } from "./pages/FinancePage";
 import { DocumentsPage } from "./pages/DocumentsPage";
 import { ReportsPage } from "./pages/ReportsPage";
-import { OdinAiPage } from "./pages/OdinAiPage";
 import { AIAssistantPage } from "./pages/AIAssistantPage";
 import { MessagesPage } from "./pages/MessagesPage";
 import { CoachPage } from "./pages/CoachPage";
@@ -42,10 +41,20 @@ import { ScoutSearchPage } from "./pages/scout/ScoutSearchPage";
 import { ScoutProspectPage } from "./pages/scout/ScoutProspectPage";
 import { ScoutReportPage } from "./pages/scout/ScoutReportPage";
 import { ScoutFavoritesPage } from "./pages/ScoutFavoritesPage";
-import { ScoutComparisonPage } from "./pages/ScoutComparisonPage";
+import { ScoutComparisonPage } from "./pages/scout/ScoutComparisonPage";
 import { ScoutRecruitmentPage } from "./pages/scout/ScoutRecruitmentPage";
 import { ScoutWatchlistPage } from "./pages/scout/ScoutWatchlistPage";
 import { ScoutAIPage } from "./pages/scout/ScoutAIPage";
+import { ScoutReportsHistoryPage } from "./pages/scout/ScoutReportsHistoryPage";
+import { ScoutMissionsPage } from "./pages/scout/ScoutMissionsPage";
+import { ScoutVideoPage } from "./pages/scout/ScoutVideoPage";
+import { ScoutShortlistPage } from "./pages/scout/ScoutShortlistPage";
+import { ScoutAgentsPage } from "./pages/scout/ScoutAgentsPage";
+import { ScoutAnalyticsPage } from "./pages/scout/ScoutAnalyticsPage";
+import { ScoutProspectsPage } from "./pages/scout/ScoutProspectsPage";
+import { ScoutSettingsPage } from "./pages/scout/ScoutSettingsPage";
+import { ScoutMapExplorerPage } from "./pages/scout/ScoutMapExplorerPage";
+import { ScoutSquadFitPage } from "./pages/scout/ScoutSquadFitPage";
 import { PlayerProfilePage } from "./pages/PlayerProfilePage";
 import { FinanceComptabilite } from "./pages/FinanceComptabilite";
 import { ContratsFinance } from "./pages/ContratsFinance";
@@ -212,8 +221,18 @@ export function AppRouter() {
         <Route path="/scout/recruitment" element={<RequireRole roles={["scout"]}><ScoutRecruitmentPage /></RequireRole>} />
         <Route path="/scout/ai" element={<RequireRole roles={["scout"]}><ScoutAIPage /></RequireRole>} />
         <Route path="/scout/report" element={<RequireRole roles={["scout"]}><ScoutReportPage /></RequireRole>} />
-        <Route path="/scout/favorites" element={<RequireRole roles={["scout"]}><ScoutFavoritesPage /></RequireRole>} />
+        <Route path="/scout/reports" element={<RequireRole roles={["scout"]}><ScoutReportsHistoryPage /></RequireRole>} />
+        <Route path="/scout/missions" element={<RequireRole roles={["scout"]}><ScoutMissionsPage /></RequireRole>} />
+        <Route path="/scout/prospects" element={<RequireRole roles={["scout"]}><ScoutProspectsPage /></RequireRole>} />
         <Route path="/scout/comparison" element={<RequireRole roles={["scout"]}><ScoutComparisonPage /></RequireRole>} />
+        <Route path="/scout/videos" element={<RequireRole roles={["scout"]}><ScoutVideoPage /></RequireRole>} />
+        <Route path="/scout/shortlist" element={<RequireRole roles={["scout"]}><ScoutShortlistPage /></RequireRole>} />
+        <Route path="/scout/map" element={<RequireRole roles={["scout"]}><ScoutMapExplorerPage /></RequireRole>} />
+        <Route path="/scout/squad-fit" element={<RequireRole roles={["scout"]}><ScoutSquadFitPage /></RequireRole>} />
+        <Route path="/scout/analytics" element={<RequireRole roles={["scout"]}><ScoutAnalyticsPage /></RequireRole>} />
+        <Route path="/scout/agents" element={<RequireRole roles={["scout"]}><ScoutAgentsPage /></RequireRole>} />
+        <Route path="/scout/settings" element={<RequireRole roles={["scout"]}><ScoutSettingsPage /></RequireRole>} />
+        <Route path="/scout/favorites" element={<RequireRole roles={["scout"]}><ScoutFavoritesPage /></RequireRole>} />
         <Route path="/player/:id" element={<RequireRole roles={["scout", "coach"]}><PlayerProfilePage /></RequireRole>} />
         <Route path="/ai-scout" element={<RequireRole roles={["scout", "coach"]}><AIAssistantPage /></RequireRole>} />
         <Route path="/contracts" element={<RequireRole roles={["coach"]}><ContractsPage /></RequireRole>} />

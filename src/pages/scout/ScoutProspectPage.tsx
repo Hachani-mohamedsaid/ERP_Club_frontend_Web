@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -11,7 +11,9 @@ import {
   BarChart, Bar, Cell,
 } from "recharts";
 import { SGauge, SCOUT_TOOLTIP } from "../../components/scout/ScoutUI";
-import { PROSPECTS, S, PRIORITY_META } from "../../data/scoutData";
+import { PROSPECTS, S, PRIORITY_META, type Prospect } from "../../data/scoutData";
+import { scoutApi } from "../../lib/api/scout";
+import { showToast } from "../../components/scout/ScoutToast";
 
 const TABS = ["Performance", "Heatmap", "Historique", "Notes", "Vidéo"] as const;
 type Tab = typeof TABS[number];
@@ -42,19 +44,84 @@ export function ScoutProspectPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>("Performance");
   const [newNote, setNewNote] = useState("");
-  const [notes, setNotes] = useState<{ date: string; text: string }[] | null>(null);
+  const [notes, setNotes] = useState<{ date: string; text: string }[]>([]);
   const [liked, setLiked] = useState(false);
+  const [p, setP] = useState<Prospect | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const p = PROSPECTS.find(pr => pr.id === id);
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    scoutApi
+      .getProspect(id)
+      .then((dto) => {
+        const mock = PROSPECTS.find((pr) => pr.id === dto.legacyId || pr.name === dto.name);
+        setP({
+          ...(mock ?? PROSPECTS[0]),
+          id: dto.id,
+          name: dto.name,
+          age: dto.age,
+          nationality: dto.nationality,
+          flag: dto.flag,
+          club: dto.club,
+          league: dto.league,
+          position: dto.position,
+          potential: dto.potential,
+          currentRating: dto.currentRating,
+          marketValue: dto.marketValue,
+          valueMK: dto.valueMK,
+          priority: dto.priority as Prospect["priority"],
+          status: dto.status as Prospect["status"],
+          aiScore: dto.aiScore,
+          injuryRisk: dto.injuryRisk,
+          foot: dto.foot as Prospect["foot"],
+          height: dto.height,
+          weight: dto.weight,
+          goals: dto.goals,
+          assists: dto.assists,
+          matches: dto.matches,
+          speed: dto.speed,
+          dribble: dto.dribble,
+          passing: dto.passing,
+          defense: dto.defense,
+          physical: dto.physical,
+          mental: dto.mental,
+          contractEnd: dto.contractEnd,
+          agent: dto.agent,
+          addedDate: dto.addedDate,
+          notes: dto.notes?.length ? dto.notes : mock?.notes ?? [],
+          matchHistory: mock?.matchHistory ?? [],
+          monthlyPotential: mock?.monthlyPotential ?? [70, 71, 72, 73, 74, dto.potential],
+          heatmapZones: mock?.heatmapZones ?? [],
+        });
+        setNotes(dto.notes?.length ? dto.notes : mock?.notes ?? []);
+        setLiked(Boolean(dto.inWatchlist));
+      })
+      .catch(() => {
+        const fallback = PROSPECTS.find((pr) => pr.id === id);
+        if (fallback) {
+          setP(fallback);
+          setNotes([...fallback.notes]);
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center text-sm" style={{ color: "var(--text-muted)" }}>
+        Chargement du profil...
+      </div>
+    );
+  }
+
   if (!p) return (
     <div className="flex h-64 items-center justify-center text-sm" style={{ color: "var(--text-muted)" }}>
       Prospect introuvable.
     </div>
   );
 
-  if (notes === null) setNotes([...p.notes]);
-
-  const safeNotes = notes ?? [];
+  const safeNotes = notes;
   const priority = PRIORITY_META[p.priority];
   const injury  = injuryLevel(p.injuryRisk);
   const pc = potColor(p.potential);
@@ -120,7 +187,22 @@ export function ScoutProspectPage() {
               whileHover={{ scale: 1.06, borderColor: priority.color, color: priority.color }}>
               <ArrowLeft size={12} /> Retour
             </motion.button>
-            <motion.button type="button" onClick={() => setLiked(!liked)}
+            <motion.button type="button" onClick={async () => {
+              if (!p) return;
+              try {
+                if (liked) {
+                  await scoutApi.removeFromWatchlist(p.id);
+                  setLiked(false);
+                  showToast("Retiré de la Watchlist", "info");
+                } else {
+                  await scoutApi.addToWatchlist(p.id);
+                  setLiked(true);
+                  showToast("Ajouté à la Watchlist ✓", "success");
+                }
+              } catch {
+                showToast("Erreur watchlist", "error");
+              }
+            }}
               className="flex h-9 w-9 items-center justify-center rounded-xl border"
               style={{
                 borderColor: liked ? `${S.danger}50` : "rgba(255,255,255,0.1)",
@@ -206,6 +288,22 @@ export function ScoutProspectPage() {
                     🤝 {p.agent}
                   </span>
                 )}
+              </div>
+
+              <div className="flex flex-wrap gap-2 mt-3">
+                {[
+                  { label: "Comparer", path: `/scout/comparison?ids=${p.id}`, color: S.info },
+                  { label: "Vidéos", path: "/scout/videos", color: S.accent },
+                  { label: "Compatibilité", path: "/scout/squad-fit", color: S.success },
+                  { label: "Rapport", path: "/scout/report", color: S.primary },
+                ].map((action) => (
+                  <motion.button key={action.label} type="button" onClick={() => navigate(action.path)}
+                    className="rounded-xl border px-3 py-1.5 text-[10px] font-bold"
+                    style={{ borderColor: `${action.color}35`, color: action.color, background: `${action.color}08` }}
+                    whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
+                    {action.label}
+                  </motion.button>
+                ))}
               </div>
             </div>
 
