@@ -7,12 +7,12 @@ import {
   Sparkles, Bell, CheckCircle2, Cpu, ArrowRight, Loader2, Radar, LayoutDashboard,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import { PLATFORM_ROLES, LOGIN_QUICK_ROLES, type PlatformRole } from "../data/platformRoles";
+import { type PlatformRole } from "../data/platformRoles";
 import odinLogo from "../assets/odin-logo.png";
 
 type RoleDef = PlatformRole;
 
-const ROLES: RoleDef[] = LOGIN_QUICK_ROLES;
+const AUTH_STEPS = ["Connexion...", "Authentification...", "Chargement IA..."];
 
 const FLOATING_STATS = [
   { label: "Joueurs", end: 24, decimals: 0, prefix: "", suffix: "", x: "7%", y: "20%", color: "#3B82F6" },
@@ -350,42 +350,6 @@ function LiveNotifications() {
   );
 }
 
-function RoleCard({ role, onClick }: { role: RoleDef; onClick: () => void }) {
-  const Icon = role.icon;
-  return (
-    <motion.button
-      type="button"
-      onClick={onClick}
-      variants={{ hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } }}
-      transition={{ duration: 0.25, ease: "easeOut" }}
-      whileHover={{
-        scale: 1.02,
-        y: -3,
-        backgroundColor: `${role.color}14`,
-        borderColor: role.color,
-        boxShadow: `0 0 0 1px ${role.color}, 0 0 22px ${role.color}80, 0 16px 44px ${role.color}40`,
-      }}
-      whileTap={{ scale: 0.98 }}
-      className="group flex items-center gap-3 rounded-2xl border p-3 text-left"
-      style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.08)" }}
-    >
-      <div
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:-rotate-12 group-hover:scale-110"
-        style={{ background: `${role.color}1f`, color: role.color }}
-      >
-        <Icon size={20} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-bold" style={{ color: "var(--text-primary)" }}>{role.label}</div>
-        <div className="truncate text-[11px]" style={{ color: "var(--text-muted)" }}>{role.desc}</div>
-      </div>
-      <ArrowRight size={15} className="shrink-0 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100" style={{ color: role.color }} />
-    </motion.button>
-  );
-}
-
-const AUTH_STEPS = ["Connexion...", "Authentification...", "Chargement IA..."];
-
 function AuthOverlay({ role, onDone }: { role: RoleDef; onDone: () => void }) {
   const [step, setStep] = useState(0);
   const [welcome, setWelcome] = useState(false);
@@ -442,7 +406,7 @@ function AuthOverlay({ role, onDone }: { role: RoleDef; onDone: () => void }) {
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { loginWithCredentials, loginDemo } = useAuth();
+  const { loginWithCredentials } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
@@ -483,14 +447,13 @@ export function LoginPage() {
 
   function startLogin(loginEmail: string, role: string, label?: string) {
     pendingDest.current = getDestination(role);
-    const def = ROLES.find((r) => r.email === loginEmail.toLowerCase())
-      ?? {
-        email: loginEmail,
-        label: label ?? "Espace Club",
-        desc: "",
-        icon: LayoutDashboard,
-        color: "#C0392B",
-      };
+    const def: RoleDef = {
+      email: loginEmail,
+      label: label ?? "Espace Club",
+      desc: "",
+      icon: LayoutDashboard,
+      color: "#C0392B",
+    };
     setPending(true);
     setAuthRole(def);
   }
@@ -510,12 +473,6 @@ export function LoginPage() {
       setPending(false);
       setLoginError(err instanceof Error ? err.message : "Connexion impossible.");
     }
-  }
-
-  function handleDemoLogin(loginEmail: string) {
-    setLoginError("");
-    const role = loginDemo(loginEmail);
-    startLogin(loginEmail, role);
   }
 
   return (
@@ -619,23 +576,6 @@ export function LoginPage() {
                 <p className="text-center text-xs font-medium" style={{ color: "#EF4444" }}>{loginError}</p>
               )}
             </form>
-
-            <div className="my-5 flex items-center gap-3">
-              <div className="h-px flex-1" style={{ background: "var(--surface-panel-border)" }} />
-              <span className="text-xs" style={{ color: "var(--text-muted)" }}>ou — accès rapide par rôle</span>
-              <div className="h-px flex-1" style={{ background: "var(--surface-panel-border)" }} />
-            </div>
-
-            <motion.div
-              className="grid max-h-[320px] grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2"
-              variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05 } } }}
-              initial="hidden"
-              animate={booted ? "show" : "hidden"}
-            >
-              {ROLES.map((role) => (
-                <RoleCard key={role.email} role={role} onClick={() => handleDemoLogin(role.email)} />
-              ))}
-            </motion.div>
 
             <p className="mt-5 text-center text-sm">
               Pas encore de compte ?{" "}
