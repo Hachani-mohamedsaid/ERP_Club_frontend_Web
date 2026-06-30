@@ -1,26 +1,27 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
   Globe, MapPin, Building2, ChevronRight, ChevronLeft, Search,
-  Users, TrendingUp, Zap, RotateCcw,
+  Users, TrendingUp, Zap, RotateCcw, Loader2, RefreshCw,
 } from "lucide-react";
 import { ScoutPage, SCard, SGauge } from "../../components/scout/ScoutUI";
 import { ScoutGeoMap } from "../../components/scout/ScoutGeoMap";
 import type { BubbleNodeInput } from "../../lib/scout/bubbleMapTypes";
 import { S } from "../../data/scoutData";
 import {
-  CONTINENTS, COUNTRIES, TEAMS, STEPS,
-  getCountriesByContinent, getTeamsByCountry,
-  getContinent, getCountry, getTeam,
-  buildContinentNodes, buildCountryNodes, buildTeamNodes,
-  getTeamLogo, getLeagueLogo, getCountryLeagueLogo, getContinentLogo,
-  type GeoContinent, type GeoCountry, type GeoTeam,
+  STEPS,
+  getTeamLogo, getLeagueLogo, getCountryLeagueLogo,   getContinentLogo,
 } from "../../data/scoutGeoData";
-import { useScoutProspects } from "../../hooks/useScoutData";
+import { scoutApi } from "../../lib/api/scout";
 import { staggerContainer, staggerItem } from "../../lib/animations";
 
 type Step = 0 | 1 | 2 | 3;
+
+type ContinentRow = Awaited<ReturnType<typeof scoutApi.getMapOverview>>["continents"][0];
+type CountryRow = Awaited<ReturnType<typeof scoutApi.getMapCountries>>["countries"][0];
+type TeamRow = Awaited<ReturnType<typeof scoutApi.getMapTeams>>["teams"][0];
+type SquadData = Awaited<ReturnType<typeof scoutApi.getTeamSquad>>;
 
 const slideVariants = {
   enter: (dir: number) => ({ x: dir > 0 ? 80 : -80, opacity: 0, filter: "blur(6px)" }),
@@ -78,15 +79,49 @@ function StepIndicator({ step, labels }: { step: Step; labels: string[] }) {
   );
 }
 
-function matchClub(prospectClub: string, teamName: string) {
-  const a = prospectClub.toLowerCase();
-  const b = teamName.toLowerCase();
-  return a.includes(b) || b.includes(a) || a.includes(b.split(" ").pop() ?? "");
+function buildContinentNodes(continents: ContinentRow[]): BubbleNodeInput[] {
+  return continents.map((c) => ({
+    id: c.id,
+    name: c.name,
+    count: c.prospects,
+    level: "continent",
+    color: c.color,
+    icon: c.icon,
+    logoUrl: getContinentLogo({ id: c.id, name: c.name, icon: c.icon, color: c.color, prospects: c.prospects, countries: c.countries }),
+    subtitle: `${c.countries} pays`,
+  }));
+}
+
+function buildCountryNodes(countries: CountryRow[], continentId: string): BubbleNodeInput[] {
+  return countries.map((c) => ({
+    id: c.id,
+    name: c.name,
+    count: c.prospects,
+    level: "country",
+    parentId: continentId,
+    color: c.color,
+    icon: c.flag,
+    logoUrl: getCountryLeagueLogo(c),
+    subtitle: c.leagues[0],
+  }));
+}
+
+function buildTeamNodes(teams: TeamRow[], countryId: string): BubbleNodeInput[] {
+  return teams.map((t) => ({
+    id: t.id,
+    name: t.name,
+    count: t.playerCount,
+    level: "team",
+    parentId: countryId,
+    color: S.primary,
+    logoUrl: getTeamLogo(t),
+    leagueLogoUrl: getLeagueLogo(t),
+    subtitle: `${t.league} · ${t.city}`,
+  }));
 }
 
 export function ScoutMapExplorerPage() {
   const navigate = useNavigate();
-  const { prospects } = useScoutProspects();
   const [step, setStep] = useState<Step>(0);
   const [direction, setDirection] = useState(1);
   const [continentId, setContinentId] = useState<string | null>(null);
@@ -94,31 +129,74 @@ export function ScoutMapExplorerPage() {
   const [teamId, setTeamId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-  const continent = continentId ? getContinent(continentId) : null;
-  const country = countryId ? getCountry(countryId) : null;
-  const team = teamId ? getTeam(teamId) : null;
+  const [overview, setOverview] = useState<Awaited<ReturnType<typeof scoutApi.getMapOverview>> | null>(null);
+  const [countries, setCountries] = useState<CountryRow[]>([]);
+  const [teams, setTeams] = useState<TeamRow[]>([]);
+  const [squad, setSquad] = useState<SquadData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadingSquad, setLoadingSquad] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const teamProspectCounts = useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const t of TEAMS) {
-      map[t.id] = prospects.filter((p) => matchClub(p.club, t.name)).length || t.playerCount;
+  const continent = overview?.continents.find((c) => c.id === continentId) ?? null;
+  const country = countries.find((c) => c.id === countryId) ?? squad?.team.country ?? null;
+  const team = teams.find((t) => t.id === teamId) ?? (squad?.team as TeamRow | undefined);
+
+  const loadOverview = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await scoutApi.getMapOverview();
+      setOverview(res);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur chargement carte.");
+    } finally {
+      setLoading(false);
     }
-    return map;
-  }, [prospects]);
+  }, []);
+
+  useEffect(() => {
+    void loadOverview();
+  }, [loadOverview]);
+
+  const loadCountries = useCallback(async (cid: string) => {
+    try {
+      const res = await scoutApi.getMapCountries(cid);
+      setCountries(res.countries);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur chargement pays.");
+    }
+  }, []);
+
+  const loadTeams = useCallback(async (cid: string) => {
+    try {
+      const res = await scoutApi.getMapTeams(cid);
+      setTeams(res.teams);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur chargement équipes.");
+    }
+  }, []);
+
+  const loadSquad = useCallback(async (tid: string, refresh = false) => {
+    setLoadingSquad(true);
+    setError(null);
+    try {
+      const res = await scoutApi.getTeamSquad(tid, refresh);
+      setSquad(res);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur chargement effectif.");
+    } finally {
+      setLoadingSquad(false);
+    }
+  }, []);
 
   const mapNodes: BubbleNodeInput[] = useMemo(() => {
-    if (step === 0) return buildContinentNodes();
-    if (step === 1 && continentId) return buildCountryNodes(continentId);
-    if (step === 2 && countryId) return buildTeamNodes(countryId, teamProspectCounts);
+    if (step === 0 && overview) return buildContinentNodes(overview.continents);
+    if (step === 1 && continentId) return buildCountryNodes(countries, continentId);
+    if (step === 2 && countryId) return buildTeamNodes(teams, countryId);
     return [];
-  }, [step, continentId, countryId, teamProspectCounts]);
+  }, [step, continentId, countryId, overview, countries, teams]);
 
   const selectedMapId = step === 1 ? countryId : step === 2 ? teamId : step === 0 ? continentId : null;
-
-  const teamProspects = useMemo(() => {
-    if (!team) return [];
-    return prospects.filter((p) => matchClub(p.club, team.name));
-  }, [team, prospects]);
 
   const breadcrumb = [
     continent ? `${continent.icon} ${continent.name}` : null,
@@ -132,47 +210,55 @@ export function ScoutMapExplorerPage() {
     setHoveredId(null);
   };
 
-  const selectContinent = (c: GeoContinent) => {
+  const selectContinent = async (c: ContinentRow) => {
     setContinentId(c.id);
     setCountryId(null);
     setTeamId(null);
+    setSquad(null);
+    await loadCountries(c.id);
     go(1);
   };
 
-  const selectCountry = (c: GeoCountry) => {
+  const selectCountry = async (c: CountryRow) => {
     setCountryId(c.id);
     setTeamId(null);
+    setSquad(null);
+    await loadTeams(c.id);
     go(2);
   };
 
-  const selectTeam = (t: GeoTeam) => {
+  const selectTeam = async (t: TeamRow) => {
     setTeamId(t.id);
     go(3);
+    await loadSquad(t.id);
   };
 
   const handleBubbleSelect = (node: BubbleNodeInput) => {
     if (node.level === "continent") {
-      const c = getContinent(node.id);
-      if (c) selectContinent(c);
+      const c = overview?.continents.find((x) => x.id === node.id);
+      if (c) void selectContinent(c);
     } else if (node.level === "country") {
-      const c = getCountry(node.id);
-      if (c) selectCountry(c);
+      const c = countries.find((x) => x.id === node.id);
+      if (c) void selectCountry(c);
     } else if (node.level === "team") {
-      const t = getTeam(node.id);
-      if (t) selectTeam(t);
+      const t = teams.find((x) => x.id === node.id);
+      if (t) void selectTeam(t);
     }
   };
 
   const back = () => {
-    if (step === 3) { setTeamId(null); go(2, -1); }
-    else if (step === 2) { setCountryId(null); go(1, -1); }
-    else if (step === 1) { setContinentId(null); go(0, -1); }
+    if (step === 3) { setTeamId(null); setSquad(null); go(2, -1); }
+    else if (step === 2) { setCountryId(null); setTeams([]); go(1, -1); }
+    else if (step === 1) { setContinentId(null); setCountries([]); go(0, -1); }
   };
 
   const reset = () => {
     setContinentId(null);
     setCountryId(null);
     setTeamId(null);
+    setCountries([]);
+    setTeams([]);
+    setSquad(null);
     setHoveredId(null);
     setDirection(-1);
     setStep(0);
@@ -193,8 +279,23 @@ export function ScoutMapExplorerPage() {
   const listHighlight = (id: string) =>
     hoveredId === id || selectedMapId === id;
 
+  if (loading && !overview) {
+    return (
+      <ScoutPage className="flex items-center justify-center gap-2 py-16">
+        <Loader2 className="h-5 w-5 animate-spin" style={{ color: S.primary }} />
+        <span className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement carte explorer…</span>
+      </ScoutPage>
+    );
+  }
+
   return (
     <ScoutPage>
+      {error && (
+        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          {error}
+        </div>
+      )}
+
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-lg font-extrabold flex items-center gap-2" style={{ color: "var(--text-primary)" }}>
@@ -202,7 +303,7 @@ export function ScoutMapExplorerPage() {
             Exploration Géographique
           </h1>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            Continent → Pays → Équipe · carte géographique interactive
+            Continent → Pays → Équipe · {overview?.stats.clubs ?? 0} clubs · effectifs via OpenAI
           </p>
         </div>
         {step > 0 && (
@@ -265,9 +366,16 @@ export function ScoutMapExplorerPage() {
           />
         ) : (
           <SCard className="!p-6 min-h-[420px] flex items-center justify-center">
-            <p className="text-sm text-center" style={{ color: "var(--text-muted)" }}>
-              Consultez le panneau de droite pour explorer {team?.name}
-            </p>
+            {loadingSquad ? (
+              <div className="flex items-center gap-2 text-sm" style={{ color: "var(--text-muted)" }}>
+                <Loader2 size={16} className="animate-spin" style={{ color: S.primary }} />
+                Génération effectif réel via IA…
+              </div>
+            ) : (
+              <p className="text-sm text-center" style={{ color: "var(--text-muted)" }}>
+                Consultez le panneau de droite pour explorer {team?.name}
+              </p>
+            )}
           </SCard>
         )}
 
@@ -293,12 +401,12 @@ export function ScoutMapExplorerPage() {
                     initial="initial"
                     animate="animate"
                   >
-                    {step === 0 && CONTINENTS.map((c) => (
+                    {step === 0 && overview?.continents.map((c) => (
                       <motion.button
                         key={c.id}
                         type="button"
                         variants={staggerItem}
-                        onClick={() => selectContinent(c)}
+                        onClick={() => void selectContinent(c)}
                         onMouseEnter={() => setHoveredId(c.id)}
                         onMouseLeave={() => setHoveredId(null)}
                         className="flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors"
@@ -309,7 +417,7 @@ export function ScoutMapExplorerPage() {
                         whileHover={{ x: 4 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        <img src={getContinentLogo(c)} alt="" className="h-7 w-7 rounded-md object-contain bg-white/95 p-0.5 ring-1 ring-white/10 shrink-0" />
+                        <img src={getContinentLogo({ id: c.id, name: c.name, icon: c.icon, color: c.color, prospects: c.prospects, countries: c.countries })} alt="" className="h-7 w-7 rounded-md object-contain bg-white/95 p-0.5 ring-1 ring-white/10 shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>{c.name}</p>
                           <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>
@@ -320,12 +428,12 @@ export function ScoutMapExplorerPage() {
                       </motion.button>
                     ))}
 
-                    {step === 1 && continentId && getCountriesByContinent(continentId).map((c) => (
+                    {step === 1 && countries.map((c) => (
                       <motion.button
                         key={c.id}
                         type="button"
                         variants={staggerItem}
-                        onClick={() => selectCountry(c)}
+                        onClick={() => void selectCountry(c)}
                         onMouseEnter={() => setHoveredId(c.id)}
                         onMouseLeave={() => setHoveredId(null)}
                         className="flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors"
@@ -345,12 +453,12 @@ export function ScoutMapExplorerPage() {
                       </motion.button>
                     ))}
 
-                    {step === 2 && countryId && getTeamsByCountry(countryId).map((t) => (
+                    {step === 2 && teams.map((t) => (
                       <motion.button
                         key={t.id}
                         type="button"
                         variants={staggerItem}
-                        onClick={() => selectTeam(t)}
+                        onClick={() => void selectTeam(t)}
                         onMouseEnter={() => setHoveredId(t.id)}
                         onMouseLeave={() => setHoveredId(null)}
                         className="flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors"
@@ -368,7 +476,7 @@ export function ScoutMapExplorerPage() {
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-bold truncate" style={{ color: "var(--text-primary)" }}>{t.name}</p>
                           <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>
-                            {t.city} · {t.league} · {teamProspectCounts[t.id]} joueurs
+                            {t.city} · {t.league} · {t.playerCount} joueurs
                           </p>
                         </div>
                         <div className="text-right">
@@ -379,7 +487,7 @@ export function ScoutMapExplorerPage() {
                     ))}
                   </motion.div>
                 </SCard>
-              ) : team ? (
+              ) : team && squad ? (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -391,12 +499,22 @@ export function ScoutMapExplorerPage() {
                         <img src={getTeamLogo(team)} alt="" className="h-14 w-14 rounded-2xl object-cover ring-2 ring-orange-500/30" />
                         <img src={getLeagueLogo(team)} alt="" className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full ring-2 ring-[rgba(8,6,24,0.96)]" />
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <p className="text-base font-extrabold" style={{ color: "var(--text-primary)" }}>{team.name}</p>
                         <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-                          {country?.flag} {team.city} · {team.league}
+                          {squad.team.country.flag} {team.city} · {team.league}
                         </p>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => teamId && void loadSquad(teamId, true)}
+                        disabled={loadingSquad}
+                        className="rounded-lg border p-2"
+                        style={{ borderColor: "rgba(255,255,255,0.1)" }}
+                        title="Rafraîchir effectif IA"
+                      >
+                        <RefreshCw size={14} className={loadingSquad ? "animate-spin" : ""} style={{ color: S.primary }} />
+                      </button>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 mb-4">
@@ -404,7 +522,7 @@ export function ScoutMapExplorerPage() {
                         { label: "Potentiel moy.", value: team.avgPotential, color: S.primary },
                         { label: "Activité scout", value: team.scoutActivity, color: S.success },
                         { label: "Niveau", value: team.tier, color: S.info },
-                        { label: "Joueurs", value: teamProspects.length || teamProspectCounts[team.id], color: S.accent },
+                        { label: "Joueurs", value: squad.players.length, color: S.accent },
                       ].map((k) => (
                         <div key={k.label} className="rounded-xl border p-2.5 text-center"
                           style={{ borderColor: "rgba(255,255,255,0.06)" }}>
@@ -415,6 +533,11 @@ export function ScoutMapExplorerPage() {
                     </div>
 
                     <SGauge value={team.avgPotential} color={S.primary} />
+
+                    <p className="mt-3 text-[9px]" style={{ color: "var(--text-muted)" }}>
+                      {squad.sources.database} en base · {squad.sources.ai} via IA
+                      {squad.cached ? " · cache" : ""}
+                    </p>
 
                     <div className="space-y-2 mt-4">
                       <motion.button type="button" onClick={() => navigate("/scout/search")}
@@ -434,30 +557,38 @@ export function ScoutMapExplorerPage() {
 
                   <SCard className="!p-4 mt-3">
                     <p className="text-[10px] font-bold uppercase mb-2 flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
-                      <Users size={11} /> Effectif scouté ({teamProspects.length})
+                      <Users size={11} /> Effectif ({squad.players.length})
                     </p>
-                    {teamProspects.length === 0 ? (
-                      <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>Aucun prospect lié — ajoutez via Recherche</p>
+                    {loadingSquad ? (
+                      <div className="flex items-center gap-2 py-4 text-[10px]" style={{ color: "var(--text-muted)" }}>
+                        <Loader2 size={12} className="animate-spin" /> Chargement…
+                      </div>
                     ) : (
-                      <div className="space-y-2">
-                        {teamProspects.map((p, i) => (
-                          <motion.button key={p.id} type="button"
-                            onClick={() => navigate(`/scout/prospect/${p.id}`)}
+                      <div className="space-y-2 max-h-[320px] overflow-y-auto">
+                        {squad.players.map((p, i) => (
+                          <motion.button
+                            key={p.id}
+                            type="button"
+                            onClick={() => p.prospectId && navigate(`/scout/prospect/${p.prospectId}`)}
                             className="flex w-full items-center gap-3 rounded-xl border p-2.5 text-left"
-                            style={{ borderColor: "rgba(255,255,255,0.06)" }}
+                            style={{ borderColor: p.inDatabase ? `${S.primary}30` : "rgba(255,255,255,0.06)" }}
                             initial={{ opacity: 0, x: 16 }}
                             animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: i * 0.06 }}
-                            whileHover={{ borderColor: `${S.primary}40`, x: 3 }}>
+                            transition={{ delay: i * 0.03 }}
+                            whileHover={{ borderColor: `${S.primary}40`, x: 3 }}
+                          >
                             <div className="flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-black text-white"
-                              style={{ background: S.primary }}>
+                              style={{ background: p.source === "prospect" ? S.primary : S.info }}>
                               {p.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-[11px] font-bold truncate" style={{ color: "var(--text-primary)" }}>
                                 {p.flag} {p.name}
                               </p>
-                              <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>{p.position} · Pot. {p.potential}</p>
+                              <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>
+                                {p.position} · {p.age}a · Pot. {p.potential}
+                                {p.source === "ai" ? " · IA" : " · DB"}
+                              </p>
                             </div>
                             <TrendingUp size={12} style={{ color: S.success }} />
                           </motion.button>
@@ -466,16 +597,21 @@ export function ScoutMapExplorerPage() {
                     )}
                   </SCard>
                 </motion.div>
+              ) : step === 3 && loadingSquad ? (
+                <SCard className="!p-8 flex items-center justify-center gap-2">
+                  <Loader2 size={18} className="animate-spin" style={{ color: S.primary }} />
+                  <span className="text-xs" style={{ color: "var(--text-muted)" }}>Génération effectif…</span>
+                </SCard>
               ) : null}
             </motion.div>
           </AnimatePresence>
 
-          {step === 0 && (
+          {step === 0 && overview && (
             <motion.div className="grid grid-cols-3 gap-2" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
               {[
-                { icon: Globe, label: "Continents", value: CONTINENTS.length, color: S.primary },
-                { icon: MapPin, label: "Pays", value: COUNTRIES.length, color: S.info },
-                { icon: Building2, label: "Clubs", value: TEAMS.length, color: S.accent },
+                { icon: Globe, label: "Continents", value: overview.stats.continents, color: S.primary },
+                { icon: MapPin, label: "Pays", value: overview.stats.countries, color: S.info },
+                { icon: Building2, label: "Clubs", value: overview.stats.clubs, color: S.accent },
               ].map((s) => (
                 <div key={s.label} className="rounded-xl border p-2.5 text-center"
                   style={{ background: "rgba(12,9,30,0.85)", borderColor: "rgba(255,255,255,0.06)" }}>

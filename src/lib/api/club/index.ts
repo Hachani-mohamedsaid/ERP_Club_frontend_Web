@@ -166,4 +166,31 @@ export const clubApi = {
     apiFetch(`/club/invoices/${id}/pay`, { method: "PATCH" }).then(parse),
   deleteInvoice: (id: string) =>
     apiFetch(`/club/invoices/${id}`, { method: "DELETE" }).then(parse),
+
+  getAi: () => apiFetch("/club/ai").then(parse<{
+    status: string;
+    model: string;
+    provider: string;
+    hasApiKey: boolean;
+    clubName: string;
+    season: string;
+    insights: { text: string; severity: string }[];
+    summary: string[];
+    suggestedActions: { label: string; path: string }[];
+    suggestedQuestions: string[];
+    avgResponseTime: string;
+    snapshot: {
+      playersCount: number;
+      staffCount: number;
+      injuredCount: number;
+      contractsToRenew: number;
+      budgetUsedPct: number;
+    };
+  }>),
+
+  chatAi: (question: string, context?: string) =>
+    apiFetch("/club/ai/chat", {
+      method: "POST",
+      body: JSON.stringify({ question, context }),
+    }).then(parse<{ question: string; answer: string; durationMs: number; model: string; clubName: string }>),
 };
