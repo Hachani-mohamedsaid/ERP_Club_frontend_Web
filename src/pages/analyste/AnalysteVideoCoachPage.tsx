@@ -3,7 +3,8 @@ import { motion } from "framer-motion";
 import { Mic, Play, Volume2, Star, AlertCircle, Target, TrendingUp } from "lucide-react";
 import { AnalystePageTransition } from "../../components/analyste/AnalystePageTransition";
 import { AnalysteKpiCard } from "../../components/analyste/AnalysteKpiCard";
-import { VIDEO_COACH_INSIGHTS } from "../../data/analysteData";
+import { AnalystePageLoader } from "../../components/analyste/AnalystePageLoader";
+import { useAnalysteVideoCoach } from "../../hooks/useAnalysteResource";
 
 const CATEGORY_CONFIG = {
   top: { icon: Star, color: "#22C55E", label: "Top actions" },
@@ -13,7 +14,12 @@ const CATEGORY_CONFIG = {
 };
 
 export function AnalysteVideoCoachPage() {
+  const { data, loading } = useAnalysteVideoCoach();
   const [playing, setPlaying] = useState(false);
+
+  if (loading && !data) return <AnalystePageLoader />;
+
+  const { insights } = data!;
 
   return (
     <AnalystePageTransition>
@@ -78,7 +84,7 @@ export function AnalysteVideoCoachPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {VIDEO_COACH_INSIGHTS.map((insight, i) => {
+        {insights.map((insight, i) => {
           const cfg = CATEGORY_CONFIG[insight.category];
           const Icon = cfg.icon;
           return (

@@ -1,9 +1,16 @@
-import { AlertTriangle, Bot, CalendarDays, ChartColumn, CheckCircle2, Handshake, Search, ShieldCheck, TrendingUp, CheckCheck, X } from "lucide-react";
+import { AlertTriangle, Bot, CalendarDays, ChartColumn, CheckCircle2, Handshake, Search, ShieldCheck, ShieldAlert, TrendingUp, Trophy, Users, CheckCheck, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { KpiFormation } from "./KpiFormation";
 import { GlassCard } from "../ui/GlassCard";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
+
+const EXEC_KPIS = [
+  { label: "Classement championnat", value: "2ème", trend: "+1 place", icon: Trophy, tone: "info" as const, bar: 86 },
+  { label: "Valeur effectif", value: "2.8 M DT", trend: "+11% saison", icon: TrendingUp, tone: "success" as const, bar: 64 },
+  { label: "Disponibilité effectif", value: "89%", trend: "3 indisponibles", icon: Users, tone: "info" as const, bar: 89 },
+  { label: "Score ODIN", value: "87/100", trend: "Risque bas", icon: ShieldAlert, tone: "danger" as const, bar: 87 },
+];
 
 const KPI_CARDS = [
   { label: "Effectif", value: "27", note: "3 groupes actifs" },
@@ -107,7 +114,7 @@ export function Dashboard() {
       className="space-y-6"
     >
       <motion.div variants={itemVariants}>
-        <KpiFormation />
+        <KpiFormation items={EXEC_KPIS} updatedLabel="Mis à jour il y a 12 min" />
       </motion.div>
 
       <motion.div 

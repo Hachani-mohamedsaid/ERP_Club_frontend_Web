@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Calendar, Sparkles } from "lucide-react";
 import { AnalystePageTransition } from "../../components/analyste/AnalystePageTransition";
 import { AnalysteKpiCard } from "../../components/analyste/AnalysteKpiCard";
-import { DEFAULT_TRAINING_PLAN, type TrainingPlanDay } from "../../data/analysteData";
+import { AnalystePageLoader } from "../../components/analyste/AnalystePageLoader";
+import { useAnalysteTraining } from "../../hooks/useAnalysteResource";
+import type { TrainingPlanDay } from "../../data/analysteData";
 
 const TYPE_COLORS: Record<TrainingPlanDay["type"], string> = {
   cardio: "#3B82F6", repos: "#22C55E", explosivite: "#EF4444", force: "#F59E0B", tactique: "#8B5CF6",
@@ -20,8 +22,15 @@ const SESSION_PALETTE: TrainingPlanDay[] = [
 const WEEK_DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"];
 
 export function AnalysteTrainingPage() {
-  const [plan, setPlan] = useState<TrainingPlanDay[]>(DEFAULT_TRAINING_PLAN);
+  const { data, loading } = useAnalysteTraining();
+  const [plan, setPlan] = useState<TrainingPlanDay[]>([]);
   const [dragOver, setDragOver] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (data) setPlan(data.plan);
+  }, [data]);
+
+  if (loading && !data) return <AnalystePageLoader />;
 
   function handleDrop(e: React.DragEvent, dayIndex: number) {
     e.preventDefault();
@@ -46,7 +55,7 @@ export function AnalysteTrainingPage() {
         <div className="flex items-center gap-2">
           <Sparkles size={16} style={{ color: "#8B5CF6" }} />
           <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-            Programme généré pour Ahmed Ben Salah — fatigue 85%, hamstring en surveillance, match samedi.
+            {data!.banner}
           </p>
         </div>
       </AnalysteKpiCard>
@@ -56,7 +65,7 @@ export function AnalysteTrainingPage() {
           <motion.div
             key={s.session}
             draggable
-            onDragStart={(e) => e.dataTransfer.setData("application/json", JSON.stringify(s))}
+            onDragStart={(e: React.DragEvent) => e.dataTransfer.setData("application/json", JSON.stringify(s))}
             whileHover={{ scale: 1.05 }}
             whileDrag={{ scale: 1.08, opacity: 0.8 }}
             className="cursor-grab rounded-xl border px-4 py-2 text-xs font-semibold active:cursor-grabbing"

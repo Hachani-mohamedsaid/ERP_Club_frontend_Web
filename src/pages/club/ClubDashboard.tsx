@@ -1,160 +1,204 @@
+import { CalendarDays, CheckCircle2, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { Users, UserCog, Wallet, Banknote, Bandage, FileWarning, Sparkles, AlertTriangle, Loader2 } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
-import { ClubPageTransition } from "../../components/club/ClubPageTransition";
-import { ClubKpiCard } from "../../components/club/ClubKpiCard";
-import { ClubLogo } from "../../components/club/ClubLogo";
-import { CountUpStat } from "../../components/player/CountUpStat";
-import { useClubProfile, getFirstName } from "../../hooks/useClubProfile";
-import { useClubDashboard } from "../../hooks/useClubDashboard";
+import { useNavigate } from "react-router-dom";
+import { KpiFormation } from "../../components/dashboard/KpiFormation";
+import { GlassCard } from "../../components/ui/GlassCard";
+import { Badge } from "../../components/ui/Badge";
+import { Button } from "../../components/ui/Button";
+import { useResponsableDashboard } from "../../hooks/useResponsableDashboard";
 
-const KPI_ICONS = { users: Users, staff: UserCog, budget: Wallet, salary: Banknote, injured: Bandage, contract: FileWarning };
+function SectionLabel({
+  icon: Icon,
+  title,
+  subtitle,
+}: {
+  icon: typeof CheckCircle2;
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <div
+        className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-odin-md)]"
+        style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+      >
+        <Icon size={17} />
+      </div>
+      <div>
+        <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+          {title}
+        </h2>
+        <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+          {subtitle}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function formatUpdatedAt(date: Date | null): string {
+  if (!date) return "Mis à jour à l'instant";
+  const mins = Math.floor((Date.now() - date.getTime()) / 60_000);
+  if (mins < 1) return "Mis à jour à l'instant";
+  if (mins === 1) return "Mis à jour il y a 1 min";
+  return `Mis à jour il y a ${mins} min`;
+}
 
 export function ClubDashboard() {
-  const profile = useClubProfile();
-  const { data, loading, error, hasOrg } = useClubDashboard();
+  const navigate = useNavigate();
+  const {
+    loading,
+    error,
+    hasOrg,
+    executiveKpis,
+    secondaryKpis,
+    validationQueue,
+    pendingCount,
+    smartNotifications,
+    fetchedAt,
+  } = useResponsableDashboard();
 
-  const org = data?.organization ?? profile.org;
-  const clubName = org?.clubName ?? profile.clubName;
-  const country = org?.country ?? profile.country;
-  const league = org?.league ?? profile.league;
-  const logoUrl = org?.logoUrl ?? profile.logoUrl;
-  const adminName = data?.owner?.fullName ? getFirstName(data.owner.fullName) : profile.adminName;
-  const season = data?.season ?? profile.season;
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.1 } },
+  };
 
-  const kpis = data?.kpis ?? [];
-  const budgetChart = data?.budgetChart ?? [];
-  const alerts = data?.alerts ?? [];
-  const aiSummary = data?.aiSummary ?? [];
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  };
+
+  if (!hasOrg) {
+    return (
+      <GlassCard className="p-6">
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+          Connectez-vous avec votre compte club pour charger les données du dashboard.
+        </p>
+      </GlassCard>
+    );
+  }
+
+  if (error) {
+    return (
+      <GlassCard className="p-6">
+        <p className="text-sm font-medium" style={{ color: "#EF4444" }}>
+          {error}
+        </p>
+      </GlassCard>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-16" style={{ color: "var(--text-muted)" }}>
+        <Loader2 size={18} className="animate-spin" />
+        <span className="text-sm">Chargement du dashboard…</span>
+      </div>
+    );
+  }
 
   return (
-    <ClubPageTransition>
-      {/* Hero */}
-      <motion.div
-        className="relative overflow-hidden rounded-[20px] border p-6 lg:p-8"
-        style={{
-          background: "linear-gradient(135deg, rgba(255,107,87,0.15) 0%, rgba(15,29,58,0.9) 50%, #070B1F 100%)",
-          borderColor: "rgba(255,255,255,0.05)",
-          backgroundSize: "200% 200%",
-          animation: "gradientMove 8s ease infinite",
-        }}
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <style>{`@keyframes gradientMove { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }`}</style>
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>Bonjour {adminName}</p>
-            <h1 className="text-2xl font-bold lg:text-3xl" style={{ color: "var(--text-primary)" }}>{clubName}</h1>
-            <p className="mt-1 text-sm" style={{ color: "var(--text-secondary)" }}>
-              Saison {season}
-              {country ? ` · ${country}` : ""}
-              {league ? ` · ${league}` : ""}
-            </p>
-          </div>
-          <ClubLogo name={clubName} logoUrl={logoUrl} size="md" />
-        </div>
+    <motion.div initial="hidden" animate="visible" variants={containerVariants} className="space-y-6">
+      <motion.div variants={itemVariants}>
+        <KpiFormation items={executiveKpis} updatedLabel={formatUpdatedAt(fetchedAt)} />
       </motion.div>
 
-      {!hasOrg && (
-        <ClubKpiCard>
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            Connectez-vous avec votre compte club (email + mot de passe) pour charger les données du dashboard.
-          </p>
-        </ClubKpiCard>
-      )}
+      <motion.div
+        className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4"
+        variants={containerVariants}
+      >
+        {secondaryKpis.map((card) => (
+          <motion.div
+            key={card.label}
+            variants={itemVariants}
+            whileHover={{ y: -5, boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          >
+            <GlassCard className="p-5">
+              <p className="text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                {card.label}
+              </p>
+              <p className="mt-2 text-2xl font-semibold" style={{ color: "var(--text-primary)" }}>
+                {card.value}
+              </p>
+              <p className="mt-1 text-xs" style={{ color: "var(--text-muted)" }}>
+                {card.note}
+              </p>
+            </GlassCard>
+          </motion.div>
+        ))}
+      </motion.div>
 
-      {error && (
-        <ClubKpiCard>
-          <p className="text-sm font-medium" style={{ color: "#EF4444" }}>{error}</p>
-        </ClubKpiCard>
-      )}
-
-      {loading && hasOrg && (
-        <div className="flex items-center justify-center gap-2 py-8" style={{ color: "var(--text-muted)" }}>
-          <Loader2 size={18} className="animate-spin" />
-          <span className="text-sm">Chargement des données club…</span>
-        </div>
-      )}
-
-      {!loading && hasOrg && data && (
-        <>
-          {/* KPIs */}
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
-            {kpis.map((kpi, i) => {
-              const Icon = KPI_ICONS[kpi.icon];
-              return (
-                <ClubKpiCard key={kpi.label} delay={i * 0.05}>
-                  <div className="flex items-center gap-2">
-                    <Icon size={16} style={{ color: kpi.color }} />
-                    <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{kpi.label}</span>
-                  </div>
-                  <p className="mt-2 text-xl font-bold" style={{ color: "var(--text-primary)" }}>
-                    <CountUpStat end={kpi.value} suffix={kpi.suffix ?? ""} prefix={kpi.prefix ?? ""} />
-                  </p>
-                </ClubKpiCard>
-              );
-            })}
-          </div>
-
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <ClubKpiCard className="lg:col-span-2" delay={0.15}>
-              <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Budget — Jan → Déc</h3>
-              <ResponsiveContainer width="100%" height={260}>
-                <LineChart data={budgetChart}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="month" tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
-                  <YAxis tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
-                  <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12 }} />
-                  <Line type="monotone" dataKey="budget" stroke="#6366F1" strokeWidth={2} dot={{ r: 3 }} animationDuration={1000} name="Budget" />
-                  <Line type="monotone" dataKey="spent" stroke="#FF6B57" strokeWidth={2} dot={{ r: 3 }} animationDuration={1000} name="Dépenses" />
-                </LineChart>
-              </ResponsiveContainer>
-            </ClubKpiCard>
-
-            <ClubKpiCard delay={0.2}>
-              <div className="mb-4 flex items-center gap-2">
-                <AlertTriangle size={16} style={{ color: "#F59E0B" }} />
-                <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Alertes</h3>
-              </div>
-              <div className="space-y-3">
-                {alerts.length === 0 ? (
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Aucune alerte pour le moment.</p>
-                ) : (
-                  alerts.map((alert) => (
-                    <div
-                      key={alert.text}
-                      className="rounded-xl border px-3 py-2.5 text-xs"
-                      style={{
-                        borderColor: alert.type === "danger" ? "rgba(239,68,68,0.3)" : "rgba(245,158,11,0.3)",
-                        background: alert.type === "danger" ? "rgba(239,68,68,0.08)" : "rgba(245,158,11,0.08)",
-                        color: alert.type === "danger" ? "#EF4444" : "#F59E0B",
-                      }}
-                    >
-                      ⚠ {alert.text}
-                    </div>
-                  ))
-                )}
-              </div>
-            </ClubKpiCard>
-          </div>
-
-          <ClubKpiCard delay={0.25}>
-            <div className="mb-3 flex items-center gap-2">
-              <Sparkles size={16} style={{ color: "#FF6B57" }} />
-              <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Résumé IA</h3>
+      <motion.div className="grid grid-cols-1 gap-6 xl:grid-cols-3" variants={containerVariants}>
+        <motion.div variants={itemVariants} className="xl:col-span-2" whileHover={{ y: -5 }}>
+          <GlassCard raised className="p-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <SectionLabel
+                icon={CheckCircle2}
+                title="Centre de Validation"
+                subtitle="Demandes en attente de décision"
+              />
+              <Badge tone="info">
+                {pendingCount} demande{pendingCount !== 1 ? "s" : ""}
+              </Badge>
             </div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-              {aiSummary.map((line) => (
-                <p key={line} className="rounded-xl border px-4 py-3 text-sm" style={{ borderColor: "rgba(255,255,255,0.05)", color: "var(--text-secondary)" }}>
-                  {line}
-                </p>
+
+            {validationQueue.length === 0 ? (
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+                Aucune demande en attente.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {validationQueue.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="rounded-[var(--radius-odin-md)] border px-4 py-3"
+                    style={{ borderColor: "var(--surface-panel-border)", background: "var(--surface-panel)" }}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p
+                          className="text-xs font-medium uppercase tracking-wide"
+                          style={{ color: "var(--text-muted)" }}
+                        >
+                          [{index + 1}] {item.title}
+                        </p>
+                        <p className="mt-1 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                          {item.subtitle}
+                        </p>
+                      </div>
+                      <Badge tone={item.tone}>{item.title}</Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-4">
+              <Button type="button" onClick={() => navigate("/responsable/validation")}>
+                Voir tout
+              </Button>
+            </div>
+          </GlassCard>
+        </motion.div>
+
+        <motion.div variants={itemVariants} whileHover={{ y: -5 }}>
+          <GlassCard className="p-6">
+            <SectionLabel
+              icon={CalendarDays}
+              title="Notifications intelligentes"
+              subtitle="Résumé des événements à traiter"
+            />
+            <div className="mt-4 flex flex-wrap gap-2">
+              {smartNotifications.map((item) => (
+                <Badge key={item} tone="neutral">
+                  {item}
+                </Badge>
               ))}
             </div>
-          </ClubKpiCard>
-        </>
-      )}
-    </ClubPageTransition>
+          </GlassCard>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 }

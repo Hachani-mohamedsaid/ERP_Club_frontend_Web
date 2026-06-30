@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { Brain, Send, Loader2, ChevronDown, ChevronUp, Zap } from "lucide-react";
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip } from "recharts";
 import { ScoutPage, SCard, SBadge, SGauge, SCOUT_TOOLTIP } from "../../components/scout/ScoutUI";
-import { PROSPECTS, S, PRIORITY_META } from "../../data/scoutData";
+import { S, PRIORITY_META, type Prospect } from "../../data/scoutData";
+import { useScoutProspects } from "../../hooks/useScoutData";
+import { showToast } from "../../components/scout/ScoutToast";
 
 const QUICK_PROMPTS = [
   "Cherche un BU ≤21 ans, potentiel >85, budget <1.5M",
@@ -23,10 +26,10 @@ interface AIResult {
   recommendation: string;
 }
 
-function runAI(query: string): AIResult[] {
+function runAI(query: string, pool: Prospect[]): AIResult[] {
   const q = query.toLowerCase();
 
-  let candidates = [...PROSPECTS];
+  let candidates = [...pool];
 
   if (q.includes("bu") || q.includes("buteur") || q.includes("avant")) {
     candidates = candidates.filter(p => p.position === "BU");
@@ -56,7 +59,7 @@ function runAI(query: string): AIResult[] {
     candidates = candidates.sort((a, b) => a.contractEnd.localeCompare(b.contractEnd));
   }
 
-  if (candidates.length === 0) candidates = [...PROSPECTS];
+  if (candidates.length === 0) candidates = [...pool];
 
   candidates.sort((a, b) => b.aiScore - a.aiScore);
 
@@ -83,6 +86,8 @@ function runAI(query: string): AIResult[] {
 }
 
 export function ScoutAIPage() {
+  const navigate = useNavigate();
+  const { prospects, watchlistIds, toggleWatchlist } = useScoutProspects();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<AIResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -95,7 +100,7 @@ export function ScoutAIPage() {
     setRan(false);
     setResults([]);
     setTimeout(() => {
-      setResults(runAI(q));
+      setResults(runAI(q, prospects as unknown as Prospect[]));
       setLoading(false);
       setRan(true);
     }, 1600);
@@ -187,7 +192,7 @@ export function ScoutAIPage() {
             </div>
 
             {results.map((res, i) => {
-              const p = PROSPECTS.find(pr => pr.id === res.id)!;
+              const p = prospects.find(pr => pr.id === res.id)!;
               const rankColor = RANK_COLORS[i] ?? S.accent;
               const isExp = expanded === res.id;
               const radarData = [
@@ -292,16 +297,25 @@ export function ScoutAIPage() {
                             </div>
                             <div className="mt-3 grid grid-cols-2 gap-2">
                               <motion.button type="button"
+                                onClick={() => navigate(`/scout/prospect/${res.id}`)}
                                 className="rounded-xl py-2 text-[10px] font-bold text-white"
                                 style={{ background: `linear-gradient(135deg,${rankColor},${rankColor}99)` }}
                                 whileHover={{ scale: 1.04 }}>
                                 Voir profil complet
                               </motion.button>
                               <motion.button type="button"
+                                onClick={async () => {
+                                  if (watchlistIds.has(res.id)) {
+                                    showToast("Déjà en watchlist", "info");
+                                    return;
+                                  }
+                                  await toggleWatchlist(res.id);
+                                  showToast("Ajouté à la Watchlist ✓", "success");
+                                }}
                                 className="rounded-xl py-2 text-[10px] font-bold"
                                 style={{ background: `${S.success}15`, color: S.success }}
                                 whileHover={{ scale: 1.04 }}>
-                                Ajouter Watchlist
+                                {watchlistIds.has(res.id) ? "En watchlist ✓" : "Ajouter Watchlist"}
                               </motion.button>
                             </div>
                           </div>

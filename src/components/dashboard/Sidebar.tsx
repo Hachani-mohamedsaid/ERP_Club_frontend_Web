@@ -67,11 +67,13 @@ import {
   BookMarked,
   Stethoscope as StethoscopeIcon,
   Clipboard,
+  Watch,
   PenTool,
   Map,
   Video,
   Target,
   Bot,
+  Globe,
 } from "lucide-react";
 
 const JOUEUR_STATIC_ROUTES = ["performances", "medical", "planning", "profil", "ia", "messages"];
@@ -120,7 +122,7 @@ const NAV_ITEMS: NavItem[] = [
           { label: "Gestion Budget", icon: Wallet, path: "/responsable/budget" },
           { label: "Entraînements", icon: CalendarDays, path: "/training" },
           { label: "Matchs", icon: Swords, path: "/matches" },
-          { label: "Contrats", icon: ScrollText, path: "/contracts" },
+          { label: "Contrats", icon: ScrollText, path: "/responsable/contrats" },
         ],
       },
       {
@@ -134,7 +136,7 @@ const NAV_ITEMS: NavItem[] = [
       {
         label: "RAPPORTS & SYSTÈME",
         items: [
-          { label: "Reports", icon: ChartColumn, path: "/reports" },
+          { label: "Reports", icon: ChartColumn, path: "/responsable/reports" },
           { label: "Journal Activité", icon: History, path: "/responsable/audit" },
           { label: "Notifications", icon: Bell, path: "/responsable/notifications" },
           { label: "Paramètres Club", icon: Settings, path: "/responsable/parametres" },
@@ -200,8 +202,20 @@ const NAV_ITEMS: NavItem[] = [
         label: "EXPLORATION",
         items: [
           { label: "Tableau de bord", icon: LayoutDashboard, path: "/scout" },
+          { label: "Carte Explorer", icon: Globe, path: "/scout/map" },
           { label: "Recherche", icon: Search, path: "/scout/search" },
           { label: "ODIN AI Scout", icon: Brain, path: "/scout/ai" },
+        ],
+      },
+      {
+        label: "PROFILS & ANALYSE",
+        items: [
+          { label: "Annuaire profils", icon: Users, path: "/scout/prospects" },
+          { label: "Comparaisons", icon: GitCompare, path: "/scout/comparison" },
+          { label: "Shortlist Club", icon: Star, path: "/scout/shortlist" },
+          { label: "Compatibilité", icon: Crosshair, path: "/scout/squad-fit" },
+          { label: "Vidéothèque", icon: Video, path: "/scout/videos" },
+          { label: "Analytics", icon: BarChart3, path: "/scout/analytics" },
         ],
       },
       {
@@ -209,7 +223,16 @@ const NAV_ITEMS: NavItem[] = [
         items: [
           { label: "Watchlist", icon: Heart, path: "/scout/watchlist" },
           { label: "Workflow", icon: Workflow, path: "/scout/recruitment" },
-          { label: "Rapports", icon: FileText, path: "/scout/report" },
+          { label: "Rapport Scout", icon: FileText, path: "/scout/report" },
+          { label: "Historique rapports", icon: History, path: "/scout/reports" },
+          { label: "Missions", icon: Map, path: "/scout/missions" },
+        ],
+      },
+      {
+        label: "CRM & CONFIG",
+        items: [
+          { label: "Agents", icon: Briefcase, path: "/scout/agents" },
+          { label: "Mon profil Scout", icon: UserCircle, path: "/scout/settings" },
         ],
       },
     ],
@@ -316,6 +339,7 @@ const NAV_ITEMS: NavItem[] = [
       {
         label: "SANTÉ & MARCHÉ",
         items: [
+          { label: "WHOOP Wearables",       icon: Watch,            path: "/analyste/whoop" },
           { label: "Injury Lab",            icon: Bandage,          path: "/analyste/blessures" },
           { label: "Injury Forecast",       icon: TrendingUp,       path: "/analyste/injury-forecast" },
           { label: "Transfer Engine",       icon: UserPlus,         path: "/analyste/transfer" },

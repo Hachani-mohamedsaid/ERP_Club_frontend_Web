@@ -93,7 +93,7 @@ const TITLE_BY_PATH: Record<string, { title: string; subtitle: string }> = {
   "/preparateur/wellness": { title: "Wellness Questionnaire", subtitle: "Pré-entraînement — Sommeil, fatigue, stress, humeur" },
   "/preparateur/recovery": { title: "Recovery Center", subtitle: "Cryothérapie, massage, repos et hydratation" },
   "/preparateur/notifications": { title: "Notifications", subtitle: "Blessures, fatigue, validations et alertes" },
-  "/analyste": { title: "Performance Intelligence Center", subtitle: "Sami Gharbi — FC Carthage" },
+  "/analyste": { title: "Performance Intelligence Center", subtitle: "" },
   "/analyste/tactique": { title: "Tactical Simulator", subtitle: "Terrain 3D · Drag & Drop · Métriques IA" },
   "/analyste/replay": { title: "Match Replay Intelligence", subtitle: "Détection auto · Timeline · Jump vidéo" },
   "/analyste/adversaire": { title: "Opponent Intelligence", subtitle: "Plan de match · Heatmap · Faiblesses" },
@@ -112,6 +112,7 @@ const TITLE_BY_PATH: Record<string, { title: string; subtitle: string }> = {
   "/analyste/injury-forecast": { title: "Injury Recovery Forecast", subtitle: "Protocole rééducation · Retour estimé · Risque rechute" },
   "/analyste/live-match": { title: "Live Match Dashboard", subtitle: "Temps réel · Win probability · Fatigue · Substitutions IA" },
   "/analyste/fatigue-heatmap": { title: "Fatigue Heatmap", subtitle: "Par tranche 15min · Effondrement physique · Actions & Erreurs" },
+  "/analyste/whoop": { title: "WHOOP Wearables Hub", subtitle: "Smartwatch 3D · Recovery · Strain · HRV · Sync joueurs" },
   "/analyste/video-analysis": { title: "Video Analysis Center", subtitle: "Replay · AI Coach · Highlights auto-détectés" },
   "/recruteur": { title: "Dashboard Recruteur", subtitle: "Karim Belaïd — Cellule de recrutement" },
   "/recruteur/discovery": { title: "Talent Discovery", subtitle: "Filtres avancés · Score IA · Base mondiale" },
@@ -609,7 +610,14 @@ export function Topbar() {
           ? clubSubtitle
           : `${clubName} · Saison ${season}`,
       }
-    : current;
+    : location.pathname.startsWith("/analyste")
+      ? {
+          title: current.title,
+          subtitle: location.pathname === "/analyste"
+            ? `${adminName} — ${clubName}`
+            : current.subtitle,
+        }
+      : current;
 
   return (
     <header className="flex items-center justify-between gap-4 px-8 py-5">

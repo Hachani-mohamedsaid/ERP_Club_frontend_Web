@@ -38,6 +38,7 @@ export const clubApi = {
   },
 
   getPlayers: () => apiFetch("/club/players").then(parse),
+  getPlayer: (id: string) => apiFetch(`/club/players/${id}`).then(parse),
   createPlayer: (body: Record<string, unknown>) =>
     apiFetch("/club/players", { method: "POST", body: JSON.stringify(body) }).then(parse),
   updatePlayer: (id: string, body: Record<string, unknown>) =>
@@ -60,8 +61,11 @@ export const clubApi = {
   getContracts: () => apiFetch("/club/contracts").then(parse),
   createContract: (body: Record<string, unknown>) =>
     apiFetch("/club/contracts", { method: "POST", body: JSON.stringify(body) }).then(parse),
+  updateContract: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/contracts/${id}`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
 
   getCalendar: () => apiFetch("/club/calendar").then(parse),
+  getTraining: () => apiFetch("/club/training").then(parse),
   createCalendarEvent: (body: Record<string, unknown>) =>
     apiFetch("/club/calendar", { method: "POST", body: JSON.stringify(body) }).then(parse),
 
@@ -80,7 +84,78 @@ export const clubApi = {
   createInfrastructure: (body: Record<string, unknown>) =>
     apiFetch("/club/infrastructures", { method: "POST", body: JSON.stringify(body) }).then(parse),
 
-  // ─── Préparateur ──────────────────────────────────────────────
+  // ─── Player Photo ────────────────────────────────────────────
+  updatePlayerPhoto: (id: string, photoUrl: string) =>
+    apiFetch(`/club/players/${id}/photo`, { method: "PATCH", body: JSON.stringify({ photoUrl }) }).then(parse),
+
+  updatePlayerPhysical: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/players/${id}/physical`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
+
+  getPlayerContract: (id: string) => apiFetch(`/club/players/${id}/contract`).then(parse),
+
+  getPlayerStats: (id: string) => apiFetch(`/club/players/${id}/stats`).then(parse),
+  updatePlayerStats: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/players/${id}/stats`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
+
+  getMatchStats: (id: string) => apiFetch(`/club/players/${id}/match-stats`).then(parse),
+  createMatchStat: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/players/${id}/match-stats`, { method: "POST", body: JSON.stringify(body) }).then(parse),
+
+  getAwards: (id: string) => apiFetch(`/club/players/${id}/awards`).then(parse),
+  createAward: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/players/${id}/awards`, { method: "POST", body: JSON.stringify(body) }).then(parse),
+  deleteAward: (awardId: string) =>
+    apiFetch(`/club/awards/${awardId}`, { method: "DELETE" }).then(parse),
+
+  getDocuments: (id: string) => apiFetch(`/club/players/${id}/documents`).then(parse),
+  getDocumentFile: (docId: string) => apiFetch(`/club/documents/${docId}/file`).then(parse),
+  createDocument: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/players/${id}/documents`, { method: "POST", body: JSON.stringify(body) }).then(parse),
+  deleteDocument: (docId: string) =>
+    apiFetch(`/club/documents/${docId}`, { method: "DELETE" }).then(parse),
+
+  getTransfers: () => apiFetch("/club/transfers").then(parse),
+  createTransfer: (body: Record<string, unknown>) =>
+    apiFetch("/club/transfers", { method: "POST", body: JSON.stringify(body) }).then(parse),
+  deleteTransfer: (id: string) =>
+    apiFetch(`/club/transfers/${id}`, { method: "DELETE" }).then(parse),
+
+  getChemistry: () => apiFetch("/club/chemistry").then(parse),
+  updateChemistry: (id: string, chemistry: number) =>
+    apiFetch(`/club/chemistry/${id}`, { method: "PATCH", body: JSON.stringify({ chemistry }) }).then(parse),
+
+  bookAppointment: (playerId: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/players/${playerId}/appointment`, { method: "POST", body: JSON.stringify(body) }).then(parse),
+
+  getFinanceReport: () => apiFetch("/club/finance/report").then(parse),
+  seedFinance: () => apiFetch("/club/finance/seed", { method: "POST" }).then(parse),
+  updateFinanceEntry: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/finance/${id}`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
+  deleteFinanceEntry: (id: string) =>
+    apiFetch(`/club/finance/${id}`, { method: "DELETE" }).then(parse),
+
+  deleteContract: (id: string) =>
+    apiFetch(`/club/contracts/${id}`, { method: "DELETE" }).then(parse),
+
+  getSponsors: () => apiFetch("/club/sponsors").then(parse),
+  createSponsor: (body: Record<string, unknown>) =>
+    apiFetch("/club/sponsors", { method: "POST", body: JSON.stringify(body) }).then(parse),
+  updateSponsor: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/sponsors/${id}`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
+  deleteSponsor: (id: string) =>
+    apiFetch(`/club/sponsors/${id}`, { method: "DELETE" }).then(parse),
+
+  getInvoices: () => apiFetch("/club/invoices").then(parse),
+  createInvoice: (body: Record<string, unknown>) =>
+    apiFetch("/club/invoices", { method: "POST", body: JSON.stringify(body) }).then(parse),
+  updateInvoice: (id: string, body: Record<string, unknown>) =>
+    apiFetch(`/club/invoices/${id}`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
+  markInvoicePaid: (id: string) =>
+    apiFetch(`/club/invoices/${id}/pay`, { method: "PATCH" }).then(parse),
+  deleteInvoice: (id: string) =>
+    apiFetch(`/club/invoices/${id}`, { method: "DELETE" }).then(parse),
+
+  // ─── Préparateur ─────────────────────────────────────────────
   getPhysicalCondition: () => apiFetch("/club/preparateur/condition").then(parse),
   getPreparateurDashboard: () => apiFetch("/club/preparateur/dashboard").then(parse),
   getInjuryRisks: () => apiFetch("/club/preparateur/injury-risks").then(parse),
@@ -155,6 +230,7 @@ export const clubApi = {
     apiFetch(`/club/preparateur/sessions/${id}`, { method: "DELETE" }).then(parse),
 
   getPresence: () => apiFetch("/club/preparateur/presence").then(parse),
+  getSessionPresence: () => apiFetch("/club/preparateur/presence").then(parse),
   updatePresence: (playerId: string, status: string) =>
     apiFetch(`/club/preparateur/presence/${playerId}`, { method: "PATCH", body: JSON.stringify({ status }) }).then(parse),
 };

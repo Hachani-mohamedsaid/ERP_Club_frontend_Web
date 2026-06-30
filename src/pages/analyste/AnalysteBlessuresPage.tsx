@@ -3,9 +3,15 @@ import { Activity } from "lucide-react";
 import { AnalystePageTransition } from "../../components/analyste/AnalystePageTransition";
 import { AnalysteKpiCard } from "../../components/analyste/AnalysteKpiCard";
 import { ProgressRing } from "../../components/analyste/ProgressRing";
-import { INJURY_PREDICTIONS } from "../../data/analysteData";
+import { AnalystePageLoader } from "../../components/analyste/AnalystePageLoader";
+import { useAnalysteInjuries } from "../../hooks/useAnalysteResource";
 
 export function AnalysteBlessuresPage() {
+  const { data, loading } = useAnalysteInjuries();
+  if (loading && !data) return <AnalystePageLoader />;
+
+  const predictions = data!.predictions;
+
   return (
     <AnalystePageTransition>
       <div className="flex items-center gap-3">
@@ -17,7 +23,7 @@ export function AnalysteBlessuresPage() {
       </div>
 
       <div className="space-y-6">
-        {INJURY_PREDICTIONS.map((p, i) => (
+        {predictions.map((p, i) => (
           <AnalysteKpiCard key={p.id} delay={i * 0.08}>
             <div className="flex flex-wrap items-start gap-6">
               <div className="flex-1 min-w-[200px]">

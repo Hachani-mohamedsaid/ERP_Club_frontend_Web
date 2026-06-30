@@ -2,11 +2,16 @@ import { TrendingUp } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, ReferenceLine } from "recharts";
 import { AnalystePageTransition } from "../../components/analyste/AnalystePageTransition";
 import { AnalysteKpiCard } from "../../components/analyste/AnalysteKpiCard";
+import { AnalystePageLoader } from "../../components/analyste/AnalystePageLoader";
 import { CountUpStat } from "../../components/player/CountUpStat";
-import { EVOLUTION_FORECASTS } from "../../data/analysteData";
+import { useAnalysteEvolution } from "../../hooks/useAnalysteResource";
 
 export function AnalysteEvolutionPage() {
-  const forecast = EVOLUTION_FORECASTS[0];
+  const { data, loading } = useAnalysteEvolution();
+  if (loading && !data) return <AnalystePageLoader />;
+
+  const { forecasts } = data!;
+  const forecast = forecasts[0];
 
   return (
     <AnalystePageTransition>
@@ -32,7 +37,7 @@ export function AnalysteEvolutionPage() {
         ))}
       </div>
 
-      {EVOLUTION_FORECASTS.map((f, i) => (
+      {forecasts.map((f, i) => (
         <AnalysteKpiCard key={f.player} delay={0.1 + i * 0.05}>
           <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{f.player} — {f.metric} (ML Forecast)</h3>
           <ResponsiveContainer width="100%" height={280}>

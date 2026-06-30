@@ -33,6 +33,24 @@
   --color-state-info: #3a7bd5;
   --color-state-info-bg: rgba(58, 123, 213, 0.12);
 
+  /* ---- Medical module semantic colors ---- */
+  --color-state-purple: #7c3aed;
+  --color-state-purple-bg: rgba(124, 58, 237, 0.12);
+  --color-state-pink: #db2777;
+  --color-state-pink-bg: rgba(219, 39, 119, 0.12);
+  --color-state-teal: #0d9488;
+  --color-state-teal-bg: rgba(13, 148, 136, 0.12);
+  --color-state-indigo: #4f46e5;
+  --color-state-indigo-bg: rgba(79, 70, 229, 0.12);
+  --color-state-rose: #e11d48;
+  --color-state-rose-bg: rgba(225, 29, 72, 0.12);
+  --color-state-cyan: #0891b2;
+  --color-state-cyan-bg: rgba(8, 145, 178, 0.12);
+  --color-state-violet: #6d28d9;
+  --color-state-violet-bg: rgba(109, 40, 217, 0.12);
+  --color-state-emerald: #059669;
+  --color-state-emerald-bg: rgba(5, 150, 105, 0.12);
+
   /* ---- Radius scale ---- */
   --radius-odin-sm: 6px;
   --radius-odin-md: 8px;
@@ -74,21 +92,39 @@
   --glass-sheen: rgba(255, 255, 255, 0.06);
   --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.35);
   --shadow-glass-strong: 0 20px 60px rgba(0, 0, 0, 0.5);
+
+  /* ---- Medical module semantic colors ---- */
+  --color-state-purple: #7c3aed;
+  --color-state-purple-bg: rgba(124, 58, 237, 0.12);
+  --color-state-pink: #db2777;
+  --color-state-pink-bg: rgba(219, 39, 119, 0.12);
+  --color-state-teal: #0d9488;
+  --color-state-teal-bg: rgba(13, 148, 136, 0.12);
+  --color-state-indigo: #4f46e5;
+  --color-state-indigo-bg: rgba(79, 70, 229, 0.12);
+  --color-state-rose: #e11d48;
+  --color-state-rose-bg: rgba(225, 29, 72, 0.12);
+  --color-state-cyan: #0891b2;
+  --color-state-cyan-bg: rgba(8, 145, 178, 0.12);
+  --color-state-violet: #6d28d9;
+  --color-state-violet-bg: rgba(109, 40, 217, 0.12);
+  --color-state-emerald: #059669;
+  --color-state-emerald-bg: rgba(5, 150, 105, 0.12);
 }
 
 [data-theme="light"] {
-  --surface-canvas: #dfe3e8;
-  --surface-canvas-2: #d4d9e0;
-  --surface-panel: rgba(255, 255, 255, 0.72);
+  --surface-canvas: #f0f2f5;
+  --surface-canvas-2: #e4e8ed;
+  --surface-panel: rgba(255, 255, 255, 0.90);
   --surface-panel-solid: #ffffff;
-  --surface-panel-border: #727986;
+  --surface-panel-border: rgba(0, 0, 0, 0.08);
   --pitch-line: #5f6b7a;
-  --surface-raised: rgba(255, 255, 255, 0.88);
-  --bg-primary: #dfe3e8;
+  --surface-raised: rgba(255, 255, 255, 0.95);
+  --bg-primary: #f0f2f5;
 
   --text-primary: #1a1a2e;
-  --text-secondary: #4a4a4a;
-  --text-muted: #656f70;
+  --text-secondary: #3a3a5c;
+  --text-muted: #6b7280;
   --text-on-accent: #ffffff;
 
   --accent: #ff7a00;
@@ -97,14 +133,32 @@
   --accent-soft: rgba(255, 122, 0, 0.12);
   --accent-rgb: 255, 122, 0;
 
-  --nav-bg: rgba(26, 26, 46, 0.92);
-  --nav-text: rgba(255, 255, 255, 0.7);
+  --nav-bg: rgba(26, 26, 46, 0.96);
+  --nav-text: rgba(255, 255, 255, 0.65);
   --nav-text-active: #ffffff;
 
   --glass-blur: 18px;
   --glass-sheen: rgba(255, 255, 255, 0.5);
-  --shadow-glass: 0 8px 32px rgba(26, 26, 46, 0.12), 0 1px 0 rgba(26, 26, 46, 0.06);
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.08);
   --shadow-glass-strong: 0 12px 40px rgba(26, 26, 46, 0.16), 0 0 0 1px rgba(109, 119, 132, 0.35);
+
+  /* ---- Medical module semantic colors (light — darker for readability) ---- */
+  --color-state-purple: #6d28d9;
+  --color-state-purple-bg: rgba(124, 58, 237, 0.12);
+  --color-state-pink: #be185d;
+  --color-state-pink-bg: rgba(219, 39, 119, 0.12);
+  --color-state-teal: #0f766e;
+  --color-state-teal-bg: rgba(13, 148, 136, 0.12);
+  --color-state-indigo: #4338ca;
+  --color-state-indigo-bg: rgba(79, 70, 229, 0.12);
+  --color-state-rose: #be123c;
+  --color-state-rose-bg: rgba(225, 29, 72, 0.12);
+  --color-state-cyan: #0e7490;
+  --color-state-cyan-bg: rgba(8, 145, 178, 0.12);
+  --color-state-violet: #5b21b6;
+  --color-state-violet-bg: rgba(109, 40, 217, 0.12);
+  --color-state-emerald: #047857;
+  --color-state-emerald-bg: rgba(5, 150, 105, 0.12);
 }
 
 * {
@@ -115,13 +169,13 @@ html,
 body,
 #root {
   height: 100%;
+  background: var(--surface-canvas);
+  color: var(--text-primary);
 }
 
 body {
   margin: 0;
   font-family: var(--font-sans);
-  color: var(--text-primary);
-  background: var(--surface-canvas);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background-color 0.25s ease, color 0.25s ease;

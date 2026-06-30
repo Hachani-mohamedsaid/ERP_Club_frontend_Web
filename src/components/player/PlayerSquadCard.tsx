@@ -6,15 +6,16 @@ import { getInitials, getAvailabilityTone } from "../../data/joueurMockData";
 
 interface PlayerSquadCardProps {
   player: SquadPlayer;
+  onSelect?: (player: SquadPlayer) => void;
 }
 
-export function PlayerSquadCard({ player }: PlayerSquadCardProps) {
+export function PlayerSquadCard({ player, onSelect }: PlayerSquadCardProps) {
   const navigate = useNavigate();
 
   return (
     <motion.button
       type="button"
-      onClick={() => navigate(`/joueurs/${player.id}`)}
+      onClick={() => onSelect ? onSelect(player) : navigate(`/joueurs/${player.id}`)}
       className="glass-panel w-full rounded-[var(--radius-odin-md)] p-5 text-left transition-shadow"
       whileHover={{ scale: 1.05, boxShadow: "0 8px 32px rgba(224,88,74,0.25)" }}
       whileTap={{ scale: 0.98 }}

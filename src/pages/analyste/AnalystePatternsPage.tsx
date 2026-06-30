@@ -2,8 +2,9 @@ import { motion } from "framer-motion";
 import { Sparkles, Brain, Activity, Crosshair } from "lucide-react";
 import { AnalystePageTransition } from "../../components/analyste/AnalystePageTransition";
 import { AnalysteKpiCard } from "../../components/analyste/AnalysteKpiCard";
+import { AnalystePageLoader } from "../../components/analyste/AnalystePageLoader";
 import { TypewriterText } from "../../components/analyste/TypewriterText";
-import { DETECTED_PATTERNS } from "../../data/analysteData";
+import { useAnalystePatterns } from "../../hooks/useAnalysteResource";
 
 const CATEGORY_CONFIG = {
   performance: { icon: Brain, color: "#8B5CF6", label: "Performance" },
@@ -12,6 +13,11 @@ const CATEGORY_CONFIG = {
 };
 
 export function AnalystePatternsPage() {
+  const { data, loading } = useAnalystePatterns();
+  if (loading && !data) return <AnalystePageLoader />;
+
+  const { patterns, summary } = data!;
+
   return (
     <AnalystePageTransition>
       <div className="flex items-center gap-3">
@@ -24,15 +30,12 @@ export function AnalystePatternsPage() {
 
       <AnalysteKpiCard glow delay={0.05}>
         <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-          <TypewriterText
-            text="Le modèle deep learning a analysé 847 matchs, 12 400 séances et 3 saisons de données wearables. Voici les patterns détectés automatiquement avec confiance > 75%."
-            speed={16}
-          />
+          <TypewriterText text={summary} speed={16} />
         </p>
       </AnalysteKpiCard>
 
       <div className="space-y-4">
-        {DETECTED_PATTERNS.map((p, i) => {
+        {patterns.map((p, i) => {
           const cfg = CATEGORY_CONFIG[p.category];
           const Icon = cfg.icon;
           return (
