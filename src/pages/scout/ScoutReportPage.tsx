@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, CheckCircle2, Brain, Star, TrendingUp, AlertTriangle, ChevronDown } from "lucide-react";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
 } from "recharts";
-import { ScoutPage, SCard, SGauge, SCOUT_TOOLTIP } from "../../components/scout/ScoutUI";
+import { ScoutPage, SCard, SGauge } from "../../components/scout/ScoutUI";
 import { S } from "../../data/scoutData";
 import { showToast } from "../../components/scout/ScoutToast";
+import { scoutApi, type ScoutProspectDto } from "../../lib/api/scout";
 
 const DECISIONS = [
   { value: "recruit",  label: "Recruter",       emoji: "✅", color: S.success },
@@ -15,7 +16,7 @@ const DECISIONS = [
   { value: "refuse",   label: "Refuser",         emoji: "❌", color: S.danger  },
 ];
 
-const PROSPECTS_LIST = [
+const PROSPECTS_LIST_FALLBACK = [
   { id: "pr1", name: "Youssef Ben Ali",  pos: "BU",      flag: "🇹🇳", base: 89 },
   { id: "pr2", name: "Nader Trabelsi",   pos: "MC",      flag: "🇹🇳", base: 84 },
   { id: "pr3", name: "Mouhamed Diallo",  pos: "Ailier G",flag: "🇨🇮", base: 81 },
@@ -48,7 +49,8 @@ function computeScore(skills: Record<string, number>, base: number): { score: nu
 }
 
 export function ScoutReportPage() {
-  const [selectedProspect, setSelectedProspect] = useState(PROSPECTS_LIST[0]);
+  const [prospectOptions, setProspectOptions] = useState(PROSPECTS_LIST_FALLBACK);
+  const [selectedProspect, setSelectedProspect] = useState(PROSPECTS_LIST_FALLBACK[0]);
   const [showProspectList, setShowProspectList] = useState(false);
   const [report, setReport] = useState({
     date: new Date().toISOString().split("T")[0],
@@ -68,6 +70,22 @@ export function ScoutReportPage() {
   const [aiResult, setAiResult] = useState<null | ReturnType<typeof computeScore>>(null);
   const [generating, setGenerating] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    scoutApi.getProspects().then((list: ScoutProspectDto[]) => {
+      if (list.length === 0) return;
+      const opts = list.map((p) => ({
+        id: p.id,
+        name: p.name,
+        pos: p.position,
+        flag: p.flag,
+        base: p.potential,
+      }));
+      setProspectOptions(opts);
+      setSelectedProspect(opts[0]);
+    }).catch(() => {});
+  }, []);
 
   const skillValues = { technique: report.technique, physique: report.physique, mental: report.mental, tactique: report.tactique, vitesse: report.vitesse };
   const radarData = Object.entries(skillValues).map(([k, v]) => ({ subject: k.charAt(0).toUpperCase() + k.slice(1), A: v }));
@@ -83,10 +101,34 @@ export function ScoutReportPage() {
     }, 1400);
   };
 
-  const handleSubmit = () => {
-    setSubmitted(true);
-    showToast("Rapport envoyé avec succès ✓", "success");
-    setTimeout(() => setSubmitted(false), 4000);
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    try {
+      await scoutApi.createReport({
+        prospectId: selectedProspect.id,
+        prospectName: selectedProspect.name,
+        matchDate: report.date,
+        matchObserved: report.match,
+        opponent: report.opponent,
+        technique: report.technique,
+        physique: report.physique,
+        mental: report.mental,
+        tactique: report.tactique,
+        vitesse: report.vitesse,
+        strengths: report.strengths,
+        weaknesses: report.weaknesses,
+        recommendation: report.recommendation,
+        decision: report.decision,
+        aiScore: aiResult?.score ?? null,
+      });
+      setSubmitted(true);
+      showToast("Rapport envoyé avec succès ✓", "success");
+      setTimeout(() => setSubmitted(false), 4000);
+    } catch {
+      showToast("Erreur lors de l'envoi du rapport", "error");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const SKILL_COLORS: Record<string, string> = {
@@ -123,7 +165,7 @@ export function ScoutReportPage() {
               <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                 className="absolute z-10 w-full mt-1 rounded-xl border overflow-hidden"
                 style={{ background: "rgba(8,6,24,0.98)", borderColor: "rgba(255,255,255,0.1)" }}>
-                {PROSPECTS_LIST.map(p => (
+                {prospectOptions.map(p => (
                   <motion.button key={p.id} type="button" onClick={() => { setSelectedProspect(p); setShowProspectList(false); setAiResult(null); }}
                     className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm"
                     style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
@@ -349,12 +391,12 @@ export function ScoutReportPage() {
       </AnimatePresence>
 
       {/* Submit */}
-      <motion.button type="button" onClick={handleSubmit}
+      <motion.button type="button" onClick={() => void handleSubmit()} disabled={submitting}
         className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold text-white"
-        style={{ background: `linear-gradient(135deg,${S.success},${S.success}cc)`, boxShadow: `0 0 20px ${S.success}40` }}
-        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+        style={{ background: `linear-gradient(135deg,${S.success},${S.success}cc)`, boxShadow: `0 0 20px ${S.success}40`, opacity: submitting ? 0.7 : 1 }}
+        whileHover={{ scale: submitting ? 1 : 1.02 }} whileTap={{ scale: 0.97 }}>
         <Send size={16} />
-        {submitted ? "Rapport envoyé ✓" : "Envoyer le rapport"}
+        {submitted ? "Rapport envoyé ✓" : submitting ? "Envoi..." : "Envoyer le rapport"}
       </motion.button>
     </ScoutPage>
   );

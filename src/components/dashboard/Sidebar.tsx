@@ -73,6 +73,7 @@ import {
   Video,
   Target,
   Bot,
+  Globe,
 } from "lucide-react";
 
 const JOUEUR_STATIC_ROUTES = ["performances", "medical", "planning", "profil", "ia", "messages"];
@@ -201,8 +202,20 @@ const NAV_ITEMS: NavItem[] = [
         label: "EXPLORATION",
         items: [
           { label: "Tableau de bord", icon: LayoutDashboard, path: "/scout" },
+          { label: "Carte Explorer", icon: Globe, path: "/scout/map" },
           { label: "Recherche", icon: Search, path: "/scout/search" },
           { label: "ODIN AI Scout", icon: Brain, path: "/scout/ai" },
+        ],
+      },
+      {
+        label: "PROFILS & ANALYSE",
+        items: [
+          { label: "Annuaire profils", icon: Users, path: "/scout/prospects" },
+          { label: "Comparaisons", icon: GitCompare, path: "/scout/comparison" },
+          { label: "Shortlist Club", icon: Star, path: "/scout/shortlist" },
+          { label: "Compatibilité", icon: Crosshair, path: "/scout/squad-fit" },
+          { label: "Vidéothèque", icon: Video, path: "/scout/videos" },
+          { label: "Analytics", icon: BarChart3, path: "/scout/analytics" },
         ],
       },
       {
@@ -210,7 +223,16 @@ const NAV_ITEMS: NavItem[] = [
         items: [
           { label: "Watchlist", icon: Heart, path: "/scout/watchlist" },
           { label: "Workflow", icon: Workflow, path: "/scout/recruitment" },
-          { label: "Rapports", icon: FileText, path: "/scout/report" },
+          { label: "Rapport Scout", icon: FileText, path: "/scout/report" },
+          { label: "Historique rapports", icon: History, path: "/scout/reports" },
+          { label: "Missions", icon: Map, path: "/scout/missions" },
+        ],
+      },
+      {
+        label: "CRM & CONFIG",
+        items: [
+          { label: "Agents", icon: Briefcase, path: "/scout/agents" },
+          { label: "Mon profil Scout", icon: UserCircle, path: "/scout/settings" },
         ],
       },
     ],

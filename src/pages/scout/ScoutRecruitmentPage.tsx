@@ -1,34 +1,54 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { GripVertical, TrendingUp } from "lucide-react";
 import { ScoutPage, SCard, SBadge, SGauge } from "../../components/scout/ScoutUI";
-import { PROSPECTS, WORKFLOW_COLS, S, PRIORITY_META, type WorkflowStatus } from "../../data/scoutData";
+import { WORKFLOW_COLS, S, PRIORITY_META, type WorkflowStatus } from "../../data/scoutData";
+import { useScoutProspects } from "../../hooks/useScoutData";
+import { showToast } from "../../components/scout/ScoutToast";
 
 export function ScoutRecruitmentPage() {
-  const [statuses, setStatuses] = useState<Record<string, WorkflowStatus>>(
-    Object.fromEntries(PROSPECTS.map(p => [p.id, p.status]))
-  );
+  const navigate = useNavigate();
+  const { prospects, loading, updateWorkflow } = useScoutProspects();
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<WorkflowStatus | null>(null);
   const dragId = useRef<string | null>(null);
+
+  const statuses: Record<string, WorkflowStatus> = Object.fromEntries(
+    prospects.map((p) => [p.id, p.status]),
+  );
 
   const handleDragStart = (id: string) => {
     dragId.current = id;
     setDragging(id);
   };
 
-  const handleDrop = (colId: WorkflowStatus) => {
-    if (dragId.current && dragId.current !== colId) {
-      setStatuses(prev => ({ ...prev, [dragId.current!]: colId }));
+  const handleDrop = async (colId: WorkflowStatus) => {
+    const prospectId = dragId.current;
+    if (prospectId && statuses[prospectId] !== colId) {
+      try {
+        await updateWorkflow(prospectId, colId);
+        showToast("Workflow mis à jour ✓", "success");
+      } catch {
+        showToast("Erreur mise à jour workflow", "error");
+      }
     }
     setDragging(null);
     setDragOver(null);
     dragId.current = null;
   };
 
-  const totalValue = PROSPECTS.reduce((a, p) => a + p.valueMK, 0);
-  const doneCount = Object.values(statuses).filter(s => s === "done").length;
-  const sigCount = Object.values(statuses).filter(s => s === "signature").length;
+  const totalValue = prospects.reduce((a, p) => a + p.valueMK, 0);
+  const doneCount = prospects.filter((p) => p.status === "done").length;
+  const sigCount = prospects.filter((p) => p.status === "signature").length;
+
+  if (loading) {
+    return (
+      <ScoutPage>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement du workflow...</p>
+      </ScoutPage>
+    );
+  }
 
   return (
     <ScoutPage>
@@ -56,7 +76,7 @@ export function ScoutRecruitmentPage() {
       <div className="overflow-x-auto pb-2">
         <div className="flex gap-3 min-w-max">
           {WORKFLOW_COLS.map(col => {
-            const colProspects = PROSPECTS.filter(p => statuses[p.id] === col.id);
+            const colProspects = prospects.filter(p => statuses[p.id] === col.id);
             const isDragTarget = dragOver === col.id;
 
             return (
@@ -93,6 +113,7 @@ export function ScoutRecruitmentPage() {
                             initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: isDraggingThis ? 0.5 : 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.9 }}
                             draggable onDragStart={() => handleDragStart(p.id)} onDragEnd={() => { setDragging(null); setDragOver(null); }}
+                            onClick={() => navigate(`/scout/prospect/${p.id}`)}
                             className="rounded-[16px] border p-3 cursor-grab active:cursor-grabbing select-none"
                             style={{
                               background: "rgba(12,9,30,0.92)",
@@ -158,8 +179,8 @@ export function ScoutRecruitmentPage() {
         </p>
         <div className="grid grid-cols-5 gap-2">
           {WORKFLOW_COLS.map(col => {
-            const count = PROSPECTS.filter(p => statuses[p.id] === col.id).length;
-            const pct = Math.round((count / PROSPECTS.length) * 100);
+            const count = prospects.filter(p => statuses[p.id] === col.id).length;
+            const pct = prospects.length > 0 ? Math.round((count / prospects.length) * 100) : 0;
             return (
               <div key={col.id} className="text-center">
                 <p className="text-lg font-extrabold" style={{ color: col.color }}>{count}</p>

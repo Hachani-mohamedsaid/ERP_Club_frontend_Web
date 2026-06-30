@@ -9,8 +9,9 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip,
 } from "recharts";
 import { ScoutPage, SBadge, SGauge, SCOUT_TOOLTIP } from "../../components/scout/ScoutUI";
-import { PROSPECTS, S, PRIORITY_META } from "../../data/scoutData";
+import { S, PRIORITY_META } from "../../data/scoutData";
 import { showToast } from "../../components/scout/ScoutToast";
+import { useScoutProspects } from "../../hooks/useScoutData";
 
 // ── Filter chip config ──────────────────────────────────────────────────────
 const POSITIONS  = ["Tous", "BU", "MC", "DC", "Ailier G", "DG", "DD", "GK"];
@@ -73,6 +74,7 @@ function ChipGroup({ label, options, value, onChange }: {
 
 export function ScoutSearchPage() {
   const navigate = useNavigate();
+  const { prospects, watchlistIds, loading, toggleWatchlist } = useScoutProspects();
 
   const [search, setSearch] = useState("");
   const [pos, setPos] = useState("Tous");
@@ -80,7 +82,6 @@ export function ScoutSearchPage() {
   const [ageRange, setAgeRange] = useState("Tous");
   const [potRange, setPotRange] = useState("Tous");
   const [budgetRange, setBudgetRange] = useState("Tous");
-  const [watchlist, setWatchlist] = useState<Set<string>>(new Set(["pr1", "pr6"]));
   const [selected, setSelected] = useState<string | null>(null);
 
   const activeFilters = [
@@ -91,7 +92,7 @@ export function ScoutSearchPage() {
     budgetRange !== "Tous" ? budgetRange : null,
   ].filter(Boolean);
 
-  const filtered = useMemo(() => PROSPECTS.filter(p => {
+  const filtered = useMemo(() => prospects.filter(p => {
     if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.club.toLowerCase().includes(search.toLowerCase())) return false;
     if (pos !== "Tous" && p.position !== pos) return false;
     if (country !== "Tous" && p.nationality !== country) return false;
@@ -99,17 +100,14 @@ export function ScoutSearchPage() {
     if (!matchesPot(p.potential, potRange)) return false;
     if (!matchesBudget(p.valueMK, budgetRange)) return false;
     return true;
-  }), [search, pos, country, ageRange, potRange, budgetRange]);
+  }), [prospects, search, pos, country, ageRange, potRange, budgetRange]);
 
-  const sel = selected ? PROSPECTS.find(p => p.id === selected) : null;
+  const sel = selected ? prospects.find(p => p.id === selected) : null;
 
-  const toggleWatch = (id: string) => {
-    setWatchlist(prev => {
-      const n = new Set(prev);
-      if (n.has(id)) { n.delete(id); showToast("Retiré de la Watchlist", "info"); }
-      else           { n.add(id);    showToast("Ajouté à la Watchlist ✓", "success"); }
-      return n;
-    });
+  const toggleWatch = async (id: string) => {
+    const wasIn = watchlistIds.has(id);
+    await toggleWatchlist(id);
+    showToast(wasIn ? "Retiré de la Watchlist" : "Ajouté à la Watchlist ✓", wasIn ? "info" : "success");
   };
 
   const clearFilters = () => {
@@ -185,7 +183,7 @@ export function ScoutSearchPage() {
           <AnimatePresence mode="popLayout">
             {filtered.map((p, i) => {
               const isSel = selected === p.id;
-              const isWatch = watchlist.has(p.id);
+              const isWatch = watchlistIds.has(p.id);
               const pc = potColor(p.potential);
               const inj = injuryMeta(p.injuryRisk);
 
@@ -436,13 +434,13 @@ export function ScoutSearchPage() {
                     <motion.button type="button" onClick={() => { toggleWatch(sel.id); }}
                       className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-sm font-bold"
                       style={{
-                        background: watchlist.has(sel.id) ? "rgba(239,68,68,0.08)" : "rgba(255,255,255,0.04)",
-                        color: watchlist.has(sel.id) ? S.danger : "var(--text-muted)",
-                        border: `1px solid ${watchlist.has(sel.id) ? S.danger + "30" : "rgba(255,255,255,0.1)"}`,
+                        background: watchlistIds.has(sel.id) ? "rgba(239,68,68,0.08)" : "rgba(255,255,255,0.04)",
+                        color: watchlistIds.has(sel.id) ? S.danger : "var(--text-muted)",
+                        border: `1px solid ${watchlistIds.has(sel.id) ? S.danger + "30" : "rgba(255,255,255,0.1)"}`,
                       }}
                       whileHover={{ scale: 1.02 }}>
-                      <Heart size={13} fill={watchlist.has(sel.id) ? S.danger : "none"} />
-                      {watchlist.has(sel.id) ? "Retirer de la Watchlist" : "Ajouter à la Watchlist"}
+                      <Heart size={13} fill={watchlistIds.has(sel.id) ? S.danger : "none"} />
+                      {watchlistIds.has(sel.id) ? "Retirer de la Watchlist" : "Ajouter à la Watchlist"}
                     </motion.button>
                   </div>
                 </div>
