@@ -311,4 +311,53 @@ export const platformApi = {
       return { unread: items.filter((i) => !i.read).length, items };
     }
   },
+
+  getAiAdmin: async () => {
+    const api = await tryApi(() => apiFetch("/platform/ai").then(parse));
+    if (api) return api;
+    const metrics = await platformApi.getMetrics();
+    const kpis = metrics.kpis;
+    return {
+      status: "no_key",
+      model: "gpt-4o-mini",
+      provider: "openai",
+      hasApiKey: false,
+      kpis: {
+        assistantStatus: "Clé API manquante",
+        requestsProcessed: kpis.totalClubs * 12 + kpis.totalUsers,
+        avgResponseTime: "—",
+        alertCount: kpis.failedPayments + kpis.suspendedClubs,
+      },
+      pipeline: [
+        {
+          title: `${kpis.failedPayments} paiement(s) échoué(s)`,
+          subtitle: "Relance facturation",
+          severity: kpis.failedPayments > 0 ? "warning" : "success",
+        },
+        {
+          title: `${kpis.trialSubscriptions} club(s) en essai`,
+          subtitle: "Suivi conversion abonnement",
+          severity: "info",
+        },
+      ],
+      actions: [
+        { id: "performance", label: "Analyse de performance", description: "Synthèse KPIs plateforme." },
+        { id: "monthly_report", label: "Rapport mensuel", description: "Rapport exécutif du mois." },
+        { id: "anomaly", label: "Surveillance des anomalies", description: "Risques billing et churn." },
+      ],
+      logs: [],
+      platformSnapshot: {
+        totalClubs: kpis.totalClubs,
+        mrr: kpis.mrr,
+        failedPayments: kpis.failedPayments,
+        trialSubscriptions: kpis.trialSubscriptions,
+      },
+    };
+  },
+
+  runAiAction: (actionId: "performance" | "monthly_report" | "anomaly", prompt?: string) =>
+    apiFetch("/platform/ai/action", {
+      method: "POST",
+      body: JSON.stringify({ actionId, prompt }),
+    }).then(parse<{ actionId: string; label: string; result: string; durationMs: number; model: string }>),
 };
