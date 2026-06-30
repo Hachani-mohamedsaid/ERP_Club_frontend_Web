@@ -23,7 +23,6 @@ import { MedicalAIPage } from "./pages/medical/MedicalAIPage";
 import { FinancePage } from "./pages/FinancePage";
 import { DocumentsPage } from "./pages/DocumentsPage";
 import { ReportsPage } from "./pages/ReportsPage";
-import { OdinAiPage } from "./pages/OdinAiPage";
 import { AIAssistantPage } from "./pages/AIAssistantPage";
 import { MessagesPage } from "./pages/MessagesPage";
 import { CoachPage } from "./pages/CoachPage";

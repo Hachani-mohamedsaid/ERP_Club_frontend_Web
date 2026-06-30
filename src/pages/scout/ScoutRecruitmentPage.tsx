@@ -105,7 +105,7 @@ export function ScoutRecruitmentPage() {
 
                   <div className="space-y-2 p-1">
                     <AnimatePresence mode="popLayout">
-                      {colProspects.map((p, i) => {
+                      {colProspects.map((p) => {
                         const priority = PRIORITY_META[p.priority];
                         const isDraggingThis = dragging === p.id;
                         return (

@@ -3,12 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
   Search, Heart, Eye, Star, ChevronRight, X, MapPin,
-  TrendingUp, Shield, Zap, Target, Activity,
+  Zap, Target, Activity,
 } from "lucide-react";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip,
 } from "recharts";
-import { ScoutPage, SBadge, SGauge, SCOUT_TOOLTIP } from "../../components/scout/ScoutUI";
+import { ScoutPage, SGauge, SCOUT_TOOLTIP } from "../../components/scout/ScoutUI";
 import { S, PRIORITY_META } from "../../data/scoutData";
 import { showToast } from "../../components/scout/ScoutToast";
 import { useScoutProspects } from "../../hooks/useScoutData";
@@ -74,7 +74,7 @@ function ChipGroup({ label, options, value, onChange }: {
 
 export function ScoutSearchPage() {
   const navigate = useNavigate();
-  const { prospects, watchlistIds, loading, toggleWatchlist } = useScoutProspects();
+  const { prospects, watchlistIds, toggleWatchlist } = useScoutProspects();
 
   const [search, setSearch] = useState("");
   const [pos, setPos] = useState("Tous");
