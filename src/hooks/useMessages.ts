@@ -36,7 +36,7 @@ export function useMessages() {
   const myMemberIdRef = useRef<string | null>(null);
   const onlineIdsRef = useRef<Set<string>>(new Set());
   const typingPeersRef = useRef<Set<string>>(new Set());
-  const initialLoadDone = useRef(false);
+  const skipNextSearchRef = useRef(true);
 
   selectedPeerIdRef.current = selectedPeerId;
   conversationIdRef.current = conversationId;
@@ -58,6 +58,7 @@ export function useMessages() {
   const loadContacts = useCallback(async (q?: string, options?: { isSearch?: boolean }) => {
     const isSearch = options?.isSearch ?? false;
     if (isSearch) setSearching(true);
+    else setLoading(true);
     try {
       const data = await messagesApi.getContacts(q);
       setMyMemberId(data.myMemberId);
@@ -70,10 +71,13 @@ export function useMessages() {
       const msg =
         raw.includes("404") || raw.includes("Not Found") || raw.includes("Cannot GET")
           ? "Module Messages en cours de déploiement — réessayez dans 1 à 2 minutes."
-          : raw;
+          : raw.includes("abort") || raw.includes("Abort")
+            ? "Délai dépassé — vérifiez la connexion au serveur."
+            : raw;
       setError(msg);
     } finally {
       if (isSearch) setSearching(false);
+      else setLoading(false);
     }
   }, [applyPresence]);
 
@@ -86,7 +90,7 @@ export function useMessages() {
       setContacts((prev) =>
         prev.map((c) =>
           c.memberId === peerMemberId
-            ? { ...c, unread: 0, preview: data.messages.at(-1)?.text ?? c.preview }
+            ? { ...c, unread: 0, preview: data.messages.at(-1)?.text ?? c.preview, conversationId: data.conversationId }
             : c,
         ),
       );
@@ -152,13 +156,39 @@ export function useMessages() {
               : c,
           ),
         );
+        void loadContacts(searchRef.current.trim() ? searchRef.current : undefined);
       } catch (e) {
         setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
         setError(e instanceof Error ? e.message : "Envoi impossible.");
       }
     },
-    [selectedPeerId],
+    [selectedPeerId, loadContacts],
   );
+
+  const deleteConversation = useCallback(async () => {
+    if (!conversationId) return;
+    try {
+      await messagesApi.deleteConversation(conversationId);
+      setMessages([]);
+      setConversationId(null);
+      setSelectedPeerId(null);
+      await loadContacts(searchRef.current.trim() ? searchRef.current : undefined);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Suppression impossible.");
+    }
+  }, [conversationId, loadContacts]);
+
+  const markThreadRead = useCallback(async () => {
+    if (!conversationId) return;
+    try {
+      await messagesApi.markRead(conversationId);
+      setContacts((prev) =>
+        prev.map((c) => (c.memberId === selectedPeerIdRef.current ? { ...c, unread: 0 } : c)),
+      );
+    } catch {
+      /* silent */
+    }
+  }, [conversationId]);
 
   const emitTyping = useCallback((active: boolean) => {
     if (!selectedPeerIdRef.current || !socketRef.current) return;
@@ -176,35 +206,28 @@ export function useMessages() {
     [emitTyping],
   );
 
-  // Initial load — once only
   useEffect(() => {
-    if (initialLoadDone.current) return;
-    initialLoadDone.current = true;
-    void (async () => {
-      setLoading(true);
-      await loadContacts();
-      setLoading(false);
-    })();
+    void loadContacts();
   }, [loadContacts]);
 
-  // Search debounce — does not block the whole sidebar
   useEffect(() => {
-    if (!initialLoadDone.current) return;
+    if (skipNextSearchRef.current) {
+      skipNextSearchRef.current = false;
+      return;
+    }
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     searchDebounceRef.current = setTimeout(() => {
-      void loadContacts(search, { isSearch: true });
-    }, 250);
+      void loadContacts(search.trim() || undefined, { isSearch: !!search.trim() });
+    }, 300);
     return () => {
       if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     };
   }, [search, loadContacts]);
 
-  // Presence overlay on contacts
   useEffect(() => {
     setContacts((prev) => applyPresence(prev));
   }, [onlineIds, typingPeers, applyPresence]);
 
-  // WebSocket — single connection per session
   useEffect(() => {
     const token = getAccessToken();
     if (!token) return;
@@ -282,12 +305,7 @@ export function useMessages() {
           });
           void messagesApi.markRead(data.conversationId);
         } else {
-          void messagesApi.getContacts(searchRef.current).then((res) => {
-            const list = searchRef.current.trim()
-              ? (res.searchResults ?? res.items)
-              : res.items;
-            setContacts(applyPresence(list));
-          });
+          void loadContacts(searchRef.current.trim() ? searchRef.current : undefined);
         }
       },
     );
@@ -304,20 +322,20 @@ export function useMessages() {
       }
     });
 
-    socket.on("conversation:read", () => {
-      void messagesApi.getContacts(searchRef.current).then((res) => {
-        const list = searchRef.current.trim()
-          ? (res.searchResults ?? res.items)
-          : res.items;
-        setContacts(applyPresence(list));
-      });
+    socket.on("conversation:deleted", (data: { conversationId: string }) => {
+      if (data.conversationId === conversationIdRef.current) {
+        setMessages([]);
+        setConversationId(null);
+        setSelectedPeerId(null);
+      }
+      void loadContacts(searchRef.current.trim() ? searchRef.current : undefined);
     });
 
     return () => {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [applyPresence]);
+  }, [applyPresence, loadContacts]);
 
   const selected =
     contacts.find((c) => c.memberId === selectedPeerId) ??
@@ -336,12 +354,8 @@ export function useMessages() {
         }
       : null);
 
-  const displayList = search.trim()
-    ? contacts
-    : contacts.filter((c) => c.conversationId);
-
   return {
-    contacts: displayList,
+    contacts,
     selected,
     selectedPeerId,
     selectPeer,
@@ -350,6 +364,8 @@ export function useMessages() {
     setSearch,
     sendMessage,
     onInputChange,
+    deleteConversation,
+    markThreadRead,
     loading,
     searching,
     threadLoading,

@@ -1,5 +1,5 @@
 import { parseApiError } from "../config";
-import { apiFetch } from "../authHeaders";
+import { apiFetchWithTimeout } from "../authHeaders";
 
 async function parse<T>(response: Response): Promise<T> {
   if (!response.ok) throw new Error(await parseApiError(response));
@@ -46,27 +46,35 @@ export interface ThreadResponse {
   messages: ChatMessage[];
 }
 
+const fetchMsg = (path: string, init?: RequestInit, timeoutMs = 15000) =>
+  apiFetchWithTimeout(path, init, timeoutMs).then(parse);
+
 export const messagesApi = {
   getContacts: (search?: string) => {
     const q = search?.trim() ? `?search=${encodeURIComponent(search.trim())}` : "";
-    return apiFetch(`/messages/contacts${q}`).then(parse<ContactsResponse>);
+    return fetchMsg(`/messages/contacts${q}`) as Promise<ContactsResponse>;
   },
 
   getThread: (peerMemberId: string) =>
-    apiFetch(`/messages/thread/${peerMemberId}`).then(parse<ThreadResponse>),
+    fetchMsg(`/messages/thread/${peerMemberId}`) as Promise<ThreadResponse>,
 
   sendMessage: (peerMemberId: string, body: string) =>
-    apiFetch(`/messages/thread/${peerMemberId}`, {
+    fetchMsg(`/messages/thread/${peerMemberId}`, {
       method: "POST",
       body: JSON.stringify({ body }),
-    }).then(parse<{
+    }) as Promise<{
       conversationId: string;
       message: ChatMessage;
       peerMemberId: string;
-    }>),
+    }>,
 
   markRead: (conversationId: string) =>
-    apiFetch(`/messages/conversations/${conversationId}/read`, {
+    fetchMsg(`/messages/conversations/${conversationId}/read`, {
       method: "PATCH",
-    }).then(parse<{ marked: number }>),
+    }) as Promise<{ marked: number }>,
+
+  deleteConversation: (conversationId: string) =>
+    fetchMsg(`/messages/conversations/${conversationId}`, {
+      method: "DELETE",
+    }) as Promise<{ deleted: boolean }>,
 };
