@@ -26,7 +26,6 @@ const fmt = (n: number) =>
     : `${n.toLocaleString("fr-TN")} DT`;
 
 const CHART_COLORS = ["#8B5CF6", "#EF4444", "#3B82F6", "#F59E0B", "#6B7280"];
-const BUDGET_CATS = ["Salaires", "Transferts", "Infrastructure", "Staff", "Divers"];
 
 export function FinanceComptabilite() {
   const { report, loading, error, refetch, history, alerts, kpis, monthlyExpenses, expenseBreakdown } =
@@ -221,34 +220,29 @@ export function FinanceComptabilite() {
         </GlassCard>
       </div>
 
-      {/* Prévision IA (static — managed by IA Finance module) */}
+      {/* Prévision IA — données réelles uniquement */}
       <GlassCard raised className="p-6">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Prévision IA</h2>
             <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              Prévision consolidée par l'assistant IA — budget fin de saison estimé
+              Données consolidées du club — projections avancées via l&apos;assistant IA
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <a href="/finance/ia" className="text-sm font-medium" style={{ color: "var(--accent)" }}>Ouvrir IA Finance</a>
-          </div>
+          <a href="/finance/ia" className="text-sm font-medium" style={{ color: "var(--accent)" }}>Ouvrir IA Finance</a>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <GlassCard className="p-4" style={{ borderColor: "#3B82F6" }}>
-            <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Budget fin saison (IA)</p>
-            <p className="mt-2 text-lg font-semibold" style={{ color: "var(--text-primary)" }}>{fmt(budget * 1.03)}</p>
-            <p className="mt-1 text-xs" style={{ color: "#3B82F6" }}>+3% vs actuel (prévision IA)</p>
+            <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Budget actuel</p>
+            <p className="mt-2 text-lg font-semibold" style={{ color: "var(--text-primary)" }}>{fmt(budget)}</p>
           </GlassCard>
           <GlassCard className="p-4" style={{ borderColor: "#10B981" }}>
-            <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Prévision revenus (IA)</p>
-            <p className="mt-2 text-lg font-semibold" style={{ color: "var(--text-primary)" }}>{fmt(revenue * 1.15)}</p>
-            <p className="mt-1 text-xs" style={{ color: "#10B981" }}>+15% vs année précédente (prévision IA)</p>
+            <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Revenus saison</p>
+            <p className="mt-2 text-lg font-semibold" style={{ color: "var(--text-primary)" }}>{fmt(revenue)}</p>
           </GlassCard>
           <GlassCard className="p-4" style={{ borderColor: "#EF4444" }}>
-            <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Prévision dépenses (IA)</p>
-            <p className="mt-2 text-lg font-semibold" style={{ color: "var(--text-primary)" }}>{fmt(expenses * 1.05)}</p>
-            <p className="mt-1 text-xs" style={{ color: "#EF4444" }}>+5% vs budget (prévision IA)</p>
+            <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Dépenses saison</p>
+            <p className="mt-2 text-lg font-semibold" style={{ color: "var(--text-primary)" }}>{fmt(expenses)}</p>
           </GlassCard>
         </div>
       </GlassCard>

@@ -135,7 +135,7 @@ export const clubApi = {
 
   // ─── Finance Extensions ──────────────────────────────────────
   getFinanceReport: () => apiFetch("/club/finance/report").then(parse),
-  seedFinance: () => apiFetch("/club/finance/seed", { method: "POST" }).then(parse),
+  purgeFinanceDemo: () => apiFetch("/club/finance/purge-demo", { method: "POST" }).then(parse),
   updateFinanceEntry: (id: string, body: Record<string, unknown>) =>
     apiFetch(`/club/finance/${id}`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
   deleteFinanceEntry: (id: string) =>

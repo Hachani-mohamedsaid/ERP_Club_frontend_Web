@@ -121,8 +121,8 @@ export function FinanceAIPage() {
   const liveReports = messages.filter((m) => m.chart).length;
 
   const kpiStats = meta?.kpiStats;
-  const questionsToday = kpiOverride?.questionsToday ?? (kpiStats ? kpiStats.questionsToday + liveQuestions : 12 + liveQuestions);
-  const reportsGenerated = kpiOverride?.reportsGenerated ?? (kpiStats ? kpiStats.reportsGenerated + liveReports : 27 + liveReports);
+  const questionsToday = kpiOverride?.questionsToday ?? (kpiStats ? kpiStats.questionsToday + liveQuestions : liveQuestions);
+  const reportsGenerated = kpiOverride?.reportsGenerated ?? (kpiStats ? kpiStats.reportsGenerated + liveReports : liveReports);
   const budgetAnalyzed = kpiStats?.budgetAnalyzed ?? "—";
 
   const KPI_STATS = [

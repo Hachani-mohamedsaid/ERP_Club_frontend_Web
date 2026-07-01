@@ -131,8 +131,8 @@ export function useFinanceBackendData() {
     setLoading(true);
     setError(null);
     try {
-      // Seed finance data if empty
-      await clubApi.seedFinance().catch(() => null);
+      // Remove legacy demo rows once (safe to call repeatedly)
+      await clubApi.purgeFinanceDemo().catch(() => null);
 
       const [reportData, transfersData] = await Promise.allSettled([
         clubApi.getFinanceReport() as Promise<FinanceReportData>,
