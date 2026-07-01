@@ -14,39 +14,53 @@ const STATUS_META: Record<string, { color: string; bg: string }> = {
   Retard: { color: F.danger, bg: "rgba(239,68,68,0.1)" },
 };
 
-// Derive payment status from contract consumed percentage (deterministic)
-function paymentStatus(c: BackendContract): "Payé" | "En attente" | "Retard" {
+// Payment status from related invoices
+function paymentStatus(
+  c: BackendContract,
+  invoices: { fournisseur: string; status: string; description: string | null }[],
+): "Payé" | "En attente" | "Retard" {
+  const name = c.holderName.toLowerCase();
+  const related = invoices.filter(
+    (inv) =>
+      inv.fournisseur.toLowerCase().includes(name) ||
+      name.includes(inv.fournisseur.toLowerCase()) ||
+      (inv.description?.toLowerCase().includes(name) ?? false),
+  );
+  if (related.some((i) => i.status === "Retard")) return "Retard";
+  if (related.some((i) => i.status === "En attente")) return "En attente";
   const daysLeft = Math.ceil((new Date(c.endDate).getTime() - Date.now()) / 86400000);
   if (daysLeft < 0) return "Retard";
-  // Use id hash for deterministic status
-  const hash = c.id.charCodeAt(c.id.length - 1) % 10;
-  if (hash < 7) return "Payé";
-  if (hash < 9) return "En attente";
-  return "Retard";
+  return "Payé";
 }
 
 export function SalairesFinance() {
-  const { contracts, loading } = useFinanceBackendData();
+  const { contracts, invoices, loading } = useFinanceBackendData();
   const [activeTab, setActiveTab] = useState<"ranking" | "table">("ranking");
 
   const contractList = contracts?.list ?? [];
+  const invoiceList = invoices?.list ?? [];
   const totalMonthlySalary = contracts?.totalMonthlySalary ?? 0;
 
-  // Build enriched employee list from contracts
-  const employees = contractList.map(c => ({
+  const employees = contractList.map((c) => ({
     ...c,
-    statut: paymentStatus(c),
+    statut: paymentStatus(c, invoiceList),
     salaireAnnuel: c.salaryMonthly * 12,
   }));
 
   const sorted = [...employees].sort((a, b) => b.salaryMonthly - a.salaryMonthly);
   const max = sorted.length > 0 ? sorted[0].salaryMonthly : 1;
 
+  const isCoach = (name: string) => /coach|entraîneur|entraineur/i.test(name);
+  const players = contractList.filter((c) => c.salaryMonthly >= 50000 && !isCoach(c.holderName));
+  const coaches = contractList.filter((c) => isCoach(c.holderName));
+  const staff = contractList.filter((c) => !players.includes(c) && !coaches.includes(c));
+  const payrollTotal = contractList.reduce((s, c) => s + c.salaryMonthly, 0) || 1;
+
   const distData = [
-    { name: "Joueurs", value: Math.round(contractList.filter(c => c.salaryMonthly >= 50000).length / (contractList.length || 1) * 100) || 75 },
-    { name: "Coachs", value: 15 },
-    { name: "Staff", value: 10 },
-  ];
+    { name: "Joueurs", value: Math.round((players.reduce((s, c) => s + c.salaryMonthly, 0) / payrollTotal) * 100) },
+    { name: "Coachs", value: Math.round((coaches.reduce((s, c) => s + c.salaryMonthly, 0) / payrollTotal) * 100) },
+    { name: "Staff", value: Math.round((staff.reduce((s, c) => s + c.salaryMonthly, 0) / payrollTotal) * 100) },
+  ].filter((d) => d.value > 0);
   const DIST_COLORS = [F.primary, F.info, F.success];
 
   const kpiCards = [

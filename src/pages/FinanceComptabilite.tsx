@@ -66,7 +66,7 @@ export function FinanceComptabilite() {
   const pieData =
     expenseBreakdown.length > 0
       ? expenseBreakdown.map((s, i) => ({ name: s.name, value: s.value, color: CHART_COLORS[i % CHART_COLORS.length] }))
-      : BUDGET_CATS.map((name, i) => ({ name, value: [60, 20, 10, 5, 5][i], color: CHART_COLORS[i] }));
+      : [];
 
   const handleAddEntry = async () => {
     if (!form.label || !form.amount) return;
