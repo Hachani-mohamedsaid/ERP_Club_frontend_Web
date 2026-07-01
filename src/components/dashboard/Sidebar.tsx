@@ -237,7 +237,7 @@ const NAV_ITEMS: NavItem[] = [
       },
     ],
   },
-  { label: "Messages", icon: MessageSquare, path: "/messages", excludeRoles: ["medical", "joueur", "adminclub", "preparateur", "analyste", "recruteur", "responsable"] },
+  { label: "Messages", icon: MessageSquare, path: "/messages", excludeRoles: ["medical", "joueur", "adminclub", "preparateur", "analyste", "recruteur", "responsable", "finance"] },
   {
     label: "Admin Club",
     icon: Building2,
@@ -441,19 +441,52 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
-    label: "Finance",
-    icon: Wallet,
+    label: "Dashboard",
+    icon: LayoutDashboard,
     path: "/comptabilite",
     allowedRoles: ["finance"],
-    submenu: [
-      { label: "Dashboard", icon: BarChart3, path: "/comptabilite" },
-      { label: "Salaires", icon: DollarSign, path: "/finance/salaires" },
-      { label: "Contrats", icon: FileText, path: "/finance/contrats" },
-      { label: "Factures & Dépenses", icon: Receipt, path: "/finance/factures" },
-      { label: "Sponsors", icon: Handshake, path: "/finance/sponsors" },
-      { label: "Rapports", icon: BarChart3, path: "/finance/rapports" },
-      { label: "IA Finance", icon: Zap, path: "/finance/ia" },
-    ],
+  },
+  {
+    label: "Salaires",
+    icon: DollarSign,
+    path: "/finance/salaires",
+    allowedRoles: ["finance"],
+  },
+  {
+    label: "Contrats",
+    icon: FileText,
+    path: "/finance/contrats",
+    allowedRoles: ["finance"],
+  },
+  {
+    label: "Factures & Dépenses",
+    icon: Receipt,
+    path: "/finance/factures",
+    allowedRoles: ["finance"],
+  },
+  {
+    label: "Sponsors",
+    icon: Handshake,
+    path: "/finance/sponsors",
+    allowedRoles: ["finance"],
+  },
+  {
+    label: "Rapports",
+    icon: BarChart3,
+    path: "/finance/rapports",
+    allowedRoles: ["finance"],
+  },
+  {
+    label: "Messages",
+    icon: MessageSquare,
+    path: "/messages",
+    allowedRoles: ["finance"],
+  },
+  {
+    label: "IA Finance",
+    icon: Zap,
+    path: "/finance/ia",
+    allowedRoles: ["finance"],
   },  {
     label: "Super Admin",
     icon: ShieldCheck,
@@ -500,7 +533,6 @@ export function Sidebar() {
   const location = useLocation();
   const { user } = useAuth();
   const [expandedScout, setExpandedScout] = useState(false);
-  const [expandedFinance, setExpandedFinance] = useState(false);
   const [expandedSuperAdmin, setExpandedSuperAdmin] = useState(true);
   const [expandedMedical, setExpandedMedical] = useState(true);
   const [expandedJoueur, setExpandedJoueur] = useState(true);
@@ -536,7 +568,6 @@ export function Sidebar() {
           ];
           const active = location.pathname === path;
           const isScout = label === "Scout";
-          const isFinance = label === "Finance";
           const isSuperAdmin = label === "Super Admin";
           const isMedical = label === "Médical";
           const isClubAdminMenu = path === "/club";
@@ -558,9 +589,8 @@ export function Sidebar() {
               <button
                 type="button"
                 onClick={() => {
-                  if ((isScout || isFinance || isSuperAdmin || isMedical || isJoueurMenu || isClubAdminMenu || isPreparateurMenu || isAnalysteMenu || isRecruteurMenu || isResponsableMenu || isCoachMenu) && (submenu || submenuGroups)) {
+                  if ((isScout || isSuperAdmin || isMedical || isJoueurMenu || isClubAdminMenu || isPreparateurMenu || isAnalysteMenu || isRecruteurMenu || isResponsableMenu || isCoachMenu) && (submenu || submenuGroups)) {
                     if (isScout) setExpandedScout(!expandedScout);
-                    if (isFinance) setExpandedFinance(!expandedFinance);
                     if (isSuperAdmin) setExpandedSuperAdmin(!expandedSuperAdmin);
                     if (isMedical) setExpandedMedical(!expandedMedical);
                     if (isJoueurMenu) setExpandedJoueur(!expandedJoueur);
@@ -582,12 +612,12 @@ export function Sidebar() {
               >
                 <Icon size={17} strokeWidth={2} />
                 {label}
-                {(isScout || isFinance || isSuperAdmin || isMedical || isJoueurMenu || isClubAdminMenu || isPreparateurMenu || isAnalysteMenu || isRecruteurMenu || isResponsableMenu || isCoachMenu) && (submenu || submenuGroups) && (
+                {(isScout || isSuperAdmin || isMedical || isJoueurMenu || isClubAdminMenu || isPreparateurMenu || isAnalysteMenu || isRecruteurMenu || isResponsableMenu || isCoachMenu) && (submenu || submenuGroups) && (
                   <ChevronDown
                     size={16}
                     strokeWidth={2}
                     className="ml-auto transition-transform duration-200"
-                    style={{ transform: (isScout && expandedScout) || (isFinance && expandedFinance) || (isSuperAdmin && expandedSuperAdmin) || (isMedical && expandedMedical) || (isJoueurMenu && expandedJoueur) || (isClubAdminMenu && expandedClubAdmin) || (isPreparateurMenu && expandedPreparateur) || (isAnalysteMenu && expandedAnalyste) || (isRecruteurMenu && expandedRecruteur) || (isResponsableMenu && expandedResponsable) || (isCoachMenu && expandedCoach) ? "rotate(180deg)" : "rotate(0deg)" }}
+                    style={{ transform: (isScout && expandedScout) || (isSuperAdmin && expandedSuperAdmin) || (isMedical && expandedMedical) || (isJoueurMenu && expandedJoueur) || (isClubAdminMenu && expandedClubAdmin) || (isPreparateurMenu && expandedPreparateur) || (isAnalysteMenu && expandedAnalyste) || (isRecruteurMenu && expandedRecruteur) || (isResponsableMenu && expandedResponsable) || (isCoachMenu && expandedCoach) ? "rotate(180deg)" : "rotate(0deg)" }}
                   />
                 )}
               </button>
@@ -624,28 +654,6 @@ export function Sidebar() {
                 </div>
               )}
 
-              {isFinance && submenu && expandedFinance && (
-                <div className="mt-1 space-y-1 pl-4">
-                  {submenu.map(({ label: subLabel, icon: SubIcon, path: subPath }) => {
-                    const subActive = location.pathname === subPath;
-                    return (
-                      <button
-                        key={subLabel}
-                        type="button"
-                        onClick={() => navigate(subPath)}
-                        className="flex w-full items-center gap-3 rounded-[var(--radius-odin-md)] px-3 py-2 text-sm transition-colors duration-150"
-                        style={{
-                          background: subActive ? "rgba(var(--accent-rgb), 0.3)" : "transparent",
-                          color: subActive ? "var(--accent)" : "var(--nav-text)",
-                        }}
-                      >
-                        <SubIcon size={15} strokeWidth={2} />
-                        {subLabel}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
               {isSuperAdmin && submenuGroups && expandedSuperAdmin && (
                 <div className="mt-1 max-h-[calc(100vh-220px)] space-y-3 overflow-y-auto pl-2 pr-1">
                   {submenuGroups.map((group) => (
