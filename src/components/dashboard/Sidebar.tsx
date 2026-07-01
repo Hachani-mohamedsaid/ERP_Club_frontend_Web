@@ -138,6 +138,7 @@ const NAV_ITEMS: NavItem[] = [
         items: [
           { label: "Reports", icon: ChartColumn, path: "/responsable/reports" },
           { label: "Journal Activité", icon: History, path: "/responsable/audit" },
+          { label: "Messages", icon: MessageSquare, path: "/messages" },
           { label: "Notifications", icon: Bell, path: "/responsable/notifications" },
           { label: "Paramètres Club", icon: Settings, path: "/responsable/parametres" },
         ],
@@ -190,6 +191,12 @@ const NAV_ITEMS: NavItem[] = [
           { label: "Recrutement", icon: UserPlus, path: "/recruitment" },
         ],
       },
+      {
+        label: "COMMUNICATION",
+        items: [
+          { label: "Messages", icon: MessageSquare, path: "/messages" },
+        ],
+      },
     ],
   },
   {
@@ -231,13 +238,13 @@ const NAV_ITEMS: NavItem[] = [
       {
         label: "CRM & CONFIG",
         items: [
+          { label: "Messages", icon: MessageSquare, path: "/messages" },
           { label: "Agents", icon: Briefcase, path: "/scout/agents" },
           { label: "Mon profil Scout", icon: UserCircle, path: "/scout/settings" },
         ],
       },
     ],
   },
-  { label: "Messages", icon: MessageSquare, path: "/messages", excludeRoles: ["medical", "joueur", "adminclub", "preparateur", "analyste", "recruteur", "responsable", "finance"] },
   {
     label: "Admin Club",
     icon: Building2,
@@ -258,6 +265,7 @@ const NAV_ITEMS: NavItem[] = [
       { label: "Utilisateurs", icon: Users, path: "/club/utilisateurs" },
       { label: "Permissions", icon: UserCircle, path: "/club/permissions" },
       { label: "Audit Logs", icon: History, path: "/club/audit-logs" },
+      { label: "Messages", icon: MessageSquare, path: "/messages" },
       { label: "Notifications", icon: Bell, path: "/club/notifications" },
     ],
   },
@@ -298,6 +306,7 @@ const NAV_ITEMS: NavItem[] = [
         label: "RAPPORTS & IA",
         items: [
           { label: "Rapports",           icon: FileText,        path: "/preparateur/rapports" },
+          { label: "Messages",           icon: MessageSquare,   path: "/messages" },
           { label: "Notifications",      icon: BellRing,        path: "/preparateur/notifications" },
           { label: "Assistant IA",       icon: Sparkles,        path: "/preparateur/ia" },
         ],
@@ -354,6 +363,12 @@ const NAV_ITEMS: NavItem[] = [
           { label: "Training Optimizer",    icon: Calendar,         path: "/analyste/training" },
         ],
       },
+      {
+        label: "COMMUNICATION",
+        items: [
+          { label: "Messages", icon: MessageSquare, path: "/messages" },
+        ],
+      },
     ],
   },
   {
@@ -366,6 +381,7 @@ const NAV_ITEMS: NavItem[] = [
         label: "TABLEAU DE BORD",
         items: [
           { label: "Dashboard", icon: LayoutDashboard, path: "/recruteur" },
+          { label: "Messages", icon: MessageSquare, path: "/messages" },
           { label: "Notifications", icon: BellRing, path: "/recruteur/notifications" },
           { label: "Journal Audit", icon: BookMarked, path: "/recruteur/audit" },
         ],
@@ -419,7 +435,7 @@ const NAV_ITEMS: NavItem[] = [
       { label: "Mon Planning", icon: Calendar, path: "/joueurs/planning" },
       { label: "AI Coach", icon: Zap, path: "/joueurs/ia" },
       { label: "Mon Profil", icon: Users, path: "/joueurs/profil" },
-      { label: "Messages", icon: MessageSquare, path: "/joueurs/messages" },
+      { label: "Messages", icon: MessageSquare, path: "/messages" },
     ],
   },
   {
@@ -438,6 +454,7 @@ const NAV_ITEMS: NavItem[] = [
       { label: "Joueurs à risque", icon: AlertTriangle, path: "/medical/risque" },
       { label: "Effectif disponible", icon: Users, path: "/medical/effectif" },
       { label: "Medical AI", icon: Cpu, path: "/medical/ia" },
+      { label: "Messages", icon: MessageSquare, path: "/messages" },
     ],
   },
   {

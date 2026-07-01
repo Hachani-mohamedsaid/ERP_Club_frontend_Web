@@ -4,11 +4,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import { useAuth } from "../../contexts/AuthContext";
-import { ChatDrawer } from "../medical/ChatDrawer";
 import { MedicalNotificationsDropdown } from "../medical/MedicalNotificationsDropdown";
 import { PrepNotificationsDropdown } from "../preparateur/PrepNotificationsDropdown";
 import { JoueurNotificationsDropdown } from "../player/JoueurNotificationsDropdown";
-import { JoueurChatDrawer } from "../player/JoueurChatDrawer";
 import { getPlayerById } from "../../data/joueurMockData";
 import { FinanceNotificationsDropdown } from "../finance/FinanceNotificationsDropdown";
 import { ClubNotificationsDropdown } from "../club/ClubNotificationsDropdown";
@@ -549,7 +547,6 @@ export function Topbar() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { adminName, clubName, season, logoUrl } = useClubProfile();
-  const [chatOpen, setChatOpen] = useState(false);
   const isMedical = user?.role === "medical";
   const isJoueur = user?.role === "joueur";
   const isPreparateur = user?.role === "preparateur";
@@ -571,7 +568,6 @@ export function Topbar() {
     "/joueurs/planning": { title: "Mon Planning", subtitle: "Matchs, entraînements et repos" },
     "/joueurs/ia": { title: "AI Coach", subtitle: "Assistant personnel intelligent" },
     "/joueurs/profil": { title: "Mon Profil", subtitle: currentPlayer?.name ?? "Profil joueur" },
-    "/joueurs/messages": { title: "Messages", subtitle: "Coach, Médecin, Direction" },
   };
 
   const prepFicheMatch = location.pathname.match(/^\/preparateur\/fiche\/(.+)$/);
@@ -688,11 +684,10 @@ export function Topbar() {
         {(isMedical || isJoueur) && (
           <button
             type="button"
-            onClick={() => setChatOpen(true)}
+            onClick={() => navigate("/messages")}
             className="glass-input relative flex h-10 w-10 items-center justify-center"
           >
             <MessageSquare size={16} style={{ color: "var(--text-secondary)" }} />
-            <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full" style={{ background: "var(--accent)" }} />
           </button>
         )}
 
@@ -726,9 +721,6 @@ export function Topbar() {
 
         <ThemeToggle />
       </div>
-
-      {isMedical && <ChatDrawer open={chatOpen} onClose={() => setChatOpen(false)} />}
-      {isJoueur && <JoueurChatDrawer open={chatOpen} onClose={() => setChatOpen(false)} />}
     </header>
   );
 }

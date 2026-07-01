@@ -1,9 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Paperclip, Search, MoreHorizontal, Check, CheckCheck, Smile } from "lucide-react";
+import { Send, Paperclip, Search, MoreHorizontal, Check, CheckCheck, Smile, Trash2, CheckCircle } from "lucide-react";
 import { useMessages } from "../hooks/useMessages";
+import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 
 const S = { primary: "#FF7A00", success: "#22C55E", muted: "rgba(255,255,255,0.4)" };
+
+const QUICK_EMOJIS = ["😀", "😂", "😍", "👍", "👏", "🔥", "⚽", "🏆", "💪", "🙏", "✅", "❤️", "😅", "🎉", "👋", "💼"];
 
 export function MessagesPage() {
   const {
@@ -16,6 +19,8 @@ export function MessagesPage() {
     setSearch,
     sendMessage,
     onInputChange,
+    deleteConversation,
+    markThreadRead,
     loading,
     searching,
     threadLoading,
@@ -24,7 +29,13 @@ export function MessagesPage() {
   } = useMessages();
 
   const [input, setInput] = useState("");
+  const [showEmoji, setShowEmoji] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!selectedPeerId && contacts.length > 0) {
@@ -36,15 +47,47 @@ export function MessagesPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length, selectedPeerId]);
 
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
   const handleSend = () => {
     const text = input.trim();
     if (!text || !selectedPeerId) return;
     void sendMessage(text);
     setInput("");
     onInputChange("");
+    setShowEmoji(false);
   };
 
-  const sidebarList = search.trim() ? contacts : contacts;
+  const insertEmoji = (emoji: string) => {
+    setInput((prev) => prev + emoji);
+    onInputChange(input + emoji);
+  };
+
+  const handleFilePick = (file: File | null) => {
+    if (!file || !selectedPeerId) return;
+    const sizeKb = Math.round(file.size / 1024);
+    const label = `📎 ${file.name} (${sizeKb} Ko)`;
+    void sendMessage(label);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleDeleteConversation = async () => {
+    setDeleting(true);
+    try {
+      await deleteConversation();
+      setShowDeleteConfirm(false);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
@@ -79,7 +122,7 @@ export function MessagesPage() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Rechercher..."
+                placeholder="Rechercher un membre..."
                 className="flex-1 bg-transparent text-xs outline-none"
                 style={{ color: "var(--text-primary)" }}
               />
@@ -95,14 +138,14 @@ export function MessagesPage() {
               <p className="px-3 py-6 text-center text-xs" style={{ color: "var(--text-muted)" }}>
                 Recherche...
               </p>
-            ) : sidebarList.length === 0 ? (
-              <p className="px-3 py-6 text-center text-xs" style={{ color: "var(--text-muted)" }}>
+            ) : contacts.length === 0 ? (
+              <p className="px-3 py-6 text-center text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
                 {search.trim()
-                  ? "Aucun utilisateur trouvé."
-                  : "Tapez un nom pour démarrer une conversation."}
+                  ? "Aucun membre trouvé."
+                  : "Aucune conversation. Tapez un nom ci-dessus pour démarrer."}
               </p>
             ) : (
-              sidebarList.map((conv) => {
+              contacts.map((conv) => {
                 const isSel = conv.memberId === selectedPeerId;
                 return (
                   <motion.button
@@ -173,7 +216,7 @@ export function MessagesPage() {
           style={{ background: "rgba(8,6,24,0.88)", borderColor: "rgba(255,255,255,0.07)" }}>
           {!selected ? (
             <div className="flex flex-1 items-center justify-center text-sm" style={{ color: "var(--text-muted)" }}>
-              Sélectionnez un contact pour commencer.
+              Recherchez un membre ou sélectionnez une conversation.
             </div>
           ) : (
             <>
@@ -198,15 +241,52 @@ export function MessagesPage() {
                     {selected.typing ? "En train d'écrire..." : selected.online ? "En ligne" : "Hors ligne"}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="relative" ref={menuRef}>
                   <motion.button
                     type="button"
+                    onClick={() => setShowMenu((o) => !o)}
                     className="flex h-8 w-8 items-center justify-center rounded-xl border"
                     style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
                     whileHover={{ scale: 1.1, borderColor: S.primary, color: S.primary }}
                   >
                     <MoreHorizontal size={14} />
                   </motion.button>
+                  <AnimatePresence>
+                    {showMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 4, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 4, scale: 0.97 }}
+                        className="absolute right-0 top-full z-20 mt-1 min-w-[200px] overflow-hidden rounded-xl border py-1 shadow-xl"
+                        style={{ background: "rgba(8,6,24,0.98)", borderColor: "rgba(255,255,255,0.1)" }}
+                      >
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-white/5"
+                          style={{ color: "var(--text-primary)" }}
+                          onClick={() => {
+                            void markThreadRead();
+                            setShowMenu(false);
+                          }}
+                        >
+                          <CheckCircle size={13} /> Marquer comme lu
+                        </button>
+                        {selected.conversationId && (
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-white/5"
+                            style={{ color: "#f87171" }}
+                            onClick={() => {
+                              setShowMenu(false);
+                              setShowDeleteConfirm(true);
+                            }}
+                          >
+                            <Trash2 size={13} /> Supprimer la conversation
+                          </button>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
 
@@ -233,7 +313,7 @@ export function MessagesPage() {
                             </div>
                           )}
                           <div>
-                            <div className="rounded-2xl px-4 py-2.5 text-sm leading-relaxed"
+                            <div className="rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words"
                               style={msg.sent ? {
                                 background: `linear-gradient(135deg,${S.primary},${S.primary}dd)`,
                                 color: "white",
@@ -293,21 +373,59 @@ export function MessagesPage() {
                 <div ref={bottomRef} />
               </div>
 
-              <div className="border-t p-3" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+              <div className="relative border-t p-3" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+                <AnimatePresence>
+                  {showEmoji && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      className="absolute bottom-full left-3 mb-2 flex flex-wrap gap-1 rounded-xl border p-2 max-w-[280px] z-10"
+                      style={{ background: "rgba(8,6,24,0.98)", borderColor: "rgba(255,255,255,0.1)" }}
+                    >
+                      {QUICK_EMOJIS.map((emoji) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-lg hover:bg-white/10"
+                          onClick={() => insertEmoji(emoji)}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                  onChange={(e) => handleFilePick(e.target.files?.[0] ?? null)}
+                />
+
                 <div className="flex items-center gap-2">
                   <motion.button
                     type="button"
+                    onClick={() => fileInputRef.current?.click()}
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border"
                     style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
                     whileHover={{ scale: 1.1, borderColor: S.primary, color: S.primary }}
+                    title="Joindre un fichier"
                   >
                     <Paperclip size={14} />
                   </motion.button>
                   <motion.button
                     type="button"
+                    onClick={() => setShowEmoji((o) => !o)}
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border"
-                    style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
+                    style={{
+                      borderColor: showEmoji ? `${S.primary}50` : "rgba(255,255,255,0.08)",
+                      color: showEmoji ? S.primary : "var(--text-muted)",
+                    }}
                     whileHover={{ scale: 1.1 }}
+                    title="Emoji"
                   >
                     <Smile size={14} />
                   </motion.button>
@@ -319,7 +437,7 @@ export function MessagesPage() {
                         setInput(e.target.value);
                         onInputChange(e.target.value);
                       }}
-                      onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                      onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
                       placeholder="Écrire un message..."
                       className="flex-1 bg-transparent text-sm outline-none"
                       style={{ color: "var(--text-primary)" }}
@@ -342,6 +460,28 @@ export function MessagesPage() {
           )}
         </div>
       </div>
+
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <ConfirmDialog
+            title="Supprimer la conversation"
+            description={
+              <>
+                Cette conversation avec <strong style={{ color: "var(--text-primary)" }}>{selected?.name}</strong> sera
+                supprimée de votre liste. L&apos;historique restera visible pour l&apos;autre membre.
+              </>
+            }
+            confirmLabel="Supprimer"
+            cancelLabel="Annuler"
+            variant="danger"
+            loading={deleting}
+            onConfirm={() => void handleDeleteConversation()}
+            onCancel={() => {
+              if (!deleting) setShowDeleteConfirm(false);
+            }}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
