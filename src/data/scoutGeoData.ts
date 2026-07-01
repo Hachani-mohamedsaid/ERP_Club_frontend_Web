@@ -166,9 +166,9 @@ export function getTeam(id: string) {
   return TEAMS.find((t) => t.id === id);
 }
 
-export function getTeamLogo(team: GeoTeam) {
+export function getTeamLogo(team: Pick<GeoTeam, "id" | "name" | "logoColor">) {
   const fallback = teamLogoUrl(team.name, team.logoColor ?? "FF7A00");
-  return getRealTeamLogoUrl(team.id, fallback);
+  return getRealTeamLogoUrl(team.id, fallback, team.name);
 }
 
 export function getLeagueLogo(team: GeoTeam) {
