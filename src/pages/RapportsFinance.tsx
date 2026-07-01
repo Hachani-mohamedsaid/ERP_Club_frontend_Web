@@ -39,15 +39,12 @@ export function RapportsFinance() {
   const totalDepenses = monthlyData.reduce((s, m) => s + m.depenses, 0);
   const totalBenefice = totalRevenus - totalDepenses;
 
-  // Revenue sources from backend
-  const revenueDistribution = revenueSources.length > 0
-    ? revenueSources.map((s, i) => ({ name: s.name, value: s.amount, color: CHART_COLORS[i % CHART_COLORS.length] }))
-    : [
-        { name: "Sponsors", value: totalRevenus * 0.45, color: CHART_COLORS[0] },
-        { name: "Billetterie", value: totalRevenus * 0.25, color: CHART_COLORS[1] },
-        { name: "Médias", value: totalRevenus * 0.20, color: CHART_COLORS[2] },
-        { name: "Autre", value: totalRevenus * 0.10, color: CHART_COLORS[3] },
-      ];
+  // Revenue sources from backend only
+  const revenueDistribution = revenueSources.map((s, i) => ({
+    name: s.name,
+    value: s.amount,
+    color: CHART_COLORS[i % CHART_COLORS.length],
+  }));
 
   // Dynamic report list based on current date
   const now = new Date();
@@ -195,36 +192,44 @@ export function RapportsFinance() {
 
           <GlassCard raised className="p-6">
             <h2 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>💰 Sources de Revenus</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={revenueDistribution}
-                  cx="50%" cy="50%" innerRadius={60} outerRadius={100}
-                  paddingAngle={2} dataKey="value"
-                >
-                  {revenueDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+            {revenueDistribution.length > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={revenueDistribution}
+                      cx="50%" cy="50%" innerRadius={60} outerRadius={100}
+                      paddingAngle={2} dataKey="value"
+                    >
+                      {revenueDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ background: "var(--surface-panel)", border: "1px solid var(--surface-panel-border)" }}
+                      formatter={(value: number) => `${(value / 1000).toFixed(0)} K DT`}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="mt-4 space-y-2">
+                  {revenueDistribution.map((item) => (
+                    <div key={item.name} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="h-3 w-3 rounded-full" style={{ background: item.color }} />
+                        <span style={{ color: "var(--text-secondary)" }}>{item.name}</span>
+                      </div>
+                      <span style={{ color: "var(--text-primary)" }} className="font-semibold">
+                        {((item.value / (totalRevenus || 1)) * 100).toFixed(0)}%
+                      </span>
+                    </div>
                   ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{ background: "var(--surface-panel)", border: "1px solid var(--surface-panel-border)" }}
-                  formatter={(value: number) => `${(value / 1000).toFixed(0)} K DT`}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="mt-4 space-y-2">
-              {revenueDistribution.map((item) => (
-                <div key={item.name} className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full" style={{ background: item.color }} />
-                    <span style={{ color: "var(--text-secondary)" }}>{item.name}</span>
-                  </div>
-                  <span style={{ color: "var(--text-primary)" }} className="font-semibold">
-                    {((item.value / (totalRevenus || 1)) * 100).toFixed(0)}%
-                  </span>
                 </div>
-              ))}
-            </div>
+              </>
+            ) : (
+              <div className="flex h-[300px] items-center justify-center text-xs" style={{ color: "var(--text-muted)" }}>
+                Aucune source de revenus enregistrée
+              </div>
+            )}
           </GlassCard>
         </div>
       ) : (

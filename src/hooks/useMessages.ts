@@ -66,12 +66,12 @@ export function useMessages() {
       setContacts(applyPresence(list));
       setError(null);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Impossible de charger les conversations.";
-      setError(
-        msg.includes("404") || msg.includes("Not Found")
-          ? "Module Messages non déployé sur le serveur — poussez le backend sur Render ou lancez-le en local."
-          : msg,
-      );
+      const raw = e instanceof Error ? e.message : "Impossible de charger les conversations.";
+      const msg =
+        raw.includes("404") || raw.includes("Not Found") || raw.includes("Cannot GET")
+          ? "Module Messages en cours de déploiement — réessayez dans 1 à 2 minutes."
+          : raw;
+      setError(msg);
     } finally {
       if (isSearch) setSearching(false);
     }
