@@ -26,6 +26,12 @@ export default defineConfig(({ mode }) => {
           secure: true,
           rewrite: (path) => path.replace(/^\/api/, ''),
         },
+        '/socket.io': {
+          target: apiTarget,
+          changeOrigin: true,
+          secure: true,
+          ws: true,
+        },
       },
     },
   }

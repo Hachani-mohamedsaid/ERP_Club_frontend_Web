@@ -71,14 +71,40 @@ export interface BackendInvoice {
 
 export interface BackendTransfer {
   id: string;
-  playerId: string;
   playerName: string;
   transferType: string;
-  fromClub: string | null;
-  toClub: string | null;
+  club: string;
+  value: string;
+  status: string;
+  probability: number;
   fee: number;
-  transferDate: string;
-  season: string | null;
+  createdAt: string;
+}
+
+function parseTransferFee(value: string, fee?: number): number {
+  if (fee != null && fee > 0) return fee;
+  const cleaned = value.replace(/\s/g, '').toUpperCase();
+  const num = parseFloat(cleaned.replace(/[^\d.,]/g, '').replace(',', '.'));
+  if (!Number.isFinite(num)) return 0;
+  if (cleaned.includes('M')) return num * 1_000_000;
+  if (cleaned.includes('K')) return num * 1_000;
+  return num;
+}
+
+function normalizeTransfer(raw: Record<string, unknown>): BackendTransfer {
+  const value = String(raw.value ?? '0');
+  const fee = parseTransferFee(value, Number(raw.fee ?? 0));
+  return {
+    id: String(raw.id ?? ''),
+    playerName: String(raw.playerName ?? ''),
+    transferType: String(raw.transferType ?? ''),
+    club: String(raw.club ?? ''),
+    value,
+    status: String(raw.status ?? ''),
+    probability: Number(raw.probability ?? 0),
+    fee,
+    createdAt: String(raw.createdAt ?? new Date().toISOString()),
+  };
 }
 
 export interface FinanceAlert {
@@ -131,8 +157,8 @@ export function useFinanceBackendData() {
     setLoading(true);
     setError(null);
     try {
-      // Seed finance data if empty
-      await clubApi.seedFinance().catch(() => null);
+      // Remove legacy demo rows once (safe to call repeatedly)
+      await clubApi.purgeFinanceDemo().catch(() => null);
 
       const [reportData, transfersData] = await Promise.allSettled([
         clubApi.getFinanceReport() as Promise<FinanceReportData>,
@@ -145,7 +171,12 @@ export function useFinanceBackendData() {
         setError("Impossible de charger les données financières.");
       }
       if (transfersData.status === "fulfilled") {
-        setTransfers(Array.isArray(transfersData.value) ? transfersData.value : []);
+        const raw = transfersData.value;
+        setTransfers(
+          Array.isArray(raw)
+            ? raw.map((t) => normalizeTransfer(t as Record<string, unknown>))
+            : [],
+        );
       }
     } catch (e) {
       setError(String(e));

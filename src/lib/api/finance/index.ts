@@ -63,4 +63,41 @@ export const financeApi = {
       method: "POST",
       body: JSON.stringify({ question, context }),
     }, 30000).then(parse<FinanceAiChatResponse>),
+
+  getNotifications: () =>
+    apiFetch("/club/finance/notifications").then(parse<FinanceNotificationsResponse>),
+
+  markAllNotificationsRead: () =>
+    apiFetch("/club/finance/notifications/read", { method: "PATCH" }).then(parse),
+
+  markNotificationRead: (id: string) =>
+    apiFetch(`/club/finance/notifications/${id}/read`, { method: "PATCH" }).then(parse),
+
+  dismissNotification: (id: string) =>
+    apiFetch(`/club/finance/notifications/${id}`, { method: "DELETE" }).then(parse),
+
+  getSearchIndex: () =>
+    apiFetch("/club/finance/search").then(parse<FinanceSearchResponse>),
+};
+
+export type FinanceNotificationItem = {
+  id: string;
+  iconKey: "contract" | "sponsor" | "invoice" | "salary" | "budget";
+  sev: "error" | "warning" | "info";
+  title: string;
+  body: string;
+  time: string;
+  read: boolean;
+  path: string;
+};
+
+export type FinanceNotificationsResponse = {
+  clubName: string;
+  season: string;
+  unread: number;
+  items: FinanceNotificationItem[];
+};
+
+export type FinanceSearchResponse = {
+  categories: { category: string; path: string; items: string[] }[];
 };
