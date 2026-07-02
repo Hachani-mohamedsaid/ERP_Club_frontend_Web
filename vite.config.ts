@@ -26,6 +26,11 @@ export default defineConfig(({ mode }) => {
           secure: true,
           rewrite: (path) => path.replace(/^\/api/, ''),
         },
+        '/uploads': {
+          target: apiTarget,
+          changeOrigin: true,
+          secure: true,
+        },
         '/socket.io': {
           target: apiTarget,
           changeOrigin: true,

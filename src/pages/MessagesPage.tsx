@@ -1,12 +1,32 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Paperclip, Search, MoreHorizontal, Check, CheckCheck, Smile, Trash2, CheckCircle } from "lucide-react";
+import { Send, Paperclip, Search, MoreHorizontal, Check, CheckCheck, Smile, Trash2, Mail, Loader2 } from "lucide-react";
 import { useMessages } from "../hooks/useMessages";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
+import { parseAttachmentMessage, resolveAttachmentUrl, formatMessagePreview } from "../lib/messages/attachment";
 
 const S = { primary: "#FF7A00", success: "#22C55E", muted: "rgba(255,255,255,0.4)" };
 
 const QUICK_EMOJIS = ["😀", "😂", "😍", "👍", "👏", "🔥", "⚽", "🏆", "💪", "🙏", "✅", "❤️", "😅", "🎉", "👋", "💼"];
+
+function MessageContent({ text }: { text: string }) {
+  const attachment = parseAttachmentMessage(text);
+  if (attachment?.type === "image") {
+    const src = resolveAttachmentUrl(attachment.url);
+    return (
+      <a href={src} target="_blank" rel="noopener noreferrer" className="block">
+        <img
+          src={src}
+          alt={attachment.name}
+          className="max-h-64 max-w-[min(100%,280px)] rounded-xl object-cover"
+          loading="lazy"
+        />
+        <p className="mt-1.5 text-[10px] opacity-80">{attachment.name}</p>
+      </a>
+    );
+  }
+  return <span className="whitespace-pre-wrap break-words">{text}</span>;
+}
 
 export function MessagesPage() {
   const {
@@ -18,9 +38,10 @@ export function MessagesPage() {
     search,
     setSearch,
     sendMessage,
+    sendImage,
     onInputChange,
     deleteConversation,
-    markThreadRead,
+    markThreadUnread,
     loading,
     searching,
     threadLoading,
@@ -33,6 +54,7 @@ export function MessagesPage() {
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -73,10 +95,14 @@ export function MessagesPage() {
 
   const handleFilePick = (file: File | null) => {
     if (!file || !selectedPeerId) return;
-    const sizeKb = Math.round(file.size / 1024);
-    const label = `📎 ${file.name} (${sizeKb} Ko)`;
-    void sendMessage(label);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (!file.type.startsWith("image/")) {
+      return;
+    }
+    setUploadingImage(true);
+    void sendImage(file).finally(() => {
+      setUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    });
   };
 
   const handleDeleteConversation = async () => {
@@ -192,7 +218,7 @@ export function MessagesPage() {
                         {conv.typing ? (
                           <span className="animate-pulse">●●● est en train d&apos;écrire...</span>
                         ) : (
-                          conv.preview || (search.trim() ? "Nouvelle conversation" : "")
+                          formatMessagePreview(conv.preview) || (search.trim() ? "Nouvelle conversation" : "")
                         )}
                       </p>
                     </div>
@@ -260,17 +286,19 @@ export function MessagesPage() {
                         className="absolute right-0 top-full z-20 mt-1 min-w-[200px] overflow-hidden rounded-xl border py-1 shadow-xl"
                         style={{ background: "rgba(8,6,24,0.98)", borderColor: "rgba(255,255,255,0.1)" }}
                       >
-                        <button
-                          type="button"
-                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-white/5"
-                          style={{ color: "var(--text-primary)" }}
-                          onClick={() => {
-                            void markThreadRead();
-                            setShowMenu(false);
-                          }}
-                        >
-                          <CheckCircle size={13} /> Marquer comme lu
-                        </button>
+                        {selected.conversationId && (
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-white/5"
+                            style={{ color: "var(--text-primary)" }}
+                            onClick={() => {
+                              void markThreadUnread();
+                              setShowMenu(false);
+                            }}
+                          >
+                            <Mail size={13} /> Marquer comme non lue
+                          </button>
+                        )}
                         {selected.conversationId && (
                           <button
                             type="button"
@@ -295,7 +323,10 @@ export function MessagesPage() {
                   <p className="text-center text-xs py-8" style={{ color: "var(--text-muted)" }}>Chargement...</p>
                 ) : (
                   <AnimatePresence initial={false}>
-                    {messages.map((msg) => (
+                    {messages.map((msg) => {
+                      const attachment = parseAttachmentMessage(msg.text);
+                      const isImage = attachment?.type === "image";
+                      return (
                       <motion.div
                         key={msg.id}
                         layout
@@ -313,9 +344,10 @@ export function MessagesPage() {
                             </div>
                           )}
                           <div>
-                            <div className="rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words"
+                            <div
+                              className={`rounded-2xl text-sm leading-relaxed ${isImage ? "p-1.5" : "px-4 py-2.5"}`}
                               style={msg.sent ? {
-                                background: `linear-gradient(135deg,${S.primary},${S.primary}dd)`,
+                                background: isImage ? "rgba(255,122,0,0.15)" : `linear-gradient(135deg,${S.primary},${S.primary}dd)`,
                                 color: "white",
                                 borderBottomRightRadius: 6,
                               } : {
@@ -324,7 +356,7 @@ export function MessagesPage() {
                                 borderBottomLeftRadius: 6,
                                 border: "1px solid rgba(255,255,255,0.08)",
                               }}>
-                              {msg.text}
+                              <MessageContent text={msg.text} />
                             </div>
                             <div
                               className={`flex items-center gap-1 mt-0.5 text-[9px] ${msg.sent ? "justify-end" : "justify-start"}`}
@@ -340,7 +372,7 @@ export function MessagesPage() {
                           </div>
                         </div>
                       </motion.div>
-                    ))}
+                    );})}
                   </AnimatePresence>
                 )}
 
@@ -401,7 +433,7 @@ export function MessagesPage() {
                   ref={fileInputRef}
                   type="file"
                   className="hidden"
-                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                  accept="image/*"
                   onChange={(e) => handleFilePick(e.target.files?.[0] ?? null)}
                 />
 
@@ -409,12 +441,13 @@ export function MessagesPage() {
                   <motion.button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border"
+                    disabled={uploadingImage}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border disabled:opacity-50"
                     style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
-                    whileHover={{ scale: 1.1, borderColor: S.primary, color: S.primary }}
-                    title="Joindre un fichier"
+                    whileHover={{ scale: uploadingImage ? 1 : 1.1, borderColor: S.primary, color: S.primary }}
+                    title="Joindre une image"
                   >
-                    <Paperclip size={14} />
+                    {uploadingImage ? <Loader2 size={14} className="animate-spin" /> : <Paperclip size={14} />}
                   </motion.button>
                   <motion.button
                     type="button"
