@@ -7,6 +7,10 @@ import {
   type MessageContact,
   type MessageStatus,
 } from "../lib/api/messages";
+import {
+  encodeAttachmentMessage,
+  formatMessagePreview,
+} from "../lib/messages/attachment";
 
 function socketBaseUrl() {
   if (import.meta.env.DEV) return window.location.origin;
@@ -165,6 +169,69 @@ export function useMessages() {
     [selectedPeerId, loadContacts],
   );
 
+  const sendImage = useCallback(
+    async (file: File) => {
+      if (!selectedPeerId) return;
+      const peerId = selectedPeerId;
+      const previewUrl = URL.createObjectURL(file);
+      const optimisticBody = encodeAttachmentMessage({
+        type: "image",
+        url: previewUrl,
+        name: file.name,
+        sizeKb: Math.round(file.size / 1024),
+      });
+      const optimistic: ChatMessage = {
+        id: `tmp-${Date.now()}`,
+        text: optimisticBody,
+        sent: true,
+        time: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+        status: "sent",
+      };
+
+      setMessages((prev) => [...prev, optimistic]);
+      setContacts((prev) =>
+        prev.map((c) =>
+          c.memberId === peerId
+            ? {
+                ...c,
+                preview: formatMessagePreview(optimisticBody),
+                time: optimistic.time,
+                conversationId: c.conversationId ?? "pending",
+              }
+            : c,
+        ),
+      );
+
+      try {
+        const uploaded = await messagesApi.uploadAttachment(file);
+        const result = await messagesApi.sendMessage(peerId, uploaded.body);
+        URL.revokeObjectURL(previewUrl);
+        setConversationId(result.conversationId);
+        setMessages((prev) =>
+          prev.map((m) => (m.id === optimistic.id ? { ...result.message, status: "sent" } : m)),
+        );
+        setContacts((prev) =>
+          prev.map((c) =>
+            c.memberId === peerId
+              ? {
+                  ...c,
+                  conversationId: result.conversationId,
+                  preview: formatMessagePreview(result.message.text),
+                  time: result.message.time,
+                }
+              : c,
+          ),
+        );
+        void loadContacts(searchRef.current.trim() ? searchRef.current : undefined);
+      } catch (e) {
+        URL.revokeObjectURL(previewUrl);
+        setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
+        setError(e instanceof Error ? e.message : "Envoi de l'image impossible.");
+      }
+    },
+    [selectedPeerId, loadContacts],
+  );
+
   const deleteConversation = useCallback(async () => {
     if (!conversationId) return;
     try {
@@ -178,17 +245,20 @@ export function useMessages() {
     }
   }, [conversationId, loadContacts]);
 
-  const markThreadRead = useCallback(async () => {
+  const markThreadUnread = useCallback(async () => {
     if (!conversationId) return;
     try {
-      await messagesApi.markRead(conversationId);
+      const result = await messagesApi.markUnread(conversationId);
+      const unreadCount = result.marked || messages.filter((m) => !m.sent).length || 1;
       setContacts((prev) =>
-        prev.map((c) => (c.memberId === selectedPeerIdRef.current ? { ...c, unread: 0 } : c)),
+        prev.map((c) =>
+          c.memberId === selectedPeerIdRef.current ? { ...c, unread: unreadCount } : c,
+        ),
       );
     } catch {
       /* silent */
     }
-  }, [conversationId]);
+  }, [conversationId, messages]);
 
   const emitTyping = useCallback((active: boolean) => {
     if (!selectedPeerIdRef.current || !socketRef.current) return;
@@ -363,9 +433,10 @@ export function useMessages() {
     search,
     setSearch,
     sendMessage,
+    sendImage,
     onInputChange,
     deleteConversation,
-    markThreadRead,
+    markThreadUnread,
     loading,
     searching,
     threadLoading,
