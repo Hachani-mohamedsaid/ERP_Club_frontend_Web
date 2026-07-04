@@ -37,7 +37,7 @@ export interface ContactsResponse {
 }
 
 export interface ThreadResponse {
-  conversationId: string;
+  conversationId: string | null;
   peer: {
     memberId: string;
     name: string;

@@ -7,32 +7,112 @@ import { CircularProgress } from "../../components/player/CircularProgress";
 import { BodyInjuryViewer } from "../../components/medical/BodyInjuryViewer";
 import { MedicalTimeline } from "../../components/medical/MedicalTimeline";
 import { AnimatedBadge } from "../../components/ui/AnimatedBadge";
-import { useCurrentPlayer } from "../../hooks/useCurrentPlayer";
 import { useLocale } from "../../contexts/LocaleContext";
 import { useJoueurBackendData } from "../../hooks/useJoueurBackendData";
 import { clubApi } from "../../lib/api/club";
+import {
+  buildBodyZones,
+  buildHeatZones,
+  getBodyPartLabel,
+  riskToPercent,
+  riskToSeverity,
+  type InjuryRow,
+} from "../../lib/injuryNormalize";
 
 export function JoueurMedicalPage() {
-  const { player } = useCurrentPlayer();
   const { t } = useLocale();
-  const { injuries: backendInjuries, playerStats, myPlayerId, refetchPlayer, calendarEvents } = useJoueurBackendData();
+  const {
+    injuries,
+    playerStats,
+    myPlayerId,
+    myPlayer,
+    refetchMedical,
+    calendarEvents,
+    loading,
+  } = useJoueurBackendData();
+
   const [bookingModal, setBookingModal] = useState(false);
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [selectedAppointmentType, setSelectedAppointmentType] = useState("");
   const [editingWellness, setEditingWellness] = useState(false);
-  const [wellnessForm, setWellnessForm] = useState({
-    sleep: String((playerStats as Record<string, unknown> & { wellness?: { sleep?: number } })?.wellness?.sleep ?? ""),
-    hydration: String((playerStats as Record<string, unknown> & { wellness?: { hydration?: number } })?.wellness?.hydration ?? ""),
-  });
+  const [wellnessForm, setWellnessForm] = useState({ sleep: "", hydration: "" });
   const [savingWellness, setSavingWellness] = useState(false);
   const [wellnessOk, setWellnessOk] = useState(false);
 
-  if (!player) return null;
+  const injuryRows: InjuryRow[] = injuries.map((inj) => ({
+    id: inj.id,
+    name: inj.name,
+    injury: inj.injury,
+    bodyPart: inj.bodyPart || null,
+    returnDate: inj.returnDate,
+    riskIA: inj.riskIA,
+    createdAt: inj.createdAt,
+  }));
+
+  const heatZones = buildHeatZones(injuryRows);
+  const bodyZones = buildBodyZones(heatZones, injuryRows);
+
+  const timelineEvents = [...injuryRows]
+    .sort((a, b) => {
+      const da = a.createdAt ? new Date(a.createdAt.includes("/") ? a.createdAt.split("/").reverse().join("-") : a.createdAt).getTime() : 0;
+      const db = b.createdAt ? new Date(b.createdAt.includes("/") ? b.createdAt.split("/").reverse().join("-") : b.createdAt).getTime() : 0;
+      return db - da;
+    })
+    .map((inj) => {
+      const severity = riskToSeverity(inj.riskIA);
+      const partLabel = getBodyPartLabel(inj.bodyPart ?? "");
+      return {
+        id: inj.id,
+        date: inj.createdAt ?? inj.returnDate,
+        title: inj.injury,
+        description: `${partLabel || "—"} — Risque ${riskToPercent(inj.riskIA)}% · Retour: ${inj.returnDate}`,
+        type: (severity === "critical" ? "danger" : severity === "medium" ? "warning" : "success") as
+          | "danger"
+          | "warning"
+          | "success",
+      };
+    });
+
+  const fatigue = playerStats?.trainingSessions?.fatiguePredicted ?? 0;
+  const isInjured = injuryRows.length > 0;
+  const statusLabel = isInjured ? "Blessé" : "Disponible";
+  const statusTone = isInjured ? "danger" : "success";
+
+  const wellnessData = (playerStats as Record<string, unknown> & {
+    wellness?: { sleep?: number; hydration?: number };
+  })?.wellness;
+  const wellnessSleep = wellnessData?.sleep != null ? `${wellnessData.sleep}h` : "—";
+  const wellnessHydration = wellnessData?.hydration ?? null;
+
+  const riskZones = injuryRows.map((inj) => {
+    const severity = riskToSeverity(inj.riskIA);
+    const pct = riskToPercent(inj.riskIA);
+    const color = severity === "critical" ? "#EF4444" : severity === "medium" ? "#F59E0B" : "#22C55E";
+    return {
+      zone: getBodyPartLabel(inj.bodyPart ?? "") || inj.injury,
+      risk: pct,
+      color,
+    };
+  });
+
+  const nextMedical = calendarEvents
+    .filter((ev) => {
+      const type = (ev.eventType ?? "").toUpperCase();
+      const isMedical = type === "MEDICAL" || type.includes("MEDICAL") || type.includes("RDV");
+      if (!isMedical) return false;
+      const d = new Date(ev.eventDate);
+      if (Number.isNaN(d.getTime())) return false;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return d >= today;
+    })
+    .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())[0];
 
   async function handleBooking(appointmentType: string) {
     if (!myPlayerId) return;
     setBookingLoading(true);
+    setSelectedAppointmentType(appointmentType);
     try {
       const nextWeek = new Date();
       nextWeek.setDate(nextWeek.getDate() + 7);
@@ -66,52 +146,23 @@ export function JoueurMedicalPage() {
       setWellnessOk(true);
       setTimeout(() => setWellnessOk(false), 3000);
       setEditingWellness(false);
-      await refetchPlayer();
-    } catch { /* non-blocking */ } finally {
+      await refetchMedical();
+    } catch {
+      /* non-blocking */
+    } finally {
       setSavingWellness(false);
     }
   }
 
-  const myBackendInjuries = backendInjuries.filter(
-    (inj) => inj.name.trim().toLowerCase() === player.name.trim().toLowerCase(),
-  );
-
-  const timelineEvents = backendInjuries.map((inj) => ({
-    id: inj.id,
-    date: inj.returnDate !== "—" ? inj.returnDate : "—",
-    title: inj.injury,
-    description: `${inj.bodyPart ?? "—"} — Risque ${inj.riskIA}%`,
-    type: (inj.riskIA < 30 ? "success" : "warning") as "success" | "warning",
-  }));
-
-  const fatigue = playerStats?.trainingSessions?.fatiguePredicted ?? 45;
-  const statusLabel = myBackendInjuries.length > 0 ? "Blessé" : "Disponible";
-  const statusTone = myBackendInjuries.length > 0 ? "danger" : "success";
-
-  // Wellness — from playerStats JSON, no Math.random
-  const wellnessData = (playerStats as Record<string, unknown> & { wellness?: { sleep?: number; hydration?: number } })?.wellness;
-  const wellnessSleep = wellnessData?.sleep ? `${wellnessData.sleep}h` : "—";
-  const wellnessHydration = wellnessData?.hydration ?? null;
-
-  // Risk zones — from real injury data only, no Math.random
-  const bodyParts = ["genou", "cheville", "dos"] as const;
-  const riskColors = { genou: "#F59E0B", cheville: "#EF4444", dos: "#3B82F6" };
-  const riskZones = bodyParts.map((zone) => {
-    const injury = myBackendInjuries.find((i) => i.bodyPart?.toLowerCase().includes(zone));
-    return {
-      zone: zone.charAt(0).toUpperCase() + zone.slice(1),
-      risk: injury ? Math.max(50, injury.riskIA) : 0,
-      color: riskColors[zone],
-    };
-  }).filter((z) => z.risk > 0);
-
-  const bodyZones = myBackendInjuries.map((inj) => ({
-    id: inj.id,
-    label: inj.bodyPart ?? inj.injury,
-    x: 50, y: 50,
-    color: inj.riskIA > 50 ? "#EF4444" : "#F59E0B",
-    description: `${inj.injury} — Retour: ${inj.returnDate}`,
-  }));
+  if (loading && !myPlayer) {
+    return (
+      <JoueurPageTransition>
+        <p className="py-16 text-center text-sm" style={{ color: "var(--text-muted)" }}>
+          Chargement du suivi médical…
+        </p>
+      </JoueurPageTransition>
+    );
+  }
 
   return (
     <JoueurPageTransition>
@@ -120,31 +171,40 @@ export function JoueurMedicalPage() {
           <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
             🫀 {t.medical.bodyModel}
           </h3>
-          <BodyInjuryViewer zones={bodyZones.length > 0 ? bodyZones : []} />
+          <BodyInjuryViewer zones={bodyZones} />
           <p className="mt-3 text-center text-xs" style={{ color: "var(--text-muted)" }}>
-            {bodyZones.length > 0 ? "Zones blessées indiquées" : "Aucune blessure active"}
+            {injuryRows.length > 0 ? "Zones blessées indiquées" : "Aucune blessure active"}
           </p>
         </JoueurKpiCard>
 
         <div className="space-y-4">
           <JoueurKpiCard delay={0.05}>
             <div className="flex items-center justify-between">
-              <p className="text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{t.medical.status}</p>
+              <p className="text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+                {t.medical.status}
+              </p>
               <Shield size={20} style={{ color: statusTone === "success" ? "#22C55E" : "#EF4444" }} />
             </div>
-            <AnimatedBadge tone={statusTone as "success" | "danger"} animated={false}>{statusLabel}</AnimatedBadge>
+            <AnimatedBadge tone={statusTone as "success" | "danger"} animated={false}>
+              {statusLabel}
+            </AnimatedBadge>
           </JoueurKpiCard>
 
           <JoueurKpiCard delay={0.08}>
-            <p className="mb-2 text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{t.medical.fatigue}</p>
+            <p className="mb-2 text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+              {t.medical.fatigue}
+            </p>
             <CircularProgress value={fatigue} size={100} color="#F59E0B" label="Fatigue" />
-            <p className="mt-1 text-center text-xs" style={{ color: "var(--text-muted)" }}>Calculé depuis les entraînements</p>
+            <p className="mt-1 text-center text-xs" style={{ color: "var(--text-muted)" }}>
+              Calculé depuis les entraînements
+            </p>
           </JoueurKpiCard>
 
-          {/* Wellness — self-logged by joueur */}
           <JoueurKpiCard delay={0.1}>
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Bien-être</span>
+              <span className="text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+                Bien-être
+              </span>
               {!editingWellness && (
                 <button
                   type="button"
@@ -166,7 +226,9 @@ export function JoueurMedicalPage() {
             {editingWellness ? (
               <div className="space-y-2">
                 <div>
-                  <label className="text-xs" style={{ color: "var(--text-muted)" }}>Sommeil (heures, ex: 7.5)</label>
+                  <label className="text-xs" style={{ color: "var(--text-muted)" }}>
+                    Sommeil (heures, ex: 7.5)
+                  </label>
                   <input
                     type="number"
                     step="0.5"
@@ -178,7 +240,9 @@ export function JoueurMedicalPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs" style={{ color: "var(--text-muted)" }}>Hydratation (%, ex: 80)</label>
+                  <label className="text-xs" style={{ color: "var(--text-muted)" }}>
+                    Hydratation (%, ex: 80)
+                  </label>
                   <input
                     type="number"
                     min="0"
@@ -198,19 +262,42 @@ export function JoueurMedicalPage() {
                   >
                     <Check size={11} /> {savingWellness ? "…" : "Sauvegarder"}
                   </button>
-                  <button type="button" onClick={() => setEditingWellness(false)} className="rounded-xl px-2 py-1.5 text-xs" style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}>
+                  <button
+                    type="button"
+                    onClick={() => setEditingWellness(false)}
+                    className="rounded-xl px-2 py-1.5 text-xs"
+                    style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
+                  >
                     <X size={11} />
                   </button>
                 </div>
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="flex items-center justify-between rounded-xl border px-3 py-2" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-                  <div className="flex items-center gap-2"><Moon size={14} style={{ color: "#3B82F6" }} /><span className="text-xs" style={{ color: "var(--text-muted)" }}>{t.medical.sleep}</span></div>
-                  <span className="font-bold" style={{ color: "var(--text-primary)" }}>{wellnessSleep}</span>
+                <div
+                  className="flex items-center justify-between rounded-xl border px-3 py-2"
+                  style={{ borderColor: "rgba(255,255,255,0.06)" }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Moon size={14} style={{ color: "#3B82F6" }} />
+                    <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                      {t.medical.sleep}
+                    </span>
+                  </div>
+                  <span className="font-bold" style={{ color: "var(--text-primary)" }}>
+                    {wellnessSleep}
+                  </span>
                 </div>
-                <div className="flex items-center justify-between rounded-xl border px-3 py-2" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-                  <div className="flex items-center gap-2"><Droplets size={14} style={{ color: "#22C55E" }} /><span className="text-xs" style={{ color: "var(--text-muted)" }}>{t.medical.hydration}</span></div>
+                <div
+                  className="flex items-center justify-between rounded-xl border px-3 py-2"
+                  style={{ borderColor: "rgba(255,255,255,0.06)" }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Droplets size={14} style={{ color: "#22C55E" }} />
+                    <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                      {t.medical.hydration}
+                    </span>
+                  </div>
                   <span className="font-bold" style={{ color: "#22C55E" }}>
                     {wellnessHydration !== null ? `${wellnessHydration}%` : "—"}
                   </span>
@@ -221,27 +308,41 @@ export function JoueurMedicalPage() {
         </div>
       </div>
 
-      {/* Injury Risk — only shown when there are injuries */}
       {riskZones.length > 0 && (
         <JoueurKpiCard delay={0.12}>
           <div className="mb-4 flex items-center gap-2">
             <Brain size={18} style={{ color: "#FF6B57" }} />
-            <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{t.medical.injuryAI}</h3>
+            <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+              {t.medical.injuryAI}
+            </h3>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {riskZones.map((pred, idx) => (
               <motion.div
-                key={pred.zone}
+                key={`${pred.zone}-${idx}`}
                 className="rounded-xl border p-4"
                 style={{ borderColor: "rgba(255,255,255,0.08)" }}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 + idx * 0.08 }}
               >
-                <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>Risk {pred.zone}</p>
-                <p className="mt-1 text-2xl font-bold" style={{ color: pred.color }}>{pred.risk}%</p>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
-                  <motion.div className="h-full rounded-full" style={{ background: pred.color }} initial={{ width: 0 }} animate={{ width: `${pred.risk}%` }} transition={{ duration: 1, delay: 0.2 + idx * 0.1 }} />
+                <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                  {pred.zone}
+                </p>
+                <p className="mt-1 text-2xl font-bold" style={{ color: pred.color }}>
+                  {pred.risk}%
+                </p>
+                <div
+                  className="mt-2 h-1.5 overflow-hidden rounded-full"
+                  style={{ background: "rgba(255,255,255,0.08)" }}
+                >
+                  <motion.div
+                    className="h-full rounded-full"
+                    style={{ background: pred.color }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${pred.risk}%` }}
+                    transition={{ duration: 1, delay: 0.2 + idx * 0.1 }}
+                  />
                 </div>
               </motion.div>
             ))}
@@ -250,46 +351,59 @@ export function JoueurMedicalPage() {
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <MedicalTimeline title={t.medical.history} events={timelineEvents} />
+        {timelineEvents.length > 0 ? (
+          <MedicalTimeline title={t.medical.history} events={timelineEvents} />
+        ) : (
+          <JoueurKpiCard delay={0.15}>
+            <p className="text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+              {t.medical.history}
+            </p>
+            <p className="mt-4 text-sm" style={{ color: "var(--text-muted)" }}>
+              Aucune blessure enregistrée par le staff médical.
+            </p>
+          </JoueurKpiCard>
+        )}
+
         <JoueurKpiCard delay={0.18}>
-          {(() => {
-            const nextMedical = calendarEvents
-              .filter((ev) => ev.eventType === "MEDICAL" && new Date(ev.eventDate) >= new Date())
-              .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())[0];
-            return (
-              <>
-                <p className="text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{t.medical.nextAppt}</p>
-                <div className="mt-3 rounded-xl border p-4" style={{ borderColor: "rgba(255,107,87,0.3)", background: "rgba(255,107,87,0.06)" }}>
-                  <div className="flex items-center gap-2">
-                    <Calendar size={16} style={{ color: "#FF6B57" }} />
-                    <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
-                      {nextMedical?.title ?? "Aucun RDV planifié"}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
-                    {nextMedical
-                      ? `${new Date(nextMedical.eventDate).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}${nextMedical.eventTime ? ` à ${nextMedical.eventTime}` : ""}`
-                      : "À planifier par le staff médical"}
-                  </p>
-                  {nextMedical?.location && (
-                    <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{nextMedical.location}</p>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setBookingModal(true)}
-                    className="mt-3 w-full rounded-xl py-2 text-xs font-semibold transition-all hover:opacity-80 active:scale-[0.98]"
-                    style={{ background: "#FF6B57", color: "white" }}
-                  >
-                    Réserver / Confirmer RDV
-                  </button>
-                </div>
-              </>
-            );
-          })()}
+          <p className="text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+            {t.medical.nextAppt}
+          </p>
+          <div
+            className="mt-3 rounded-xl border p-4"
+            style={{ borderColor: "rgba(255,107,87,0.3)", background: "rgba(255,107,87,0.06)" }}
+          >
+            <div className="flex items-center gap-2">
+              <Calendar size={16} style={{ color: "#FF6B57" }} />
+              <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
+                {nextMedical?.title ?? "Aucun RDV planifié"}
+              </span>
+            </div>
+            <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
+              {nextMedical
+                ? `${new Date(nextMedical.eventDate).toLocaleDateString("fr-FR", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}${nextMedical.eventTime ? ` à ${nextMedical.eventTime}` : ""}`
+                : "À planifier par le staff médical"}
+            </p>
+            {nextMedical?.location && (
+              <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                {nextMedical.location}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={() => setBookingModal(true)}
+              className="mt-3 w-full rounded-xl py-2 text-xs font-semibold transition-all hover:opacity-80 active:scale-[0.98]"
+              style={{ background: "#FF6B57", color: "white" }}
+            >
+              Réserver / Confirmer RDV
+            </button>
+          </div>
         </JoueurKpiCard>
       </div>
 
-      {/* Booking Modal — joueur confirms intent, staff validates */}
       <AnimatePresence>
         {bookingModal && (
           <motion.div
@@ -310,8 +424,15 @@ export function JoueurMedicalPage() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="mb-4 flex items-center justify-between">
-                <h3 className="font-bold" style={{ color: "var(--text-primary)" }}>Demande de rendez-vous</h3>
-                <button type="button" onClick={() => setBookingModal(false)} className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}>
+                <h3 className="font-bold" style={{ color: "var(--text-primary)" }}>
+                  Demande de rendez-vous
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setBookingModal(false)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full"
+                  style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
+                >
                   <X size={16} />
                 </button>
               </div>
@@ -331,13 +452,18 @@ export function JoueurMedicalPage() {
                     disabled={bookingLoading}
                     onClick={() => handleBooking(slot.label)}
                     className="w-full rounded-xl border p-3 text-left transition-all hover:border-[#FF6B57] hover:bg-[rgba(255,107,87,0.06)] disabled:opacity-60"
-                    style={{ borderColor: selectedAppointmentType === slot.label ? "#FF6B57" : "rgba(255,255,255,0.08)" }}
+                    style={{
+                      borderColor:
+                        selectedAppointmentType === slot.label ? "#FF6B57" : "rgba(255,255,255,0.08)",
+                    }}
                   >
                     <div className="flex items-center gap-3">
                       <span className="text-xl">{slot.icon}</span>
-                      <p className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{slot.label}</p>
+                      <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                        {slot.label}
+                      </p>
                     </div>
-                    <p className="text-xs mt-0.5 ml-8" style={{ color: "var(--text-muted)" }}>
+                    <p className="ml-8 mt-0.5 text-xs" style={{ color: "var(--text-muted)" }}>
                       {bookingLoading ? "Envoi en cours…" : "Demande envoyée au staff médical"}
                     </p>
                   </button>
