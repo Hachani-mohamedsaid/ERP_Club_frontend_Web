@@ -35,7 +35,7 @@ function ProgressRing({ pct, color, size = 64 }: { pct: number; color: string; s
 
 const ACard = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
   <motion.div className={`rounded-[20px] border p-5 ${className}`}
-    style={{ background: "rgba(5,8,22,0.7)", borderColor: "rgba(255,255,255,0.06)", boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}
+    style={{ background: "rgba(5,8,22,0.7)", borderColor: "var(--surface-panel-border)", boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}
     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
     {children}
   </motion.div>
@@ -69,7 +69,7 @@ export function AnalysteInjuryForecastPage() {
           { label: "Risque rechute moyen",    value: `${summary.avgRelapseRisk}%`, color: "#FF7A00", icon: AlertTriangle },
         ].map(({ label, value, color, icon: Icon }, i) => (
           <motion.div key={label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
-            <div className="rounded-[16px] border p-4" style={{ background: "rgba(5,8,22,0.7)", borderColor: "rgba(255,255,255,0.06)" }}>
+            <div className="rounded-[16px] border p-4" style={{ background: "rgba(5,8,22,0.7)", borderColor: "var(--surface-panel-border)" }}>
               <div className="flex items-center gap-2">
                 <motion.div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
                   style={{ background: `${color}18`, color }}

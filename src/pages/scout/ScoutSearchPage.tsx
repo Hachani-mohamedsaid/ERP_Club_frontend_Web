@@ -62,7 +62,7 @@ function ChipGroup({ label, options, value, onChange }: {
           style={{
             background: value === opt ? S.primary : "rgba(255,255,255,0.05)",
             color: value === opt ? "white" : "var(--text-muted)",
-            border: `1px solid ${value === opt ? S.primary + "60" : "rgba(255,255,255,0.08)"}`,
+            border: "1px solid var(--surface-panel-border)",
           }}
           whileHover={{ scale: 1.07 }} whileTap={{ scale: 0.94 }}>
           {opt}
@@ -139,7 +139,7 @@ export function ScoutSearchPage() {
 
       {/* Search bar */}
       <div className="flex items-center gap-2 rounded-2xl border px-4 py-2.5"
-        style={{ background: "rgba(8,6,24,0.85)", borderColor: "rgba(255,255,255,0.09)" }}>
+        style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
         <Search size={15} style={{ color: "var(--text-muted)" }} />
         <input value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Rechercher par nom ou club..."
@@ -153,7 +153,7 @@ export function ScoutSearchPage() {
 
       {/* Filter chips */}
       <div className="rounded-[20px] border p-4 space-y-2.5"
-        style={{ background: "rgba(8,6,24,0.85)", borderColor: "rgba(255,255,255,0.07)" }}>
+        style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
         <ChipGroup label="Poste"        options={POSITIONS}    value={pos}         onChange={setPos} />
         <ChipGroup label="Pays"         options={COUNTRIES}    value={country}     onChange={setCountry} />
         <ChipGroup label="Âge"          options={AGE_RANGES}   value={ageRange}    onChange={setAgeRange} />
@@ -193,7 +193,7 @@ export function ScoutSearchPage() {
                   exit={{ opacity: 0, x: -10 }} transition={{ delay: i * 0.035 }}
                   className="flex items-center gap-4 rounded-[18px] border p-4 cursor-pointer"
                   style={{
-                    background: isSel ? `${S.primary}07` : "rgba(8,6,24,0.88)",
+                    background: isSel ? `${S.primary}07` : "var(--surface-panel-solid)",
                     borderColor: isSel ? `${S.primary}40` : "rgba(255,255,255,0.07)",
                   }}
                   onClick={() => setSelected(isSel ? null : p.id)}
@@ -269,7 +269,7 @@ export function ScoutSearchPage() {
           {filtered.length === 0 && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="flex flex-col items-center justify-center rounded-[20px] border py-14"
-              style={{ background: "rgba(8,6,24,0.85)", borderColor: "rgba(255,255,255,0.07)" }}>
+              style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
               <Search size={28} className="mb-3 opacity-20" style={{ color: "var(--text-muted)" }} />
               <p className="text-sm" style={{ color: "var(--text-muted)" }}>Aucun prospect ne correspond aux filtres</p>
               <motion.button type="button" onClick={clearFilters}
@@ -291,7 +291,7 @@ export function ScoutSearchPage() {
                 transition={{ type: "spring", damping: 22, stiffness: 280 }}
                 className="rounded-[24px] border overflow-hidden"
                 style={{
-                  background: "rgba(8,6,24,0.96)",
+                  background: "var(--surface-panel-solid)",
                   borderColor: `${PRIORITY_META[sel.priority].color}30`,
                   boxShadow: `0 0 48px ${PRIORITY_META[sel.priority].color}10`,
                 }}>
@@ -388,7 +388,7 @@ export function ScoutSearchPage() {
                       { label: "IA Score",         value: `${sel.aiScore}%`, color: S.primary },
                     ].map(k => (
                       <div key={k.label} className="flex items-center justify-between text-xs">
-                        <span style={{ color: "rgba(255,255,255,0.35)" }}>{k.label}</span>
+                        <span style={{ color: "var(--text-muted)" }}>{k.label}</span>
                         <span className="font-bold" style={{ color: k.color as string }}>{k.value}</span>
                       </div>
                     ))}
@@ -415,7 +415,7 @@ export function ScoutSearchPage() {
                     ].map(a => (
                       <div key={a.label}>
                         <div className="flex justify-between text-[9px] mb-0.5">
-                          <span style={{ color: "rgba(255,255,255,0.35)" }}>{a.label}</span>
+                          <span style={{ color: "var(--text-muted)" }}>{a.label}</span>
                           <span className="font-extrabold" style={{ color: a.color }}>{a.value}</span>
                         </div>
                         <SGauge value={a.value} color={a.color} />
@@ -436,7 +436,7 @@ export function ScoutSearchPage() {
                       style={{
                         background: watchlistIds.has(sel.id) ? "rgba(239,68,68,0.08)" : "rgba(255,255,255,0.04)",
                         color: watchlistIds.has(sel.id) ? S.danger : "var(--text-muted)",
-                        border: `1px solid ${watchlistIds.has(sel.id) ? S.danger + "30" : "rgba(255,255,255,0.1)"}`,
+                        border: "1px solid var(--surface-panel-border)",
                       }}
                       whileHover={{ scale: 1.02 }}>
                       <Heart size={13} fill={watchlistIds.has(sel.id) ? S.danger : "none"} />
@@ -448,22 +448,22 @@ export function ScoutSearchPage() {
             ) : (
               <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 className="flex flex-col items-center justify-center rounded-[24px] border py-16"
-                style={{ background: "rgba(8,6,24,0.7)", borderColor: "rgba(255,255,255,0.06)" }}>
+                style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
                 <motion.div className="text-5xl mb-4"
                   animate={{ y: [0, -6, 0] }} transition={{ duration: 2.5, repeat: Infinity }}>
                   👤
                 </motion.div>
                 <p className="text-sm font-semibold" style={{ color: "var(--text-muted)" }}>Sélectionner un prospect</p>
-                <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.2)" }}>
+                <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                   Cliquer sur un joueur pour voir le détail
                 </p>
                 <div className="mt-5 space-y-2 text-left w-full max-w-[200px]">
                   {["Profil technique", "Radar attributs", "Risque blessure", "Valeur marchande"].map((h, i) => (
                     <motion.div key={h} className="flex items-center gap-2 rounded-xl border px-3 py-2"
-                      style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.07)" }}
+                      style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}
                       initial={{ opacity: 0, x: 8 }} animate={{ opacity: 0.4, x: 0 }} transition={{ delay: 0.2 + i * 0.08 }}>
                       <div className="h-5 w-5 rounded-lg" style={{ background: "rgba(255,255,255,0.06)" }} />
-                      <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.3)" }}>{h}</p>
+                      <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{h}</p>
                     </motion.div>
                   ))}
                 </div>

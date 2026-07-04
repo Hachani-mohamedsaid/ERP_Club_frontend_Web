@@ -76,7 +76,7 @@ export function JoueurMedicalPage() {
 
   const fatigue = playerStats?.trainingSessions?.fatiguePredicted ?? 0;
   const isInjured = injuryRows.length > 0;
-  const statusLabel = isInjured ? "Blessé" : "Disponible";
+  const statusLabel = isInjured ? t.medicalExtra.injured : t.medicalExtra.available;
   const statusTone = isInjured ? "danger" : "success";
 
   const wellnessData = (playerStats as Record<string, unknown> & {
@@ -173,7 +173,7 @@ export function JoueurMedicalPage() {
           </h3>
           <BodyInjuryViewer zones={bodyZones} />
           <p className="mt-3 text-center text-xs" style={{ color: "var(--text-muted)" }}>
-            {injuryRows.length > 0 ? "Zones blessées indiquées" : "Aucune blessure active"}
+            {injuryRows.length > 0 ? t.medicalExtra.injuredZones : t.medicalExtra.noInjuries}
           </p>
         </JoueurKpiCard>
 
@@ -203,7 +203,7 @@ export function JoueurMedicalPage() {
           <JoueurKpiCard delay={0.1}>
             <div className="mb-2 flex items-center justify-between">
               <span className="text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-                Bien-être
+                {t.medicalExtra.wellness}
               </span>
               {!editingWellness && (
                 <button
@@ -218,7 +218,7 @@ export function JoueurMedicalPage() {
                   className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs"
                   style={{ background: "rgba(255,107,87,0.12)", color: "#FF6B57" }}
                 >
-                  <Pencil size={10} /> Saisir
+                  <Pencil size={10} /> {t.medicalExtra.enter}
                 </button>
               )}
             </div>
@@ -260,13 +260,13 @@ export function JoueurMedicalPage() {
                     className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-1.5 text-xs font-semibold"
                     style={{ background: "#22C55E", color: "white" }}
                   >
-                    <Check size={11} /> {savingWellness ? "…" : "Sauvegarder"}
+                    <Check size={11} /> {savingWellness ? "…" : t.medicalExtra.save}
                   </button>
                   <button
                     type="button"
                     onClick={() => setEditingWellness(false)}
                     className="rounded-xl px-2 py-1.5 text-xs"
-                    style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
+                    style={{ background: "var(--surface-input)", color: "var(--text-muted)" }}
                   >
                     <X size={11} />
                   </button>
@@ -276,7 +276,7 @@ export function JoueurMedicalPage() {
               <div className="space-y-3">
                 <div
                   className="flex items-center justify-between rounded-xl border px-3 py-2"
-                  style={{ borderColor: "rgba(255,255,255,0.06)" }}
+                  style={{ borderColor: "var(--surface-panel-border)" }}
                 >
                   <div className="flex items-center gap-2">
                     <Moon size={14} style={{ color: "#3B82F6" }} />
@@ -290,7 +290,7 @@ export function JoueurMedicalPage() {
                 </div>
                 <div
                   className="flex items-center justify-between rounded-xl border px-3 py-2"
-                  style={{ borderColor: "rgba(255,255,255,0.06)" }}
+                  style={{ borderColor: "var(--surface-panel-border)" }}
                 >
                   <div className="flex items-center gap-2">
                     <Droplets size={14} style={{ color: "#22C55E" }} />
@@ -321,7 +321,7 @@ export function JoueurMedicalPage() {
               <motion.div
                 key={`${pred.zone}-${idx}`}
                 className="rounded-xl border p-4"
-                style={{ borderColor: "rgba(255,255,255,0.08)" }}
+                style={{ borderColor: "var(--surface-panel-border)" }}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 + idx * 0.08 }}
@@ -334,7 +334,7 @@ export function JoueurMedicalPage() {
                 </p>
                 <div
                   className="mt-2 h-1.5 overflow-hidden rounded-full"
-                  style={{ background: "rgba(255,255,255,0.08)" }}
+                  style={{ background: "var(--surface-input)" }}
                 >
                   <motion.div
                     className="h-full rounded-full"
@@ -359,7 +359,7 @@ export function JoueurMedicalPage() {
               {t.medical.history}
             </p>
             <p className="mt-4 text-sm" style={{ color: "var(--text-muted)" }}>
-              Aucune blessure enregistrée par le staff médical.
+              {t.medicalExtra.noInjuryHistory}
             </p>
           </JoueurKpiCard>
         )}
@@ -375,7 +375,7 @@ export function JoueurMedicalPage() {
             <div className="flex items-center gap-2">
               <Calendar size={16} style={{ color: "#FF6B57" }} />
               <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
-                {nextMedical?.title ?? "Aucun RDV planifié"}
+                {nextMedical?.title ?? t.medicalExtra.noAppointment}
               </span>
             </div>
             <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
@@ -385,7 +385,7 @@ export function JoueurMedicalPage() {
                     month: "long",
                     year: "numeric",
                   })}${nextMedical.eventTime ? ` à ${nextMedical.eventTime}` : ""}`
-                : "À planifier par le staff médical"}
+                : t.medicalExtra.staffPlans}
             </p>
             {nextMedical?.location && (
               <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
@@ -398,7 +398,7 @@ export function JoueurMedicalPage() {
               className="mt-3 w-full rounded-xl py-2 text-xs font-semibold transition-all hover:opacity-80 active:scale-[0.98]"
               style={{ background: "#FF6B57", color: "white" }}
             >
-              Réserver / Confirmer RDV
+              {t.medicalExtra.bookAppt}
             </button>
           </div>
         </JoueurKpiCard>
@@ -417,7 +417,7 @@ export function JoueurMedicalPage() {
           >
             <motion.div
               className="w-full max-w-md rounded-2xl p-6"
-              style={{ background: "#141B2D", border: "1px solid rgba(255,107,87,0.3)" }}
+              style={{ background: "var(--surface-panel-solid)", border: "1px solid rgba(255,107,87,0.3)" }}
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
@@ -431,7 +431,7 @@ export function JoueurMedicalPage() {
                   type="button"
                   onClick={() => setBookingModal(false)}
                   className="flex h-8 w-8 items-center justify-center rounded-full"
-                  style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
+                  style={{ background: "var(--surface-input)", color: "var(--text-muted)" }}
                 >
                   <X size={16} />
                 </button>
@@ -454,7 +454,7 @@ export function JoueurMedicalPage() {
                     className="w-full rounded-xl border p-3 text-left transition-all hover:border-[#FF6B57] hover:bg-[rgba(255,107,87,0.06)] disabled:opacity-60"
                     style={{
                       borderColor:
-                        selectedAppointmentType === slot.label ? "#FF6B57" : "rgba(255,255,255,0.08)",
+                        selectedAppointmentType === slot.label ? "#FF6B57" : "var(--surface-panel-border)",
                     }}
                   >
                     <div className="flex items-center gap-3">
@@ -479,7 +479,7 @@ export function JoueurMedicalPage() {
           <motion.div
             key="booking-toast"
             className="fixed bottom-6 right-6 z-[210] flex items-center gap-3 rounded-2xl px-5 py-3 shadow-xl"
-            style={{ background: "#141B2D", border: "1px solid rgba(34,197,94,0.4)", color: "#22C55E" }}
+            style={{ background: "var(--surface-panel-solid)", border: "1px solid rgba(34,197,94,0.4)", color: "#22C55E" }}
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}
@@ -492,7 +492,7 @@ export function JoueurMedicalPage() {
           <motion.div
             key="wellness-toast"
             className="fixed bottom-20 right-6 z-[210] flex items-center gap-3 rounded-2xl px-5 py-3 shadow-xl"
-            style={{ background: "#141B2D", border: "1px solid rgba(34,197,94,0.4)", color: "#22C55E" }}
+            style={{ background: "var(--surface-panel-solid)", border: "1px solid rgba(34,197,94,0.4)", color: "#22C55E" }}
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}

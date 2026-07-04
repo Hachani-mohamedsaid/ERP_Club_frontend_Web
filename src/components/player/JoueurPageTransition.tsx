@@ -1,14 +1,12 @@
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
-import { JoueurLangToggle } from "./JoueurLangToggle";
 
 interface JoueurPageTransitionProps {
   children: ReactNode;
   className?: string;
-  showLangToggle?: boolean;
 }
 
-export function JoueurPageTransition({ children, className = "space-y-6", showLangToggle = true }: JoueurPageTransitionProps) {
+export function JoueurPageTransition({ children, className = "space-y-6" }: JoueurPageTransitionProps) {
   return (
     <motion.div
       className={className}
@@ -16,11 +14,6 @@ export function JoueurPageTransition({ children, className = "space-y-6", showLa
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
     >
-      {showLangToggle && (
-        <div className="flex justify-end">
-          <JoueurLangToggle />
-        </div>
-      )}
       {children}
     </motion.div>
   );

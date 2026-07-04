@@ -92,32 +92,32 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
           {/* Palette */}
           <motion.div
             className="fixed left-1/2 top-[18%] z-[9999] w-full max-w-[580px] overflow-hidden rounded-[22px] border shadow-2xl"
-            style={{ background: "rgba(8,6,24,0.98)", borderColor: "rgba(255,255,255,0.1)", transform: "translateX(-50%)", boxShadow: "0 32px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,122,0,0.15)" }}
+            style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)", transform: "translateX(-50%)", boxShadow: "0 32px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,122,0,0.15)" }}
             initial={{ opacity: 0, scale: 0.92, y: -20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: -10 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}>
 
             {/* Search input */}
-            <div className="flex items-center gap-3 border-b px-4 py-3.5" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
-              <Search size={16} style={{ color: "rgba(255,255,255,0.4)", flexShrink: 0 }} />
+            <div className="flex items-center gap-3 border-b px-4 py-3.5" style={{ borderColor: "var(--surface-panel-border)" }}>
+              <Search size={16} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
               <input autoFocus type="text" placeholder="Rechercher contrats, joueurs, sponsors..."
                 value={query} onChange={e => setQuery(e.target.value)}
                 className="flex-1 bg-transparent text-sm outline-none placeholder:text-[rgba(255,255,255,0.3)]"
                 style={{ color: "white" }} />
               <div className="flex items-center gap-1">
-                <kbd className="rounded-md border px-1.5 py-0.5 text-[9px] font-bold" style={{ borderColor: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.35)" }}>ESC</kbd>
+                <kbd className="rounded-md border px-1.5 py-0.5 text-[9px] font-bold" style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}>ESC</kbd>
               </div>
             </div>
 
             {/* Results */}
             <div className="max-h-72 overflow-y-auto py-2">
               {results.length === 0 ? (
-                <div className="px-4 py-8 text-center text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+                <div className="px-4 py-8 text-center text-xs" style={{ color: "var(--text-muted)" }}>
                   Aucun résultat pour « {query} »
                 </div>
               ) : (
                 <>
                   {query.trim().length === 0 && (
-                    <p className="px-4 pb-1 text-[9px] uppercase tracking-widest font-bold" style={{ color: "rgba(255,255,255,0.25)" }}>
+                    <p className="px-4 pb-1 text-[9px] uppercase tracking-widest font-bold" style={{ color: "var(--text-muted)" }}>
                       Accès rapide
                     </p>
                   )}
@@ -139,7 +139,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
                           <p className="text-xs font-semibold" style={{ color: isHl ? "white" : "rgba(255,255,255,0.8)" }}>
                             {item.label}
                           </p>
-                          <p className="text-[9px]" style={{ color: "rgba(255,255,255,0.35)" }}>{item.sub}</p>
+                          <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>{item.sub}</p>
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
                           <span className="rounded-full px-2 py-0.5 text-[8px] font-bold"
@@ -156,12 +156,12 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between border-t px-4 py-2" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-              <div className="flex items-center gap-3 text-[9px]" style={{ color: "rgba(255,255,255,0.3)" }}>
-                <span><kbd className="rounded border px-1 py-0.5" style={{ borderColor: "rgba(255,255,255,0.15)" }}>↑↓</kbd> naviguer</span>
-                <span><kbd className="rounded border px-1 py-0.5" style={{ borderColor: "rgba(255,255,255,0.15)" }}>↵</kbd> ouvrir</span>
+            <div className="flex items-center justify-between border-t px-4 py-2" style={{ borderColor: "var(--surface-panel-border)" }}>
+              <div className="flex items-center gap-3 text-[9px]" style={{ color: "var(--text-muted)" }}>
+                <span><kbd className="rounded border px-1 py-0.5" style={{ borderColor: "var(--surface-panel-border)" }}>↑↓</kbd> naviguer</span>
+                <span><kbd className="rounded border px-1 py-0.5" style={{ borderColor: "var(--surface-panel-border)" }}>↵</kbd> ouvrir</span>
               </div>
-              <div className="flex items-center gap-1 text-[9px]" style={{ color: "rgba(255,255,255,0.25)" }}>
+              <div className="flex items-center gap-1 text-[9px]" style={{ color: "var(--text-muted)" }}>
                 <span style={{ color: F.primary }}>●</span> ODIN ERP
               </div>
             </div>

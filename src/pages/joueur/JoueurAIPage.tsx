@@ -262,7 +262,7 @@ export function JoueurAIPage() {
               onClick={() => void loadReport(true, player.name)}
               disabled={refreshing}
               className="flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
-              style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-secondary)" }}
+              style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-secondary)" }}
             >
               {refreshing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
               Actualiser
@@ -271,7 +271,7 @@ export function JoueurAIPage() {
               type="button"
               onClick={exportReport}
               className="flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition-all hover:brightness-110 active:scale-[0.98]"
-              style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-secondary)" }}
+              style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-secondary)" }}
             >
               <FileDown size={14} />
               {t.ai.downloadPdf}
@@ -320,7 +320,7 @@ export function JoueurAIPage() {
                   <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{s.label}</span>
                   <span className="text-sm font-bold" style={{ color: "#22C55E" }}>{s.value}</span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+                <div className="h-2 overflow-hidden rounded-full" style={{ background: "var(--surface-input)" }}>
                   <motion.div
                     className="h-full rounded-full"
                     style={{ background: "#22C55E" }}
@@ -347,7 +347,7 @@ export function JoueurAIPage() {
                   <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{w.label}</span>
                   <span className="text-sm font-bold" style={{ color: "#F59E0B" }}>{w.value}</span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+                <div className="h-2 overflow-hidden rounded-full" style={{ background: "var(--surface-input)" }}>
                   <motion.div
                     className="h-full rounded-full"
                     style={{ background: "#F59E0B" }}
@@ -384,7 +384,7 @@ export function JoueurAIPage() {
                 key={d.day}
                 className="rounded-2xl border p-3"
                 style={{
-                  borderColor: "rgba(255,255,255,0.06)",
+                  borderColor: "var(--surface-panel-border)",
                   background: isRest ? "rgba(107,114,128,0.08)" : "rgba(255,107,87,0.06)",
                 }}
                 initial={{ opacity: 0, y: 12 }}
@@ -400,7 +400,7 @@ export function JoueurAIPage() {
                   <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{d.focus}</span>
                 </div>
                 <p className="text-[10px] leading-snug" style={{ color: "var(--text-muted)" }}>{d.detail}</p>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full" style={{ background: "var(--surface-input)" }}>
                   <motion.div
                     className="h-full rounded-full"
                     style={{ background: barColor }}
@@ -427,7 +427,7 @@ export function JoueurAIPage() {
           <div className="flex items-center gap-4 rounded-2xl border p-4" style={{ borderColor: "rgba(245,158,11,0.25)", background: "rgba(245,158,11,0.06)" }}>
             <div className="relative flex h-16 w-16 shrink-0 items-center justify-center">
               <svg width={64} height={64} className="-rotate-90">
-                <circle cx={32} cy={32} r={26} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={6} />
+                <circle cx={32} cy={32} r={26} fill="none" stroke="var(--chart-grid)" strokeWidth={6} />
                 <motion.circle
                   cx={32}
                   cy={32}
@@ -464,7 +464,7 @@ export function JoueurAIPage() {
               <motion.div
                 key={idx}
                 className="flex items-start gap-2.5 rounded-xl border p-3"
-                style={{ borderColor: "rgba(255,255,255,0.06)" }}
+                style={{ borderColor: "var(--surface-panel-border)" }}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.18 + idx * 0.06 }}
@@ -495,7 +495,7 @@ export function JoueurAIPage() {
                 type="button"
                 onClick={() => void askQuestion(item.question)}
                 className="w-full rounded-xl border p-3 text-left transition-all hover:scale-[1.02] hover:border-[#FF6B57]/40 active:scale-[0.98]"
-                style={{ borderColor: "rgba(255,255,255,0.06)" }}
+                style={{ borderColor: "var(--surface-panel-border)" }}
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 + idx * 0.05 }}
@@ -525,7 +525,7 @@ export function JoueurAIPage() {
                 type="button"
                 onClick={() => void askQuestion(q)}
                 className="rounded-full border px-3 py-1.5 text-xs transition-all hover:border-[#FF6B57] active:scale-[0.98]"
-                style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-secondary)" }}
+                style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-secondary)" }}
               >
                 {q}
               </button>
@@ -533,7 +533,7 @@ export function JoueurAIPage() {
           </div>
           <div
             className="mb-4 max-h-72 space-y-3 overflow-y-auto rounded-[20px] border p-4"
-            style={{ borderColor: "rgba(255,255,255,0.08)", minHeight: 240, background: "#070B1A" }}
+            style={{ borderColor: "var(--surface-panel-border)", minHeight: 240, background: "#070B1A" }}
           >
             {chat.length === 0 && (
               <div className="flex flex-col items-center py-10 text-center">

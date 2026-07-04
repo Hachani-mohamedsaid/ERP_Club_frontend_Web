@@ -142,7 +142,7 @@ export function AnalysteLiveMatchPage() {
           { label: "xG",                   value: String(currentData.xg),                   color: "#8B5CF6", icon: RefreshCw },
         ].map(({ label, value, color, icon: Icon }, i) => (
           <motion.div key={label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
-            <div className="rounded-[16px] border p-4" style={{ background: "rgba(5,8,22,0.7)", borderColor: "rgba(255,255,255,0.06)" }}>
+            <div className="rounded-[16px] border p-4" style={{ background: "rgba(5,8,22,0.7)", borderColor: "var(--surface-panel-border)" }}>
               <div className="flex items-center gap-2">
                 <motion.div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
                   style={{ background: `${color}18`, color }}

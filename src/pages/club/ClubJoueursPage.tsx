@@ -177,7 +177,7 @@ function PlayerAddModal({
     >
       <motion.div
         className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-[24px] border p-6"
-        style={{ background: "rgba(10,18,40,0.98)", borderColor: "rgba(255,107,87,0.25)" }}
+        style={{ background: "var(--surface-panel-solid)", borderColor: "rgba(255,107,87,0.25)" }}
         initial={{ scale: 0.92, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         onClick={(e) => e.stopPropagation()}
@@ -198,7 +198,7 @@ function PlayerAddModal({
                   className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
                   style={{
                     background: "rgba(30,35,50,0.97)",
-                    borderColor: "rgba(255,255,255,0.1)",
+                    borderColor: "var(--surface-panel-border)",
                     color: "var(--text-primary)",
                   }}
                 >
@@ -217,7 +217,7 @@ function PlayerAddModal({
                   className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
                   style={{
                     background: "rgba(255,255,255,0.04)",
-                    borderColor: "rgba(255,255,255,0.1)",
+                    borderColor: "var(--surface-panel-border)",
                     color: "var(--text-primary)",
                   }}
                 />
@@ -242,7 +242,7 @@ function PlayerAddModal({
               className="mb-3 w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
               style={{
                 background: "rgba(255,255,255,0.04)",
-                borderColor: "rgba(255,255,255,0.1)",
+                borderColor: "var(--surface-panel-border)",
                 color: "var(--text-primary)",
               }}
             />
@@ -257,7 +257,7 @@ function PlayerAddModal({
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
               style={{
                 background: "rgba(255,255,255,0.04)",
-                borderColor: "rgba(255,255,255,0.1)",
+                borderColor: "var(--surface-panel-border)",
                 color: "var(--text-primary)",
               }}
             />
@@ -268,7 +268,7 @@ function PlayerAddModal({
             type="button"
             onClick={onClose}
             className="flex-1 rounded-xl border py-2.5 text-sm"
-            style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
+            style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
           >
             Annuler
           </button>
@@ -852,7 +852,7 @@ export function ClubJoueursPage() {
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setCompareOpen(false)} />
             <motion.div
               className="relative w-full max-w-lg rounded-[20px] border p-6"
-              style={{ background: "rgba(15,29,58,0.95)", borderColor: "rgba(255,255,255,0.05)" }}
+              style={{ background: "rgba(15,29,58,0.95)", borderColor: "var(--surface-panel-border)" }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}

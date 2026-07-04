@@ -121,7 +121,7 @@ export function CoachMatchAnalysisPage() {
                     { label: "Surveillance", value: 2,  color: "#F59E0B" },
                   ].map(m => (
                     <div key={m.label} className="flex items-center justify-between py-1 text-xs border-b last:border-0"
-                      style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+                      style={{ borderColor: "var(--surface-panel-border)" }}>
                       <span style={{ color: "var(--text-muted)" }}>{m.label}</span>
                       <span className="font-bold" style={{ color: m.color }}>{m.value}</span>
                     </div>

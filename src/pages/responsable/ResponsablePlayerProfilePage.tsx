@@ -165,7 +165,7 @@ export function ResponsablePlayerProfilePage() {
               <LineChart data={ovrEvolution}>
                 <XAxis dataKey="month" tick={{ fill: "var(--text-muted)", fontSize: 10 }} />
                 <YAxis domain={[0, 100]} tick={{ fill: "var(--text-muted)", fontSize: 10 }} />
-                <Tooltip contentStyle={{ background: "rgba(10,16,30,0.95)", border: "1px solid rgba(255,107,87,0.2)" }} />
+                <Tooltip contentStyle={{ background: "var(--surface-modal)", border: "1px solid rgba(255,107,87,0.2)" }} />
                 <Line type="monotone" dataKey="ovr" stroke="#FF6B57" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
@@ -199,7 +199,7 @@ export function ResponsablePlayerProfilePage() {
           {playerInjuries.length > 0 ? (
             <ul className="space-y-2">
               {playerInjuries.map((inj) => (
-                <li key={inj.id} className="rounded-xl border px-3 py-2 text-sm" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+                <li key={inj.id} className="rounded-xl border px-3 py-2 text-sm" style={{ borderColor: "var(--surface-panel-border)" }}>
                   <p className="font-medium" style={{ color: "var(--text-primary)" }}>{inj.injury}</p>
                   <p style={{ color: "var(--text-muted)" }}>
                     {inj.bodyPart ?? "—"} · retour {inj.returnDate ?? "—"}

@@ -32,7 +32,7 @@ export function TalentCard({
       className="group relative overflow-hidden rounded-[20px] border p-4 backdrop-blur-[10px]"
       style={{
         background: "linear-gradient(160deg, rgba(15,29,58,0.95), rgba(20,15,45,0.9))",
-        borderColor: "rgba(255,255,255,0.06)",
+        borderColor: "var(--surface-panel-border)",
         boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
       }}
       initial={{ opacity: 0, y: 18 }}

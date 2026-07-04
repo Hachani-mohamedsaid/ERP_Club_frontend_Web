@@ -141,7 +141,7 @@ export function PlayerHeatmap({ compact = false }: PlayerHeatmapProps) {
             style={{
               background: period === f.id ? "#FF6B57" : "rgba(255,255,255,0.05)",
               color: period === f.id ? "white" : "var(--text-muted)",
-              border: `1px solid ${period === f.id ? "#FF6B57" : "rgba(255,255,255,0.08)"}`,
+              border: "1px solid var(--surface-panel-border)",
             }}
           >
             {f.label}
@@ -154,7 +154,7 @@ export function PlayerHeatmap({ compact = false }: PlayerHeatmapProps) {
         <div className="relative mx-auto w-full" style={{ maxWidth: pitchMaxWidth }}>
           <motion.div
             className="relative overflow-hidden rounded-2xl border-2"
-            style={{ borderColor: "rgba(255,255,255,0.15)", aspectRatio: "68 / 105" }}
+            style={{ borderColor: "var(--surface-panel-border)", aspectRatio: "68 / 105" }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8 }}
@@ -198,7 +198,7 @@ export function PlayerHeatmap({ compact = false }: PlayerHeatmapProps) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 4 }}
                 className="mt-3 rounded-[16px] border p-4"
-                style={{ borderColor: "rgba(255,107,87,0.3)", background: "#141B2D" }}
+                style={{ borderColor: "rgba(255,107,87,0.3)", background: "var(--surface-panel-solid)" }}
               >
                 <p className="text-sm font-bold" style={{ color: "#FF6B57" }}>{hovered.label}</p>
                 <p className="mt-1 text-lg font-bold" style={{ color: "var(--text-primary)" }}>
@@ -229,7 +229,7 @@ export function PlayerHeatmap({ compact = false }: PlayerHeatmapProps) {
 
         {/* Position panel */}
         <div className="space-y-3">
-          <div className="rounded-[16px] border p-4" style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}>
+          <div className="rounded-[16px] border p-4" style={{ borderColor: "var(--surface-panel-border)", background: "var(--surface-input)" }}>
             <div className="mb-2 flex items-center gap-2">
               <Crosshair size={14} style={{ color: "#FF6B57" }} />
               <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
@@ -241,7 +241,7 @@ export function PlayerHeatmap({ compact = false }: PlayerHeatmapProps) {
             </p>
           </div>
 
-          <div className="rounded-[16px] border p-4" style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}>
+          <div className="rounded-[16px] border p-4" style={{ borderColor: "var(--surface-panel-border)", background: "var(--surface-input)" }}>
             <div className="mb-2 flex items-center gap-2">
               <MapPin size={14} style={{ color: "#F59E0B" }} />
               <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
@@ -265,7 +265,7 @@ export function PlayerHeatmap({ compact = false }: PlayerHeatmapProps) {
             <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>actions sur la période</p>
           </div>
 
-          <div className="rounded-[16px] border p-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+          <div className="rounded-[16px] border p-3" style={{ borderColor: "var(--surface-panel-border)" }}>
             <p className="mb-2 text-[10px] font-semibold uppercase" style={{ color: "var(--text-muted)" }}>Intensité</p>
             <div className="space-y-1.5 text-[10px]" style={{ color: "var(--text-muted)" }}>
               <div className="flex items-center gap-2">

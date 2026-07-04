@@ -39,7 +39,7 @@ export function ToastContainer() {
           return (
             <motion.div key={toast.id}
               className="pointer-events-auto flex items-center gap-3 rounded-2xl border px-4 py-3 shadow-2xl min-w-[260px]"
-              style={{ background: "rgba(8,6,24,0.97)", borderColor: c.border, boxShadow: `0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px ${c.border}` }}
+              style={{ background: "var(--surface-panel-solid)", borderColor: c.border, boxShadow: `0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px ${c.border}` }}
               initial={{ opacity: 0, x: 60, scale: 0.92 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 60, scale: 0.88 }}
@@ -48,7 +48,7 @@ export function ToastContainer() {
                 style={{ background: c.bg }}>
                 <Icon size={14} style={{ color: c.color }} />
               </div>
-              <p className="flex-1 text-xs font-semibold" style={{ color: "rgba(255,255,255,0.9)" }}>
+              <p className="flex-1 text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
                 {toast.message}
               </p>
               <motion.button type="button" onClick={() => dismiss(toast.id)}

@@ -88,7 +88,7 @@ function UserModal({
     >
       <motion.div
         className="w-full max-w-md rounded-[24px] border p-6"
-        style={{ background: "rgba(10,18,40,0.98)", borderColor: "rgba(255,107,87,0.25)", boxShadow: "0 40px 80px rgba(0,0,0,0.6)" }}
+        style={{ background: "var(--surface-panel-solid)", borderColor: "rgba(255,107,87,0.25)", boxShadow: "0 40px 80px rgba(0,0,0,0.6)" }}
         initial={{ scale: 0.92, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.92, y: 20 }}
@@ -132,7 +132,7 @@ function UserModal({
                   Joueur (effectif)
                 </label>
                 {withoutAccount.length === 0 ? (
-                  <p className="rounded-xl border px-4 py-3 text-xs" style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}>
+                  <p className="rounded-xl border px-4 py-3 text-xs" style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}>
                     Tous les joueurs de l&apos;effectif ont déjà un compte. Ajoutez d&apos;abord un joueur dans Gestion Joueurs.
                   </p>
                 ) : (
@@ -147,7 +147,7 @@ function UserModal({
                       }));
                     }}
                     className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                    style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                    style={{ background: "rgba(30,35,50,0.97)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
                   >
                     <option value="">Sélectionner un joueur sans compte…</option>
                     {withoutAccount.map((p) => (
@@ -164,7 +164,7 @@ function UserModal({
                   value={form.name ?? ""}
                   readOnly
                   className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none opacity-80"
-                  style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                  style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
                 />
               </div>
 
@@ -175,7 +175,7 @@ function UserModal({
                   value={form.email ?? ""}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                  style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                  style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
                   placeholder="joueur@gmail.com"
                 />
               </div>
@@ -191,7 +191,7 @@ function UserModal({
                   value={form[field] ?? ""}
                   onChange={(e) => setForm({ ...form, [field]: e.target.value })}
                   className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                  style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                  style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
                   placeholder={field === "name" ? "Ahmed Ben Salah" : "ahmed@club.tn"}
                 />
               </div>
@@ -236,7 +236,7 @@ function UserModal({
                     style={{
                       background: form.status === s ? `${STATUS_COLOR[s]}20` : "rgba(255,255,255,0.04)",
                       color: form.status === s ? STATUS_COLOR[s] : "var(--text-muted)",
-                      border: `1px solid ${form.status === s ? STATUS_COLOR[s] + "60" : "rgba(255,255,255,0.08)"}`,
+                      border: "1px solid var(--surface-panel-border)",
                     }}
                   >
                     {s}
@@ -254,7 +254,7 @@ function UserModal({
                 value={form.password ?? ""}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
                 placeholder="••••••••••"
                 minLength={8}
                 required
@@ -266,7 +266,7 @@ function UserModal({
         <div className="mt-6 flex gap-3">
           <button type="button" onClick={onClose}
             className="flex-1 rounded-xl border py-2.5 text-sm font-medium"
-            style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}>
+            style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}>
             Annuler
           </button>
           <motion.button
@@ -316,7 +316,7 @@ function UserViewDrawer({
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <motion.div
         className="relative flex h-full w-full max-w-md flex-col border-l p-6"
-        style={{ background: "rgba(10,18,40,0.98)", borderColor: "rgba(255,107,87,0.2)" }}
+        style={{ background: "var(--surface-panel-solid)", borderColor: "rgba(255,107,87,0.2)" }}
         initial={{ x: 80 }} animate={{ x: 0 }} exit={{ x: 80 }}
       >
         <div className="mb-6 flex items-start justify-between">
@@ -344,7 +344,7 @@ function UserViewDrawer({
             { label: "Dernière connexion", value: user.lastLogin },
             { label: "Créé le", value: user.createdAt },
           ].map(({ label, value, color }) => (
-            <div key={label} className="rounded-xl border p-3" style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}>
+            <div key={label} className="rounded-xl border p-3" style={{ borderColor: "var(--surface-panel-border)", background: "rgba(255,255,255,0.02)" }}>
               <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>{label}</p>
               <p className="mt-1 font-semibold" style={{ color: color ?? "var(--text-primary)" }}>{value}</p>
             </div>
@@ -400,7 +400,7 @@ function RoleChangeModal({
     >
       <motion.div
         className="w-full max-w-sm rounded-[24px] border p-6"
-        style={{ background: "rgba(10,18,40,0.98)", borderColor: "rgba(255,107,87,0.25)" }}
+        style={{ background: "var(--surface-panel-solid)", borderColor: "rgba(255,107,87,0.25)" }}
         initial={{ scale: 0.92, y: 20 }} animate={{ scale: 1, y: 0 }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -426,7 +426,7 @@ function RoleChangeModal({
           })}
         </div>
         <div className="mt-5 flex gap-2">
-          <button type="button" onClick={onClose} className="flex-1 rounded-xl border py-2.5 text-sm" style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}>
+          <button type="button" onClick={onClose} className="flex-1 rounded-xl border py-2.5 text-sm" style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}>
             Annuler
           </button>
           <button type="button" onClick={() => onSave(role)}
@@ -595,7 +595,7 @@ export function ClubUtilisateursPage() {
             value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="Rechercher utilisateur..."
             className="w-full rounded-xl border py-2.5 pl-9 pr-3 text-sm outline-none"
-            style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}
+            style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
           />
         </div>
         <div className="flex flex-wrap gap-2">
@@ -606,7 +606,7 @@ export function ClubUtilisateursPage() {
               style={{
                 background: roleFilter === r ? `${ROLE_COLOR[r as Role] ?? "#FF6B57"}20` : "rgba(255,255,255,0.04)",
                 color: roleFilter === r ? (ROLE_COLOR[r as Role] ?? "#FF6B57") : "var(--text-muted)",
-                border: `1px solid ${roleFilter === r ? (ROLE_COLOR[r as Role] ?? "#FF6B57") + "50" : "rgba(255,255,255,0.08)"}`,
+                border: "1px solid var(--surface-panel-border)",
               }}
               whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.95 }}
             >
@@ -633,7 +633,7 @@ export function ClubUtilisateursPage() {
                 exit={{ opacity: 0, x: 12 }}
                 transition={{ delay: i * 0.04 }}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4"
-                style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.06)" }}
+                style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--surface-panel-border)" }}
               >
                 {/* Avatar + info */}
                 <div className="flex items-center gap-3">
@@ -768,7 +768,7 @@ export function ClubUtilisateursPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 60 }}
             className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-2xl border px-5 py-3.5 shadow-2xl"
-            style={{ background: "rgba(10,18,40,0.97)", borderColor: "rgba(245,158,11,0.4)", boxShadow: "0 0 30px rgba(245,158,11,0.15)" }}
+            style={{ background: "var(--surface-panel-solid)", borderColor: "rgba(245,158,11,0.4)", boxShadow: "0 0 30px rgba(245,158,11,0.15)" }}
           >
             <KeyRound size={16} style={{ color: "#F59E0B" }} />
             <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>

@@ -110,8 +110,8 @@ export function JoueurMonProfilPage() {
 
   return (
     <JoueurPageTransition>
-      <motion.div className="overflow-hidden rounded-[24px] border" style={{ borderColor: "rgba(255,255,255,0.08)", background: "#141B2D" }} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="relative h-36" style={{ background: "linear-gradient(135deg, #FF6B57 0%, #141B2D 60%, #070B1A 100%)" }} />
+      <motion.div className="overflow-hidden rounded-[24px] border" style={{ borderColor: "var(--surface-panel-border)", background: "var(--surface-panel-solid)" }} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="relative h-36" style={{ background: "linear-gradient(135deg, #FF6B57 0%, var(--surface-panel-solid) 60%, #070B1A 100%)" }} />
         <div className="relative px-6 pb-6">
           <div className="absolute -top-14">
             <PlayerAvatar name={player.name} size={96} photoUrl={photoUrl} onPhotoUpload={handleFileChange} />
@@ -158,7 +158,7 @@ export function JoueurMonProfilPage() {
           {trophiesFromBackend.length > 0 ? (
             <div className="grid grid-cols-3 gap-3">
               {trophiesFromBackend.map((tr, idx) => (
-                <motion.div key={tr.id} className="rounded-xl border p-3 text-center" style={{ borderColor: "rgba(255,255,255,0.06)" }} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 + idx * 0.06 }}>
+                <motion.div key={tr.id} className="rounded-xl border p-3 text-center" style={{ borderColor: "var(--surface-panel-border)" }} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 + idx * 0.06 }}>
                   <span className="text-2xl">{tr.icon}</span>
                   <p className="mt-1 text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{tr.title}</p>
                   <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{tr.year ?? tr.season}</p>
@@ -186,7 +186,7 @@ export function JoueurMonProfilPage() {
             { icon: Square,   label: "🟨 Jaunes", value: seasonYellow, color: "#EAB308" },
             { icon: Square,   label: "🟥 Rouges", value: seasonRed,   color: "#EF4444" },
           ].map(({ icon: Icon, label, value, color }, idx) => (
-            <motion.div key={label} className="rounded-2xl border p-3 text-center" style={{ borderColor: "rgba(255,255,255,0.06)", background: `${color}0c` }} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + idx * 0.05 }} whileHover={{ y: -4, borderColor: `${color}40` }}>
+            <motion.div key={label} className="rounded-2xl border p-3 text-center" style={{ borderColor: "var(--surface-panel-border)", background: `${color}0c` }} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + idx * 0.05 }} whileHover={{ y: -4, borderColor: `${color}40` }}>
               <Icon size={15} className="mx-auto" style={{ color }} />
               <p className="mt-1.5 text-xl font-black" style={{ color }}><CountUpStat end={value} /></p>
               <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{label}</p>
@@ -203,9 +203,9 @@ export function JoueurMonProfilPage() {
               </p>
             </div>
           </div>
-          <div className="overflow-hidden rounded-2xl border" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+          <div className="overflow-hidden rounded-2xl border" style={{ borderColor: "var(--surface-panel-border)" }}>
             {matchStats.length > 0 ? matchStats.slice(0, 5).map((m, idx) => (
-              <motion.div key={m.id} className="flex items-center gap-3 px-4 py-2" style={{ borderTop: idx > 0 ? "1px solid rgba(255,255,255,0.05)" : undefined }} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + idx * 0.05 }}>
+              <motion.div key={m.id} className="flex items-center gap-3 px-4 py-2" style={{ borderTop: idx > 0 ? "1px solid var(--divider)" : undefined }} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + idx * 0.05 }}>
                 <span className="w-20 text-xs font-bold" style={{ color: "var(--text-primary)" }}>
                   {new Date(m.matchDate).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })}
                 </span>
@@ -231,7 +231,7 @@ export function JoueurMonProfilPage() {
                   <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold" style={{ background: "#FF6B57", color: "white" }}>
                     {(step.year ?? "?").slice(-2)}
                   </div>
-                  {idx < careerTimeline.length - 1 && <div className="mt-1 w-0.5 flex-1" style={{ background: "rgba(255,255,255,0.1)", minHeight: 32 }} />}
+                  {idx < careerTimeline.length - 1 && <div className="mt-1 w-0.5 flex-1" style={{ background: "var(--divider)", minHeight: 32 }} />}
                 </div>
                 <div>
                   <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{step.club ?? clubName}</p>
@@ -321,7 +321,7 @@ export function JoueurMonProfilPage() {
                   type="button"
                   onClick={() => setEditingPhysical(false)}
                   className="flex items-center justify-center rounded-xl px-3 py-2 text-xs"
-                  style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
+                  style={{ background: "var(--surface-input)", color: "var(--text-muted)" }}
                 >
                   <X size={12} />
                 </button>
@@ -330,7 +330,7 @@ export function JoueurMonProfilPage() {
           ) : (
             <div className="grid grid-cols-2 gap-3">
               {infoItems.map(({ icon: Icon, label, value }) => (
-                <div key={label} className="rounded-xl border p-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+                <div key={label} className="rounded-xl border p-3" style={{ borderColor: "var(--surface-panel-border)" }}>
                   <Icon size={14} style={{ color: "var(--text-muted)" }} />
                   <p className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>{label}</p>
                   <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{value || "—"}</p>
@@ -351,7 +351,7 @@ export function JoueurMonProfilPage() {
                 { label: "Salaire", value: myContract.salary },
                 { label: "Clause libératoire", value: myContract.releaseClause },
               ].map(({ label, value }) => (
-                <div key={label} className="flex justify-between rounded-xl border px-4 py-2" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+                <div key={label} className="flex justify-between rounded-xl border px-4 py-2" style={{ borderColor: "var(--surface-panel-border)" }}>
                   <span className="text-xs" style={{ color: "var(--text-muted)" }}>{label}</span>
                   <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{value}</span>
                 </div>
@@ -373,7 +373,7 @@ export function JoueurMonProfilPage() {
                 type="button"
                 onClick={() => downloadPDF(player.name, doc.name, clubName)}
                 className="flex items-center gap-3 rounded-xl border p-4 text-left transition-all hover:scale-[1.02] active:scale-[0.98]"
-                style={{ borderColor: "rgba(255,255,255,0.08)" }}
+                style={{ borderColor: "var(--surface-panel-border)" }}
                 title={`Télécharger ${doc.name}`}
               >
                 <FileText size={18} style={{ color: "#FF6B57" }} />
@@ -396,7 +396,7 @@ export function JoueurMonProfilPage() {
           <motion.div
             key="save-toast"
             className="fixed bottom-6 right-6 z-[210] flex items-center gap-3 rounded-2xl px-5 py-3 shadow-xl"
-            style={{ background: "#141B2D", border: "1px solid rgba(34,197,94,0.4)", color: "#22C55E" }}
+            style={{ background: "var(--surface-panel-solid)", border: "1px solid rgba(34,197,94,0.4)", color: "#22C55E" }}
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}

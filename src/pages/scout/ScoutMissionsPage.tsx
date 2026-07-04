@@ -109,7 +109,7 @@ export function ScoutMissionsPage() {
                   onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
                   placeholder={f.placeholder}
                   className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                  style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                  style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
                 />
               </div>
             ))}
@@ -120,7 +120,7 @@ export function ScoutMissionsPage() {
                 value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
                 className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
               />
             </div>
             <div>
@@ -130,7 +130,7 @@ export function ScoutMissionsPage() {
                 value={form.time}
                 onChange={(e) => setForm({ ...form, time: e.target.value })}
                 className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
               />
             </div>
           </div>
@@ -140,7 +140,7 @@ export function ScoutMissionsPage() {
             placeholder="Notes / consignes..."
             rows={2}
             className="mt-3 w-full rounded-xl border px-3 py-2 text-sm outline-none resize-none"
-            style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.09)", color: "var(--text-primary)" }}
+            style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
           />
           <motion.button
             type="button"

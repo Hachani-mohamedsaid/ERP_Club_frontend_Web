@@ -14,7 +14,7 @@ const EVENT_COLORS: Record<string, string> = {
 
 const ACard = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
   <motion.div className={`rounded-[20px] border p-5 ${className}`}
-    style={{ background: "rgba(5,8,22,0.7)", borderColor: "rgba(255,255,255,0.06)", boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}
+    style={{ background: "rgba(5,8,22,0.7)", borderColor: "var(--surface-panel-border)", boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}
     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
     {children}
   </motion.div>

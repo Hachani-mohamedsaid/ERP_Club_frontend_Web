@@ -61,14 +61,14 @@ export function PlayerDetailDrawer({ player, open, onClose }: PlayerDetailDrawer
             { label: "Passes D.", value: stats.assists },
             { label: "Valeur", value: player.marketValue },
           ].map((stat) => (
-            <div key={stat.label} className="rounded-xl border p-3" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+            <div key={stat.label} className="rounded-xl border p-3" style={{ borderColor: "var(--surface-panel-border)" }}>
               <p className="text-[10px] uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{stat.label}</p>
               <p className="mt-1 text-lg font-bold" style={{ color: "var(--text-primary)" }}>{stat.value}</p>
             </div>
           ))}
         </div>
 
-        <div className="rounded-xl border p-4" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+        <div className="rounded-xl border p-4" style={{ borderColor: "var(--surface-panel-border)" }}>
           <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Contrat</h4>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span style={{ color: "var(--text-muted)" }}>Salaire</span><span style={{ color: "var(--text-primary)" }}>{contract.salary}</span></div>
@@ -78,7 +78,7 @@ export function PlayerDetailDrawer({ player, open, onClose }: PlayerDetailDrawer
           </div>
         </div>
 
-        <div className="rounded-xl border p-4" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+        <div className="rounded-xl border p-4" style={{ borderColor: "var(--surface-panel-border)" }}>
           <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Statut médical</h4>
           {injuries.length > 0 ? (
             injuries.slice(0, 2).map((inj) => (
@@ -100,7 +100,7 @@ export function PlayerDetailDrawer({ player, open, onClose }: PlayerDetailDrawer
             <LineChart data={ovrEvolution}>
               <XAxis dataKey="month" tick={{ fill: "var(--text-muted)", fontSize: 10 }} />
               <YAxis domain={["dataMin - 2", "dataMax + 2"]} tick={{ fill: "var(--text-muted)", fontSize: 10 }} />
-              <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12 }} />
+              <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }} />
               <Line type="monotone" dataKey="ovr" stroke="#FF6B57" strokeWidth={2} dot={{ r: 3 }} animationDuration={1000} />
             </LineChart>
           </ResponsiveContainer>

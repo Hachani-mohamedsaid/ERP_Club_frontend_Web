@@ -232,7 +232,7 @@ export function ScoutDashboard() {
           {AI_RECS.map((rec, i) => (
             <motion.div key={rec.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
               className="flex items-start gap-4 rounded-[16px] border p-4 cursor-pointer"
-              style={{ background: "rgba(255,255,255,0.025)", borderColor: "rgba(255,255,255,0.07)" }}
+              style={{ background: "rgba(255,255,255,0.025)", borderColor: "var(--surface-panel-border)" }}
               whileHover={{ borderColor: `${S.accent}40`, y: -2 }}
               onClick={() => navigate(`/scout/prospect/${rec.id}`)}>
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-base font-black text-white"

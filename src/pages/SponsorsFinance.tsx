@@ -98,7 +98,7 @@ export function SponsorsFinance() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-extrabold" style={{ color: "var(--text-primary)" }}>Gestion des Sponsors</h1>
-          <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
+          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
             {sponsorList.length} partenaires · {(totalAnnual / 1000).toFixed(0)}K DT / an
           </p>
         </div>
@@ -119,7 +119,7 @@ export function SponsorsFinance() {
           return (
             <motion.div
               key={i} className="rounded-[18px] border p-4"
-              style={{ background: "rgba(8,6,24,0.88)", borderColor: "rgba(255,255,255,0.07)" }}
+              style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}
               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
               whileHover={{ y: -2 }}
             >
@@ -129,7 +129,7 @@ export function SponsorsFinance() {
                 </div>
                 <span className="text-[9px] font-bold" style={{ color: k.color }}>{k.trend}</span>
               </div>
-              <p className="text-[10px] uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.4)" }}>{k.label}</p>
+              <p className="text-[10px] uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{k.label}</p>
               <p className="text-lg font-extrabold mt-0.5" style={{ color: k.color }}>{k.value}</p>
             </motion.div>
           );
@@ -155,10 +155,10 @@ export function SponsorsFinance() {
 
       {sponsorList.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center rounded-[20px] border"
-          style={{ background: "rgba(8,6,24,0.88)", borderColor: "rgba(255,255,255,0.07)" }}>
-          <DollarSign size={40} style={{ color: "rgba(255,255,255,0.2)" }} className="mb-3" />
-          <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>Aucun sponsor enregistré</p>
-          <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.25)" }}>Cliquez sur "Nouveau sponsor" pour en ajouter un</p>
+          style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
+          <DollarSign size={40} style={{ color: "var(--text-muted)" }} className="mb-3" />
+          <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>Aucun sponsor enregistré</p>
+          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Cliquez sur "Nouveau sponsor" pour en ajouter un</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_280px]">
@@ -175,7 +175,7 @@ export function SponsorsFinance() {
                     transition={{ delay: i * 0.05 }}
                     className="relative overflow-hidden rounded-[22px] border cursor-pointer"
                     style={{
-                      background: isSel ? `${F.primary}06` : "rgba(8,6,24,0.88)",
+                      background: isSel ? `${F.primary}06` : "var(--surface-panel-solid)",
                       borderColor: isSel ? `${F.primary}40` : `${meta.color}20`,
                     }}
                     whileHover={{ y: -3, boxShadow: `0 12px 32px rgba(0,0,0,0.35), 0 0 0 1px ${meta.color}30` }}
@@ -190,7 +190,7 @@ export function SponsorsFinance() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-extrabold" style={{ color: "var(--text-primary)" }}>{s.nom}</p>
-                          <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>{s.secteur}</p>
+                          <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{s.secteur}</p>
                           <div className="mt-1 flex items-center gap-1.5">
                             <div className="h-1.5 w-1.5 rounded-full" style={{ background: meta.color }} />
                             <span className="text-[9px] font-bold" style={{ color: meta.color }}>{meta.label}</span>
@@ -198,12 +198,12 @@ export function SponsorsFinance() {
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-base font-extrabold" style={{ color: F.success }}>{(s.montant / 1000).toFixed(0)}K DT</p>
-                          <p className="text-[8px]" style={{ color: "rgba(255,255,255,0.3)" }}>par an</p>
+                          <p className="text-[8px]" style={{ color: "var(--text-muted)" }}>par an</p>
                         </div>
                       </div>
                       <div className="mb-3">
                         <div className="flex justify-between text-[9px] mb-1">
-                          <span style={{ color: "rgba(255,255,255,0.4)" }}>Probabilité renouvellement</span>
+                          <span style={{ color: "var(--text-muted)" }}>Probabilité renouvellement</span>
                           <span className="font-bold" style={{ color: meta.color }}>{s.renewalProbability}%</span>
                         </div>
                         <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.07)" }}>
@@ -215,7 +215,7 @@ export function SponsorsFinance() {
                         </div>
                       </div>
                       <div className="flex items-center justify-between text-[9px]">
-                        <span style={{ color: "rgba(255,255,255,0.3)" }}>
+                        <span style={{ color: "var(--text-muted)" }}>
                           {new Date(s.startDate).toLocaleDateString("fr-FR", { month: "short", year: "numeric" })} → {new Date(s.endDate).toLocaleDateString("fr-FR", { month: "short", year: "numeric" })}
                         </span>
                         <div className="flex gap-1.5">
@@ -259,7 +259,7 @@ export function SponsorsFinance() {
 
           {/* Right: pie + detail */}
           <div className="space-y-3">
-            <div className="rounded-[20px] border p-5" style={{ background: "rgba(8,6,24,0.88)", borderColor: "rgba(255,255,255,0.07)" }}>
+            <div className="rounded-[20px] border p-5" style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
               <p className="text-xs font-bold mb-3" style={{ color: "var(--text-primary)" }}>Répartition sponsoring</p>
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
@@ -268,7 +268,7 @@ export function SponsorsFinance() {
                       {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                     </Pie>
                     <Tooltip
-                      contentStyle={{ background: "rgba(8,6,24,0.97)", border: "1px solid rgba(255,255,255,0.1)", color: "white", borderRadius: 10 }}
+                      contentStyle={{ background: "var(--surface-panel-solid)", border: "1px solid rgba(255,255,255,0.1)", color: "white", borderRadius: 10 }}
                       formatter={(v: number) => [`${v}%`, "Part"]}
                     />
                   </PieChart>
@@ -278,7 +278,7 @@ export function SponsorsFinance() {
                 {sponsorList.map((s, i) => (
                   <div key={s.id} className="flex items-center gap-2 text-[9px]">
                     <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                    <span className="flex-1" style={{ color: "rgba(255,255,255,0.5)" }}>{s.nom}</span>
+                    <span className="flex-1" style={{ color: "var(--text-muted)" }}>{s.nom}</span>
                     <span className="font-bold" style={{ color: "var(--text-primary)" }}>{(s.montant / 1000).toFixed(0)}K</span>
                   </div>
                 ))}
@@ -290,7 +290,7 @@ export function SponsorsFinance() {
                 <motion.div
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                   className="rounded-[20px] border p-4"
-                  style={{ background: "rgba(8,6,24,0.95)", borderColor: `${getSponsorMeta(sel).color}25` }}
+                  style={{ background: "var(--surface-panel-solid)", borderColor: `${getSponsorMeta(sel).color}25` }}
                 >
                   <p className="text-[10px] font-bold mb-2" style={{ color: getSponsorMeta(sel).color }}>
                     {sel.logo} {sel.nom} — Détail
@@ -304,7 +304,7 @@ export function SponsorsFinance() {
                       { l: "Note", v: sel.notes ?? "—" },
                     ].map(r => (
                       <div key={r.l} className="flex gap-2">
-                        <span className="shrink-0 w-14" style={{ color: "rgba(255,255,255,0.3)" }}>{r.l}:</span>
+                        <span className="shrink-0 w-14" style={{ color: "var(--text-muted)" }}>{r.l}:</span>
                         <span style={{ color: "var(--text-primary)" }}>{r.v}</span>
                       </div>
                     ))}

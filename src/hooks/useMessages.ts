@@ -11,6 +11,9 @@ import {
   encodeAttachmentMessage,
   formatMessagePreview,
 } from "../lib/messages/attachment";
+import { loadPreferences } from "../lib/preferences/defaults";
+import { dispatchNotification, playNotificationSound } from "../lib/preferences/notificationHelpers";
+import { joueurTranslations, type Locale } from "../i18n/joueurTranslations";
 
 function socketBaseUrl() {
   if (import.meta.env.DEV) return window.location.origin;
@@ -402,6 +405,16 @@ export function useMessages() {
           });
           void messagesApi.markRead(data.conversationId);
         } else {
+          const prefs = loadPreferences();
+          const locale = (localStorage.getItem("odin_locale") as Locale) || "fr";
+          const title = joueurTranslations[locale]?.settings?.newMessageTitle ?? "Nouveau message";
+          const preview = formatMessagePreview(data.message.text);
+          void dispatchNotification("message", prefs.notifications, {
+            title,
+            body: preview,
+            tag: `msg-${data.message.id}`,
+          });
+          if (prefs.soundAlerts) playNotificationSound();
           void loadContacts(searchRef.current.trim() ? searchRef.current : undefined);
         }
       },

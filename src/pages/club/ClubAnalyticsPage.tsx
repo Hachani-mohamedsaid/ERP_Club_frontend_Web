@@ -62,7 +62,7 @@ export function ClubAnalyticsPage() {
           type="button"
           onClick={() => reload()}
           className="rounded-lg border px-3 py-1.5 text-xs font-semibold"
-          style={{ borderColor: "rgba(255,255,255,0.1)", color: "var(--text-muted)" }}
+          style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
         >
           Actualiser
         </button>
@@ -93,7 +93,7 @@ export function ClubAnalyticsPage() {
                 <Tooltip
                   contentStyle={{
                     background: "#0F1D3A",
-                    border: "1px solid rgba(255,255,255,0.08)",
+                    border: "1px solid var(--surface-panel-border)",
                     borderRadius: 12,
                   }}
                 />
@@ -131,7 +131,7 @@ export function ClubAnalyticsPage() {
                 <Tooltip
                   contentStyle={{
                     background: "#0F1D3A",
-                    border: "1px solid rgba(255,255,255,0.08)",
+                    border: "1px solid var(--surface-panel-border)",
                     borderRadius: 12,
                   }}
                 />
@@ -162,7 +162,7 @@ export function ClubAnalyticsPage() {
                     key={scorer.rank}
                     className="flex items-center justify-between rounded-xl border px-4 py-3"
                     style={{
-                      borderColor: "rgba(255,255,255,0.06)",
+                      borderColor: "var(--surface-panel-border)",
                       background: "rgba(255,255,255,0.02)",
                     }}
                   >

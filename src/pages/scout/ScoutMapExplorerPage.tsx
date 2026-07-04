@@ -310,14 +310,14 @@ export function ScoutMapExplorerPage() {
           <div className="flex gap-2">
             <motion.button type="button" onClick={back}
               className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold"
-              style={{ borderColor: "rgba(255,255,255,0.12)", color: "var(--text-muted)" }}
+              style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
               whileHover={{ borderColor: S.primary, color: S.primary }}
               whileTap={{ scale: 0.96 }}>
               <ChevronLeft size={14} /> Retour
             </motion.button>
             <motion.button type="button" onClick={reset}
               className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold"
-              style={{ borderColor: "rgba(255,255,255,0.12)", color: "var(--text-muted)" }}
+              style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
               whileTap={{ scale: 0.96 }}>
               <RotateCcw size={13} /> Recommencer
             </motion.button>
@@ -497,7 +497,7 @@ export function ScoutMapExplorerPage() {
                     <div className="flex items-center gap-3 mb-4">
                       <div className="relative">
                         <img src={getTeamLogo(team)} alt="" className="h-14 w-14 rounded-2xl object-cover ring-2 ring-orange-500/30" />
-                        <img src={getLeagueLogo(team)} alt="" className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full ring-2 ring-[rgba(8,6,24,0.96)]" />
+                        <img src={getLeagueLogo(team)} alt="" className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full ring-2 ring-[var(--surface-panel-solid)]" />
                       </div>
                       <div className="flex-1">
                         <p className="text-base font-extrabold" style={{ color: "var(--text-primary)" }}>{team.name}</p>
@@ -510,7 +510,7 @@ export function ScoutMapExplorerPage() {
                         onClick={() => teamId && void loadSquad(teamId, true)}
                         disabled={loadingSquad}
                         className="rounded-lg border p-2"
-                        style={{ borderColor: "rgba(255,255,255,0.1)" }}
+                        style={{ borderColor: "var(--surface-panel-border)" }}
                         title="Rafraîchir effectif IA"
                       >
                         <RefreshCw size={14} className={loadingSquad ? "animate-spin" : ""} style={{ color: S.primary }} />
@@ -525,7 +525,7 @@ export function ScoutMapExplorerPage() {
                         { label: "Joueurs", value: squad.players.length, color: S.accent },
                       ].map((k) => (
                         <div key={k.label} className="rounded-xl border p-2.5 text-center"
-                          style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+                          style={{ borderColor: "var(--surface-panel-border)" }}>
                           <p className="text-sm font-extrabold" style={{ color: k.color }}>{k.value}</p>
                           <p className="text-[8px] mt-0.5" style={{ color: "var(--text-muted)" }}>{k.label}</p>
                         </div>
@@ -614,7 +614,7 @@ export function ScoutMapExplorerPage() {
                 { icon: Building2, label: "Clubs", value: overview.stats.clubs, color: S.accent },
               ].map((s) => (
                 <div key={s.label} className="rounded-xl border p-2.5 text-center"
-                  style={{ background: "rgba(12,9,30,0.85)", borderColor: "rgba(255,255,255,0.06)" }}>
+                  style={{ background: "rgba(12,9,30,0.85)", borderColor: "var(--surface-panel-border)" }}>
                   <s.icon size={14} className="mx-auto mb-1" style={{ color: s.color }} />
                   <p className="text-lg font-extrabold" style={{ color: s.color }}>{s.value}</p>
                   <p className="text-[8px]" style={{ color: "var(--text-muted)" }}>{s.label}</p>

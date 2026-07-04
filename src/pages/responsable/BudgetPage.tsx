@@ -74,7 +74,7 @@ function PieBlock({ title, data, emptyLabel }: { title: string; data: FinanceCha
   return (
     <div
       className="rounded-2xl border p-4"
-      style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}
+      style={{ borderColor: "var(--surface-panel-border)", background: "rgba(255,255,255,0.02)" }}
     >
       <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{title}</h3>
       {chartData.length === 0 ? (
@@ -97,7 +97,7 @@ function PieBlock({ title, data, emptyLabel }: { title: string; data: FinanceCha
               ))}
             </Pie>
             <Tooltip
-              contentStyle={{ background: "#0F1D3A", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12 }}
+              contentStyle={{ background: "#0F1D3A", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }}
               formatter={(_v: number, _n: string, props: { payload?: FinanceChartSlice }) =>
                 [`${(props.payload?.amount ?? 0).toLocaleString("fr-FR")} DT`, props.payload?.name ?? ""]
               }
@@ -138,7 +138,7 @@ function ExpenseModal({
     >
       <motion.div
         className="w-full max-w-md rounded-[24px] border p-6"
-        style={{ background: "rgba(10,16,30,0.97)", borderColor: "rgba(255,122,0,0.3)" }}
+        style={{ background: "var(--surface-modal)", borderColor: "rgba(255,122,0,0.3)" }}
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.9, y: 20 }}
@@ -158,7 +158,7 @@ function ExpenseModal({
               onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))}
               placeholder="Ex: Achat équipement"
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             />
           </div>
           <div>
@@ -169,7 +169,7 @@ function ExpenseModal({
               value={form.amount}
               onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             />
           </div>
           <div>
@@ -178,7 +178,7 @@ function ExpenseModal({
               value={form.categoryId}
               onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(30,35,50,0.97)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             >
               {categories.map((b) => (
                 <option key={b.id} value={b.id}>{b.category}</option>
@@ -192,7 +192,7 @@ function ExpenseModal({
               onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
               placeholder="Optionnel"
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             />
           </div>
         </div>
@@ -245,7 +245,7 @@ function FinanceModal({
     >
       <motion.div
         className="w-full max-w-md rounded-[24px] border p-6"
-        style={{ background: "rgba(10,16,30,0.97)", borderColor: "rgba(255,122,0,0.3)" }}
+        style={{ background: "var(--surface-modal)", borderColor: "rgba(255,122,0,0.3)" }}
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         onClick={(e) => e.stopPropagation()}
@@ -263,7 +263,7 @@ function FinanceModal({
               value={form.label}
               onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))}
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             />
           </div>
           <div>
@@ -274,7 +274,7 @@ function FinanceModal({
               value={form.amount}
               onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             />
           </div>
           <div>
@@ -287,7 +287,7 @@ function FinanceModal({
                 setForm((f) => ({ ...f, category: next === "REVENUE" ? "Sponsors" : "Salaires" }));
               }}
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(30,35,50,0.97)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             >
               <option value="EXPENSE">Dépense</option>
               <option value="REVENUE">Revenu</option>
@@ -299,7 +299,7 @@ function FinanceModal({
               value={form.category}
               onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(30,35,50,0.97)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             >
               {categories.map((c) => (
                 <option key={c} value={c}>{c}</option>
@@ -398,7 +398,7 @@ export function BudgetPage() {
           <div
             key={kpi.label}
             className="rounded-2xl border p-4"
-            style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}
+            style={{ borderColor: "var(--surface-panel-border)", background: "rgba(255,255,255,0.02)" }}
           >
             <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
               {kpi.label}
@@ -415,7 +415,7 @@ export function BudgetPage() {
         <PieBlock title="Sources de revenus" data={finance.revenueSources} emptyLabel="Aucun revenu enregistré." />
         <div
           className="rounded-2xl border p-4"
-          style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}
+          style={{ borderColor: "var(--surface-panel-border)", background: "rgba(255,255,255,0.02)" }}
         >
           <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
             Dépenses mensuelles (K DT)
@@ -428,7 +428,7 @@ export function BudgetPage() {
                 <XAxis dataKey="month" tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
                 <YAxis tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
                 <Tooltip
-                  contentStyle={{ background: "#0F1D3A", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12 }}
+                  contentStyle={{ background: "#0F1D3A", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }}
                   formatter={(v: number) => [`${v} K DT`, "Dépenses"]}
                 />
                 <Bar dataKey="amount" fill="#FF7A00" radius={[6, 6, 0, 0]} />
@@ -442,7 +442,7 @@ export function BudgetPage() {
         <PieBlock title="Répartition des dépenses" data={finance.expenseBreakdown} emptyLabel="Aucune dépense enregistrée." />
         <div
           className="rounded-2xl border p-4"
-          style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}
+          style={{ borderColor: "var(--surface-panel-border)", background: "rgba(255,255,255,0.02)" }}
         >
           <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Historique</h3>
           {finance.history.length === 0 ? (
@@ -453,7 +453,7 @@ export function BudgetPage() {
                 <div
                   key={h.id}
                   className="flex items-center justify-between rounded-xl border px-4 py-3"
-                  style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}
+                  style={{ borderColor: "var(--surface-panel-border)", background: "rgba(255,255,255,0.02)" }}
                 >
                   <div>
                     <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{h.label}</p>

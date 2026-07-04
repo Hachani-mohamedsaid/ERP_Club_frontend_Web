@@ -158,7 +158,7 @@ export function StaffPage() {
             style={{ background: "rgba(0,0,0,0.7)" }}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <motion.div className="w-full max-w-md rounded-[24px] border p-6"
-              style={{ background: "rgba(10,16,30,0.97)", borderColor: "rgba(255,122,0,0.3)" }}
+              style={{ background: "var(--surface-modal)", borderColor: "rgba(255,122,0,0.3)" }}
               initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}>
               <h3 className="text-lg font-bold mb-4" style={{ color: "var(--text-primary)" }}>
                 {modal === "add" ? "Ajouter membre staff" : "Modifier membre"}
@@ -175,7 +175,7 @@ export function StaffPage() {
                     <input placeholder={f.placeholder} value={form[f.key as keyof typeof form] as string}
                       onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
                       className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                      style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }} />
+                      style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }} />
                   </div>
                 ))}
                 <div>
@@ -183,7 +183,7 @@ export function StaffPage() {
                   <select value={form.role}
                     onChange={e => setForm(prev => ({ ...prev, role: e.target.value as StaffRole }))}
                     className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                    style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}>
+                    style={{ background: "rgba(30,35,50,0.97)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}>
                     {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </div>

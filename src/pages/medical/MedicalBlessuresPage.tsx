@@ -78,7 +78,7 @@ const FORM_LABEL_STYLE: CSSProperties = {
   display: "block",
   fontSize: 11,
   fontWeight: 600,
-  color: "rgba(255,255,255,0.5)",
+  color: "var(--text-muted)",
   textTransform: "uppercase",
   letterSpacing: "0.08em",
   marginBottom: 6,

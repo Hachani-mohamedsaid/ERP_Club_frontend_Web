@@ -45,7 +45,7 @@ export function MatchCountdown({ targetDate, label }: MatchCountdownProps) {
           <motion.div
             key={u}
             className="flex flex-col items-center rounded-xl border px-3 py-2"
-            style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,107,87,0.08)" }}
+            style={{ borderColor: "var(--surface-panel-border)", background: "rgba(255,107,87,0.08)" }}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.06 }}

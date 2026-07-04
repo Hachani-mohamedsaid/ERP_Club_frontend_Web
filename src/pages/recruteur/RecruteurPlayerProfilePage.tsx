@@ -111,7 +111,7 @@ export function RecruteurPlayerProfilePage() {
       <div className="flex items-center gap-3">
         <motion.button type="button" onClick={() => navigate(-1)}
           className="flex items-center gap-2 rounded-xl border px-3 py-2 text-sm"
-          style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-secondary)" }}
+          style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-secondary)" }}
           whileHover={{ borderColor: "rgba(139,92,246,0.4)", color: "#8B5CF6" }} whileTap={{ scale: 0.96 }}>
           <ArrowLeft size={14} /> Retour
         </motion.button>
@@ -199,7 +199,7 @@ export function RecruteurPlayerProfilePage() {
               { label: "Valeur",   value: player.value,         color: "#22C55E" },
             ].map(m => (
               <div key={m.label} className="rounded-xl border p-2 text-center"
-                style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.06)" }}>
+                style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--surface-panel-border)" }}>
                 <p className="text-base font-extrabold" style={{ color: m.color }}>{m.value}</p>
                 <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{m.label}</p>
               </div>
@@ -278,7 +278,7 @@ export function RecruteurPlayerProfilePage() {
                   {clubs.map((c, i) => (
                     <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.07 }}
                       className="mb-2 flex items-center gap-3 rounded-xl border px-3 py-2.5"
-                      style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                      style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-black"
                         style={{ background: "rgba(139,92,246,0.18)", color: "#8B5CF6" }}>
                         {c.club.split(" ").map(w => w[0]).join("").slice(0, 2)}

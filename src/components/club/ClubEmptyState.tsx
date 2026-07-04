@@ -13,7 +13,7 @@ export function ClubEmptyState({
   return (
     <div
       className="flex flex-col items-center justify-center gap-3 rounded-2xl border px-6 py-12 text-center"
-      style={{ borderColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)" }}
+      style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
     >
       {title && <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{title}</p>}
       {description && <p className="text-sm">{description}</p>}

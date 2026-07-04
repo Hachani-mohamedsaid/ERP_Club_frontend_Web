@@ -147,15 +147,15 @@ export function ClubNotificationsDropdown() {
             transition={{ duration: 0.18 }}
             className="absolute right-0 top-full z-50 mt-2 w-[360px] overflow-hidden rounded-[22px] border shadow-2xl"
             style={{
-              background: "rgba(8,12,28,0.98)",
-              borderColor: "rgba(255,255,255,0.09)",
+              background: "var(--surface-panel-solid)",
+              borderColor: "var(--surface-panel-border)",
               boxShadow: "0 24px 64px rgba(0,0,0,0.65)",
               backdropFilter: "blur(20px)",
             }}
           >
             <div
               className="flex items-center justify-between border-b px-4 py-3.5"
-              style={{ borderColor: "rgba(255,255,255,0.07)" }}
+              style={{ borderColor: "var(--surface-panel-border)" }}
             >
               <div className="flex items-center gap-2">
                 <Bell size={14} style={{ color: ACCENT }} />
@@ -190,8 +190,8 @@ export function ClubNotificationsDropdown() {
                 </p>
               ) : notifs.length === 0 ? (
                 <div className="flex flex-col items-center py-12 text-center">
-                  <Bell size={28} style={{ color: "rgba(255,255,255,0.1)" }} className="mb-2" />
-                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+                  <Bell size={28} style={{ color: "var(--text-muted)" }} className="mb-2" />
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                     Aucune notification
                   </p>
                 </div>
@@ -239,11 +239,11 @@ export function ClubNotificationsDropdown() {
                         <p className="mt-0.5 text-[9px] leading-snug" style={{ color: "var(--text-muted)" }}>
                           {n.description}
                         </p>
-                        <span className="mt-1 block text-[8px]" style={{ color: "rgba(255,255,255,0.25)" }}>
+                        <span className="mt-1 block text-[8px]" style={{ color: "var(--text-muted)" }}>
                           {n.date}
                         </span>
                       </div>
-                      <ChevronRight size={10} style={{ color: "rgba(255,255,255,0.2)" }} className="mt-2 shrink-0" />
+                      <ChevronRight size={10} style={{ color: "var(--text-muted)" }} className="mt-2 shrink-0" />
                     </motion.div>
                   );
                 })
@@ -252,7 +252,7 @@ export function ClubNotificationsDropdown() {
 
             <div
               className="flex items-center justify-between border-t px-4 py-2.5"
-              style={{ borderColor: "rgba(255,255,255,0.06)" }}
+              style={{ borderColor: "var(--surface-panel-border)" }}
             >
               <button
                 type="button"
