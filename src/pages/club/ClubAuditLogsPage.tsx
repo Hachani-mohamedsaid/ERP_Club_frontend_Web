@@ -100,7 +100,7 @@ export function ClubAuditLogsPage() {
           <motion.button
             type="button" onClick={exportCSV}
             className="flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium"
-            style={{ borderColor: "rgba(255,255,255,0.1)", color: "var(--text-secondary)" }}
+            style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-secondary)" }}
             whileHover={{ borderColor: "#FF6B57", color: "#FF6B57", background: "rgba(255,107,87,0.08)" }}
             whileTap={{ scale: 0.96 }}
           >
@@ -139,7 +139,7 @@ export function ClubAuditLogsPage() {
               style={{
                 background: typeFilter === t ? `${ACTION_COLOR[t as ActionType] ?? "#FF6B57"}20` : "rgba(255,255,255,0.04)",
                 color: typeFilter === t ? (ACTION_COLOR[t as ActionType] ?? "#FF6B57") : "var(--text-muted)",
-                border: `1px solid ${typeFilter === t ? (ACTION_COLOR[t as ActionType] ?? "#FF6B57") + "50" : "rgba(255,255,255,0.08)"}`,
+                border: "1px solid var(--surface-panel-border)",
               }}
               whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
             >
@@ -154,7 +154,7 @@ export function ClubAuditLogsPage() {
               value={search} onChange={(e) => setSearch(e.target.value)}
               placeholder="Utilisateur, action..."
               className="rounded-xl border py-2.5 pl-9 pr-3 text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)", width: 180 }}
+              style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)", width: 180 }}
             />
           </div>
           <input
@@ -162,7 +162,7 @@ export function ClubAuditLogsPage() {
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
             className="rounded-xl border px-3 py-2.5 text-sm outline-none"
-            style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
+            style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
           />
         </div>
       </div>

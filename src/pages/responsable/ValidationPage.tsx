@@ -254,7 +254,7 @@ export function ValidationPage() {
                         onChange={e => setComment(e.target.value)}
                         placeholder="Commentaire (optionnel)..."
                         className="w-full resize-none rounded-xl border px-4 py-3 text-sm outline-none"
-                        style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}
+                        style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
                       />
                       <div className="grid grid-cols-1 gap-2">
                         <RBtn onClick={() => action(selected.id, "Validé")} variant="success">
@@ -291,7 +291,7 @@ export function ValidationPage() {
                         >
                           {["#FF7A00","#22C55E","#EF4444","#8B5CF6"].map((c, i) => <Cell key={i} fill={c} />)}
                         </Pie>
-                        <Tooltip contentStyle={{ background: "rgba(10,16,30,0.95)", border: "1px solid rgba(255,122,0,0.2)", color: "var(--text-primary)", borderRadius: 12 }} />
+                        <Tooltip contentStyle={{ background: "var(--surface-modal)", border: "1px solid rgba(255,122,0,0.2)", color: "var(--text-primary)", borderRadius: 12 }} />
                         <Legend wrapperStyle={{ color: "var(--text-muted)", fontSize: 10 }} />
                       </PieChart>
                     </ResponsiveContainer>
@@ -311,7 +311,7 @@ export function ValidationPage() {
                           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
                           <XAxis dataKey="name" tick={{ fill: "var(--text-muted)", fontSize: 9 }} axisLine={false} tickLine={false} />
                           <YAxis tick={{ fill: "var(--text-muted)", fontSize: 9 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                          <Tooltip contentStyle={{ background: "rgba(10,16,30,0.95)", border: "1px solid rgba(255,122,0,0.2)", color: "var(--text-primary)", borderRadius: 12 }} />
+                          <Tooltip contentStyle={{ background: "var(--surface-modal)", border: "1px solid rgba(255,122,0,0.2)", color: "var(--text-primary)", borderRadius: 12 }} />
                           <Bar dataKey="count" radius={[5, 5, 0, 0]} fill="#FF7A00" fillOpacity={0.85} />
                         </BarChart>
                       </ResponsiveContainer>

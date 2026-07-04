@@ -690,7 +690,7 @@ export function MedicalPage() {
                 className="flex min-h-[3.5rem] items-center gap-3 rounded-xl px-4 py-4"
                 style={{
                   background: accentBg,
-                  border: `1px solid ${accentColor}`,
+                  border: "1px solid var(--surface-panel-border)",
                   borderLeft: `4px solid ${accentColor}`,
                 }}
               >

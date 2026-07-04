@@ -94,7 +94,7 @@ export function FinanceGlobalSearch() {
         />
         {query && (
           <button type="button" onClick={(e) => { e.stopPropagation(); setQuery(""); }}>
-            <X size={12} style={{ color: "rgba(255,255,255,0.35)" }} />
+            <X size={12} style={{ color: "var(--text-muted)" }} />
           </button>
         )}
       </motion.div>
@@ -107,8 +107,8 @@ export function FinanceGlobalSearch() {
             exit={{ opacity: 0, y: 4, scale: 0.98 }}
             className="absolute right-0 top-full z-50 mt-2 w-[340px] overflow-hidden rounded-[18px] border shadow-2xl"
             style={{
-              background: "rgba(8,6,24,0.98)",
-              borderColor: "rgba(255,255,255,0.09)",
+              background: "var(--surface-panel-solid)",
+              borderColor: "var(--surface-panel-border)",
             }}
           >
             <div className="max-h-[320px] overflow-y-auto p-2">
@@ -134,7 +134,7 @@ export function FinanceGlobalSearch() {
                         key={item}
                         type="button"
                         className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[10px]"
-                        style={{ color: "rgba(255,255,255,0.75)" }}
+                        style={{ color: "var(--text-secondary)" }}
                         whileHover={{ background: "rgba(255,255,255,0.04)" }}
                         onClick={() => {
                           navigate(cat.path);

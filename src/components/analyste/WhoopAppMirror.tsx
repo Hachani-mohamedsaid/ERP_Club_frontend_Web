@@ -45,16 +45,16 @@ export function WhoopAppMirror({
       }}
     >
       {/* Status bar */}
-      <div className="flex items-center justify-between px-4 pt-3 text-[10px] font-medium" style={{ color: "rgba(255,255,255,0.35)" }}>
+      <div className="flex items-center justify-between px-4 pt-3 text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
         <span>9:41</span>
-        <span className="font-bold tracking-[0.25em]" style={{ color: "rgba(255,255,255,0.5)" }}>WHOOP</span>
+        <span className="font-bold tracking-[0.25em]" style={{ color: "var(--text-muted)" }}>WHOOP</span>
         <span>100%</span>
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-4">
         {activeTab === "recovery" && (
           <>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: "rgba(255,255,255,0.45)" }}>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: "var(--text-muted)" }}>
               Today&apos;s Recovery
             </p>
             <div className="relative mt-6 flex items-center justify-center">
@@ -76,26 +76,26 @@ export function WhoopAppMirror({
               </svg>
               <div className="absolute text-center">
                 <p className="text-5xl font-light tabular-nums tracking-tight" style={{ color: "white" }}>{recovery}</p>
-                <p className="text-[10px] font-medium uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>percent</p>
+                <p className="text-[10px] font-medium uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>percent</p>
               </div>
             </div>
-            <div className="mt-8 grid w-full grid-cols-3 gap-3 border-t pt-5" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+            <div className="mt-8 grid w-full grid-cols-3 gap-3 border-t pt-5" style={{ borderColor: "var(--surface-panel-border)" }}>
               <div className="text-center">
                 <p className="text-lg font-semibold tabular-nums text-white">{hrv}</p>
-                <p className="text-[9px] uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.35)" }}>HRV</p>
+                <p className="text-[9px] uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>HRV</p>
                 <p className="text-[9px] font-medium" style={{ color: hrvDelta >= 0 ? "#44D62C" : "#E84855" }}>
                   {hrvDelta >= 0 ? "+" : ""}{hrvDelta}%
                 </p>
               </div>
               <div className="text-center">
                 <p className="text-lg font-semibold tabular-nums text-white">{restingHr}</p>
-                <p className="text-[9px] uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.35)" }}>RHR</p>
-                <p className="text-[9px]" style={{ color: "rgba(255,255,255,0.25)" }}>bpm</p>
+                <p className="text-[9px] uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>RHR</p>
+                <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>bpm</p>
               </div>
               <div className="text-center">
                 <p className="text-lg font-semibold tabular-nums text-white">{sleepPerformance}%</p>
-                <p className="text-[9px] uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.35)" }}>Sleep</p>
-                <p className="text-[9px]" style={{ color: "rgba(255,255,255,0.25)" }}>{sleepHours}h</p>
+                <p className="text-[9px] uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Sleep</p>
+                <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>{sleepHours}h</p>
               </div>
             </div>
           </>
@@ -103,7 +103,7 @@ export function WhoopAppMirror({
 
         {activeTab === "strain" && (
           <>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: "rgba(255,255,255,0.45)" }}>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: "var(--text-muted)" }}>
               Day Strain
             </p>
             <p className="mt-4 text-6xl font-light tabular-nums text-white">{strain}</p>
@@ -121,7 +121,7 @@ export function WhoopAppMirror({
                   style={{ left: `${targetPct}%`, background: "rgba(255,255,255,0.6)" }}
                 />
               </div>
-              <div className="mt-2 flex justify-between text-[9px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+              <div className="mt-2 flex justify-between text-[9px]" style={{ color: "var(--text-muted)" }}>
                 <span>0</span>
                 <span>Objectif {strainTarget}</span>
                 <span>21</span>
@@ -132,17 +132,17 @@ export function WhoopAppMirror({
 
         {activeTab === "sleep" && (
           <>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: "rgba(255,255,255,0.45)" }}>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: "var(--text-muted)" }}>
               Sleep Performance
             </p>
             <p className="mt-4 text-6xl font-light tabular-nums text-white">{sleepPerformance}<span className="text-2xl">%</span></p>
-            <p className="mt-2 text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>{sleepHours} heures · besoin 8h</p>
+            <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>{sleepHours} heures · besoin 8h</p>
           </>
         )}
       </div>
 
       {/* Tab bar */}
-      <div className="grid grid-cols-3 border-t" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+      <div className="grid grid-cols-3 border-t" style={{ borderColor: "var(--surface-panel-border)" }}>
         {(["recovery", "strain", "sleep"] as const).map((tab) => (
           <div
             key={tab}

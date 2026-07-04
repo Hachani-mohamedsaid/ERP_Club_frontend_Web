@@ -85,13 +85,13 @@ export function CoachEffectifPage() {
       {/* Filters */}
       <div className="flex flex-wrap gap-2 items-center">
         <div className="flex items-center gap-2 rounded-xl border px-3 py-2"
-          style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
+          style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--surface-panel-border)" }}>
           <Search size={13} style={{ color: "var(--text-muted)" }} />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher joueur..."
             className="bg-transparent text-sm outline-none w-36" style={{ color: "var(--text-primary)" }} />
         </div>
         <div className="flex items-center gap-1.5 rounded-xl border px-2 py-1.5"
-          style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
+          style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--surface-panel-border)" }}>
           <Filter size={11} style={{ color: "var(--text-muted)" }} />
           <select value={posFilter} onChange={e => setPosFilter(e.target.value)}
             className="bg-transparent text-xs outline-none" style={{ color: "var(--text-muted)" }}>
@@ -118,7 +118,7 @@ export function CoachEffectifPage() {
         <CCard className="!p-0 overflow-hidden">
           {/* Table head */}
           <div className="grid grid-cols-[40px_1fr_70px_60px_90px_80px_80px_100px] gap-2 border-b px-4 py-3 text-[10px] font-semibold uppercase"
-            style={{ borderColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)" }}>
+            style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}>
             <span>#</span><span>Joueur</span><span>Poste</span><span>Âge</span><span>Statut</span><span>Forme</span><span>Fatigue</span><span className="text-right">Contrat</span>
           </div>
           <div>
@@ -208,7 +208,7 @@ export function CoachEffectifPage() {
                     { label: "Matchs", value: selected.matches, color: COACH_ACCENT },
                   ].map(m => (
                     <div key={m.label} className="rounded-xl border p-2 text-center"
-                      style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.06)" }}>
+                      style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--surface-panel-border)" }}>
                       <p className="text-lg font-extrabold" style={{ color: m.color }}>{m.value}</p>
                       <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>{m.label}</p>
                     </div>
@@ -241,7 +241,7 @@ export function CoachEffectifPage() {
                 <p className="mb-2 text-xs font-bold" style={{ color: "var(--text-primary)" }}>Derniers matchs</p>
                 {selected.recentMatches.map((m, i) => (
                   <div key={i} className="mb-1.5 flex items-center gap-3 rounded-xl border px-3 py-2"
-                    style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                    style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
                     <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{m.date}</span>
                     <span className="flex-1 text-xs font-semibold" style={{ color: "var(--text-primary)" }}>vs {m.vs}</span>
                     <span className="text-xs font-bold" style={{ color: COACH_ACCENT }}>{m.rating}/10</span>

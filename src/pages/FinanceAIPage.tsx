@@ -164,7 +164,7 @@ export function FinanceAIPage() {
           </motion.div>
           <div>
             <h1 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>ODIN Finance AI</h1>
-            <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
               Assistant intelligent · {meta?.clubName ?? "Club"}
             </p>
           </div>
@@ -192,7 +192,7 @@ export function FinanceAIPage() {
             <motion.div
               key={i}
               className="rounded-[16px] border p-3"
-              style={{ background: "rgba(8,6,24,0.88)", borderColor: "rgba(255,255,255,0.07)" }}
+              style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06 }}
@@ -203,7 +203,7 @@ export function FinanceAIPage() {
                   <Icon size={11} style={{ color: k.color }} />
                 </div>
               </div>
-              <p className="text-[9px] uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.35)" }}>{k.label}</p>
+              <p className="text-[9px] uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{k.label}</p>
               <p className="text-lg font-extrabold" style={{ color: k.color }}>{k.value}</p>
             </motion.div>
           );
@@ -213,7 +213,7 @@ export function FinanceAIPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_260px]">
         <div
           className="flex flex-col overflow-hidden rounded-[22px] border"
-          style={{ background: "rgba(8,6,24,0.92)", borderColor: "rgba(255,255,255,0.07)", minHeight: "520px" }}
+          style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)", minHeight: "520px" }}
         >
           <div ref={chatRef} className="max-h-[440px] flex-1 space-y-4 overflow-y-auto p-4">
             <AnimatePresence initial={false}>
@@ -270,21 +270,21 @@ export function FinanceAIPage() {
                                 </defs>
                                 <CartesianGrid strokeDasharray="2 2" stroke="rgba(255,255,255,0.04)" vertical={false} />
                                 <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 8 }} axisLine={false} tickLine={false} />
-                                <Tooltip contentStyle={{ background: "rgba(8,6,24,0.97)", border: "none", color: "white", borderRadius: 8, fontSize: 10 }} />
+                                <Tooltip contentStyle={{ background: "var(--surface-panel-solid)", border: "none", color: "white", borderRadius: 8, fontSize: 10 }} />
                                 <Area type="monotone" dataKey="v" stroke={msg.chart.color} fill={`url(#g${msg.id})`} strokeWidth={2} />
                               </AreaChart>
                             ) : msg.chart.type === "line" ? (
                               <LineChart data={msg.chart.data.map((d) => ({ name: d.label, v: d.val }))}>
                                 <CartesianGrid strokeDasharray="2 2" stroke="rgba(255,255,255,0.04)" vertical={false} />
                                 <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 8 }} axisLine={false} tickLine={false} />
-                                <Tooltip contentStyle={{ background: "rgba(8,6,24,0.97)", border: "none", color: "white", borderRadius: 8, fontSize: 10 }} />
+                                <Tooltip contentStyle={{ background: "var(--surface-panel-solid)", border: "none", color: "white", borderRadius: 8, fontSize: 10 }} />
                                 <Line type="monotone" dataKey="v" stroke={msg.chart.color} strokeWidth={2.5} dot={{ fill: msg.chart.color, r: 3 }} />
                               </LineChart>
                             ) : (
                               <BarChart data={msg.chart.data.map((d) => ({ name: d.label, v: d.val }))}>
                                 <CartesianGrid strokeDasharray="2 2" stroke="rgba(255,255,255,0.04)" vertical={false} />
                                 <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 8 }} axisLine={false} tickLine={false} />
-                                <Tooltip contentStyle={{ background: "rgba(8,6,24,0.97)", border: "none", color: "white", borderRadius: 8, fontSize: 10 }} />
+                                <Tooltip contentStyle={{ background: "var(--surface-panel-solid)", border: "none", color: "white", borderRadius: 8, fontSize: 10 }} />
                                 <Bar dataKey="v" fill={msg.chart.color} radius={[4, 4, 0, 0]} />
                               </BarChart>
                             )}
@@ -320,7 +320,7 @@ export function FinanceAIPage() {
             )}
           </div>
 
-          <div className="border-t px-4 py-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+          <div className="border-t px-4 py-3" style={{ borderColor: "var(--surface-panel-border)" }}>
             <div className="flex items-center gap-2">
               <input
                 type="text"
@@ -329,7 +329,7 @@ export function FinanceAIPage() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && void sendMessage()}
                 className="flex-1 rounded-xl border bg-transparent px-4 py-2 text-xs outline-none"
-                style={{ borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
               />
               <motion.button
                 type="button"
@@ -347,8 +347,8 @@ export function FinanceAIPage() {
         </div>
 
         <div className="space-y-3">
-          <div className="rounded-[20px] border p-4" style={{ background: "rgba(8,6,24,0.88)", borderColor: "rgba(255,255,255,0.07)" }}>
-            <p className="mb-3 text-[10px] font-bold" style={{ color: "rgba(255,255,255,0.5)" }}>
+          <div className="rounded-[20px] border p-4" style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
+            <p className="mb-3 text-[10px] font-bold" style={{ color: "var(--text-muted)" }}>
               💡 Questions suggérées
             </p>
             <div className="space-y-2">
@@ -361,7 +361,7 @@ export function FinanceAIPage() {
                     onClick={() => void sendMessage(q)}
                     disabled={loading}
                     className="w-full rounded-[14px] border p-3 text-left disabled:opacity-50"
-                    style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}
+                    style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--surface-panel-border)" }}
                     whileHover={{ scale: 1.02, borderColor: `${F.primary}30`, background: `${F.primary}06` }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -378,9 +378,9 @@ export function FinanceAIPage() {
             </div>
           </div>
 
-          <div className="rounded-[20px] border p-4" style={{ background: "rgba(8,6,24,0.88)", borderColor: `${F.ai}20` }}>
+          <div className="rounded-[20px] border p-4" style={{ background: "var(--surface-panel-solid)", borderColor: `${F.ai}20` }}>
             <p className="mb-2 text-[10px] font-bold" style={{ color: F.ai }}>🤖 Capacités ODIN AI</p>
-            <div className="space-y-1.5 text-[9px]" style={{ color: "rgba(255,255,255,0.5)" }}>
+            <div className="space-y-1.5 text-[9px]" style={{ color: "var(--text-muted)" }}>
               {["Analyse budgétaire automatique", "Graphiques générés en temps réel", "Prévisions sur 6 mois", "Alertes budget & sponsors", "Recommandations optimisation"].map((c, i) => (
                 <div key={i} className="flex items-center gap-1.5">
                   <div className="h-1 w-1 rounded-full" style={{ background: F.ai }} />

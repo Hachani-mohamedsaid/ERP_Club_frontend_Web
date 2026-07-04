@@ -242,7 +242,7 @@ export function ClubAIPage() {
             <p
               key={line}
               className="rounded-xl border px-4 py-3 text-sm"
-              style={{ borderColor: "rgba(255,255,255,0.05)", color: "var(--text-secondary)" }}
+              style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-secondary)" }}
             >
               {line}
             </p>
@@ -319,7 +319,7 @@ export function ClubAIPage() {
             placeholder={aiUnavailable ? "IA indisponible" : "Votre question…"}
             disabled={aiUnavailable || thinking}
             className="flex-1 rounded-xl border px-4 py-2.5 text-sm disabled:opacity-50"
-            style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.05)", color: "var(--text-primary)" }}
+            style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
           />
           <button
             type="button"

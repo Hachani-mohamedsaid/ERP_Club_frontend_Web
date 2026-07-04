@@ -35,7 +35,7 @@ const inputClass =
   "rounded-xl border px-4 py-2.5 text-sm outline-none w-full";
 const inputStyle = {
   background: "rgba(255,255,255,0.04)",
-  borderColor: "rgba(255,255,255,0.08)",
+  borderColor: "var(--surface-panel-border)",
   color: "var(--text-primary)",
 };
 
@@ -143,7 +143,7 @@ function SaveBar({
   onSave: () => void;
 }) {
   return (
-    <div className="mt-4 space-y-2 border-t pt-4" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+    <div className="mt-4 space-y-2 border-t pt-4" style={{ borderColor: "var(--surface-panel-border)" }}>
       {saveError && (
         <p className="flex items-center gap-1.5 text-sm text-red-400">
           <AlertCircle size={14} /> {saveError}
@@ -312,7 +312,7 @@ export function SuperAdminSettings() {
                 <ControlledInput label="URL favicon" value={form.faviconUrl} onChange={(v) => patch("faviconUrl", v)} placeholder="https://..." />
               </div>
               {form.logoUrl && (
-                <div className="mt-4 flex items-center gap-4 rounded-xl border p-4" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+                <div className="mt-4 flex items-center gap-4 rounded-xl border p-4" style={{ borderColor: "var(--surface-panel-border)" }}>
                   <img src={form.logoUrl} alt="Logo preview" className="h-12 w-12 rounded-lg object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                   <div>
                     <p className="text-sm font-semibold" style={{ color: form.primaryColor }}>{form.platformName}</p>

@@ -72,7 +72,7 @@ export function AnalysteChemistrePage() {
           { label: "Duo à améliorer",         value: `${worstPair.a} ↔ ${worstPair.b}`, color: "#EF4444", icon: Link },
         ].map(({ label, value, color, icon: Icon }, i) => (
           <motion.div key={label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
-            <div className="rounded-[16px] border p-4" style={{ background: "rgba(5,8,22,0.7)", borderColor: "rgba(255,255,255,0.06)" }}>
+            <div className="rounded-[16px] border p-4" style={{ background: "rgba(5,8,22,0.7)", borderColor: "var(--surface-panel-border)" }}>
               <div className="flex items-center gap-2">
                 <motion.div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
                   style={{ background: `${color}18`, color }}
@@ -235,7 +235,7 @@ export function AnalysteChemistrePage() {
                       { label: "Historique", value: selectedLink.history },
                     ].map(({ label, value }) => (
                       <div key={label} className="rounded-xl border p-2 text-center"
-                        style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                        style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
                         <p className="text-sm font-bold" style={{ color: chemColor(value) }}>{value}%</p>
                         <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{label}</p>
                       </div>
@@ -246,7 +246,7 @@ export function AnalysteChemistrePage() {
             ) : (
               <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 className="flex h-48 items-center justify-center rounded-[20px] border"
-                style={{ borderColor: "rgba(255,255,255,0.05)", background: "rgba(5,8,22,0.5)" }}>
+                style={{ borderColor: "var(--surface-panel-border)", background: "rgba(5,8,22,0.5)" }}>
                 <p className="text-sm" style={{ color: "var(--text-muted)" }}>Sélectionner un lien pour le détail</p>
               </motion.div>
             )}

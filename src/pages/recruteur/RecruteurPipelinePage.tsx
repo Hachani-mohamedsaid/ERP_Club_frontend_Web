@@ -55,7 +55,7 @@ function PlayerCard({ player, onMove, onRemove }: {
   const stageIdx = STAGES.indexOf(player.stage);
   return (
     <motion.div layout className="rounded-xl border p-3 cursor-grab active:cursor-grabbing"
-      style={{ background: "rgba(14,10,35,0.85)", borderColor: "rgba(255,255,255,0.08)" }}
+      style={{ background: "rgba(14,10,35,0.85)", borderColor: "var(--surface-panel-border)" }}
       initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
       whileHover={{ borderColor: `${STAGE_COLORS[player.stage]}40`, y: -1 }}>
       <div className="flex items-start justify-between mb-2">
@@ -196,7 +196,7 @@ export function RecruteurPipelinePage() {
               </AnimatePresence>
               {byStage(stage).length === 0 && (
                 <div className="rounded-xl border border-dashed py-6 text-center"
-                  style={{ borderColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)" }}>
+                  style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}>
                   <p className="text-[10px]">Vide</p>
                 </div>
               )}
@@ -226,7 +226,7 @@ export function RecruteurPipelinePage() {
           { label: "Score IA moyen",    value: `${Math.round(players.reduce((a,p) => a + p.aiScore, 0) / players.length)}/100`, color: "#8B5CF6" },
         ].map((k, i) => (
           <motion.div key={k.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.05 }}>
-            <div className="rounded-[16px] border p-4" style={{ background: "rgba(14,10,35,0.8)", borderColor: "rgba(255,255,255,0.07)" }}>
+            <div className="rounded-[16px] border p-4" style={{ background: "rgba(14,10,35,0.8)", borderColor: "var(--surface-panel-border)" }}>
               <p className="text-2xl font-extrabold" style={{ color: k.color }}>{k.value}</p>
               <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{k.label}</p>
             </div>
@@ -257,20 +257,20 @@ export function RecruteurPipelinePage() {
                   <input value={newName} onChange={e => setNewName(e.target.value)}
                     placeholder="Ex: Ahmed Ben Ali"
                     className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }} />
+                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }} />
                 </div>
                 <div>
                   <label className="block text-[11px] font-medium mb-1" style={{ color: "var(--text-muted)" }}>Poste</label>
                   <select value={newPos} onChange={e => setNewPos(e.target.value)}
                     className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                    style={{ background: "rgba(10,8,28,0.95)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}>
+                    style={{ background: "var(--surface-modal)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}>
                     {["BU","MOC","MDF","DC","LB","GK","ATT","LAT"].map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
               </div>
               <div className="mt-4 flex justify-end gap-2">
                 <button type="button" onClick={() => setShowModal(false)}
-                  className="rounded-xl border px-4 py-2 text-xs" style={{ borderColor: "rgba(255,255,255,0.1)", color: "var(--text-muted)" }}>
+                  className="rounded-xl border px-4 py-2 text-xs" style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}>
                   Annuler
                 </button>
                 <motion.button type="button" onClick={addPlayer}
@@ -287,7 +287,7 @@ export function RecruteurPipelinePage() {
 
       {/* Flow legend */}
       <div className="flex flex-wrap items-center gap-1 rounded-[16px] border p-4 text-[11px]"
-        style={{ background: "rgba(14,10,35,0.6)", borderColor: "rgba(255,255,255,0.06)" }}>
+        style={{ background: "rgba(14,10,35,0.6)", borderColor: "var(--surface-panel-border)" }}>
         <span style={{ color: "var(--text-muted)" }}>Flux:</span>
         {STAGES.map((s, i) => (
           <span key={s} className="flex items-center gap-1">

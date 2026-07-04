@@ -116,7 +116,7 @@ export function ContratsFinance() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-extrabold" style={{ color: "var(--text-primary)" }}>Gestion des Contrats</h1>
-          <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
+          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
             {contractList.length} contrats · Saison en cours
           </p>
         </div>
@@ -134,7 +134,7 @@ export function ContratsFinance() {
             type="button"
             onClick={handleExportPDF}
             className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold"
-            style={{ borderColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)" }}
+            style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
             whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.95 }}
           >
             <Download size={12} /> Export
@@ -149,7 +149,7 @@ export function ContratsFinance() {
           return (
             <motion.div
               key={i} className="rounded-[18px] border p-4"
-              style={{ background: "rgba(8,6,24,0.88)", borderColor: `${k.color}18` }}
+              style={{ background: "var(--surface-panel-solid)", borderColor: `${k.color}18` }}
               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
               whileHover={{ y: -2, borderColor: `${k.color}35` }}
             >
@@ -158,7 +158,7 @@ export function ContratsFinance() {
                   <Icon size={13} style={{ color: k.color }} />
                 </div>
               </div>
-              <p className="text-[9px] uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.4)" }}>{k.label}</p>
+              <p className="text-[9px] uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{k.label}</p>
               <p className="text-2xl font-extrabold" style={{ color: k.color }}>{k.value}</p>
             </motion.div>
           );
@@ -178,7 +178,7 @@ export function ContratsFinance() {
             style={{
               background: activeTab === tab.id ? `${F.primary}14` : "rgba(255,255,255,0.04)",
               color: activeTab === tab.id ? F.primary : "rgba(255,255,255,0.4)",
-              border: `1px solid ${activeTab === tab.id ? F.primary + "35" : "transparent"}`,
+              border: "1px solid var(--surface-panel-border)",
             }}
             whileHover={{ scale: 1.04 }}
           >
@@ -206,11 +206,11 @@ export function ContratsFinance() {
               })}
             </div>
 
-            <div className="rounded-[22px] border overflow-hidden" style={{ background: "rgba(8,6,24,0.88)", borderColor: "rgba(255,255,255,0.07)" }}>
+            <div className="rounded-[22px] border overflow-hidden" style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
               {filtered.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <FileText size={32} style={{ color: "rgba(255,255,255,0.2)" }} className="mb-2" />
-                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>Aucun contrat trouvé</p>
+                  <FileText size={32} style={{ color: "var(--text-muted)" }} className="mb-2" />
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Aucun contrat trouvé</p>
                 </div>
               ) : (
                 <div className="divide-y">
@@ -242,7 +242,7 @@ export function ContratsFinance() {
                               >URGENT</motion.span>
                             )}
                           </div>
-                          <p className="text-[9px] mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
+                          <p className="text-[9px] mt-0.5" style={{ color: "var(--text-muted)" }}>
                             {new Date(c.startDate).toLocaleDateString("fr-FR")} → {new Date(c.endDate).toLocaleDateString("fr-FR")}
                           </p>
                         </div>
@@ -250,7 +250,7 @@ export function ContratsFinance() {
                           <p className="text-xs font-extrabold" style={{ color: "var(--text-primary)" }}>
                             {(c.salaryMonthly / 1000).toFixed(0)}K DT/mois
                           </p>
-                          <p className="text-[8px]" style={{ color: "rgba(255,255,255,0.3)" }}>
+                          <p className="text-[8px]" style={{ color: "var(--text-muted)" }}>
                             +{((c.bonus) / 1000).toFixed(0)}K primes
                           </p>
                         </div>
@@ -288,7 +288,7 @@ export function ContratsFinance() {
 
         {activeTab === "renouvellement" && (
           <motion.div key="renewal" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
               Contrats arrivant à expiration dans les 90 prochains jours — action recommandée
             </p>
             {RENEWAL_BUCKETS.map(bucket => {
@@ -315,7 +315,7 @@ export function ContratsFinance() {
                           key={c.id}
                           initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.07 }}
                           className="relative overflow-hidden rounded-[20px] border p-4"
-                          style={{ background: "rgba(8,6,24,0.92)", borderColor: `${bucket.color}25`, borderLeft: `3px solid ${bucket.color}` }}
+                          style={{ background: "var(--surface-panel-solid)", borderColor: `${bucket.color}25`, borderLeft: `3px solid ${bucket.color}` }}
                           whileHover={{ y: -3, boxShadow: `0 12px 28px rgba(0,0,0,0.4), 0 0 0 1px ${bucket.color}30` }}
                         >
                           {d <= 15 && (
@@ -335,18 +335,18 @@ export function ContratsFinance() {
                             </div>
                             <div>
                               <p className="text-xs font-extrabold" style={{ color: "var(--text-primary)" }}>{c.holderName}</p>
-                              <p className="text-[9px]" style={{ color: "rgba(255,255,255,0.4)" }}>
+                              <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>
                                 {(c.salaryMonthly / 1000).toFixed(0)}K DT/mois
                               </p>
                             </div>
                           </div>
                           <div className="space-y-1.5 mb-3">
                             <div className="flex items-center justify-between text-[9px]">
-                              <span style={{ color: "rgba(255,255,255,0.35)" }}>Expiration</span>
+                              <span style={{ color: "var(--text-muted)" }}>Expiration</span>
                               <span className="font-bold" style={{ color: bucket.color }}>{new Date(c.endDate).toLocaleDateString("fr-FR")}</span>
                             </div>
                             <div className="flex items-center justify-between text-[9px]">
-                              <span style={{ color: "rgba(255,255,255,0.35)" }}>Jours restants</span>
+                              <span style={{ color: "var(--text-muted)" }}>Jours restants</span>
                               <span className="font-extrabold text-sm" style={{ color: bucket.color }}>{d}j</span>
                             </div>
                           </div>
@@ -371,7 +371,7 @@ export function ContratsFinance() {
                             <motion.button
                               type="button"
                               className="flex items-center justify-center gap-1 rounded-xl border px-3 py-1.5 text-[9px] font-bold"
-                              style={{ borderColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.45)" }}
+                              style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
                               whileHover={{ scale: 1.04 }}
                             >
                               <FileText size={9} /> Voir
@@ -388,7 +388,7 @@ export function ContratsFinance() {
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <CheckCircle size={40} style={{ color: F.success }} className="mb-3" />
                 <p className="text-sm font-bold" style={{ color: F.success }}>Aucun contrat à renouveler</p>
-                <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>Tous les contrats sont valides pour les 90 prochains jours</p>
+                <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Tous les contrats sont valides pour les 90 prochains jours</p>
               </div>
             )}
           </motion.div>

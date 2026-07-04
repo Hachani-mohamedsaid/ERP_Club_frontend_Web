@@ -145,7 +145,7 @@ export function JoueurFormationPage() {
             style={{ width: "100%", maxWidth: 400, height: 420, borderColor: "var(--color-state-success)", background: "rgba(46,158,91,0.06)" }}
           >
             <div className="absolute inset-x-8 top-1/2 h-px" style={{ background: "rgba(255,255,255,0.12)" }} />
-            <div className="absolute left-1/2 top-4 h-20 w-20 -translate-x-1/2 rounded-full border" style={{ borderColor: "rgba(255,255,255,0.1)" }} />
+            <div className="absolute left-1/2 top-4 h-20 w-20 -translate-x-1/2 rounded-full border" style={{ borderColor: "var(--surface-panel-border)" }} />
 
             {FORMATION_433.map((slot) => {
               const playerId = assignments[slot.id];

@@ -149,7 +149,7 @@ export function RRow({ children, className = "" }: { children: ReactNode; classN
     <motion.div
       variants={cardVariants}
       className={`rounded-xl border p-4 ${className}`}
-      style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}
+      style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}
       whileHover={{ borderColor: "rgba(255,122,0,0.3)", background: "rgba(255,122,0,0.04)", x: 3 }}
       transition={{ duration: 0.16 }}
     >
@@ -216,7 +216,7 @@ export function RSearch({ value, onChange, placeholder }: {
   return (
     <motion.input
       className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-      style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}
+      style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
       placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)}
       initial={{ opacity: 0 }} animate={{ opacity: 1 }}
       whileFocus={{ borderColor: "rgba(255,122,0,0.5)", boxShadow: "0 0 0 2px rgba(255,122,0,0.1)" }}
@@ -231,7 +231,7 @@ export function RToggle({ label, description, defaultOn = true }: {
   const [on, setOn] = React.useState(defaultOn);
   return (
     <div className="flex items-center justify-between gap-4 rounded-xl border p-4"
-      style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+      style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
       <div>
         <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{label}</p>
         {description && <p className="text-xs" style={{ color: "var(--text-muted)" }}>{description}</p>}

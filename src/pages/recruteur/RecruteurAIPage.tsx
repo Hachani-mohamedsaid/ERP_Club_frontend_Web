@@ -129,7 +129,7 @@ function RankCard({ scored, rank, onProfile }: { scored: ScoredPlayer; rank: num
         {expanded && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden border-t"
-            style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+            style={{ borderColor: "var(--surface-panel-border)" }}>
             <div className="p-4 grid grid-cols-1 gap-4 sm:grid-cols-[1fr_160px]">
               {/* Left */}
               <div className="space-y-3">
@@ -342,7 +342,7 @@ export function RecruteurAIPage() {
             {presets.map(p => (
               <motion.button key={p} type="button" onClick={() => run(p)}
                 className="rounded-full border px-3 py-1.5 text-xs"
-                style={{ borderColor: "rgba(255,255,255,0.12)", color: "var(--text-muted)" }}
+                style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
                 whileHover={{ borderColor: "rgba(139,92,246,0.4)", color: "#8B5CF6" }}>
                 {p}
               </motion.button>
@@ -382,7 +382,7 @@ export function RecruteurAIPage() {
 
             {/* AI summary chart */}
             {scoredResults.length > 0 && (
-              <div className="rounded-[20px] border p-5" style={{ background: "rgba(14,10,35,0.8)", borderColor: "rgba(255,255,255,0.07)" }}>
+              <div className="rounded-[20px] border p-5" style={{ background: "rgba(14,10,35,0.8)", borderColor: "var(--surface-panel-border)" }}>
                 <p className="mb-3 text-sm font-bold" style={{ color: "var(--text-primary)" }}>Comparaison scores IA — Top 8</p>
                 <div className="h-44">
                   <ResponsiveContainer width="100%" height="100%">

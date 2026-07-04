@@ -70,7 +70,7 @@ export function PrepCalendrierPage() {
         <div className="flex items-center gap-3">
           <motion.button type="button" onClick={prevMonth}
             className="flex h-8 w-8 items-center justify-center rounded-xl border"
-            style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)" }}
+            style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)" }}
             whileHover={{ borderColor: "rgba(255,122,0,0.35)" }} whileTap={{ scale: 0.92 }}>
             <ChevronLeft size={16} style={{ color: "var(--text-muted)" }} />
           </motion.button>
@@ -79,7 +79,7 @@ export function PrepCalendrierPage() {
           </h2>
           <motion.button type="button" onClick={nextMonth}
             className="flex h-8 w-8 items-center justify-center rounded-xl border"
-            style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)" }}
+            style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)" }}
             whileHover={{ borderColor: "rgba(255,122,0,0.35)" }} whileTap={{ scale: 0.92 }}>
             <ChevronRight size={16} style={{ color: "var(--text-muted)" }} />
           </motion.button>
@@ -195,7 +195,7 @@ export function PrepCalendrierPage() {
                     <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Détail</p>
                     <motion.button type="button" onClick={() => setSelected(null)}
                       className="text-[11px] px-2 py-1 rounded-lg border"
-                      style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
+                      style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
                       whileHover={{ borderColor: "rgba(255,122,0,0.3)" }}>×</motion.button>
                   </div>
                   <div className="rounded-xl p-3" style={{ background: `${selected.color}10`, border: `1px solid ${selected.color}30` }}>

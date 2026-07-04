@@ -69,14 +69,14 @@ export function RecruteurRequestsPage() {
         </div>
 
         <RecruteurKpiCard hover={false}>
-          <div className="mb-4 flex items-center justify-between border-b pb-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+          <div className="mb-4 flex items-center justify-between border-b pb-3" style={{ borderColor: "var(--surface-panel-border)" }}>
             <div>
               <h3 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Workflow — {req.player}</h3>
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>{req.position} • {req.value} • Demandé par {req.requestedBy}</p>
             </div>
           </div>
 
-          <div className="relative ml-3 border-l-2 pl-6" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+          <div className="relative ml-3 border-l-2 pl-6" style={{ borderColor: "var(--surface-panel-border)" }}>
             {req.steps.map((step, i) => {
               const meta = STATUS_META[step.status];
               const Icon = meta.icon;
@@ -107,7 +107,7 @@ export function RecruteurRequestsPage() {
           </div>
 
           {req.steps.some((s) => s.status === "pending") && (
-            <div className="mt-4 flex gap-2 border-t pt-4" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+            <div className="mt-4 flex gap-2 border-t pt-4" style={{ borderColor: "var(--surface-panel-border)" }}>
               <button type="button" onClick={() => act("approved")} className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold text-white" style={{ background: "linear-gradient(135deg,#22C55E,#16A34A)" }}>
                 <Check size={15} /> Approuver mon étape
               </button>

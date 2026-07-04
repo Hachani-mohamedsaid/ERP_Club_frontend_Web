@@ -76,7 +76,7 @@ export function ScoutProspectsPage() {
             style={{
               background: statusFilter === col.id ? col.bg : "rgba(255,255,255,0.05)",
               color: statusFilter === col.id ? col.color : "var(--text-muted)",
-              border: `1px solid ${statusFilter === col.id ? col.color + "40" : "transparent"}`,
+              border: "1px solid var(--surface-panel-border)",
             }}
             whileTap={{ scale: 0.95 }}>
             {col.label}
@@ -84,7 +84,7 @@ export function ScoutProspectsPage() {
         ))}
         <select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}
           className="ml-auto rounded-xl border px-3 py-1.5 text-[10px] font-bold outline-none"
-          style={{ background: "rgba(8,6,24,0.85)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}>
+          style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}>
           <option value="potential">Tri: Potentiel</option>
           <option value="aiScore">Tri: Score IA</option>
           <option value="age">Tri: Âge</option>
@@ -153,7 +153,7 @@ export function ScoutProspectsPage() {
             return (
               <motion.div key={p.id}
                 className="flex flex-wrap items-center gap-4 rounded-[16px] border p-3 cursor-pointer"
-                style={{ background: "rgba(12,9,30,0.85)", borderColor: "rgba(255,255,255,0.07)" }}
+                style={{ background: "rgba(12,9,30,0.85)", borderColor: "var(--surface-panel-border)" }}
                 whileHover={{ borderColor: `${S.primary}35` }}
                 onClick={() => navigate(`/scout/prospect/${p.id}`)}>
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl text-xs font-extrabold text-white"

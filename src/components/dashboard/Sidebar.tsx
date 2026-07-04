@@ -1,6 +1,10 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { AnimatePresence } from "framer-motion";
 import { useAuth } from "../../contexts/AuthContext";
+import { useLocale } from "../../contexts/LocaleContext";
+import { useUserPreferences } from "../../contexts/UserPreferencesContext";
+import { SettingsModal } from "../ui/SettingsModal";
 import odinLogo from "../../assets/odin-logo.png";
 import {
   LayoutDashboard,
@@ -548,7 +552,11 @@ const NAV_ITEMS: NavItem[] = [
 export function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const { t } = useLocale();
+  const { preferences } = useUserPreferences();
+  const compact = preferences.compactSidebar;
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [expandedScout, setExpandedScout] = useState(false);
   const [expandedSuperAdmin, setExpandedSuperAdmin] = useState(true);
   const [expandedMedical, setExpandedMedical] = useState(true);
@@ -561,18 +569,20 @@ export function Sidebar() {
   const [expandedCoach, setExpandedCoach] = useState(true);
 
   return (
-    <aside className="glass-nav flex h-full w-64 flex-col px-4 py-6">
-      <div className="mb-8 flex items-center justify-center px-2">
+    <aside
+      className={`glass-nav relative z-40 flex h-full flex-col overflow-visible py-6 transition-all duration-200 ${compact ? "w-[72px] px-2" : "w-64 px-4"}`}
+    >
+      <div className={`mb-8 flex shrink-0 items-center justify-center ${compact ? "px-0" : "px-2"}`}>
         <img
           src={odinLogo}
           alt="ODIN ERP"
-          className="app-logo w-36 cursor-pointer"
+          className={`app-logo cursor-pointer ${compact ? "w-10" : "w-36"}`}
           draggable={false}
           onClick={() => navigate("/")}
         />
       </div>
 
-      <nav className="flex-1 space-y-1">
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto">
         {NAV_ITEMS.filter((it) => {
           if (it.excludeRoles && user && it.excludeRoles.includes(user.role)) return false;
           if (!it.allowedRoles) return true;
@@ -601,11 +611,17 @@ export function Sidebar() {
           });
           const isProfileActive = isJoueurMenu && /^\/joueurs\/[^/]+$/.test(location.pathname) && !JOUEUR_STATIC_ROUTES.includes(location.pathname.split("/")[2] ?? "");
 
+          const showSubmenus = !compact;
+
           return (
             <div key={label}>
               <button
                 type="button"
                 onClick={() => {
+                  if (compact) {
+                    navigate(path);
+                    return;
+                  }
                   if ((isScout || isSuperAdmin || isMedical || isJoueurMenu || isClubAdminMenu || isPreparateurMenu || isAnalysteMenu || isRecruteurMenu || isResponsableMenu || isCoachMenu) && (submenu || submenuGroups)) {
                     if (isScout) setExpandedScout(!expandedScout);
                     if (isSuperAdmin) setExpandedSuperAdmin(!expandedSuperAdmin);
@@ -621,15 +637,15 @@ export function Sidebar() {
                     navigate(path);
                   }
                 }}
-                className="flex w-full items-center gap-3 rounded-[var(--radius-odin-md)] px-3 py-2.5 text-sm transition-colors duration-150"
+                className={`flex w-full items-center rounded-[var(--radius-odin-md)] text-sm transition-colors duration-150 ${compact ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5"}`}
                 style={{
                   background: active || activeSubmenu || isProfileActive ? "var(--accent)" : "transparent",
                   color: active || activeSubmenu || isProfileActive ? "white" : "var(--nav-text)",
                 }}
               >
                 <Icon size={17} strokeWidth={2} />
-                {label}
-                {(isScout || isSuperAdmin || isMedical || isJoueurMenu || isClubAdminMenu || isPreparateurMenu || isAnalysteMenu || isRecruteurMenu || isResponsableMenu || isCoachMenu) && (submenu || submenuGroups) && (
+                {!compact && label}
+                {!compact && (isScout || isSuperAdmin || isMedical || isJoueurMenu || isClubAdminMenu || isPreparateurMenu || isAnalysteMenu || isRecruteurMenu || isResponsableMenu || isCoachMenu) && (submenu || submenuGroups) && (
                   <ChevronDown
                     size={16}
                     strokeWidth={2}
@@ -639,7 +655,7 @@ export function Sidebar() {
                 )}
               </button>
 
-              {isScout && submenuGroups && expandedScout && (
+              {showSubmenus && isScout && submenuGroups && expandedScout && (
                 <div className="mt-1 max-h-[calc(100vh-220px)] space-y-3 overflow-y-auto pl-2 pr-1">
                   {submenuGroups.map((group) => (
                     <div key={group.label}>
@@ -671,7 +687,7 @@ export function Sidebar() {
                 </div>
               )}
 
-              {isSuperAdmin && submenuGroups && expandedSuperAdmin && (
+              {showSubmenus && isSuperAdmin && submenuGroups && expandedSuperAdmin && (
                 <div className="mt-1 max-h-[calc(100vh-220px)] space-y-3 overflow-y-auto pl-2 pr-1">
                   {submenuGroups.map((group) => (
                     <div key={group.label}>
@@ -702,7 +718,7 @@ export function Sidebar() {
                   ))}
                 </div>
               )}
-              {isMedical && submenu && expandedMedical && (
+              {showSubmenus && isMedical && submenu && expandedMedical && (
                 <div className="mt-1 space-y-1 pl-4">
                   {submenu.map(({ label: subLabel, icon: SubIcon, path: subPath }) => {
                     const subActive = location.pathname === subPath || (subPath === "/medical" && location.pathname === "/medical");
@@ -724,7 +740,7 @@ export function Sidebar() {
                   })}
                 </div>
               )}
-              {isJoueurMenu && submenu && expandedJoueur && (
+              {showSubmenus && isJoueurMenu && submenu && expandedJoueur && (
                 <div className="mt-1 space-y-1 pl-4">
                   {submenu.map(({ label: subLabel, icon: SubIcon, path: subPath }) => {
                     const subActive = location.pathname === subPath || (subPath === "/joueurs" && location.pathname === "/joueurs");
@@ -746,7 +762,7 @@ export function Sidebar() {
                   })}
                 </div>
               )}
-              {isClubAdminMenu && submenu && expandedClubAdmin && (
+              {showSubmenus && isClubAdminMenu && submenu && expandedClubAdmin && (
                 <div className="mt-1 space-y-1 pl-4">
                   {submenu.map(({ label: subLabel, icon: SubIcon, path: subPath }) => {
                     const subActive = location.pathname === subPath || (subPath === "/club" && location.pathname === "/club");
@@ -768,7 +784,7 @@ export function Sidebar() {
                   })}
                 </div>
               )}
-              {isPreparateurMenu && submenuGroups && expandedPreparateur && (
+              {showSubmenus && isPreparateurMenu && submenuGroups && expandedPreparateur && (
                 <div className="mt-1 max-h-[calc(100vh-220px)] space-y-3 overflow-y-auto pl-2 pr-1">
                   {submenuGroups.map((group) => (
                     <div key={group.label}>
@@ -799,7 +815,7 @@ export function Sidebar() {
                   ))}
                 </div>
               )}
-              {isAnalysteMenu && submenuGroups && expandedAnalyste && (
+              {showSubmenus && isAnalysteMenu && submenuGroups && expandedAnalyste && (
                 <div className="mt-1 max-h-[calc(100vh-220px)] space-y-3 overflow-y-auto pl-2 pr-1">
                   {submenuGroups.map((group) => (
                     <div key={group.label}>
@@ -830,7 +846,7 @@ export function Sidebar() {
                   ))}
                 </div>
               )}
-              {isRecruteurMenu && submenuGroups && expandedRecruteur && (
+              {showSubmenus && isRecruteurMenu && submenuGroups && expandedRecruteur && (
                 <div className="mt-1 max-h-[calc(100vh-220px)] space-y-3 overflow-y-auto pl-2 pr-1">
                   {submenuGroups.map((group) => (
                     <div key={group.label}>
@@ -861,7 +877,7 @@ export function Sidebar() {
                   ))}
                 </div>
               )}
-              {isResponsableMenu && submenuGroups && expandedResponsable && (
+              {showSubmenus && isResponsableMenu && submenuGroups && expandedResponsable && (
                 <div className="mt-1 max-h-[calc(100vh-220px)] space-y-3 overflow-y-auto pl-2 pr-1">
                   {submenuGroups.map((group) => (
                     <div key={group.label}>
@@ -892,7 +908,7 @@ export function Sidebar() {
                   ))}
                 </div>
               )}
-              {isCoachMenu && submenuGroups && expandedCoach && (
+              {showSubmenus && isCoachMenu && submenuGroups && expandedCoach && (
                 <div className="mt-1 max-h-[calc(100vh-220px)] space-y-3 overflow-y-auto pl-2 pr-1">
                   {submenuGroups.map((group) => (
                     <div key={group.label}>
@@ -928,15 +944,39 @@ export function Sidebar() {
         })}
       </nav>
 
-      <button
-        type="button"
-        onClick={() => navigate("/login")}
-        className="flex w-full items-center gap-3 rounded-[var(--radius-odin-md)] px-3 py-2.5 text-sm transition-colors duration-150"
-        style={{ color: "var(--nav-text)" }}
+      <div
+        className="mt-auto shrink-0 space-y-1 border-t pt-3"
+        style={{ borderColor: "rgba(255,255,255,0.12)" }}
       >
-        <LogOut size={17} strokeWidth={2} />
-        Déconnexion
-      </button>
+        <button
+          type="button"
+          onClick={() => setSettingsOpen(true)}
+          title={compact ? t.nav.settings : undefined}
+          className={`flex w-full items-center rounded-[var(--radius-odin-md)] text-sm transition-colors duration-150 ${compact ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5"}`}
+          style={{ color: "var(--nav-text)" }}
+        >
+          <Settings size={17} strokeWidth={2} />
+          {!compact && t.nav.settings}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            logout();
+            navigate("/login");
+          }}
+          title={compact ? t.nav.logout : undefined}
+          className={`flex w-full items-center rounded-[var(--radius-odin-md)] text-sm transition-colors duration-150 ${compact ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5"}`}
+          style={{ color: "var(--nav-text)" }}
+        >
+          <LogOut size={17} strokeWidth={2} />
+          {!compact && t.nav.logout}
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+      </AnimatePresence>
     </aside>
   );
 }

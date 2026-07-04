@@ -28,7 +28,7 @@ export function CircularProgress({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="rgba(255,255,255,0.08)"
+          stroke="var(--chart-grid)"
           strokeWidth={strokeWidth}
         />
         <motion.circle

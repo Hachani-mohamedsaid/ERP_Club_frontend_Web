@@ -3,15 +3,18 @@ import { ThemeProvider } from "./lib/theme";
 import { AppRouter } from "./router";
 import { AuthProvider } from "./contexts/AuthContext";
 import { LocaleProvider } from "./contexts/LocaleContext";
+import { UserPreferencesProvider } from "./contexts/UserPreferencesContext";
 
 function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
         <LocaleProvider>
-          <BrowserRouter>
-            <AppRouter />
-          </BrowserRouter>
+          <UserPreferencesProvider>
+            <BrowserRouter>
+              <AppRouter />
+            </BrowserRouter>
+          </UserPreferencesProvider>
         </LocaleProvider>
       </AuthProvider>
     </ThemeProvider>

@@ -194,7 +194,7 @@ export function MatchesPage() {
             ) : (
               <div className="space-y-3">
                 {past.map((m) => (
-                  <div key={m.id} className="flex items-center justify-between rounded-xl border px-4 py-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+                  <div key={m.id} className="flex items-center justify-between rounded-xl border px-4 py-3" style={{ borderColor: "var(--surface-panel-border)" }}>
                     <div>
                       <p className="font-medium" style={{ color: "var(--text-primary)" }}>{m.title}</p>
                       <p className="text-xs" style={{ color: "var(--text-muted)" }}>{formatMatchDate(m.eventDate, m.eventTime)}</p>
@@ -215,7 +215,7 @@ export function MatchesPage() {
             ) : (
               <div className="space-y-3">
                 {upcoming.map((m) => (
-                  <div key={m.id} className="flex items-center justify-between rounded-xl border px-4 py-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+                  <div key={m.id} className="flex items-center justify-between rounded-xl border px-4 py-3" style={{ borderColor: "var(--surface-panel-border)" }}>
                     <div>
                       <p className="font-medium" style={{ color: "var(--text-primary)" }}>{m.title}</p>
                       <p className="text-xs" style={{ color: "var(--text-muted)" }}>
@@ -263,7 +263,7 @@ export function MatchesPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   className="mt-6 border-t pt-6"
-                  style={{ borderColor: "rgba(255,255,255,0.08)" }}
+                  style={{ borderColor: "var(--surface-panel-border)" }}
                 >
                   <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                     <div>
@@ -291,7 +291,7 @@ export function MatchesPage() {
                           <div
                             key={`${p.position}-${p.name}`}
                             className="flex items-center justify-between rounded-xl border px-3 py-2"
-                            style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}
+                            style={{ borderColor: "var(--surface-panel-border)", background: "rgba(255,255,255,0.02)" }}
                           >
                             <div>
                               <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{p.name}</p>

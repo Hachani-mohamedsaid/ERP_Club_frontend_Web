@@ -21,7 +21,7 @@ export function WhoopGlassMetric({ label, value, suffix = "", delta, progress, c
       className="rounded-2xl border p-4 backdrop-blur-xl"
       style={{
         background: "rgba(17,24,39,0.5)",
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: "var(--surface-panel-border)",
         boxShadow: `0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px ${c}15`,
       }}
       initial={{ opacity: 0, y: 24 }}

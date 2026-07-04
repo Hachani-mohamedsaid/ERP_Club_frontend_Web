@@ -49,7 +49,7 @@ export function AnalysteAdversairePage() {
             <BarChart data={attackData}>
               <XAxis dataKey="zone" tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
               <YAxis tick={{ fill: "var(--text-muted)", fontSize: 11 }} domain={[0, 50]} />
-              <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12 }} />
+              <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }} />
               <Bar dataKey="pct" radius={[8, 8, 0, 0]} animationDuration={1200}>
                 {attackData.map((d) => <Cell key={d.zone} fill={d.color} />)}
               </Bar>

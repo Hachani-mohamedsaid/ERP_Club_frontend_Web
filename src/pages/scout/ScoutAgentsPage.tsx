@@ -81,7 +81,7 @@ function AgentCard({
       </div>
 
       {agent.players.length > 0 && (
-        <div className="mt-4 pt-3 border-t" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+        <div className="mt-4 pt-3 border-t" style={{ borderColor: "var(--surface-panel-border)" }}>
           <p className="text-[10px] font-bold uppercase mb-2" style={{ color: "var(--text-muted)" }}>
             Joueurs représentés
           </p>
@@ -323,7 +323,7 @@ export function ScoutAgentsPage() {
 
       <div className="flex gap-2">
         <div className="flex flex-1 items-center gap-2 rounded-xl border px-3 py-2"
-          style={{ background: "rgba(8,6,24,0.85)", borderColor: "rgba(255,255,255,0.09)" }}>
+          style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
           <Search size={14} style={{ color: "var(--text-muted)" }} />
           <input
             value={search}
@@ -433,7 +433,7 @@ export function ScoutAgentsPage() {
           >
             <motion.div
               className="w-full max-w-lg rounded-2xl border p-5 max-h-[80vh] overflow-y-auto"
-              style={{ background: "rgba(12,9,30,0.98)", borderColor: "rgba(255,255,255,0.1)" }}
+              style={{ background: "rgba(12,9,30,0.98)", borderColor: "var(--surface-panel-border)" }}
               initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -453,7 +453,7 @@ export function ScoutAgentsPage() {
                   <p style={{ color: "var(--text-muted)" }}>À: {contactData.email}</p>
                   <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{contactData.subject}</p>
                   <div className="rounded-xl border p-3 whitespace-pre-line text-xs"
-                    style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-secondary)" }}>
+                    style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-secondary)" }}>
                     {contactData.body}
                   </div>
                 </div>
@@ -461,7 +461,7 @@ export function ScoutAgentsPage() {
                 <div className="space-y-3">
                   {historyData.summary && <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{historyData.summary}</p>}
                   {historyData.entries.map((entry, i) => (
-                    <div key={i} className="rounded-xl border p-3 text-xs" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+                    <div key={i} className="rounded-xl border p-3 text-xs" style={{ borderColor: "var(--surface-panel-border)" }}>
                       <div className="flex justify-between mb-1">
                         <span className="font-bold" style={{ color: S.primary }}>{entry.date}</span>
                         <span style={{ color: "var(--text-muted)" }}>{entry.type}</span>

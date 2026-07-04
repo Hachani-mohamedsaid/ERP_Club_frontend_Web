@@ -32,8 +32,8 @@ export function PositionMap({ preferred, secondary }: PositionMapProps) {
         style={{ borderColor: "var(--color-state-success)", background: "rgba(46,158,91,0.08)" }}
       />
       <div className="absolute inset-x-4 top-1/2 h-0.5" style={{ background: "rgba(255,255,255,0.15)" }} />
-      <div className="absolute inset-x-4 top-1/4 h-0.5" style={{ background: "rgba(255,255,255,0.1)" }} />
-      <div className="absolute left-1/2 top-4 h-16 w-16 -translate-x-1/2 rounded-full border" style={{ borderColor: "rgba(255,255,255,0.1)" }} />
+      <div className="absolute inset-x-4 top-1/4 h-0.5" style={{ background: "var(--divider)" }} />
+      <div className="absolute left-1/2 top-4 h-16 w-16 -translate-x-1/2 rounded-full border" style={{ borderColor: "var(--surface-panel-border)" }} />
 
       {Object.entries(POSITIONS).map(([key, pos]) => {
         const isPreferred = key === preferred;

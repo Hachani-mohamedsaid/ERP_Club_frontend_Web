@@ -51,7 +51,7 @@ const RESP_TABS = ["Vue globale", "Recrutement", "Médical", "Matchs"];
 
 const TOOLTIP_STYLE = {
   contentStyle: {
-    background: "rgba(10,16,30,0.95)", border: "1px solid rgba(255,122,0,0.2)",
+    background: "var(--surface-modal)", border: "1px solid rgba(255,122,0,0.2)",
     color: "var(--text-primary)", borderRadius: 12,
   },
 };
@@ -116,7 +116,7 @@ function ResponsableReports() {
           <div className="flex gap-2">
             <motion.button type="button"
               className="flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold"
-              style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-secondary)" }}
+              style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-secondary)" }}
               whileHover={{ borderColor: "rgba(255,122,0,0.3)", color: "var(--accent)" }} whileTap={{ scale: 0.96 }}>
               <RefreshCw size={12} /> Actualiser
             </motion.button>

@@ -133,7 +133,7 @@ export function FinanceDashboard() {
           const sparkData = k.sparkline.map((v) => ({ v }));
           return (
             <motion.div key={i} className="rounded-[18px] border p-4"
-              style={{ background: "rgba(8,6,24,0.88)", borderColor: "rgba(255,255,255,0.07)" }}
+              style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}
               whileHover={{ y: -3, boxShadow: `0 12px 30px rgba(0,0,0,0.35), 0 0 0 1px ${k.color}20` }}>
               <div className="flex items-start justify-between gap-1 mb-2">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: `${k.color}14` }}>
@@ -162,7 +162,7 @@ export function FinanceDashboard() {
       </motion.div>
 
       <motion.div variants={fade} className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-[20px] border p-5" style={{ background: "rgba(8,6,24,0.88)", borderColor: "rgba(255,255,255,0.07)" }}>
+        <div className="rounded-[20px] border p-5" style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
           <p className="mb-3 text-xs font-bold" style={{ color: "var(--text-primary)" }}>📈 Évolution Revenus (M DT)</p>
           {budgetChart.length > 0 ? (
             <div className="h-52">
@@ -177,7 +177,7 @@ export function FinanceDashboard() {
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
                   <XAxis dataKey="month" tick={{ fill: F.muted, fontSize: 10 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: F.muted, fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ background: "rgba(8,6,24,0.97)", border: `1px solid ${F.primary}30`, color: "white", borderRadius: 12 }} formatter={(v: number) => [`${v}M DT`, "Revenus"]} />
+                  <Tooltip contentStyle={{ background: "var(--surface-panel-solid)", border: `1px solid ${F.primary}30`, color: "white", borderRadius: 12 }} formatter={(v: number) => [`${v}M DT`, "Revenus"]} />
                   <Area type="monotone" dataKey="budget" stroke={F.primary} fill="url(#budGrad)" strokeWidth={2.5} dot={{ fill: F.primary, r: 3 }} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -187,7 +187,7 @@ export function FinanceDashboard() {
           )}
         </div>
 
-        <div className="rounded-[20px] border p-5" style={{ background: "rgba(8,6,24,0.88)", borderColor: "rgba(255,255,255,0.07)" }}>
+        <div className="rounded-[20px] border p-5" style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
           <p className="mb-3 text-xs font-bold" style={{ color: "var(--text-primary)" }}>📊 Revenus vs Dépenses (M DT)</p>
           {revExpChart.length > 0 ? (
             <div className="h-52">
@@ -196,7 +196,7 @@ export function FinanceDashboard() {
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
                   <XAxis dataKey="month" tick={{ fill: F.muted, fontSize: 10 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: F.muted, fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ background: "rgba(8,6,24,0.97)", border: "1px solid rgba(255,255,255,0.1)", color: "white", borderRadius: 12 }} formatter={(v: number) => [`${v}M DT`]} />
+                  <Tooltip contentStyle={{ background: "var(--surface-panel-solid)", border: "1px solid rgba(255,255,255,0.1)", color: "white", borderRadius: 12 }} formatter={(v: number) => [`${v}M DT`]} />
                   <Legend wrapperStyle={{ fontSize: 10, color: F.muted }} />
                   <Bar dataKey="revenus" fill={F.success} radius={[4, 4, 0, 0]} name="Revenus" />
                   <Bar dataKey="depenses" fill={F.danger} radius={[4, 4, 0, 0]} name="Dépenses" />
@@ -211,7 +211,7 @@ export function FinanceDashboard() {
 
       {AI_INSIGHTS.length > 0 && (
         <motion.div variants={fade} className="rounded-[22px] border p-5"
-          style={{ background: "rgba(8,6,24,0.92)", borderColor: "rgba(99,102,241,0.2)", boxShadow: "0 0 40px rgba(99,102,241,0.06)" }}>
+          style={{ background: "var(--surface-panel-solid)", borderColor: "rgba(99,102,241,0.2)", boxShadow: "0 0 40px rgba(99,102,241,0.06)" }}>
           <div className="flex items-center gap-3 mb-4">
             <motion.div className="flex h-9 w-9 items-center justify-center rounded-xl"
               style={{ background: "linear-gradient(135deg,#6366F1,#FF7A00)" }}

@@ -20,7 +20,7 @@ const RISK_COLOR: Record<TransferTarget["risk"], string> = {
 
 const ACard = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
   <motion.div className={`rounded-[20px] border p-5 ${className}`}
-    style={{ background: "rgba(5,8,22,0.7)", borderColor: "rgba(255,255,255,0.06)", boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}
+    style={{ background: "rgba(5,8,22,0.7)", borderColor: "var(--surface-panel-border)", boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}
     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
     {children}
   </motion.div>
@@ -72,7 +72,7 @@ export function AnalysteTransferPage() {
           { label: "Budget estimé total",    value: summary.totalBudget,                                     color: "#3B82F6", icon: DollarSign  },
         ].map(({ label, value, color, icon: Icon }, i) => (
           <motion.div key={label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
-            <div className="rounded-[16px] border p-4" style={{ background: "rgba(5,8,22,0.7)", borderColor: "rgba(255,255,255,0.06)" }}>
+            <div className="rounded-[16px] border p-4" style={{ background: "rgba(5,8,22,0.7)", borderColor: "var(--surface-panel-border)" }}>
               <div className="flex items-center gap-2">
                 <motion.div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
                   style={{ background: `${color}18`, color }}
@@ -99,7 +99,7 @@ export function AnalysteTransferPage() {
             style={{
               background: posFilter === p ? "rgba(139,92,246,0.2)" : "rgba(255,255,255,0.04)",
               color: posFilter === p ? "#8B5CF6" : "var(--text-muted)",
-              border: `1px solid ${posFilter === p ? "rgba(139,92,246,0.4)" : "rgba(255,255,255,0.06)"}`,
+              border: "1px solid var(--surface-panel-border)",
             }}
             whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }}>
             {p}
@@ -188,7 +188,7 @@ export function AnalysteTransferPage() {
                       { label: "Coût",           value: selected.cost,                color: "#8B5CF6" },
                     ].map(m => (
                       <div key={m.label} className="rounded-xl border p-2 text-center"
-                        style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                        style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
                         <p className="text-sm font-extrabold" style={{ color: m.color }}>{m.value}</p>
                         <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{m.label}</p>
                       </div>
@@ -205,7 +205,7 @@ export function AnalysteTransferPage() {
             ) : (
               <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 className="flex h-48 items-center justify-center rounded-[20px] border"
-                style={{ borderColor: "rgba(255,255,255,0.05)", background: "rgba(5,8,22,0.5)" }}>
+                style={{ borderColor: "var(--surface-panel-border)", background: "rgba(5,8,22,0.5)" }}>
                 <p className="text-sm" style={{ color: "var(--text-muted)" }}>Sélectionner un joueur</p>
               </motion.div>
             )}

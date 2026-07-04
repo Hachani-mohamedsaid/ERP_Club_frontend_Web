@@ -15,7 +15,7 @@ export function ClubBestXIPitch({
         className="relative overflow-hidden rounded-2xl border"
         style={{
           aspectRatio: "3 / 4",
-          borderColor: "rgba(255,255,255,0.08)",
+          borderColor: "var(--surface-panel-border)",
           background: "linear-gradient(180deg, #1a5c30 0%, #1e6b38 50%, #1a5c30 100%)",
         }}
       >
@@ -57,7 +57,7 @@ export function ClubBestXIPitch({
             </div>
             <span
               className="mt-1 max-w-[72px] truncate text-center text-[10px] font-semibold"
-              style={{ color: "rgba(255,255,255,0.95)" }}
+              style={{ color: "var(--text-primary)" }}
             >
               {player.name}
             </span>

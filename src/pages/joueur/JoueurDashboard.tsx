@@ -84,7 +84,7 @@ export function JoueurDashboard() {
       {/* ── HERO ── */}
       <motion.div
         className="relative overflow-hidden rounded-[24px] border"
-        style={{ borderColor: "rgba(255,255,255,0.08)" }}
+        style={{ borderColor: "var(--surface-panel-border)" }}
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
@@ -154,7 +154,7 @@ export function JoueurDashboard() {
                 ].map(({ icon: Icon, label, value, sub, color }, i) => (
                   <motion.div key={label}
                     className="rounded-[16px] border p-3"
-                    style={{ borderColor: "rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.03)" }}
+                    style={{ borderColor: "var(--surface-panel-border)", background: "var(--surface-input)" }}
                     initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
                     whileHover={{ y: -3, borderColor: `${color}35` }}>
                     <Icon size={13} style={{ color }} />
@@ -168,7 +168,7 @@ export function JoueurDashboard() {
               {/* Training load + fatigue */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <motion.div className="rounded-[18px] border p-4"
-                  style={{ borderColor: "rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.03)" }}
+                  style={{ borderColor: "var(--surface-panel-border)", background: "var(--surface-input)" }}
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
                   <div className="mb-2 flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -177,7 +177,7 @@ export function JoueurDashboard() {
                     </div>
                     <span className="text-sm font-black" style={{ color: loadColor }}>{trainingLoad}%</span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+                  <div className="h-2 overflow-hidden rounded-full" style={{ background: "var(--surface-input)" }}>
                     <motion.div className="h-full rounded-full" style={{ background: loadColor }}
                       initial={{ width: 0 }} animate={{ width: `${trainingLoad}%` }} transition={{ duration: 1 }} />
                   </div>
@@ -194,7 +194,7 @@ export function JoueurDashboard() {
                     <span className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Fatigue prévue</span>
                     <span className="ml-auto text-sm font-black" style={{ color: "#F59E0B" }}>{fatiguePredicted}%</span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+                  <div className="h-2 overflow-hidden rounded-full" style={{ background: "var(--surface-input)" }}>
                     <motion.div className="h-full rounded-full" style={{ background: "#F59E0B" }}
                       initial={{ width: 0 }} animate={{ width: `${fatiguePredicted}%` }} transition={{ duration: 1, delay: 0.1 }} />
                   </div>
@@ -204,7 +204,7 @@ export function JoueurDashboard() {
 
               {/* Last 3 match ratings */}
               {lastMatchRatings.length > 0 && (
-                <div className="rounded-[18px] border p-4" style={{ borderColor: "rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)" }}>
+                <div className="rounded-[18px] border p-4" style={{ borderColor: "var(--surface-panel-border)", background: "var(--surface-input)" }}>
                   <p className="mb-3 text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
                     Derniers matchs
                   </p>
@@ -243,11 +243,11 @@ export function JoueurDashboard() {
           </h3>
           <SeasonProgressBar label={t.dashboard.goalTarget} current={seasonGoals} target={goalTarget} />
           <div className="mt-4 grid grid-cols-2 gap-3 text-center">
-            <div className="rounded-xl border p-2" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+            <div className="rounded-xl border p-2" style={{ borderColor: "var(--surface-panel-border)" }}>
               <p className="text-lg font-bold" style={{ color: "#3B82F6" }}>{seasonAssists}/{assistTarget}</p>
               <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>Assists</p>
             </div>
-            <div className="rounded-xl border p-2" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+            <div className="rounded-xl border p-2" style={{ borderColor: "var(--surface-panel-border)" }}>
               <p className="text-lg font-bold" style={{ color: "#F59E0B" }}>{minutesTotal}</p>
               <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>Minutes</p>
             </div>
@@ -264,7 +264,7 @@ export function JoueurDashboard() {
               <LineChart data={ovrProgression}>
                 <XAxis dataKey="month" tick={{ fill: "var(--text-muted)", fontSize: 10 }} axisLine={false} tickLine={false} />
                 <YAxis domain={[60, 100]} hide />
-                <Tooltip contentStyle={{ background: "#141B2D", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12 }} />
+                <Tooltip contentStyle={{ background: "var(--surface-panel-solid)", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }} />
                 <Line type="monotone" dataKey="ovr" stroke="#FF6B57" strokeWidth={2.5} dot={{ fill: "#FF6B57", r: 4 }} animationDuration={1500} />
               </LineChart>
             </ResponsiveContainer>
@@ -280,7 +280,7 @@ export function JoueurDashboard() {
               {rewardsList.map((r) => (
                 <motion.div key={r.id} variants={staggerItem}
                   className="flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all hover:scale-[1.02]"
-                  style={{ borderColor: "rgba(255,255,255,0.06)", background: `${r.color}11` }}>
+                  style={{ borderColor: "var(--surface-panel-border)", background: `${r.color}11` }}>
                   <span className="text-xl">{r.icon}</span>
                   <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{r.text}</span>
                 </motion.div>
@@ -303,7 +303,7 @@ export function JoueurDashboard() {
               { label: "Assists", value: seasonAssists, color: "#3B82F6" },
               { label: "Matchs", value: seasonMatches, color: "#F59E0B" },
             ].map(({ label, value, color }) => (
-              <div key={label} className="rounded-xl border p-2 text-center" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+              <div key={label} className="rounded-xl border p-2 text-center" style={{ borderColor: "var(--surface-panel-border)" }}>
                 <p className="text-lg font-bold" style={{ color }}><CountUpStat end={value} suffix="" /></p>
                 <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{label}</p>
               </div>

@@ -36,7 +36,7 @@ function FinanceTransactionModal({
     >
       <motion.div
         className="w-full max-w-md rounded-[24px] border p-6"
-        style={{ background: "rgba(10,18,40,0.98)", borderColor: "rgba(255,107,87,0.25)" }}
+        style={{ background: "var(--surface-panel-solid)", borderColor: "rgba(255,107,87,0.25)" }}
         initial={{ scale: 0.92, y: 20 }} animate={{ scale: 1, y: 0 }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -59,7 +59,7 @@ function FinanceTransactionModal({
               onChange={(e) => setForm({ ...form, label: e.target.value })}
               placeholder="Ex: Salaire, Sponsor…"
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             />
           </div>
           <div>
@@ -72,7 +72,7 @@ function FinanceTransactionModal({
               value={form.amount}
               onChange={(e) => setForm({ ...form, amount: e.target.value })}
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             />
           </div>
           <div>
@@ -87,7 +87,7 @@ function FinanceTransactionModal({
                 setForm((f) => ({ ...f, category: next === "REVENUE" ? "Sponsors" : "Salaires" }));
               }}
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(30,35,50,0.97)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             >
               <option value="EXPENSE">Dépense (EXPENSE)</option>
               <option value="REVENUE">Revenu (REVENUE)</option>
@@ -101,7 +101,7 @@ function FinanceTransactionModal({
               value={form.category}
               onChange={(e) => setForm({ ...form, category: e.target.value })}
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(30,35,50,0.97)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             >
               {categories.map((c) => (
                 <option key={c} value={c}>{c}</option>
@@ -169,7 +169,7 @@ function PieBlock({
               ))}
             </Pie>
             <Tooltip
-              contentStyle={{ background: "#0F1D3A", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12 }}
+              contentStyle={{ background: "#0F1D3A", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }}
               formatter={(_v: number, _n: string, props: { payload?: FinanceChartSlice }) =>
                 [`${(props.payload?.amount ?? 0).toLocaleString("fr-FR")} DT`, props.payload?.name ?? ""]
               }
@@ -253,7 +253,7 @@ export function ClubFinancesPage() {
                 <XAxis dataKey="month" tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
                 <YAxis tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
                 <Tooltip
-                  contentStyle={{ background: "#0F1D3A", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12 }}
+                  contentStyle={{ background: "#0F1D3A", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }}
                   formatter={(v: number) => [`${v} K DT`, "Dépenses"]}
                 />
                 <Bar dataKey="amount" fill="#FF6B57" radius={[6, 6, 0, 0]} />
@@ -279,7 +279,7 @@ export function ClubFinancesPage() {
                 <div
                   key={h.id}
                   className="flex items-center justify-between rounded-xl border px-4 py-3"
-                  style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}
+                  style={{ borderColor: "var(--surface-panel-border)", background: "rgba(255,255,255,0.02)" }}
                 >
                   <div>
                     <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{h.label}</p>

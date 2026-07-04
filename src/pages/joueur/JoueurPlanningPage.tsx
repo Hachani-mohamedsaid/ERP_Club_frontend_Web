@@ -181,7 +181,7 @@ export function JoueurPlanningPage() {
                 {trainingLoad}%
               </span>
             </div>
-            <div className="h-2.5 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+            <div className="h-2.5 overflow-hidden rounded-full" style={{ background: "var(--surface-input)" }}>
               <motion.div
                 className="h-full rounded-full"
                 style={{ background: loadColor }}
@@ -191,7 +191,8 @@ export function JoueurPlanningPage() {
               />
             </div>
             <p className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>
-              {sess.completed ?? 0}/{sess.total ?? 0} séances · Intensité {sess.intensity ?? "—"}
+              {sess.completed ?? 0}/{sess.total ?? 0} {t.planningExtra.sessions} · {t.planningExtra.intensity}{" "}
+              {sess.intensity ?? "—"}
             </p>
           </JoueurKpiCard>
 
@@ -207,7 +208,7 @@ export function JoueurPlanningPage() {
                 {sess.fatiguePredicted ?? 0}%
               </span>
             </div>
-            <div className="h-2.5 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+            <div className="h-2.5 overflow-hidden rounded-full" style={{ background: "var(--surface-input)" }}>
               <motion.div
                 className="h-full rounded-full"
                 style={{ background: "#F59E0B" }}
@@ -217,7 +218,7 @@ export function JoueurPlanningPage() {
               />
             </div>
             <p className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>
-              Prédiction basée sur les entraînements
+              {t.planningExtra.fatigueFromTraining}
             </p>
           </JoueurKpiCard>
         </div>
@@ -236,11 +237,11 @@ export function JoueurPlanningPage() {
               —°
             </p>
             <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-              Données météo non disponibles
+              {t.planningExtra.weatherUnavailable}
             </p>
             <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
               <Wind size={12} />
-              Service météo non connecté
+              {t.planningExtra.weatherOffline}
             </div>
           </JoueurKpiCard>
 
@@ -268,7 +269,7 @@ export function JoueurPlanningPage() {
                       {idx < arr.length - 1 && (
                         <div
                           className="mt-1 w-0.5 flex-1"
-                          style={{ background: "rgba(255,255,255,0.1)", minHeight: 40 }}
+                          style={{ background: "var(--divider)", minHeight: 40 }}
                         />
                       )}
                     </div>
@@ -287,7 +288,7 @@ export function JoueurPlanningPage() {
                 ))
               ) : (
                 <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-                  {loading ? "Chargement…" : "Aucun événement ce mois"}
+                  {loading ? t.planningExtra.loadingCalendar : t.planningExtra.noEventsMonth}
                 </p>
               )}
             </div>
@@ -302,7 +303,7 @@ export function JoueurPlanningPage() {
                   {monthLabel}
                 </h3>
                 <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                  {monthEvents.length} événement{monthEvents.length !== 1 ? "s" : ""} · Calendrier du club
+                  {monthEvents.length} {t.planningExtra.clubCalendar}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -310,7 +311,7 @@ export function JoueurPlanningPage() {
                   type="button"
                   onClick={() => setCurrentDate(new Date(year, month - 1, 1))}
                   className="flex h-8 w-8 items-center justify-center rounded-xl border"
-                  style={{ borderColor: "rgba(255,255,255,0.08)" }}
+                  style={{ borderColor: "var(--surface-panel-border)" }}
                 >
                   <ChevronLeft size={16} style={{ color: "var(--text-muted)" }} />
                 </button>
@@ -318,7 +319,7 @@ export function JoueurPlanningPage() {
                   type="button"
                   onClick={() => setCurrentDate(new Date(year, month + 1, 1))}
                   className="flex h-8 w-8 items-center justify-center rounded-xl border"
-                  style={{ borderColor: "rgba(255,255,255,0.08)" }}
+                  style={{ borderColor: "var(--surface-panel-border)" }}
                 >
                   <ChevronRight size={16} style={{ color: "var(--text-muted)" }} />
                 </button>
@@ -351,15 +352,15 @@ export function JoueurPlanningPage() {
                     onClick={() => openDay(day)}
                     className="aspect-square rounded-xl border p-1 text-left"
                     style={{
-                      borderColor: isToday ? "#FF6B57" : "rgba(255,255,255,0.06)",
-                      background: isToday ? "rgba(255,107,87,0.08)" : "transparent",
+                      borderColor: isToday ? "var(--accent)" : "var(--surface-panel-border)",
+                      background: isToday ? "var(--accent-soft)" : "var(--surface-input)",
                       cursor: events.length > 0 ? "pointer" : "default",
                     }}
-                    whileHover={events.length > 0 ? { backgroundColor: "rgba(255,255,255,0.04)" } : undefined}
+                    whileHover={events.length > 0 ? { backgroundColor: "var(--surface-hover)" } : undefined}
                   >
                     <span
-                      className="text-xs font-medium"
-                      style={{ color: isToday ? "#FF6B57" : "var(--text-secondary)" }}
+                      className="text-xs font-semibold"
+                      style={{ color: isToday ? "var(--accent)" : "var(--text-primary)" }}
                     >
                       {day}
                     </span>
@@ -403,9 +404,7 @@ export function JoueurPlanningPage() {
             </h3>
             {upcomingEvents.length === 0 ? (
               <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-                {loading
-                  ? "Chargement du calendrier…"
-                  : "Aucun événement à venir. Le staff (coach, médical, admin) ajoute les événements au calendrier du club."}
+                {loading ? t.planningExtra.loadingCalendar : t.planningExtra.noUpcoming}
               </p>
             ) : (
               <div className="grid grid-cols-1 gap-4">
@@ -481,7 +480,7 @@ export function JoueurPlanningPage() {
           >
             <motion.div
               className="w-full max-w-sm rounded-2xl p-6"
-              style={{ background: "#141B2D", border: "1px solid rgba(255,255,255,0.1)" }}
+              style={{ background: "var(--surface-panel-solid)", border: "1px solid var(--surface-panel-border)" }}
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
@@ -495,7 +494,7 @@ export function JoueurPlanningPage() {
                   type="button"
                   onClick={() => setSelectedDayEvents(null)}
                   className="flex h-8 w-8 items-center justify-center rounded-full"
-                  style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
+                  style={{ background: "var(--surface-input)", color: "var(--text-muted)" }}
                 >
                   <X size={16} />
                 </button>
@@ -546,7 +545,7 @@ export function JoueurPlanningPage() {
             <motion.div
               className="w-full max-w-sm rounded-2xl p-6"
               style={{
-                background: "#141B2D",
+                background: "var(--surface-panel-solid)",
                 border: `1px solid ${PLANNING_TYPE_COLORS[selectedEvent.type]}44`,
               }}
               initial={{ scale: 0.9, y: 20 }}
@@ -576,7 +575,7 @@ export function JoueurPlanningPage() {
                   type="button"
                   onClick={() => setSelectedEvent(null)}
                   className="flex h-8 w-8 items-center justify-center rounded-full"
-                  style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
+                  style={{ background: "var(--surface-input)", color: "var(--text-muted)" }}
                 >
                   <X size={16} />
                 </button>
@@ -584,7 +583,7 @@ export function JoueurPlanningPage() {
               <div className="space-y-3">
                 <div
                   className="flex items-center gap-3 rounded-xl border px-4 py-2.5"
-                  style={{ borderColor: "rgba(255,255,255,0.06)" }}
+                  style={{ borderColor: "var(--surface-panel-border)" }}
                 >
                   <CalendarDays size={14} style={{ color: PLANNING_TYPE_COLORS[selectedEvent.type] }} />
                   <span className="text-sm" style={{ color: "var(--text-primary)" }}>
@@ -593,7 +592,7 @@ export function JoueurPlanningPage() {
                 </div>
                 <div
                   className="flex items-center gap-3 rounded-xl border px-4 py-2.5"
-                  style={{ borderColor: "rgba(255,255,255,0.06)" }}
+                  style={{ borderColor: "var(--surface-panel-border)" }}
                 >
                   <Clock size={14} style={{ color: PLANNING_TYPE_COLORS[selectedEvent.type] }} />
                   <span className="text-sm" style={{ color: "var(--text-primary)" }}>
@@ -603,7 +602,7 @@ export function JoueurPlanningPage() {
                 {selectedEvent.location && (
                   <div
                     className="flex items-center gap-3 rounded-xl border px-4 py-2.5"
-                    style={{ borderColor: "rgba(255,255,255,0.06)" }}
+                    style={{ borderColor: "var(--surface-panel-border)" }}
                   >
                     <MapPin size={14} style={{ color: PLANNING_TYPE_COLORS[selectedEvent.type] }} />
                     <span className="text-sm" style={{ color: "var(--text-primary)" }}>

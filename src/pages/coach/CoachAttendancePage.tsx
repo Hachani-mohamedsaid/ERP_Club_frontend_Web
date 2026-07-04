@@ -168,7 +168,7 @@ export function CoachAttendancePage() {
             {SESSIONS_DONE.map((s, i) => (
               <motion.div key={s.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                 className="flex items-center gap-3 rounded-xl border px-4 py-3"
-                style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-bold"
                   style={{ background: `${COACH_ACCENT}18`, color: COACH_ACCENT }}>{s.type[0]}</div>
                 <div className="flex-1">

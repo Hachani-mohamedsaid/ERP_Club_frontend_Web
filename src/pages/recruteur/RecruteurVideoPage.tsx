@@ -121,7 +121,7 @@ export function RecruteurVideoPage() {
 
           <RecruteurKpiCard hover={false}>
             <h3 className="mb-3 text-sm font-bold" style={{ color: "var(--text-primary)" }}>Heatmap vidéo</h3>
-            <div className="relative aspect-[3/2] w-full overflow-hidden rounded-xl" style={{ background: "linear-gradient(90deg,#163a1f,#0f2e18)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="relative aspect-[3/2] w-full overflow-hidden rounded-xl" style={{ background: "linear-gradient(90deg,#163a1f,#0f2e18)", border: "1px solid var(--surface-panel-border)" }}>
               <div className="absolute inset-y-2 left-1/2 w-px" style={{ background: "rgba(255,255,255,0.15)" }} />
               {[
                 { x: 62, y: 42, s: 80, c: "#EF4444" },

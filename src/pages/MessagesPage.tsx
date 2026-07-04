@@ -5,7 +5,7 @@ import { useMessages } from "../hooks/useMessages";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { parseAttachmentMessage, resolveAttachmentUrl, formatMessagePreview } from "../lib/messages/attachment";
 
-const S = { primary: "#FF7A00", success: "#22C55E", muted: "rgba(255,255,255,0.4)" };
+const S = { primary: "#FF7A00", success: "#22C55E", muted: "var(--text-muted)" };
 
 const QUICK_EMOJIS = ["😀", "😂", "😍", "👍", "👏", "🔥", "⚽", "🏆", "💪", "🙏", "✅", "❤️", "😅", "🎉", "👋", "💼"];
 
@@ -155,10 +155,10 @@ export function MessagesPage() {
 
       <div className="flex gap-3 h-[70vh] min-h-[500px]">
         <div className="flex w-72 shrink-0 flex-col rounded-[20px] border overflow-hidden"
-          style={{ background: "rgba(8,6,24,0.92)", borderColor: "rgba(255,255,255,0.07)" }}>
-          <div className="border-b p-3" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+          style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
+          <div className="border-b p-3" style={{ borderColor: "var(--surface-panel-border)" }}>
             <div className="flex items-center gap-2 rounded-xl border px-3 py-1.5"
-              style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)" }}>
+              style={{ background: "var(--surface-input)", borderColor: "var(--surface-panel-border)" }}>
               <Search size={12} style={{ color: "var(--text-muted)" }} />
               <input
                 value={search}
@@ -199,7 +199,7 @@ export function MessagesPage() {
                       background: isSel ? `${S.primary}10` : "transparent",
                       borderLeft: isSel ? `2px solid ${S.primary}` : "2px solid transparent",
                     }}
-                    whileHover={{ background: isSel ? `${S.primary}10` : "rgba(255,255,255,0.03)" }}
+                    whileHover={{ background: isSel ? `${S.primary}10` : "var(--surface-hover)" }}
                   >
                     <div className="relative shrink-0">
                       <div
@@ -207,7 +207,7 @@ export function MessagesPage() {
                         style={{
                           background: isSel
                             ? `linear-gradient(135deg,${S.primary},${S.primary}99)`
-                            : "linear-gradient(135deg,rgba(255,255,255,0.12),rgba(255,255,255,0.06))",
+                            : "linear-gradient(135deg,rgba(255,255,255,0.12),var(--surface-input))",
                         }}
                       >
                         {conv.avatar}
@@ -215,7 +215,7 @@ export function MessagesPage() {
                       {conv.online && (
                         <div
                           className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2"
-                          style={{ background: S.success, borderColor: "rgba(8,6,24,0.92)" }}
+                          style={{ background: S.success, borderColor: "var(--surface-panel-solid)" }}
                         />
                       )}
                     </div>
@@ -236,7 +236,7 @@ export function MessagesPage() {
                         {conv.typing ? (
                           <span className="animate-pulse">●●● est en train d&apos;écrire...</span>
                         ) : isSearchResult ? (
-                          <span style={{ color: "rgba(255,255,255,0.35)" }}>Appuyez pour démarrer une conversation</span>
+                          <span style={{ color: "var(--text-muted)" }}>Appuyez pour démarrer une conversation</span>
                         ) : (
                           formatMessagePreview(conv.preview) || ""
                         )}
@@ -259,14 +259,14 @@ export function MessagesPage() {
         </div>
 
         <div className="flex flex-1 flex-col rounded-[20px] border overflow-hidden"
-          style={{ background: "rgba(8,6,24,0.88)", borderColor: "rgba(255,255,255,0.07)" }}>
+          style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
           {!selected ? (
             <div className="flex flex-1 items-center justify-center text-sm" style={{ color: "var(--text-muted)" }}>
               Recherchez un membre ou sélectionnez une conversation.
             </div>
           ) : (
             <>
-              <div className="flex items-center gap-3 border-b px-4 py-3" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+              <div className="flex items-center gap-3 border-b px-4 py-3" style={{ borderColor: "var(--surface-panel-border)" }}>
                 <div className="relative shrink-0">
                   <div
                     className="flex h-10 w-10 items-center justify-center rounded-2xl text-xs font-extrabold text-white"
@@ -277,7 +277,7 @@ export function MessagesPage() {
                   {selected.online && (
                     <div
                       className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2"
-                      style={{ background: S.success, borderColor: "rgba(8,6,24,0.88)" }}
+                      style={{ background: S.success, borderColor: "var(--surface-panel-solid)" }}
                     />
                   )}
                 </div>
@@ -297,7 +297,7 @@ export function MessagesPage() {
                     type="button"
                     onClick={() => setShowMenu((o) => !o)}
                     className="flex h-8 w-8 items-center justify-center rounded-xl border"
-                    style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
+                    style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
                     whileHover={{ scale: 1.1, borderColor: S.primary, color: S.primary }}
                   >
                     <MoreHorizontal size={14} />
@@ -309,7 +309,7 @@ export function MessagesPage() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 4, scale: 0.97 }}
                         className="absolute right-0 top-full z-20 mt-1 min-w-[200px] overflow-hidden rounded-xl border py-1 shadow-xl"
-                        style={{ background: "rgba(8,6,24,0.98)", borderColor: "rgba(255,255,255,0.1)" }}
+                        style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}
                       >
                         {selected.conversationId && (
                           <button
@@ -372,7 +372,7 @@ export function MessagesPage() {
                           {!msg.sent && (
                             <div
                               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-[10px] font-bold text-white mb-0.5"
-                              style={{ background: "linear-gradient(135deg,rgba(255,255,255,0.15),rgba(255,255,255,0.08))" }}
+                              style={{ background: "linear-gradient(135deg,rgba(255,255,255,0.15),var(--surface-panel-border))" }}
                             >
                               {selected.avatar[0]}
                             </div>
@@ -385,10 +385,10 @@ export function MessagesPage() {
                                 color: "white",
                                 borderBottomRightRadius: 6,
                               } : {
-                                background: "rgba(255,255,255,0.06)",
+                                background: "var(--surface-input)",
                                 color: "var(--text-primary)",
                                 borderBottomLeftRadius: 6,
-                                border: "1px solid rgba(255,255,255,0.08)",
+                                border: "1px solid var(--surface-panel-border)",
                               }}>
                               <MessageContent text={msg.text} />
                             </div>
@@ -416,11 +416,11 @@ export function MessagesPage() {
                       className="flex items-end gap-2">
                       <div
                         className="flex h-7 w-7 items-center justify-center rounded-xl text-[10px] font-bold text-white"
-                        style={{ background: "linear-gradient(135deg,rgba(255,255,255,0.15),rgba(255,255,255,0.08))" }}
+                        style={{ background: "linear-gradient(135deg,rgba(255,255,255,0.15),var(--surface-panel-border))" }}
                       >
                         {selected.avatar[0]}
                       </div>
-                      <div className="rounded-2xl px-4 py-3" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      <div className="rounded-2xl px-4 py-3" style={{ background: "var(--surface-input)", border: "1px solid var(--surface-panel-border)" }}>
                         <div className="flex gap-1 items-center">
                           {[0, 1, 2].map((i) => (
                             <motion.div
@@ -439,7 +439,7 @@ export function MessagesPage() {
                 <div ref={bottomRef} />
               </div>
 
-              <div className="relative border-t p-3" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+              <div className="relative border-t p-3" style={{ borderColor: "var(--surface-panel-border)" }}>
                 <AnimatePresence>
                   {showEmoji && (
                     <motion.div
@@ -447,7 +447,7 @@ export function MessagesPage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 8 }}
                       className="absolute bottom-full left-3 mb-2 flex flex-wrap gap-1 rounded-xl border p-2 max-w-[280px] z-10"
-                      style={{ background: "rgba(8,6,24,0.98)", borderColor: "rgba(255,255,255,0.1)" }}
+                      style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}
                     >
                       {QUICK_EMOJIS.map((emoji) => (
                         <button
@@ -477,7 +477,7 @@ export function MessagesPage() {
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadingImage}
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border disabled:opacity-50"
-                    style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
+                    style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
                     whileHover={{ scale: uploadingImage ? 1 : 1.1, borderColor: S.primary, color: S.primary }}
                     title="Joindre une image"
                   >
@@ -488,7 +488,7 @@ export function MessagesPage() {
                     onClick={() => setShowEmoji((o) => !o)}
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border"
                     style={{
-                      borderColor: showEmoji ? `${S.primary}50` : "rgba(255,255,255,0.08)",
+                      borderColor: showEmoji ? `${S.primary}50` : "var(--surface-panel-border)",
                       color: showEmoji ? S.primary : "var(--text-muted)",
                     }}
                     whileHover={{ scale: 1.1 }}
@@ -497,7 +497,7 @@ export function MessagesPage() {
                     <Smile size={14} />
                   </motion.button>
                   <div className="flex flex-1 items-center gap-2 rounded-xl border px-3 py-2"
-                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.09)" }}>
+                    style={{ background: "var(--surface-input)", borderColor: "var(--surface-panel-border)" }}>
                     <input
                       value={input}
                       onChange={(e) => {
@@ -515,7 +515,7 @@ export function MessagesPage() {
                     onClick={handleSend}
                     disabled={!input.trim()}
                     className="flex h-9 w-9 items-center justify-center rounded-xl disabled:opacity-30"
-                    style={{ background: input.trim() ? `linear-gradient(135deg,${S.primary},${S.primary}cc)` : "rgba(255,255,255,0.06)" }}
+                    style={{ background: input.trim() ? `linear-gradient(135deg,${S.primary},${S.primary}cc)` : "var(--surface-input)" }}
                     whileHover={{ scale: input.trim() ? 1.1 : 1 }}
                     whileTap={{ scale: 0.9 }}
                   >

@@ -85,7 +85,7 @@ export function PrepWellnessPage() {
   }
 
   const TOOLTIP_STYLE = {
-    contentStyle: { background: "rgba(10,16,30,0.95)", border: "1px solid rgba(255,122,0,0.2)", color: "white", borderRadius: 12 },
+    contentStyle: { background: "var(--surface-modal)", border: "1px solid rgba(255,122,0,0.2)", color: "white", borderRadius: 12 },
   };
 
   return (
@@ -159,7 +159,7 @@ export function PrepWellnessPage() {
                     {w.filled && (
                       <motion.button type="button" onClick={() => openForm(w)}
                         className="shrink-0 rounded-xl px-2 py-1 text-[11px] border"
-                        style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
+                        style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
                         whileHover={{ borderColor: "rgba(255,122,0,0.3)" }}>
                         Éditer
                       </motion.button>
@@ -211,7 +211,7 @@ export function PrepWellnessPage() {
             style={{ background: "rgba(0,0,0,0.75)" }}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <motion.div className="w-full max-w-md rounded-[24px] border p-6"
-              style={{ background: "rgba(8,14,30,0.98)", borderColor: "rgba(255,122,0,0.3)" }}
+              style={{ background: "var(--surface-modal)", borderColor: "rgba(255,122,0,0.3)" }}
               initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9 }}>
               <h3 className="text-base font-bold mb-1" style={{ color: "var(--text-primary)" }}>
                 Questionnaire Wellness
@@ -251,7 +251,7 @@ export function PrepWellnessPage() {
                 </motion.button>
                 <motion.button type="button" onClick={() => setFormPlayer(null)}
                   className="rounded-xl border px-4 py-2.5 text-sm"
-                  style={{ borderColor: "rgba(255,255,255,0.1)", color: "var(--text-muted)" }}
+                  style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
                   whileHover={{ borderColor: "rgba(255,122,0,0.3)" }}>
                   Annuler
                 </motion.button>

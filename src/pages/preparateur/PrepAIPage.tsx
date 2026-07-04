@@ -194,7 +194,7 @@ export function PrepAIPage() {
               <div
                 key={kpi.label}
                 className="rounded-xl border px-3 py-2 text-center"
-                style={{ borderColor: "rgba(255,255,255,0.06)" }}
+                style={{ borderColor: "var(--surface-panel-border)" }}
               >
                 <p className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>{kpi.value}</p>
                 <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{kpi.label}</p>
@@ -399,7 +399,7 @@ export function PrepAIPage() {
             className="flex-1 rounded-xl border px-4 py-2.5 text-sm outline-none disabled:opacity-50"
             style={{
               background: "rgba(255,255,255,0.03)",
-              borderColor: "rgba(255,255,255,0.07)",
+              borderColor: "var(--surface-panel-border)",
               color: "var(--text-primary)",
             }}
           />

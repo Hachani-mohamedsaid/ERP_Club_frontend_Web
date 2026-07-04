@@ -115,7 +115,7 @@ export function WhoopR3FBand({ recovery }: BandProps) {
       className="relative h-[420px] w-full overflow-hidden rounded-2xl"
       style={{
         background: "radial-gradient(ellipse at 50% 50%, rgba(52,211,153,0.06) 0%, #000 72%)",
-        border: "1px solid rgba(255,255,255,0.05)",
+        border: "1px solid var(--surface-panel-border)",
       }}
     >
       <Canvas

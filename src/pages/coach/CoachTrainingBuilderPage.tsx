@@ -142,7 +142,7 @@ export function CoachTrainingBuilderPage() {
                 return (
                   <motion.div key={s.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
                     className="flex items-center gap-4 rounded-[20px] border p-4 opacity-75"
-                    style={{ background: "rgba(14,10,35,0.6)", borderColor: "rgba(255,255,255,0.05)" }}>
+                    style={{ background: "rgba(14,10,35,0.6)", borderColor: "var(--surface-panel-border)" }}>
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl"
                       style={{ background: m.bg }}>{m.emoji}</div>
                     <div className="flex-1">
@@ -254,13 +254,13 @@ export function CoachTrainingBuilderPage() {
                     <label className="block text-[11px] font-medium mb-1" style={{ color: "var(--text-muted)" }}>Date</label>
                     <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
                       className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                      style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }} />
+                      style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }} />
                   </div>
                   <div>
                     <label className="block text-[11px] font-medium mb-1" style={{ color: "var(--text-muted)" }}>Heure</label>
                     <input type="time" value={form.time} onChange={e => setForm(p => ({ ...p, time: e.target.value }))}
                       className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                      style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }} />
+                      style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }} />
                   </div>
                 </div>
                 {/* Duration & Intensity */}
@@ -269,13 +269,13 @@ export function CoachTrainingBuilderPage() {
                     <label className="block text-[11px] font-medium mb-1" style={{ color: "var(--text-muted)" }}>Durée (min)</label>
                     <input type="number" value={form.duration} onChange={e => setForm(p => ({ ...p, duration: +e.target.value }))}
                       className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                      style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }} />
+                      style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }} />
                   </div>
                   <div>
                     <label className="block text-[11px] font-medium mb-1" style={{ color: "var(--text-muted)" }}>Intensité</label>
                     <select value={form.intensity} onChange={e => setForm(p => ({ ...p, intensity: e.target.value as TrainingSession["intensity"] }))}
                       className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                      style={{ background: "rgba(10,8,28,0.95)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}>
+                      style={{ background: "var(--surface-modal)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}>
                       {["Faible","Modérée","Élevée","Maximale"].map(v => <option key={v} value={v}>{v}</option>)}
                     </select>
                   </div>
@@ -286,12 +286,12 @@ export function CoachTrainingBuilderPage() {
                   <input placeholder="Ex: Pressing haut, transitions rapides..." value={form.objective}
                     onChange={e => setForm(p => ({ ...p, objective: e.target.value }))}
                     className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }} />
+                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }} />
                 </div>
               </div>
               <div className="mt-5 flex justify-end gap-2">
                 <button type="button" onClick={() => setShowModal(false)}
-                  className="rounded-xl border px-4 py-2 text-xs" style={{ borderColor: "rgba(255,255,255,0.1)", color: "var(--text-muted)" }}>
+                  className="rounded-xl border px-4 py-2 text-xs" style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}>
                   Annuler
                 </button>
                 <motion.button type="button" onClick={addSession}

@@ -39,7 +39,7 @@ const EMPTY_FORM = { name: "", country: "", flag: "🌍", zone: "", specialty: "
 function RCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={`rounded-[20px] border p-5 ${className}`}
-      style={{ background: "rgba(14,10,35,0.8)", borderColor: "rgba(255,255,255,0.07)" }}>
+      style={{ background: "rgba(14,10,35,0.8)", borderColor: "var(--surface-panel-border)" }}>
       {children}
     </div>
   );
@@ -117,7 +117,7 @@ export function RecruteurScoutsPage() {
         {/* Scout list */}
         <RCard>
           <div className="mb-4 flex items-center gap-2 rounded-xl border px-3 py-2"
-            style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
+            style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--surface-panel-border)" }}>
             <Search size={14} style={{ color: "var(--text-muted)" }} />
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher scout, pays, zone..."
               className="flex-1 bg-transparent text-sm outline-none" style={{ color: "var(--text-primary)" }} />
@@ -217,7 +217,7 @@ export function RecruteurScoutsPage() {
                 <p className="mb-2 text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Joueurs scoués (récents)</p>
                 {["Ahmed Ali", "Yassine Ben Youssef", "Mohamed Karray"].map((pl, i) => (
                   <div key={pl} className="mb-1.5 flex items-center gap-2 rounded-lg border px-2 py-1.5"
-                    style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                    style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
                     <div className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold"
                       style={{ background: "rgba(139,92,246,0.2)", color: "#8B5CF6" }}>{i + 1}</div>
                     <span className="text-xs" style={{ color: "var(--text-muted)" }}>{pl}</span>
@@ -268,21 +268,21 @@ export function RecruteurScoutsPage() {
                     <input placeholder={placeholder} value={(form as Record<string, string>)[key]}
                       onChange={e => setForm(prev => ({ ...prev, [key]: e.target.value }))}
                       className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                      style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }} />
+                      style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }} />
                   </div>
                 ))}
                 <div>
                   <label className="block text-[11px] font-medium mb-1" style={{ color: "var(--text-muted)" }}>Spécialité</label>
                   <select value={form.specialty} onChange={e => setForm(prev => ({ ...prev, specialty: e.target.value }))}
                     className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                    style={{ background: "rgba(10,8,28,0.95)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}>
+                    style={{ background: "var(--surface-modal)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}>
                     {["Attaquants", "Milieux", "Défenseurs", "Gardiens", "Latéraux", "Généraliste"].map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
               </div>
               <div className="mt-5 flex justify-end gap-2">
                 <button type="button" onClick={() => setShowModal(false)}
-                  className="rounded-xl border px-4 py-2 text-xs" style={{ borderColor: "rgba(255,255,255,0.1)", color: "var(--text-muted)" }}>
+                  className="rounded-xl border px-4 py-2 text-xs" style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}>
                   Annuler
                 </button>
                 <motion.button type="button" onClick={() => setShowModal(false)}
