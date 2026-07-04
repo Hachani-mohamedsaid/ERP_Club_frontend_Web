@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { KeyRound, Loader2, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLocale } from "../../contexts/LocaleContext";
 import { changePassword } from "../../lib/api/auth";
 
@@ -16,6 +17,11 @@ export function ChangePasswordDialog({ onClose }: ChangePasswordDialogProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -40,10 +46,16 @@ export function ChangePasswordDialog({ onClose }: ChangePasswordDialogProps) {
     }
   }
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <motion.div
-      className="fixed inset-0 z-[110] flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.8)", backdropFilter: "blur(12px)" }}
+      className="fixed inset-0 z-[210] flex items-center justify-center p-4"
+      style={{
+        background: "rgba(0,0,0,0.8)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+      }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -132,6 +144,7 @@ export function ChangePasswordDialog({ onClose }: ChangePasswordDialogProps) {
           {loading ? <Loader2 size={16} className="animate-spin" /> : t.settings.savePassword}
         </button>
       </motion.form>
-    </motion.div>
+    </motion.div>,
+    document.body,
   );
 }

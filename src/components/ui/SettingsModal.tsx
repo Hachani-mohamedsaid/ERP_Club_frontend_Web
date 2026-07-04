@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence } from "framer-motion";
 import {
   Bell,
@@ -144,10 +145,15 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
     formatAppDateTime,
   } = useUserPreferences();
   const [showPassword, setShowPassword] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const isDark = theme === "dark";
   const role = user?.role ?? "guest";
   const landingOptions = LANDING_OPTIONS_BY_ROLE[role] ?? [];
   const currentLanding = getRoleLandingPage(role);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -176,11 +182,17 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
     { value: "12h", label: t.settings.time12 },
   ];
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <>
       <motion.div
-        className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-        style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(12px)" }}
+        className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+        style={{
+          background: "rgba(0,0,0,0.75)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+        }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -489,6 +501,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
       <AnimatePresence>
         {showPassword && <ChangePasswordDialog onClose={() => setShowPassword(false)} />}
       </AnimatePresence>
-    </>
+    </>,
+    document.body,
   );
 }
