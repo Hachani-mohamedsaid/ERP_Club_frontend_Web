@@ -30,6 +30,7 @@ export function useMessages() {
   const [error, setError] = useState<string | null>(null);
   const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set());
   const [typingPeers, setTypingPeers] = useState<Set<string>>(new Set());
+  const [activePeer, setActivePeer] = useState<MessageContact | null>(null);
 
   const socketRef = useRef<Socket | null>(null);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -89,12 +90,32 @@ export function useMessages() {
     setThreadLoading(true);
     try {
       const data = await messagesApi.getThread(peerMemberId);
-      setConversationId(data.conversationId);
+      const hasMessages = data.messages.length > 0;
+      setConversationId(hasMessages ? data.conversationId : null);
       setMessages(data.messages);
+      setActivePeer({
+        memberId: data.peer.memberId,
+        name: data.peer.name,
+        role: data.peer.role,
+        avatar: data.peer.avatar,
+        conversationId: hasMessages ? data.conversationId : null,
+        preview: data.messages.at(-1)?.text ?? "",
+        time: data.messages.at(-1)?.time ?? "",
+        unread: 0,
+        online: onlineIdsRef.current.has(data.peer.memberId),
+        typing: typingPeersRef.current.has(data.peer.memberId),
+      });
       setContacts((prev) =>
         prev.map((c) =>
           c.memberId === peerMemberId
-            ? { ...c, unread: 0, preview: data.messages.at(-1)?.text ?? c.preview, conversationId: data.conversationId }
+            ? {
+                ...c,
+                unread: 0,
+                preview: hasMessages
+                  ? formatMessagePreview(data.messages.at(-1)?.text ?? "")
+                  : c.preview,
+                conversationId: hasMessages ? data.conversationId : null,
+              }
             : c,
         ),
       );
@@ -239,6 +260,7 @@ export function useMessages() {
       setMessages([]);
       setConversationId(null);
       setSelectedPeerId(null);
+      setActivePeer(null);
       await loadContacts(searchRef.current.trim() ? searchRef.current : undefined);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Suppression impossible.");
@@ -288,14 +310,19 @@ export function useMessages() {
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     searchDebounceRef.current = setTimeout(() => {
       void loadContacts(search.trim() || undefined, { isSearch: !!search.trim() });
+      if (!search.trim() && messages.length === 0 && !conversationId) {
+        setSelectedPeerId(null);
+        setActivePeer(null);
+      }
     }, 300);
     return () => {
       if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     };
-  }, [search, loadContacts]);
+  }, [search, loadContacts, messages.length, conversationId]);
 
   useEffect(() => {
     setContacts((prev) => applyPresence(prev));
+    setActivePeer((prev) => (prev ? applyPresence([prev])[0] : null));
   }, [onlineIds, typingPeers, applyPresence]);
 
   useEffect(() => {
@@ -409,19 +436,8 @@ export function useMessages() {
 
   const selected =
     contacts.find((c) => c.memberId === selectedPeerId) ??
-    (selectedPeerId
-      ? {
-          memberId: selectedPeerId,
-          name: "…",
-          role: "",
-          avatar: "?",
-          conversationId,
-          preview: "",
-          time: "",
-          unread: 0,
-          online: onlineIds.has(selectedPeerId),
-          typing: typingPeers.has(selectedPeerId),
-        }
+    (selectedPeerId && activePeer?.memberId === selectedPeerId
+      ? applyPresence([activePeer])[0]
       : null);
 
   return {

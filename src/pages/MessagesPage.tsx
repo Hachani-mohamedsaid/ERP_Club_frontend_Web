@@ -9,6 +9,21 @@ const S = { primary: "#FF7A00", success: "#22C55E", muted: "rgba(255,255,255,0.4
 
 const QUICK_EMOJIS = ["😀", "😂", "😍", "👍", "👏", "🔥", "⚽", "🏆", "💪", "🙏", "✅", "❤️", "😅", "🎉", "👋", "💼"];
 
+function RoleBadge({ role, compact }: { role: string; compact?: boolean }) {
+  return (
+    <span
+      className={`shrink-0 rounded-full font-bold uppercase tracking-wide ${compact ? "px-1.5 py-0.5 text-[8px]" : "px-2 py-0.5 text-[9px]"}`}
+      style={{
+        background: "rgba(255,122,0,0.14)",
+        color: S.primary,
+        border: "1px solid rgba(255,122,0,0.35)",
+      }}
+    >
+      {role}
+    </span>
+  );
+}
+
 function MessageContent({ text }: { text: string }) {
   const attachment = parseAttachmentMessage(text);
   if (attachment?.type === "image") {
@@ -173,6 +188,7 @@ export function MessagesPage() {
             ) : (
               contacts.map((conv) => {
                 const isSel = conv.memberId === selectedPeerId;
+                const isSearchResult = !!search.trim();
                 return (
                   <motion.button
                     key={conv.memberId}
@@ -206,19 +222,23 @@ export function MessagesPage() {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
-                        <p className="text-xs font-bold truncate" style={{ color: isSel ? S.primary : "var(--text-primary)" }}>
-                          {conv.name}
-                        </p>
-                        {conv.time && (
-                          <span className="text-[9px] shrink-0" style={{ color: "var(--text-muted)" }}>{conv.time}</span>
+                        <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                          <p className="truncate text-xs font-bold" style={{ color: isSel ? S.primary : "var(--text-primary)" }}>
+                            {conv.name}
+                          </p>
+                          {isSearchResult && <RoleBadge role={conv.role} compact />}
+                        </div>
+                        {conv.time && !isSearchResult && (
+                          <span className="shrink-0 text-[9px]" style={{ color: "var(--text-muted)" }}>{conv.time}</span>
                         )}
                       </div>
-                      <p className="text-[9px] mt-0.5" style={{ color: "var(--text-muted)" }}>{conv.role}</p>
-                      <p className="text-[10px] mt-0.5 truncate" style={{ color: conv.typing ? S.primary : "var(--text-muted)" }}>
+                      <p className="mt-0.5 truncate text-[10px]" style={{ color: conv.typing ? S.primary : "var(--text-muted)" }}>
                         {conv.typing ? (
                           <span className="animate-pulse">●●● est en train d&apos;écrire...</span>
+                        ) : isSearchResult ? (
+                          <span style={{ color: "rgba(255,255,255,0.35)" }}>Appuyez pour démarrer une conversation</span>
                         ) : (
-                          formatMessagePreview(conv.preview) || (search.trim() ? "Nouvelle conversation" : "")
+                          formatMessagePreview(conv.preview) || ""
                         )}
                       </p>
                     </div>
@@ -261,13 +281,18 @@ export function MessagesPage() {
                     />
                   )}
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-extrabold" style={{ color: "var(--text-primary)" }}>{selected.name}</p>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate text-sm font-extrabold" style={{ color: "var(--text-primary)" }}>
+                      {selected.name}
+                    </p>
+                    <RoleBadge role={selected.role} />
+                  </div>
                   <p className="text-[10px]" style={{ color: selected.online ? S.success : "var(--text-muted)" }}>
                     {selected.typing ? "En train d'écrire..." : selected.online ? "En ligne" : "Hors ligne"}
                   </p>
                 </div>
-                <div className="relative" ref={menuRef}>
+                <div className="relative shrink-0" ref={menuRef}>
                   <motion.button
                     type="button"
                     onClick={() => setShowMenu((o) => !o)}
@@ -321,6 +346,15 @@ export function MessagesPage() {
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {threadLoading ? (
                   <p className="text-center text-xs py-8" style={{ color: "var(--text-muted)" }}>Chargement...</p>
+                ) : messages.length === 0 ? (
+                  <div className="flex h-full min-h-[200px] flex-col items-center justify-center text-center px-6">
+                    <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                      Nouvelle conversation
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                      Aucun message pour l&apos;instant. Écrivez ci-dessous pour démarrer — la conversation apparaîtra dans votre liste après le premier envoi.
+                    </p>
+                  </div>
                 ) : (
                   <AnimatePresence initial={false}>
                     {messages.map((msg) => {
