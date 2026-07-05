@@ -45,15 +45,6 @@ const EVENT_COLORS: Record<string, string> = {
   Appel: "#F59E0B", Pressing: "#EF4444", Récupération: "#64748B",
 };
 
-<<<<<<< HEAD
-const ACard = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-  <motion.div className={`rounded-[20px] border p-5 ${className}`}
-    style={{ background: "rgba(5,8,22,0.7)", borderColor: "var(--surface-panel-border)", boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}
-    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-    {children}
-  </motion.div>
-);
-=======
 function GlassCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <motion.div
@@ -65,7 +56,6 @@ function GlassCard({ children, className = "" }: { children: React.ReactNode; cl
     </motion.div>
   );
 }
->>>>>>> 94c3e3a (update)
 
 export function AnalysteVideoAnalysisPage() {
   const [phase, setPhase] = useState<Phase>("upload");
