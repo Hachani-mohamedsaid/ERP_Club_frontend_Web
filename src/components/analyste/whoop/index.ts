@@ -8,3 +8,4 @@ export { WhoopGlassMetric } from "./WhoopGlassMetric";
 export { WhoopPlayerProfile } from "./WhoopPlayerProfile";
 export { WhoopTeamOverview } from "./WhoopTeamOverview";
 export { WhoopR3FBand } from "./WhoopR3FBand";
+export { ViivR3FWatch } from "./ViivR3FWatch";

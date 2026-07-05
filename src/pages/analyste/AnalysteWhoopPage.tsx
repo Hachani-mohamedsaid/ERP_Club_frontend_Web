@@ -67,13 +67,13 @@ export function AnalysteWhoopPage() {
           >
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-400/80">WHOOP</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-cyan-400">VIIV</span>
                 <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[9px] font-bold text-emerald-400">LIVE</span>
               </div>
-              <h1 className="mt-1 bg-gradient-to-r from-white to-slate-400 bg-clip-text text-2xl font-bold text-transparent lg:text-3xl">
-                Wearables Hub
+              <h1 className="mt-1 bg-gradient-to-r from-white via-cyan-100 to-slate-400 bg-clip-text text-2xl font-bold text-transparent lg:text-3xl">
+                Smartwatch Hub
               </h1>
-              <p className="text-xs text-slate-500">FC Carthage · Telemetry · Recovery Intelligence</p>
+              <p className="text-xs text-slate-500">FC Carthage · Télémétrie Viiv · Recovery · HRV · GPS · Sync joueurs</p>
             </div>
 
             <div className="flex items-center gap-2">
@@ -84,7 +84,7 @@ export function AnalysteWhoopPage() {
                   placeholder="Kar..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-44 rounded-xl border border-white/8 bg-slate-900/60 py-2 pl-9 pr-3 text-xs text-white placeholder:text-slate-600 backdrop-blur-md focus:border-orange-500/40 focus:outline-none"
+                  className="w-44 rounded-xl border border-white/8 bg-slate-900/60 py-2 pl-9 pr-3 text-xs text-white placeholder:text-slate-600 backdrop-blur-md focus:border-cyan-500/40 focus:outline-none"
                 />
               </div>
 
@@ -131,7 +131,7 @@ export function AnalysteWhoopPage() {
                 type="button"
                 onClick={() => { setSyncing(true); setTimeout(() => setSyncing(false), 2000); }}
                 disabled={syncing}
-                className="flex items-center gap-2 rounded-xl border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-xs font-semibold text-orange-300"
+                className="flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-xs font-semibold text-cyan-300"
                 whileTap={{ scale: 0.97 }}
               >
                 <RefreshCw size={13} className={syncing ? "animate-spin" : ""} />
@@ -157,11 +157,13 @@ export function AnalysteWhoopPage() {
               >
                 <WhoopHero player={player} />
 
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
                   <WhoopGlassMetric label="Recovery" value={player.recovery} suffix="%" delta={`${player.recoveryDelta >= 0 ? "+" : ""}${player.recoveryDelta}%`} progress={player.recovery} />
+                  <WhoopGlassMetric label="Énergie Viiv" value={player.viivEnergy} suffix="%" progress={player.viivEnergy} color="#22d3ee" />
                   <WhoopGlassMetric label="Strain" value={player.strain} color="#f97316" />
                   <WhoopGlassMetric label="Sleep" value={player.sleepHours} suffix="h" progress={player.sleepPerformance} color="#818cf8" delay={0.05} />
-                  <WhoopGlassMetric label="HRV" value={player.hrv} suffix=" ms" delay={0.1} />
+                  <WhoopGlassMetric label="HRV" value={player.hrv} suffix=" ms" delay={0.08} />
+                  <WhoopGlassMetric label="VO₂ Max" value={player.vo2Max} suffix="" color="#22d3ee" delay={0.1} />
                 </div>
 
                 <div className="grid gap-5 lg:grid-cols-12">

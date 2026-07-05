@@ -12,7 +12,7 @@ export function WhoopAICoach({ player }: { player: WhoopPlayerMetrics }) {
     >
       <div className="flex items-center gap-2">
         <Sparkles size={18} className="text-violet-400" />
-        <p className="text-xs font-bold uppercase tracking-widest text-violet-300">Odin AI Coach</p>
+        <p className="text-xs font-bold uppercase tracking-widest text-cyan-300">Odin AI Coach · Viiv</p>
         <span className="ml-auto rounded-full bg-violet-500/20 px-2 py-0.5 text-[10px] font-bold text-violet-300">
           {player.aiConfidence}% confiance
         </span>
