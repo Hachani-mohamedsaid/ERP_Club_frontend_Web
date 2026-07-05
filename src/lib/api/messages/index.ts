@@ -1,5 +1,6 @@
 import { parseApiError } from "../config";
-import { apiFetchWithTimeout } from "../authHeaders";
+import { apiFetchWithTimeout, getAccessToken } from "../authHeaders";
+import type { MessageAttachmentPayload } from "../../messages/attachment";
 
 async function parse<T>(response: Response): Promise<T> {
   if (!response.ok) throw new Error(await parseApiError(response));
@@ -36,7 +37,7 @@ export interface ContactsResponse {
 }
 
 export interface ThreadResponse {
-  conversationId: string;
+  conversationId: string | null;
   peer: {
     memberId: string;
     name: string;
@@ -73,8 +74,27 @@ export const messagesApi = {
       method: "PATCH",
     }) as Promise<{ marked: number }>,
 
+  markUnread: (conversationId: string) =>
+    fetchMsg(`/messages/conversations/${conversationId}/unread`, {
+      method: "PATCH",
+    }) as Promise<{ marked: number }>,
+
   deleteConversation: (conversationId: string) =>
     fetchMsg(`/messages/conversations/${conversationId}`, {
       method: "DELETE",
     }) as Promise<{ deleted: boolean }>,
+
+  uploadAttachment: async (file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    const { API_URL } = await import("../config");
+    const token = getAccessToken();
+    const response = await fetch(`${API_URL}/messages/upload`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+    if (!response.ok) throw new Error(await parseApiError(response));
+    return response.json() as Promise<MessageAttachmentPayload & { body: string }>;
+  },
 };

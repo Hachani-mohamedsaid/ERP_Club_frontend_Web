@@ -92,7 +92,7 @@ export function RecruteurNotificationsPage() {
           return (
             <motion.div key={k.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
               <div className="rounded-[20px] border p-4 flex items-center gap-3"
-                style={{ background: "rgba(14,10,35,0.8)", borderColor: "rgba(255,255,255,0.07)" }}>
+                style={{ background: "rgba(14,10,35,0.8)", borderColor: "var(--surface-panel-border)" }}>
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
                   style={{ background: `${k.color}15` }}>
                   <Icon size={18} style={{ color: k.color }} />
@@ -207,7 +207,7 @@ export function RecruteurNotificationsPage() {
         {filtered.length === 0 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             className="flex flex-col items-center justify-center rounded-[20px] border py-16"
-            style={{ background: "rgba(14,10,35,0.6)", borderColor: "rgba(255,255,255,0.06)" }}>
+            style={{ background: "rgba(14,10,35,0.6)", borderColor: "var(--surface-panel-border)" }}>
             <Bell size={28} className="mb-3 opacity-25" style={{ color: "var(--text-muted)" }} />
             <p className="text-sm" style={{ color: "var(--text-muted)" }}>Aucune notification</p>
           </motion.div>

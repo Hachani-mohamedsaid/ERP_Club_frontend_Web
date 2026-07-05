@@ -239,7 +239,7 @@ export function ScoutAIPage() {
                   <AnimatePresence>
                     {isExp && (
                       <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden border-t" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+                        className="overflow-hidden border-t" style={{ borderColor: "var(--surface-panel-border)" }}>
                         <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2">
                           {p && radarData.length > 0 && (
                           <div>

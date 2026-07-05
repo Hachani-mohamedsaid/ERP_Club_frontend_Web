@@ -7,6 +7,13 @@ import {
   type MessageContact,
   type MessageStatus,
 } from "../lib/api/messages";
+import {
+  encodeAttachmentMessage,
+  formatMessagePreview,
+} from "../lib/messages/attachment";
+import { loadPreferences } from "../lib/preferences/defaults";
+import { dispatchNotification, playNotificationSound } from "../lib/preferences/notificationHelpers";
+import { joueurTranslations, type Locale } from "../i18n/joueurTranslations";
 
 function socketBaseUrl() {
   if (import.meta.env.DEV) return window.location.origin;
@@ -26,6 +33,7 @@ export function useMessages() {
   const [error, setError] = useState<string | null>(null);
   const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set());
   const [typingPeers, setTypingPeers] = useState<Set<string>>(new Set());
+  const [activePeer, setActivePeer] = useState<MessageContact | null>(null);
 
   const socketRef = useRef<Socket | null>(null);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -85,12 +93,32 @@ export function useMessages() {
     setThreadLoading(true);
     try {
       const data = await messagesApi.getThread(peerMemberId);
-      setConversationId(data.conversationId);
+      const hasMessages = data.messages.length > 0;
+      setConversationId(hasMessages ? data.conversationId : null);
       setMessages(data.messages);
+      setActivePeer({
+        memberId: data.peer.memberId,
+        name: data.peer.name,
+        role: data.peer.role,
+        avatar: data.peer.avatar,
+        conversationId: hasMessages ? data.conversationId : null,
+        preview: data.messages.at(-1)?.text ?? "",
+        time: data.messages.at(-1)?.time ?? "",
+        unread: 0,
+        online: onlineIdsRef.current.has(data.peer.memberId),
+        typing: typingPeersRef.current.has(data.peer.memberId),
+      });
       setContacts((prev) =>
         prev.map((c) =>
           c.memberId === peerMemberId
-            ? { ...c, unread: 0, preview: data.messages.at(-1)?.text ?? c.preview, conversationId: data.conversationId }
+            ? {
+                ...c,
+                unread: 0,
+                preview: hasMessages
+                  ? formatMessagePreview(data.messages.at(-1)?.text ?? "")
+                  : c.preview,
+                conversationId: hasMessages ? data.conversationId : null,
+              }
             : c,
         ),
       );
@@ -165,6 +193,69 @@ export function useMessages() {
     [selectedPeerId, loadContacts],
   );
 
+  const sendImage = useCallback(
+    async (file: File) => {
+      if (!selectedPeerId) return;
+      const peerId = selectedPeerId;
+      const previewUrl = URL.createObjectURL(file);
+      const optimisticBody = encodeAttachmentMessage({
+        type: "image",
+        url: previewUrl,
+        name: file.name,
+        sizeKb: Math.round(file.size / 1024),
+      });
+      const optimistic: ChatMessage = {
+        id: `tmp-${Date.now()}`,
+        text: optimisticBody,
+        sent: true,
+        time: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+        status: "sent",
+      };
+
+      setMessages((prev) => [...prev, optimistic]);
+      setContacts((prev) =>
+        prev.map((c) =>
+          c.memberId === peerId
+            ? {
+                ...c,
+                preview: formatMessagePreview(optimisticBody),
+                time: optimistic.time,
+                conversationId: c.conversationId ?? "pending",
+              }
+            : c,
+        ),
+      );
+
+      try {
+        const uploaded = await messagesApi.uploadAttachment(file);
+        const result = await messagesApi.sendMessage(peerId, uploaded.body);
+        URL.revokeObjectURL(previewUrl);
+        setConversationId(result.conversationId);
+        setMessages((prev) =>
+          prev.map((m) => (m.id === optimistic.id ? { ...result.message, status: "sent" } : m)),
+        );
+        setContacts((prev) =>
+          prev.map((c) =>
+            c.memberId === peerId
+              ? {
+                  ...c,
+                  conversationId: result.conversationId,
+                  preview: formatMessagePreview(result.message.text),
+                  time: result.message.time,
+                }
+              : c,
+          ),
+        );
+        void loadContacts(searchRef.current.trim() ? searchRef.current : undefined);
+      } catch (e) {
+        URL.revokeObjectURL(previewUrl);
+        setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
+        setError(e instanceof Error ? e.message : "Envoi de l'image impossible.");
+      }
+    },
+    [selectedPeerId, loadContacts],
+  );
+
   const deleteConversation = useCallback(async () => {
     if (!conversationId) return;
     try {
@@ -172,23 +263,27 @@ export function useMessages() {
       setMessages([]);
       setConversationId(null);
       setSelectedPeerId(null);
+      setActivePeer(null);
       await loadContacts(searchRef.current.trim() ? searchRef.current : undefined);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Suppression impossible.");
     }
   }, [conversationId, loadContacts]);
 
-  const markThreadRead = useCallback(async () => {
+  const markThreadUnread = useCallback(async () => {
     if (!conversationId) return;
     try {
-      await messagesApi.markRead(conversationId);
+      const result = await messagesApi.markUnread(conversationId);
+      const unreadCount = result.marked || messages.filter((m) => !m.sent).length || 1;
       setContacts((prev) =>
-        prev.map((c) => (c.memberId === selectedPeerIdRef.current ? { ...c, unread: 0 } : c)),
+        prev.map((c) =>
+          c.memberId === selectedPeerIdRef.current ? { ...c, unread: unreadCount } : c,
+        ),
       );
     } catch {
       /* silent */
     }
-  }, [conversationId]);
+  }, [conversationId, messages]);
 
   const emitTyping = useCallback((active: boolean) => {
     if (!selectedPeerIdRef.current || !socketRef.current) return;
@@ -218,14 +313,19 @@ export function useMessages() {
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     searchDebounceRef.current = setTimeout(() => {
       void loadContacts(search.trim() || undefined, { isSearch: !!search.trim() });
+      if (!search.trim() && messages.length === 0 && !conversationId) {
+        setSelectedPeerId(null);
+        setActivePeer(null);
+      }
     }, 300);
     return () => {
       if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     };
-  }, [search, loadContacts]);
+  }, [search, loadContacts, messages.length, conversationId]);
 
   useEffect(() => {
     setContacts((prev) => applyPresence(prev));
+    setActivePeer((prev) => (prev ? applyPresence([prev])[0] : null));
   }, [onlineIds, typingPeers, applyPresence]);
 
   useEffect(() => {
@@ -305,6 +405,16 @@ export function useMessages() {
           });
           void messagesApi.markRead(data.conversationId);
         } else {
+          const prefs = loadPreferences();
+          const locale = (localStorage.getItem("odin_locale") as Locale) || "fr";
+          const title = joueurTranslations[locale]?.settings?.newMessageTitle ?? "Nouveau message";
+          const preview = formatMessagePreview(data.message.text);
+          void dispatchNotification("message", prefs.notifications, {
+            title,
+            body: preview,
+            tag: `msg-${data.message.id}`,
+          });
+          if (prefs.soundAlerts) playNotificationSound();
           void loadContacts(searchRef.current.trim() ? searchRef.current : undefined);
         }
       },
@@ -339,19 +449,8 @@ export function useMessages() {
 
   const selected =
     contacts.find((c) => c.memberId === selectedPeerId) ??
-    (selectedPeerId
-      ? {
-          memberId: selectedPeerId,
-          name: "…",
-          role: "",
-          avatar: "?",
-          conversationId,
-          preview: "",
-          time: "",
-          unread: 0,
-          online: onlineIds.has(selectedPeerId),
-          typing: typingPeers.has(selectedPeerId),
-        }
+    (selectedPeerId && activePeer?.memberId === selectedPeerId
+      ? applyPresence([activePeer])[0]
       : null);
 
   return {
@@ -363,9 +462,10 @@ export function useMessages() {
     search,
     setSearch,
     sendMessage,
+    sendImage,
     onInputChange,
     deleteConversation,
-    markThreadRead,
+    markThreadUnread,
     loading,
     searching,
     threadLoading,

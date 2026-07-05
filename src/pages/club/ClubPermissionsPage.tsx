@@ -150,7 +150,7 @@ export function ClubPermissionsPage() {
             style={{
               background: activeRole === role ? `${ROLE_COLOR[role]}20` : "rgba(255,255,255,0.04)",
               color: activeRole === role ? ROLE_COLOR[role] : "var(--text-muted)",
-              border: `1px solid ${activeRole === role ? ROLE_COLOR[role] + "50" : "rgba(255,255,255,0.08)"}`,
+              border: "1px solid var(--surface-panel-border)",
               boxShadow: activeRole === role ? `0 0 16px ${ROLE_COLOR[role]}30` : "none",
             }}
             whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
@@ -173,7 +173,7 @@ export function ClubPermissionsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+              <tr className="border-b" style={{ borderColor: "var(--surface-panel-border)" }}>
                 <th className="pb-3 pr-4 text-left text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
                   Module
                 </th>
@@ -228,11 +228,11 @@ export function ClubPermissionsPage() {
         </div>
 
         {/* Legend */}
-        <div className="mt-6 flex flex-wrap items-center gap-4 border-t pt-4" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+        <div className="mt-6 flex flex-wrap items-center gap-4 border-t pt-4" style={{ borderColor: "var(--surface-panel-border)" }}>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>Légende :</p>
           {[
             { label: "Accordé", color: "#FF6B57" },
-            { label: "Refusé", color: "rgba(255,255,255,0.2)" },
+            { label: "Refusé", color: "var(--text-muted)" },
           ].map(({ label, color }) => (
             <div key={label} className="flex items-center gap-2">
               <div className="flex h-5 w-5 items-center justify-center rounded-md border"

@@ -7,6 +7,9 @@ import {
   Sparkles, Bell, CheckCircle2, Cpu, ArrowRight, Loader2, Radar, LayoutDashboard,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { useUserPreferences } from "../contexts/UserPreferencesContext";
+import { getLandingPage } from "../lib/preferences/landingRoutes";
+import type { Role } from "../contexts/AuthContext";
 import { type PlatformRole } from "../data/platformRoles";
 import odinLogo from "../assets/odin-logo.png";
 
@@ -407,6 +410,7 @@ function AuthOverlay({ role, onDone }: { role: RoleDef; onDone: () => void }) {
 export function LoginPage() {
   const navigate = useNavigate();
   const { loginWithCredentials } = useAuth();
+  const { preferences } = useUserPreferences();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
@@ -431,18 +435,7 @@ export function LoginPage() {
   }
 
   function getDestination(role: string) {
-    return role === "coach" ? "/coach" :
-      role === "scout" ? "/scout" :
-      role === "medical" ? "/medical" :
-      role === "finance" ? "/comptabilite" :
-      role === "superadmin" ? "/superadmin/dashboard" :
-      role === "adminclub" ? "/club" :
-      role === "responsable" ? "/dashboard" :
-      role === "preparateur" ? "/preparateur" :
-      role === "analyste" ? "/analyste" :
-      role === "recruteur" ? "/recruteur" :
-      role === "joueur" ? "/joueurs" :
-      "/dashboard";
+    return getLandingPage(role as Role, preferences.landingPages);
   }
 
   function startLogin(loginEmail: string, role: string, label?: string) {
@@ -510,7 +503,7 @@ export function LoginPage() {
                 <motion.span
                   key={tag}
                   className="rounded-full border px-2.5 py-1 text-[11px] font-semibold"
-                  style={{ borderColor: "rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "var(--text-secondary)" }}
+                  style={{ borderColor: "var(--surface-panel-border)", background: "rgba(255,255,255,0.04)", color: "var(--text-secondary)" }}
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: booted ? 1 : 0, y: booted ? 0 : 6 }}
                   transition={{ delay: 0.3 + i * 0.1 }}
@@ -543,7 +536,7 @@ export function LoginPage() {
               background: "rgba(15,20,35,0.55)",
               backdropFilter: "blur(25px)",
               WebkitBackdropFilter: "blur(25px)",
-              borderColor: "rgba(255,255,255,0.08)",
+              borderColor: "var(--surface-panel-border)",
               boxShadow: "0 24px 60px rgba(0,0,0,0.4), 0 0 80px rgba(99,102,241,0.15)",
             }}
             animate={booted ? { y: [0, -6, 0] } : { y: 0 }}

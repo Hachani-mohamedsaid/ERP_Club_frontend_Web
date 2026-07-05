@@ -1,12 +1,47 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Paperclip, Search, MoreHorizontal, Check, CheckCheck, Smile, Trash2, CheckCircle } from "lucide-react";
+import { Send, Paperclip, Search, MoreHorizontal, Check, CheckCheck, Smile, Trash2, Mail, Loader2 } from "lucide-react";
 import { useMessages } from "../hooks/useMessages";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
+import { parseAttachmentMessage, resolveAttachmentUrl, formatMessagePreview } from "../lib/messages/attachment";
 
-const S = { primary: "#FF7A00", success: "#22C55E", muted: "rgba(255,255,255,0.4)" };
+const S = { primary: "#FF7A00", success: "#22C55E", muted: "var(--text-muted)" };
 
 const QUICK_EMOJIS = ["😀", "😂", "😍", "👍", "👏", "🔥", "⚽", "🏆", "💪", "🙏", "✅", "❤️", "😅", "🎉", "👋", "💼"];
+
+function RoleBadge({ role, compact }: { role: string; compact?: boolean }) {
+  return (
+    <span
+      className={`shrink-0 rounded-full font-bold uppercase tracking-wide ${compact ? "px-1.5 py-0.5 text-[8px]" : "px-2 py-0.5 text-[9px]"}`}
+      style={{
+        background: "rgba(255,122,0,0.14)",
+        color: S.primary,
+        border: "1px solid rgba(255,122,0,0.35)",
+      }}
+    >
+      {role}
+    </span>
+  );
+}
+
+function MessageContent({ text }: { text: string }) {
+  const attachment = parseAttachmentMessage(text);
+  if (attachment?.type === "image") {
+    const src = resolveAttachmentUrl(attachment.url);
+    return (
+      <a href={src} target="_blank" rel="noopener noreferrer" className="block">
+        <img
+          src={src}
+          alt={attachment.name}
+          className="max-h-64 max-w-[min(100%,280px)] rounded-xl object-cover"
+          loading="lazy"
+        />
+        <p className="mt-1.5 text-[10px] opacity-80">{attachment.name}</p>
+      </a>
+    );
+  }
+  return <span className="whitespace-pre-wrap break-words">{text}</span>;
+}
 
 export function MessagesPage() {
   const {
@@ -18,9 +53,10 @@ export function MessagesPage() {
     search,
     setSearch,
     sendMessage,
+    sendImage,
     onInputChange,
     deleteConversation,
-    markThreadRead,
+    markThreadUnread,
     loading,
     searching,
     threadLoading,
@@ -33,6 +69,7 @@ export function MessagesPage() {
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -73,10 +110,14 @@ export function MessagesPage() {
 
   const handleFilePick = (file: File | null) => {
     if (!file || !selectedPeerId) return;
-    const sizeKb = Math.round(file.size / 1024);
-    const label = `📎 ${file.name} (${sizeKb} Ko)`;
-    void sendMessage(label);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (!file.type.startsWith("image/")) {
+      return;
+    }
+    setUploadingImage(true);
+    void sendImage(file).finally(() => {
+      setUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    });
   };
 
   const handleDeleteConversation = async () => {
@@ -114,10 +155,10 @@ export function MessagesPage() {
 
       <div className="flex gap-3 h-[70vh] min-h-[500px]">
         <div className="flex w-72 shrink-0 flex-col rounded-[20px] border overflow-hidden"
-          style={{ background: "rgba(8,6,24,0.92)", borderColor: "rgba(255,255,255,0.07)" }}>
-          <div className="border-b p-3" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+          style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
+          <div className="border-b p-3" style={{ borderColor: "var(--surface-panel-border)" }}>
             <div className="flex items-center gap-2 rounded-xl border px-3 py-1.5"
-              style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)" }}>
+              style={{ background: "var(--surface-input)", borderColor: "var(--surface-panel-border)" }}>
               <Search size={12} style={{ color: "var(--text-muted)" }} />
               <input
                 value={search}
@@ -147,6 +188,7 @@ export function MessagesPage() {
             ) : (
               contacts.map((conv) => {
                 const isSel = conv.memberId === selectedPeerId;
+                const isSearchResult = !!search.trim();
                 return (
                   <motion.button
                     key={conv.memberId}
@@ -157,7 +199,7 @@ export function MessagesPage() {
                       background: isSel ? `${S.primary}10` : "transparent",
                       borderLeft: isSel ? `2px solid ${S.primary}` : "2px solid transparent",
                     }}
-                    whileHover={{ background: isSel ? `${S.primary}10` : "rgba(255,255,255,0.03)" }}
+                    whileHover={{ background: isSel ? `${S.primary}10` : "var(--surface-hover)" }}
                   >
                     <div className="relative shrink-0">
                       <div
@@ -165,7 +207,7 @@ export function MessagesPage() {
                         style={{
                           background: isSel
                             ? `linear-gradient(135deg,${S.primary},${S.primary}99)`
-                            : "linear-gradient(135deg,rgba(255,255,255,0.12),rgba(255,255,255,0.06))",
+                            : "linear-gradient(135deg,rgba(255,255,255,0.12),var(--surface-input))",
                         }}
                       >
                         {conv.avatar}
@@ -173,26 +215,30 @@ export function MessagesPage() {
                       {conv.online && (
                         <div
                           className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2"
-                          style={{ background: S.success, borderColor: "rgba(8,6,24,0.92)" }}
+                          style={{ background: S.success, borderColor: "var(--surface-panel-solid)" }}
                         />
                       )}
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
-                        <p className="text-xs font-bold truncate" style={{ color: isSel ? S.primary : "var(--text-primary)" }}>
-                          {conv.name}
-                        </p>
-                        {conv.time && (
-                          <span className="text-[9px] shrink-0" style={{ color: "var(--text-muted)" }}>{conv.time}</span>
+                        <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                          <p className="truncate text-xs font-bold" style={{ color: isSel ? S.primary : "var(--text-primary)" }}>
+                            {conv.name}
+                          </p>
+                          {isSearchResult && <RoleBadge role={conv.role} compact />}
+                        </div>
+                        {conv.time && !isSearchResult && (
+                          <span className="shrink-0 text-[9px]" style={{ color: "var(--text-muted)" }}>{conv.time}</span>
                         )}
                       </div>
-                      <p className="text-[9px] mt-0.5" style={{ color: "var(--text-muted)" }}>{conv.role}</p>
-                      <p className="text-[10px] mt-0.5 truncate" style={{ color: conv.typing ? S.primary : "var(--text-muted)" }}>
+                      <p className="mt-0.5 truncate text-[10px]" style={{ color: conv.typing ? S.primary : "var(--text-muted)" }}>
                         {conv.typing ? (
                           <span className="animate-pulse">●●● est en train d&apos;écrire...</span>
+                        ) : isSearchResult ? (
+                          <span style={{ color: "var(--text-muted)" }}>Appuyez pour démarrer une conversation</span>
                         ) : (
-                          conv.preview || (search.trim() ? "Nouvelle conversation" : "")
+                          formatMessagePreview(conv.preview) || ""
                         )}
                       </p>
                     </div>
@@ -213,14 +259,14 @@ export function MessagesPage() {
         </div>
 
         <div className="flex flex-1 flex-col rounded-[20px] border overflow-hidden"
-          style={{ background: "rgba(8,6,24,0.88)", borderColor: "rgba(255,255,255,0.07)" }}>
+          style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
           {!selected ? (
             <div className="flex flex-1 items-center justify-center text-sm" style={{ color: "var(--text-muted)" }}>
               Recherchez un membre ou sélectionnez une conversation.
             </div>
           ) : (
             <>
-              <div className="flex items-center gap-3 border-b px-4 py-3" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+              <div className="flex items-center gap-3 border-b px-4 py-3" style={{ borderColor: "var(--surface-panel-border)" }}>
                 <div className="relative shrink-0">
                   <div
                     className="flex h-10 w-10 items-center justify-center rounded-2xl text-xs font-extrabold text-white"
@@ -231,22 +277,27 @@ export function MessagesPage() {
                   {selected.online && (
                     <div
                       className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2"
-                      style={{ background: S.success, borderColor: "rgba(8,6,24,0.88)" }}
+                      style={{ background: S.success, borderColor: "var(--surface-panel-solid)" }}
                     />
                   )}
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-extrabold" style={{ color: "var(--text-primary)" }}>{selected.name}</p>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate text-sm font-extrabold" style={{ color: "var(--text-primary)" }}>
+                      {selected.name}
+                    </p>
+                    <RoleBadge role={selected.role} />
+                  </div>
                   <p className="text-[10px]" style={{ color: selected.online ? S.success : "var(--text-muted)" }}>
                     {selected.typing ? "En train d'écrire..." : selected.online ? "En ligne" : "Hors ligne"}
                   </p>
                 </div>
-                <div className="relative" ref={menuRef}>
+                <div className="relative shrink-0" ref={menuRef}>
                   <motion.button
                     type="button"
                     onClick={() => setShowMenu((o) => !o)}
                     className="flex h-8 w-8 items-center justify-center rounded-xl border"
-                    style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
+                    style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
                     whileHover={{ scale: 1.1, borderColor: S.primary, color: S.primary }}
                   >
                     <MoreHorizontal size={14} />
@@ -258,19 +309,21 @@ export function MessagesPage() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 4, scale: 0.97 }}
                         className="absolute right-0 top-full z-20 mt-1 min-w-[200px] overflow-hidden rounded-xl border py-1 shadow-xl"
-                        style={{ background: "rgba(8,6,24,0.98)", borderColor: "rgba(255,255,255,0.1)" }}
+                        style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}
                       >
-                        <button
-                          type="button"
-                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-white/5"
-                          style={{ color: "var(--text-primary)" }}
-                          onClick={() => {
-                            void markThreadRead();
-                            setShowMenu(false);
-                          }}
-                        >
-                          <CheckCircle size={13} /> Marquer comme lu
-                        </button>
+                        {selected.conversationId && (
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-white/5"
+                            style={{ color: "var(--text-primary)" }}
+                            onClick={() => {
+                              void markThreadUnread();
+                              setShowMenu(false);
+                            }}
+                          >
+                            <Mail size={13} /> Marquer comme non lue
+                          </button>
+                        )}
                         {selected.conversationId && (
                           <button
                             type="button"
@@ -293,9 +346,21 @@ export function MessagesPage() {
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {threadLoading ? (
                   <p className="text-center text-xs py-8" style={{ color: "var(--text-muted)" }}>Chargement...</p>
+                ) : messages.length === 0 ? (
+                  <div className="flex h-full min-h-[200px] flex-col items-center justify-center text-center px-6">
+                    <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                      Nouvelle conversation
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                      Aucun message pour l&apos;instant. Écrivez ci-dessous pour démarrer — la conversation apparaîtra dans votre liste après le premier envoi.
+                    </p>
+                  </div>
                 ) : (
                   <AnimatePresence initial={false}>
-                    {messages.map((msg) => (
+                    {messages.map((msg) => {
+                      const attachment = parseAttachmentMessage(msg.text);
+                      const isImage = attachment?.type === "image";
+                      return (
                       <motion.div
                         key={msg.id}
                         layout
@@ -307,24 +372,25 @@ export function MessagesPage() {
                           {!msg.sent && (
                             <div
                               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-[10px] font-bold text-white mb-0.5"
-                              style={{ background: "linear-gradient(135deg,rgba(255,255,255,0.15),rgba(255,255,255,0.08))" }}
+                              style={{ background: "linear-gradient(135deg,rgba(255,255,255,0.15),var(--surface-panel-border))" }}
                             >
                               {selected.avatar[0]}
                             </div>
                           )}
                           <div>
-                            <div className="rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words"
+                            <div
+                              className={`rounded-2xl text-sm leading-relaxed ${isImage ? "p-1.5" : "px-4 py-2.5"}`}
                               style={msg.sent ? {
-                                background: `linear-gradient(135deg,${S.primary},${S.primary}dd)`,
+                                background: isImage ? "rgba(255,122,0,0.15)" : `linear-gradient(135deg,${S.primary},${S.primary}dd)`,
                                 color: "white",
                                 borderBottomRightRadius: 6,
                               } : {
-                                background: "rgba(255,255,255,0.06)",
+                                background: "var(--surface-input)",
                                 color: "var(--text-primary)",
                                 borderBottomLeftRadius: 6,
-                                border: "1px solid rgba(255,255,255,0.08)",
+                                border: "1px solid var(--surface-panel-border)",
                               }}>
-                              {msg.text}
+                              <MessageContent text={msg.text} />
                             </div>
                             <div
                               className={`flex items-center gap-1 mt-0.5 text-[9px] ${msg.sent ? "justify-end" : "justify-start"}`}
@@ -340,7 +406,7 @@ export function MessagesPage() {
                           </div>
                         </div>
                       </motion.div>
-                    ))}
+                    );})}
                   </AnimatePresence>
                 )}
 
@@ -350,11 +416,11 @@ export function MessagesPage() {
                       className="flex items-end gap-2">
                       <div
                         className="flex h-7 w-7 items-center justify-center rounded-xl text-[10px] font-bold text-white"
-                        style={{ background: "linear-gradient(135deg,rgba(255,255,255,0.15),rgba(255,255,255,0.08))" }}
+                        style={{ background: "linear-gradient(135deg,rgba(255,255,255,0.15),var(--surface-panel-border))" }}
                       >
                         {selected.avatar[0]}
                       </div>
-                      <div className="rounded-2xl px-4 py-3" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      <div className="rounded-2xl px-4 py-3" style={{ background: "var(--surface-input)", border: "1px solid var(--surface-panel-border)" }}>
                         <div className="flex gap-1 items-center">
                           {[0, 1, 2].map((i) => (
                             <motion.div
@@ -373,7 +439,7 @@ export function MessagesPage() {
                 <div ref={bottomRef} />
               </div>
 
-              <div className="relative border-t p-3" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+              <div className="relative border-t p-3" style={{ borderColor: "var(--surface-panel-border)" }}>
                 <AnimatePresence>
                   {showEmoji && (
                     <motion.div
@@ -381,7 +447,7 @@ export function MessagesPage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 8 }}
                       className="absolute bottom-full left-3 mb-2 flex flex-wrap gap-1 rounded-xl border p-2 max-w-[280px] z-10"
-                      style={{ background: "rgba(8,6,24,0.98)", borderColor: "rgba(255,255,255,0.1)" }}
+                      style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}
                     >
                       {QUICK_EMOJIS.map((emoji) => (
                         <button
@@ -401,7 +467,7 @@ export function MessagesPage() {
                   ref={fileInputRef}
                   type="file"
                   className="hidden"
-                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                  accept="image/*"
                   onChange={(e) => handleFilePick(e.target.files?.[0] ?? null)}
                 />
 
@@ -409,19 +475,20 @@ export function MessagesPage() {
                   <motion.button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border"
-                    style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
-                    whileHover={{ scale: 1.1, borderColor: S.primary, color: S.primary }}
-                    title="Joindre un fichier"
+                    disabled={uploadingImage}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border disabled:opacity-50"
+                    style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
+                    whileHover={{ scale: uploadingImage ? 1 : 1.1, borderColor: S.primary, color: S.primary }}
+                    title="Joindre une image"
                   >
-                    <Paperclip size={14} />
+                    {uploadingImage ? <Loader2 size={14} className="animate-spin" /> : <Paperclip size={14} />}
                   </motion.button>
                   <motion.button
                     type="button"
                     onClick={() => setShowEmoji((o) => !o)}
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border"
                     style={{
-                      borderColor: showEmoji ? `${S.primary}50` : "rgba(255,255,255,0.08)",
+                      borderColor: showEmoji ? `${S.primary}50` : "var(--surface-panel-border)",
                       color: showEmoji ? S.primary : "var(--text-muted)",
                     }}
                     whileHover={{ scale: 1.1 }}
@@ -430,7 +497,7 @@ export function MessagesPage() {
                     <Smile size={14} />
                   </motion.button>
                   <div className="flex flex-1 items-center gap-2 rounded-xl border px-3 py-2"
-                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.09)" }}>
+                    style={{ background: "var(--surface-input)", borderColor: "var(--surface-panel-border)" }}>
                     <input
                       value={input}
                       onChange={(e) => {
@@ -448,7 +515,7 @@ export function MessagesPage() {
                     onClick={handleSend}
                     disabled={!input.trim()}
                     className="flex h-9 w-9 items-center justify-center rounded-xl disabled:opacity-30"
-                    style={{ background: input.trim() ? `linear-gradient(135deg,${S.primary},${S.primary}cc)` : "rgba(255,255,255,0.06)" }}
+                    style={{ background: input.trim() ? `linear-gradient(135deg,${S.primary},${S.primary}cc)` : "var(--surface-input)" }}
                     whileHover={{ scale: input.trim() ? 1.1 : 1 }}
                     whileTap={{ scale: 0.9 }}
                   >

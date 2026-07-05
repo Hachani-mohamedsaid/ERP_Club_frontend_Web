@@ -73,7 +73,7 @@ export function FacturesFinance() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-extrabold" style={{ color: "var(--text-primary)" }}>Gestion des Factures</h1>
-          <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
+          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
             {INVOICES.length} factures · {(totalAll / 1000).toFixed(1)}K DT total
           </p>
         </div>
@@ -84,7 +84,7 @@ export function FacturesFinance() {
             <Plus size={12} /> Nouvelle facture
           </motion.button>
           <motion.button type="button" className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold"
-            style={{ borderColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)" }}
+            style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
             whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.95 }}>
             <Download size={12} /> Export
           </motion.button>
@@ -108,11 +108,11 @@ export function FacturesFinance() {
                 <span className="text-[9px] font-extrabold rounded-full px-2 py-0.5"
                   style={{ background: `${card.color}15`, color: card.color }}>{card.pct}%</span>
               </div>
-              <p className="text-[9px] uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.4)" }}>{card.label}</p>
+              <p className="text-[9px] uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{card.label}</p>
               <p className="text-lg font-extrabold mt-0.5" style={{ color: card.color }}>
                 {(card.amount / 1000).toFixed(0)}K DT
               </p>
-              <p className="text-[8px] mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>{card.sub}</p>
+              <p className="text-[8px] mt-0.5" style={{ color: "var(--text-muted)" }}>{card.sub}</p>
               {/* Bottom progress bar */}
               <div className="mt-3 h-1 w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.07)" }}>
                 <motion.div className="h-1 rounded-full" style={{ background: card.color }}
@@ -158,14 +158,14 @@ export function FacturesFinance() {
             );
           })}
         </div>
-        <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+        <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
           {filtered.length} résultat{filtered.length > 1 ? "s" : ""}
         </span>
       </div>
 
       {/* Invoice list */}
-      <div className="rounded-[22px] border overflow-hidden" style={{ background: "rgba(8,6,24,0.88)", borderColor: "rgba(255,255,255,0.07)" }}>
-        <div className="px-5 pt-4 pb-3 border-b flex items-center justify-between" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+      <div className="rounded-[22px] border overflow-hidden" style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
+        <div className="px-5 pt-4 pb-3 border-b flex items-center justify-between" style={{ borderColor: "var(--surface-panel-border)" }}>
           <p className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>
             <FileText size={12} className="inline mr-1.5" style={{ color: F.primary }} />
             Liste des factures
@@ -195,7 +195,7 @@ export function FacturesFinance() {
                     <p className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>
                       {inv.reference} — {inv.fournisseur}
                     </p>
-                    <p className="text-[9px] mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
+                    <p className="text-[9px] mt-0.5" style={{ color: "var(--text-muted)" }}>
                       {inv.date} · {inv.type}
                     </p>
                   </div>
@@ -217,7 +217,7 @@ export function FacturesFinance() {
                   <div className="flex gap-1.5 shrink-0">
                     <motion.button type="button"
                       className="flex items-center gap-1 rounded-lg border px-2 py-1 text-[9px] font-bold"
-                      style={{ borderColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.45)" }}
+                      style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
                       whileHover={{ scale: 1.08, borderColor: `${F.info}40`, color: F.info }}>
                       <Eye size={9} /> Voir
                     </motion.button>

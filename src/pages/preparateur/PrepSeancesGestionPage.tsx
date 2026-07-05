@@ -54,7 +54,7 @@ function Field({ label, type = "text", value, onChange, placeholder }: {
       <label className="mb-1 block text-xs" style={{ color: "var(--text-muted)" }}>{label}</label>
       <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
         className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
-        style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }} />
+        style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }} />
     </div>
   );
 }
@@ -186,7 +186,7 @@ export function PrepSeancesGestionPage() {
                         <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Détail séance</p>
                         <motion.button type="button" onClick={() => setSelectedSession(null)}
                           className="text-xs px-3 py-1.5 rounded-lg border"
-                          style={{ borderColor: "rgba(255,255,255,0.1)", color: "var(--text-muted)" }}
+                          style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
                           whileHover={{ borderColor: "rgba(255,122,0,0.3)" }}>
                           Fermer
                         </motion.button>
@@ -203,16 +203,16 @@ export function PrepSeancesGestionPage() {
                           { label: "Intensité", value: selectedSession.intensity, color: INTENSITY_COLOR[selectedSession.intensity] },
                         ].map(({ label, value, color }) => (
                           <div key={label} className="flex justify-between rounded-xl border px-3 py-2.5 text-sm"
-                            style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                            style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
                             <span style={{ color: "var(--text-muted)" }}>{label}</span>
                             <span className="font-semibold" style={{ color: color ?? "var(--text-primary)" }}>{value}</span>
                           </div>
                         ))}
-                        <div className="rounded-xl border p-3" style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                        <div className="rounded-xl border p-3" style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
                           <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Objectif</p>
                           <p className="text-sm" style={{ color: "var(--text-primary)" }}>{selectedSession.objective}</p>
                         </div>
-                        <div className="rounded-xl border p-3" style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                        <div className="rounded-xl border p-3" style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
                           <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Exercices</p>
                           <p className="text-sm" style={{ color: "var(--text-primary)" }}>{selectedSession.exercises}</p>
                         </div>
@@ -228,7 +228,7 @@ export function PrepSeancesGestionPage() {
                 ) : (
                   <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                     className="flex h-64 items-center justify-center rounded-[20px] border"
-                    style={{ borderColor: "rgba(255,255,255,0.05)", background: "rgba(255,255,255,0.02)" }}>
+                    style={{ borderColor: "var(--surface-panel-border)", background: "rgba(255,255,255,0.02)" }}>
                     <p className="text-sm" style={{ color: "var(--text-muted)" }}>Sélectionner une séance</p>
                   </motion.div>
                 )}
@@ -310,7 +310,7 @@ export function PrepSeancesGestionPage() {
             style={{ background: "rgba(0,0,0,0.75)" }}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <motion.div className="w-full max-w-lg rounded-[24px] border p-6"
-              style={{ background: "rgba(8,14,30,0.98)", borderColor: "rgba(255,122,0,0.3)" }}
+              style={{ background: "var(--surface-modal)", borderColor: "rgba(255,122,0,0.3)" }}
               initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9 }}>
               <h3 className="text-base font-bold mb-4" style={{ color: "var(--text-primary)" }}>
                 {modal === "add" ? "Créer une séance" : "Modifier la séance"}
@@ -326,7 +326,7 @@ export function PrepSeancesGestionPage() {
                   <label className="mb-1 block text-xs" style={{ color: "var(--text-muted)" }}>Intensité</label>
                   <select value={form.intensity} onChange={e => setForm(p => ({ ...p, intensity: e.target.value as Intensity }))}
                     className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
-                    style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}>
+                    style={{ background: "rgba(30,35,50,0.97)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}>
                     {(["Basse","Moyenne","Haute","Max"] as Intensity[]).map(i => <option key={i} value={i}>{i}</option>)}
                   </select>
                 </div>
@@ -334,7 +334,7 @@ export function PrepSeancesGestionPage() {
                   <label className="mb-1 block text-xs" style={{ color: "var(--text-muted)" }}>Type</label>
                   <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value as SessionType }))}
                     className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
-                    style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}>
+                    style={{ background: "rgba(30,35,50,0.97)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}>
                     {(["cardio","force","vitesse","mobilite","repos","match"] as SessionType[]).map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
@@ -346,7 +346,7 @@ export function PrepSeancesGestionPage() {
                   <textarea value={form.exercises} onChange={e => setForm(p => ({ ...p, exercises: e.target.value }))}
                     rows={3} placeholder="Ex: Course 20min · Fartlek 20min · Étirements 20min"
                     className="w-full resize-none rounded-xl border px-3 py-2.5 text-sm outline-none"
-                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }} />
+                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }} />
                 </div>
               </div>
               <div className="mt-4 flex gap-2">
@@ -358,7 +358,7 @@ export function PrepSeancesGestionPage() {
                 </motion.button>
                 <motion.button type="button" onClick={() => setModal(null)}
                   className="rounded-xl border px-4 py-2.5 text-sm"
-                  style={{ borderColor: "rgba(255,255,255,0.1)", color: "var(--text-muted)" }}
+                  style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
                   whileHover={{ borderColor: "rgba(255,122,0,0.3)" }}>
                   Annuler
                 </motion.button>

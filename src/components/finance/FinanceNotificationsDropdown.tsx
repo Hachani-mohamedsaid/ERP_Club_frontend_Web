@@ -125,15 +125,15 @@ export function FinanceNotificationsDropdown() {
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
             className="absolute right-0 top-full z-50 mt-2 w-[360px] overflow-hidden rounded-[22px] border shadow-2xl"
             style={{
-              background: "rgba(8,6,24,0.98)",
-              borderColor: "rgba(255,255,255,0.09)",
+              background: "var(--surface-panel-solid)",
+              borderColor: "var(--surface-panel-border)",
               boxShadow: "0 24px 64px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,122,0,0.08)",
               backdropFilter: "blur(20px)",
             }}
           >
             <div
               className="flex items-center justify-between px-4 py-3.5 border-b"
-              style={{ borderColor: "rgba(255,255,255,0.07)" }}
+              style={{ borderColor: "var(--surface-panel-border)" }}
             >
               <div className="flex items-center gap-2">
                 <Bell size={14} style={{ color: F.primary }} />
@@ -169,8 +169,8 @@ export function FinanceNotificationsDropdown() {
                 </p>
               ) : notifs.length === 0 ? (
                 <div className="flex flex-col items-center py-12 text-center">
-                  <Bell size={28} style={{ color: "rgba(255,255,255,0.1)" }} className="mb-2" />
-                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+                  <Bell size={28} style={{ color: "var(--text-muted)" }} className="mb-2" />
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                     Aucune notification
                   </p>
                 </div>
@@ -217,11 +217,11 @@ export function FinanceNotificationsDropdown() {
                         >
                           {n.title}
                         </p>
-                        <p className="text-[9px] mt-0.5 leading-snug" style={{ color: "rgba(255,255,255,0.35)" }}>
+                        <p className="text-[9px] mt-0.5 leading-snug" style={{ color: "var(--text-muted)" }}>
                           {n.body}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[8px]" style={{ color: "rgba(255,255,255,0.25)" }}>
+                          <span className="text-[8px]" style={{ color: "var(--text-muted)" }}>
                             {n.time}
                           </span>
                           <span
@@ -237,13 +237,13 @@ export function FinanceNotificationsDropdown() {
                         <motion.button
                           type="button"
                           className="opacity-0 group-hover:opacity-100 rounded-lg p-1"
-                          style={{ color: "rgba(255,255,255,0.35)" }}
+                          style={{ color: "var(--text-muted)" }}
                           onClick={(e) => void dismiss(n.id, e)}
                           whileHover={{ scale: 1.2, color: F.danger }}
                         >
                           <X size={10} />
                         </motion.button>
-                        <ChevronRight size={10} style={{ color: "rgba(255,255,255,0.2)" }} />
+                        <ChevronRight size={10} style={{ color: "var(--text-muted)" }} />
                       </div>
                     </motion.div>
                   );
@@ -253,9 +253,9 @@ export function FinanceNotificationsDropdown() {
 
             <div
               className="border-t px-4 py-2.5 flex items-center justify-between"
-              style={{ borderColor: "rgba(255,255,255,0.06)" }}
+              style={{ borderColor: "var(--surface-panel-border)" }}
             >
-              <span className="text-[9px]" style={{ color: "rgba(255,255,255,0.3)" }}>
+              <span className="text-[9px]" style={{ color: "var(--text-muted)" }}>
                 Finance · {meta.clubName || "Club"} · {meta.season || "Saison en cours"}
               </span>
               <motion.button

@@ -107,7 +107,7 @@ export function PrepNotificationsPage() {
         {unread > 0 && (
           <motion.button type="button" onClick={markAllRead}
             className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs"
-            style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
+            style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
             whileHover={{ borderColor: "rgba(255,122,0,0.3)", color: "var(--accent)" }}>
             <BellOff size={11} /> Tout marquer lu
           </motion.button>
@@ -160,14 +160,14 @@ export function PrepNotificationsPage() {
                         {!n.read && (
                           <motion.button type="button" onClick={() => markRead(n.id)}
                             className="rounded-lg border px-2.5 py-1 text-[10px]"
-                            style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
+                            style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
                             whileHover={{ borderColor: "rgba(255,122,0,0.3)", color: "var(--accent)" }}>
                             Marquer lu
                           </motion.button>
                         )}
                         <motion.button type="button" onClick={() => remove(n.id)}
                           className="flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[10px]"
-                          style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
+                          style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
                           whileHover={{ borderColor: "rgba(239,68,68,0.3)", color: "#EF4444" }}>
                           <Trash2 size={9} /> Supprimer
                         </motion.button>

@@ -12,7 +12,7 @@ function Field({ label, placeholder, value, onChange, type = "text" }: {
       <motion.input type={type} placeholder={placeholder} value={value}
         onChange={e => onChange(e.target.value)}
         className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-        style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}
+        style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
         whileFocus={{ borderColor: "rgba(255,122,0,0.5)", boxShadow: "0 0 0 2px rgba(255,122,0,0.1)" }}
       />
     </div>

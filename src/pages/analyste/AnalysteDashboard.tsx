@@ -153,7 +153,7 @@ export function AnalysteDashboard() {
                 className="group relative overflow-hidden rounded-[20px] border p-4 text-left"
                 style={{
                   background: "rgba(15,29,58,0.85)",
-                  borderColor: "rgba(255,255,255,0.05)",
+                  borderColor: "var(--surface-panel-border)",
                   boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
                 }}
               >
@@ -193,7 +193,7 @@ export function AnalysteDashboard() {
       {/* Pattern Detection preview */}
       <motion.div
         className="rounded-[20px] border p-5"
-        style={{ background: "rgba(15,29,58,0.85)", borderColor: "rgba(255,255,255,0.05)" }}
+        style={{ background: "rgba(15,29,58,0.85)", borderColor: "var(--surface-panel-border)" }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}

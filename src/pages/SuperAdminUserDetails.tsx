@@ -169,7 +169,7 @@ export function SuperAdminUserDetails() {
               </div>
             </div>
 
-            <div className="space-y-3 border-t pt-4 text-sm" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+            <div className="space-y-3 border-t pt-4 text-sm" style={{ borderColor: "var(--surface-panel-border)" }}>
               {[
                 { icon: Mail, label: "Email", value: user.email },
                 { icon: Building2, label: "Club", value: user.club },

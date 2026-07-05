@@ -100,7 +100,7 @@ export function AnalystePPIPage() {
             </h3>
             <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}
               className="rounded-xl border px-3 py-1.5 text-xs outline-none"
-              style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}>
+              style={{ background: "rgba(30,35,50,0.97)", borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}>
               <option value="ppi">Trier par PPI</option>
               <option value="age">Trier par âge</option>
               <option value="fatigue">Trier par fatigue</option>

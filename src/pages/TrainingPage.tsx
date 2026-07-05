@@ -74,7 +74,7 @@ function TrainingModal({
     >
       <motion.div
         className="w-full max-w-md rounded-[24px] border p-6"
-        style={{ background: "rgba(10,18,40,0.98)", borderColor: "rgba(59,130,246,0.35)" }}
+        style={{ background: "var(--surface-panel-solid)", borderColor: "rgba(59,130,246,0.35)" }}
         initial={{ scale: 0.92, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         onClick={(e) => e.stopPropagation()}
@@ -103,7 +103,7 @@ function TrainingModal({
                 onChange={(e) => setForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
                 placeholder={f.placeholder}
                 className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
               />
             </div>
           ))}
@@ -115,7 +115,7 @@ function TrainingModal({
               value={form.intensity}
               onChange={(e) => setForm((prev) => ({ ...prev, intensity: e.target.value }))}
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(30,35,50,0.97)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             >
               {["Faible", "Moyenne", "Élevée"].map((o) => (
                 <option key={o} value={o}>{o}</option>
@@ -283,7 +283,7 @@ export function TrainingPage() {
                     <div
                       key={s.id}
                       className="flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3"
-                      style={{ borderColor: "rgba(255,255,255,0.06)" }}
+                      style={{ borderColor: "var(--surface-panel-border)" }}
                     >
                       <div className="flex flex-wrap items-center gap-4">
                         <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>

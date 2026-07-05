@@ -28,7 +28,7 @@ function PlayerDetailDrawer({ player, onClose }: { player: BackendPlayer; onClos
     >
       <motion.div
         className="h-full w-full max-w-sm overflow-y-auto rounded-2xl p-6"
-        style={{ background: "#141B2D", border: "1px solid rgba(255,107,87,0.25)" }}
+        style={{ background: "var(--surface-panel-solid)", border: "1px solid rgba(255,107,87,0.25)" }}
         initial={{ x: 80, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: 80, opacity: 0 }}
@@ -50,7 +50,7 @@ function PlayerDetailDrawer({ player, onClose }: { player: BackendPlayer; onClos
               </AnimatedBadge>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}>
+          <button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: "var(--surface-input)", color: "var(--text-muted)" }}>
             <X size={16} />
           </button>
         </div>
@@ -62,7 +62,7 @@ function PlayerDetailDrawer({ player, onClose }: { player: BackendPlayer; onClos
             { label: "Buts", value: player.goals ?? 0, color: "#22C55E" },
             { label: "Assists", value: player.stats?.seasonStats?.assists ?? 0, color: "#3B82F6" },
           ].map(({ label, value, color, suffix = "" }) => (
-            <div key={label} className="rounded-xl border p-3 text-center" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+            <div key={label} className="rounded-xl border p-3 text-center" style={{ borderColor: "var(--surface-panel-border)" }}>
               <p className="text-xl font-black" style={{ color }}>
                 <CountUpStat end={value} suffix={suffix} />
               </p>
@@ -80,7 +80,7 @@ function PlayerDetailDrawer({ player, onClose }: { player: BackendPlayer; onClos
                   <span style={{ color: "var(--text-muted)" }}>{key.charAt(0).toUpperCase() + key.slice(1)}</span>
                   <span className="font-bold" style={{ color: "#FF6B57" }}>{val}</span>
                 </div>
-                <div className="h-1.5 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+                <div className="h-1.5 overflow-hidden rounded-full" style={{ background: "var(--surface-input)" }}>
                   <motion.div className="h-full rounded-full" style={{ background: "#FF6B57" }} initial={{ width: 0 }} animate={{ width: `${val}%` }} transition={{ duration: 0.8 }} />
                 </div>
               </div>
@@ -89,27 +89,27 @@ function PlayerDetailDrawer({ player, onClose }: { player: BackendPlayer; onClos
         </GlassCard>
 
         <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
-          <div className="rounded-xl border p-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+          <div className="rounded-xl border p-3" style={{ borderColor: "var(--surface-panel-border)" }}>
             <p className="text-xs" style={{ color: "var(--text-muted)" }}>Valeur marché</p>
             <p className="font-bold" style={{ color: "#22C55E" }}>{player.marketValue || "—"}</p>
           </div>
-          <div className="rounded-xl border p-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+          <div className="rounded-xl border p-3" style={{ borderColor: "var(--surface-panel-border)" }}>
             <p className="text-xs" style={{ color: "var(--text-muted)" }}>Salaire</p>
             <p className="font-bold" style={{ color: "var(--text-primary)" }}>{player.contract?.salary || "—"}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
-          <div className="rounded-xl border p-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+          <div className="rounded-xl border p-3" style={{ borderColor: "var(--surface-panel-border)" }}>
             <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Forme actuelle</p>
-            <div className="h-1.5 overflow-hidden rounded-full mb-1" style={{ background: "rgba(255,255,255,0.06)" }}>
+            <div className="h-1.5 overflow-hidden rounded-full mb-1" style={{ background: "var(--surface-input)" }}>
               <motion.div className="h-full rounded-full" style={{ background: "#3B82F6" }} initial={{ width: 0 }} animate={{ width: `${player.stats?.form ?? 70}%` }} transition={{ duration: 0.8 }} />
             </div>
             <p className="text-xs font-semibold" style={{ color: "#3B82F6" }}>{player.stats?.form ?? 70}%</p>
           </div>
-          <div className="rounded-xl border p-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+          <div className="rounded-xl border p-3" style={{ borderColor: "var(--surface-panel-border)" }}>
             <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Charge entraîn.</p>
-            <div className="h-1.5 overflow-hidden rounded-full mb-1" style={{ background: "rgba(255,255,255,0.06)" }}>
+            <div className="h-1.5 overflow-hidden rounded-full mb-1" style={{ background: "var(--surface-input)" }}>
               <motion.div className="h-full rounded-full" style={{ background: "#22C55E" }} initial={{ width: 0 }} animate={{ width: `${player.stats?.trainingLoad ?? 65}%` }} transition={{ duration: 0.8, delay: 0.1 }} />
             </div>
             <p className="text-xs font-semibold" style={{ color: "#22C55E" }}>{player.stats?.trainingLoad ?? 65}%</p>

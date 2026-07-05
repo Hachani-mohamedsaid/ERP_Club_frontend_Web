@@ -83,7 +83,7 @@ export function PrepConditionPage() {
               <PolarGrid stroke="rgba(255,255,255,0.1)" />
               <PolarAngleAxis dataKey="stat" tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
               <Radar name="Score" dataKey="value" stroke="#FF6B57" fill="#FF6B57" fillOpacity={0.3} animationDuration={1000} animationBegin={200} />
-              <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12 }} />
+              <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }} />
             </RadarChart>
           </ResponsiveContainer>
         </PrepKpiCard>
@@ -95,7 +95,7 @@ export function PrepConditionPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
               <XAxis dataKey="month" tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
               <YAxis domain={[65, 95]} tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
-              <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12 }} />
+              <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }} />
               <Line type="monotone" dataKey="speed" stroke="#FF6B57" strokeWidth={2} dot={{ r: 4 }} animationDuration={1000} name="Vitesse" />
               <Line type="monotone" dataKey="endurance" stroke="#6366F1" strokeWidth={2} dot={{ r: 4 }} animationDuration={1000} name="Endurance" />
             </LineChart>

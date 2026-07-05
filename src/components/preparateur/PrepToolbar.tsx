@@ -24,7 +24,7 @@ export function PrepToolbar({
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={placeholder}
           className="w-full rounded-xl border py-2.5 pl-10 pr-4 text-sm"
-          style={{ background: "rgba(15,29,58,0.8)", borderColor: "rgba(255,255,255,0.05)", color: "var(--text-primary)" }}
+          style={{ background: "rgba(15,29,58,0.8)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
         />
       </div>
       {filterOptions && onFilterChange && (
@@ -34,7 +34,7 @@ export function PrepToolbar({
             value={filter}
             onChange={(e) => onFilterChange(e.target.value)}
             className="appearance-none rounded-xl border py-2.5 pl-9 pr-8 text-sm"
-            style={{ background: "rgba(15,29,58,0.8)", borderColor: "rgba(255,255,255,0.05)", color: "var(--text-primary)" }}
+            style={{ background: "rgba(15,29,58,0.8)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
           >
             {filterOptions.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -43,12 +43,12 @@ export function PrepToolbar({
         </div>
       )}
       {onExportCsv && (
-        <button type="button" onClick={onExportCsv} className="flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-medium hover:bg-white/5" style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-secondary)" }}>
+        <button type="button" onClick={onExportCsv} className="flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-medium hover:bg-white/5" style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-secondary)" }}>
           <FileSpreadsheet size={14} /> Excel
         </button>
       )}
       {onExportPdf && (
-        <button type="button" onClick={onExportPdf} className="flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-medium hover:bg-white/5" style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-secondary)" }}>
+        <button type="button" onClick={onExportPdf} className="flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-medium hover:bg-white/5" style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-secondary)" }}>
           <FileDown size={14} /> PDF
         </button>
       )}

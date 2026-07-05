@@ -64,7 +64,7 @@ export function CoachPlayerDetailPage() {
       <div className="flex items-center gap-3">
         <motion.button type="button" onClick={() => navigate(-1)}
           className="flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold"
-          style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)", background: "rgba(255,255,255,0.03)" }}
+          style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)", background: "rgba(255,255,255,0.03)" }}
           whileHover={{ borderColor: `${COACH_ACCENT}50`, color: COACH_ACCENT }} whileTap={{ scale: 0.96 }}>
           <ArrowLeft size={13} /> Retour effectif
         </motion.button>
@@ -101,7 +101,7 @@ export function CoachPlayerDetailPage() {
               { label: "Matchs", value: player.matches, color: COACH_ACCENT },
             ].map(m => (
               <div key={m.label} className="rounded-xl border p-2 text-center"
-                style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.06)" }}>
+                style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--surface-panel-border)" }}>
                 <p className="text-xl font-extrabold" style={{ color: m.color }}>{m.value}</p>
                 <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{m.label}</p>
               </div>
@@ -256,7 +256,7 @@ export function CoachPlayerDetailPage() {
                 {player.recentMatches.map((m, i) => (
                   <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.07 }}
                     className="flex items-center gap-3 rounded-xl border px-4 py-3"
-                    style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                    style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
                     <span className="text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>{m.date}</span>
                     <span className="flex-1 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>vs {m.vs}</span>
                     <div className="flex items-center gap-3">
@@ -277,7 +277,7 @@ export function CoachPlayerDetailPage() {
                   { label: "Matchs joués",      value: player.matches },
                 ].map(m => (
                   <div key={m.label} className="rounded-xl border p-3 text-center"
-                    style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.06)" }}>
+                    style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--surface-panel-border)" }}>
                     <p className="text-xl font-extrabold" style={{ color: COACH_ACCENT }}>{m.value}</p>
                     <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{m.label}</p>
                   </div>

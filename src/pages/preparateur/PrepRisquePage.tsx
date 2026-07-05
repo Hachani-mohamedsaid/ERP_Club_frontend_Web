@@ -79,7 +79,7 @@ export function PrepRisquePage() {
                     <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>Risk IA</p>
                   </div>
                 </div>
-                <div className="mt-3 rounded-lg border px-3 py-2" style={{ borderColor: "rgba(255,255,255,0.05)", background: "rgba(255,255,255,0.02)" }}>
+                <div className="mt-3 rounded-lg border px-3 py-2" style={{ borderColor: "var(--surface-panel-border)", background: "rgba(255,255,255,0.02)" }}>
                   <p className="mb-1 text-[10px] font-semibold uppercase" style={{ color: "var(--text-muted)" }}>Recommandation IA</p>
                   <ul className="space-y-1">
                     {entry.recommendation.map((rec) => (

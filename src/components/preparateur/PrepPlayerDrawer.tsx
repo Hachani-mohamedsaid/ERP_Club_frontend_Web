@@ -39,7 +39,7 @@ export function PrepPlayerDrawer({ player, open, onClose }: PrepPlayerDrawerProp
               { label: "Taille", value: player.height },
               { label: "Poste", value: player.position },
             ].map((s) => (
-              <div key={s.label} className="rounded-xl border p-2.5 text-center" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+              <div key={s.label} className="rounded-xl border p-2.5 text-center" style={{ borderColor: "var(--surface-panel-border)" }}>
                 <p className="text-[10px] uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{s.label}</p>
                 <p className="mt-0.5 text-sm font-bold" style={{ color: "var(--text-primary)" }}>{s.value}</p>
               </div>
@@ -61,7 +61,7 @@ export function PrepPlayerDrawer({ player, open, onClose }: PrepPlayerDrawerProp
           ))}
         </div>
 
-        <div className="rounded-xl border p-4" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+        <div className="rounded-xl border p-4" style={{ borderColor: "var(--surface-panel-border)" }}>
           <div className="mb-2 flex items-center gap-2">
             <Trophy size={14} style={{ color: "#6366F1" }} />
             <h4 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Dernier match</h4>
@@ -73,7 +73,7 @@ export function PrepPlayerDrawer({ player, open, onClose }: PrepPlayerDrawerProp
           </div>
         </div>
 
-        <div className="rounded-xl border p-4" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+        <div className="rounded-xl border p-4" style={{ borderColor: "var(--surface-panel-border)" }}>
           <div className="mb-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Calendar size={14} style={{ color: availColor }} />
@@ -85,7 +85,7 @@ export function PrepPlayerDrawer({ player, open, onClose }: PrepPlayerDrawerProp
           </div>
         </div>
 
-        <div className="rounded-xl border p-4" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+        <div className="rounded-xl border p-4" style={{ borderColor: "var(--surface-panel-border)" }}>
           <div className="mb-3 flex items-center gap-2">
             <Bandage size={14} style={{ color: "#EF4444" }} />
             <h4 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Historique blessures</h4>
@@ -107,7 +107,7 @@ export function PrepPlayerDrawer({ player, open, onClose }: PrepPlayerDrawerProp
           )}
         </div>
 
-        <div className="rounded-xl border p-4" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+        <div className="rounded-xl border p-4" style={{ borderColor: "var(--surface-panel-border)" }}>
           <div className="mb-3 flex items-center gap-2">
             <Dumbbell size={14} style={{ color: "#6366F1" }} />
             <h4 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Programmes actifs</h4>

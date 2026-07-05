@@ -61,7 +61,7 @@ function InjuryFormModal({
     >
       <motion.div
         className="w-full max-w-2xl rounded-[24px] border p-6"
-        style={{ background: "rgba(10,18,40,0.98)", borderColor: "rgba(255,107,87,0.25)" }}
+        style={{ background: "var(--surface-panel-solid)", borderColor: "rgba(255,107,87,0.25)" }}
         initial={{ scale: 0.92, y: 20 }} animate={{ scale: 1, y: 0 }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -81,7 +81,7 @@ function InjuryFormModal({
                 value={form.playerName}
                 onChange={(e) => setForm((prev) => ({ ...prev, playerName: e.target.value }))}
                 className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                style={{ background: "rgba(30,35,50,0.97)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
               >
                 <option value="">Sélectionner un joueur…</option>
                 {players.map((p) => (
@@ -94,7 +94,7 @@ function InjuryFormModal({
                 onChange={(e) => setForm((prev) => ({ ...prev, playerName: e.target.value }))}
                 placeholder="Nom du joueur"
                 className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
               />
             )}
           </div>
@@ -107,7 +107,7 @@ function InjuryFormModal({
               value={form.injuryType}
               onChange={(e) => setForm((prev) => ({ ...prev, injuryType: e.target.value }))}
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(30,35,50,0.97)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             >
               {INJURY_TYPE_OPTIONS.map((t) => (
                 <option key={t} value={t}>{t}</option>
@@ -123,7 +123,7 @@ function InjuryFormModal({
               value={form.bodyPart}
               onChange={(e) => setForm((prev) => ({ ...prev, bodyPart: e.target.value }))}
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(30,35,50,0.97)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             >
               {BODY_PART_OPTIONS.map((z) => (
                 <option key={z.id} value={z.id}>{z.label}</option>
@@ -140,7 +140,7 @@ function InjuryFormModal({
               value={form.returnDate}
               onChange={(e) => setForm((prev) => ({ ...prev, returnDate: e.target.value }))}
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             />
           </div>
 
@@ -156,7 +156,7 @@ function InjuryFormModal({
               onChange={(e) => setForm((prev) => ({ ...prev, riskScore: e.target.value }))}
               placeholder="8"
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             />
           </div>
           </div>

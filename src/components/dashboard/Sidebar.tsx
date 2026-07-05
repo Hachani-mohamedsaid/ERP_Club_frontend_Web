@@ -1,6 +1,10 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { AnimatePresence } from "framer-motion";
 import { useAuth } from "../../contexts/AuthContext";
+import { useLocale } from "../../contexts/LocaleContext";
+import { useUserPreferences } from "../../contexts/UserPreferencesContext";
+import { SettingsModal } from "../ui/SettingsModal";
 import odinLogo from "../../assets/odin-logo.png";
 import {
   LayoutDashboard,
@@ -18,7 +22,6 @@ import {
   LogOut,
   BarChart3,
   UserPlus,
-  ChevronDown,
   Search,
   Heart,
   Scale,
@@ -76,7 +79,15 @@ import {
   Globe,
 } from "lucide-react";
 
-const JOUEUR_STATIC_ROUTES = ["performances", "medical", "planning", "profil", "ia", "messages"];
+const JOUEUR_NAV_KEYS: Record<string, keyof import("../../i18n/joueurTranslations").JoueurTranslations["nav"]> = {
+  "/joueurs": "dashboard",
+  "/joueurs/performances": "performances",
+  "/joueurs/medical": "medical",
+  "/joueurs/planning": "planning",
+  "/joueurs/ia": "aiCoach",
+  "/joueurs/profil": "profile",
+  "/messages": "messages",
+};
 
 interface NavSubItem {
   label: string;
@@ -548,395 +559,162 @@ const NAV_ITEMS: NavItem[] = [
 export function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
-  const [expandedScout, setExpandedScout] = useState(false);
-  const [expandedSuperAdmin, setExpandedSuperAdmin] = useState(true);
-  const [expandedMedical, setExpandedMedical] = useState(true);
-  const [expandedJoueur, setExpandedJoueur] = useState(true);
-  const [expandedClubAdmin, setExpandedClubAdmin] = useState(true);
-  const [expandedPreparateur, setExpandedPreparateur] = useState(true);
-  const [expandedAnalyste, setExpandedAnalyste] = useState(true);
-  const [expandedRecruteur, setExpandedRecruteur] = useState(true);
-  const [expandedResponsable, setExpandedResponsable] = useState(true);
-  const [expandedCoach, setExpandedCoach] = useState(true);
+  const { user, logout } = useAuth();
+  const { t } = useLocale();
+  const { preferences } = useUserPreferences();
+  const compact = preferences.compactSidebar;
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  function subItemActive(subPath: string) {
+    const exactOnly = [
+      "/joueurs",
+      "/medical",
+      "/club",
+      "/preparateur",
+      "/analyste",
+      "/recruteur",
+      "/dashboard",
+      "/coach",
+      "/scout",
+      "/superadmin/dashboard",
+      "/comptabilite",
+    ];
+    if (location.pathname === subPath) return true;
+    if (exactOnly.includes(subPath)) return false;
+    return location.pathname.startsWith(`${subPath}/`);
+  }
+
+  function renderSubButton(
+    subPath: string,
+    subLabel: string,
+    SubIcon: typeof LayoutDashboard,
+    active: boolean,
+    key?: string,
+  ) {
+    return (
+      <button
+        key={key ?? subPath}
+        type="button"
+        onClick={() => navigate(subPath)}
+        title={compact ? subLabel : undefined}
+        className={`flex w-full items-center rounded-[var(--radius-odin-md)] text-sm transition-colors duration-150 ${compact ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5"}`}
+        style={{
+          background: active ? "var(--accent)" : "transparent",
+          color: active ? "white" : "var(--nav-text)",
+        }}
+      >
+        <SubIcon size={17} strokeWidth={2} />
+        {!compact && subLabel}
+      </button>
+    );
+  }
 
   return (
-    <aside className="glass-nav flex h-full w-64 flex-col px-4 py-6">
-      <div className="mb-8 flex items-center justify-center px-2">
+    <aside
+      className={`glass-nav relative z-40 flex h-full flex-col overflow-visible py-6 transition-all duration-200 ${compact ? "w-[72px] px-2" : "w-64 px-4"}`}
+    >
+      <div className={`mb-8 flex shrink-0 items-center justify-center ${compact ? "px-0" : "px-2"}`}>
         <img
           src={odinLogo}
           alt="ODIN ERP"
-          className="app-logo w-36 cursor-pointer"
+          className={`app-logo cursor-pointer ${compact ? "w-10" : "w-36"}`}
           draggable={false}
           onClick={() => navigate("/")}
         />
       </div>
 
-      <nav className="flex-1 space-y-1">
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto">
         {NAV_ITEMS.filter((it) => {
           if (it.excludeRoles && user && it.excludeRoles.includes(user.role)) return false;
           if (!it.allowedRoles) return true;
           if (!user) return false;
           return it.allowedRoles.includes(user.role);
         }).map(({ label, icon: Icon, path, submenu, submenuGroups }) => {
-          const allSubPaths = [
-            ...(submenu?.map((s) => s.path) ?? []),
-            ...(submenuGroups?.flatMap((g) => g.items.map((i) => i.path)) ?? []),
-          ];
-          const active = location.pathname === path;
-          const isScout = label === "Scout";
-          const isSuperAdmin = label === "Super Admin";
-          const isMedical = label === "Médical";
-          const isClubAdminMenu = path === "/club";
-          const isPreparateurMenu = path === "/preparateur";
-          const isAnalysteMenu = path === "/analyste";
-          const isRecruteurMenu = path === "/recruteur";
-          const isCoachMenu = path === "/coach" && label === "Entraîneur";
           const isJoueurMenu = path === "/joueurs";
-          const isResponsableMenu = label === "Responsable Club";
-          const activeSubmenu = allSubPaths.length > 0 && allSubPaths.some((itemPath) => {
-            if (location.pathname === itemPath) return true;
-            if (["/joueurs","/medical","/club","/preparateur","/analyste","/recruteur","/dashboard"].includes(itemPath)) return false;
-            return location.pathname.startsWith(itemPath);
-          });
-          const isProfileActive = isJoueurMenu && /^\/joueurs\/[^/]+$/.test(location.pathname) && !JOUEUR_STATIC_ROUTES.includes(location.pathname.split("/")[2] ?? "");
+          const hasSubmenu = !!(submenu?.length || submenuGroups?.length);
 
-          return (
-            <div key={label}>
-              <button
-                type="button"
-                onClick={() => {
-                  if ((isScout || isSuperAdmin || isMedical || isJoueurMenu || isClubAdminMenu || isPreparateurMenu || isAnalysteMenu || isRecruteurMenu || isResponsableMenu || isCoachMenu) && (submenu || submenuGroups)) {
-                    if (isScout) setExpandedScout(!expandedScout);
-                    if (isSuperAdmin) setExpandedSuperAdmin(!expandedSuperAdmin);
-                    if (isMedical) setExpandedMedical(!expandedMedical);
-                    if (isJoueurMenu) setExpandedJoueur(!expandedJoueur);
-                    if (isClubAdminMenu) setExpandedClubAdmin(!expandedClubAdmin);
-                    if (isPreparateurMenu) setExpandedPreparateur(!expandedPreparateur);
-                    if (isAnalysteMenu) setExpandedAnalyste(!expandedAnalyste);
-                    if (isRecruteurMenu) setExpandedRecruteur(!expandedRecruteur);
-                    if (isResponsableMenu) setExpandedResponsable(!expandedResponsable);
-                    if (isCoachMenu) setExpandedCoach(!expandedCoach);
-                  } else {
-                    navigate(path);
-                  }
-                }}
-                className="flex w-full items-center gap-3 rounded-[var(--radius-odin-md)] px-3 py-2.5 text-sm transition-colors duration-150"
-                style={{
-                  background: active || activeSubmenu || isProfileActive ? "var(--accent)" : "transparent",
-                  color: active || activeSubmenu || isProfileActive ? "white" : "var(--nav-text)",
-                }}
-              >
-                <Icon size={17} strokeWidth={2} />
-                {label}
-                {(isScout || isSuperAdmin || isMedical || isJoueurMenu || isClubAdminMenu || isPreparateurMenu || isAnalysteMenu || isRecruteurMenu || isResponsableMenu || isCoachMenu) && (submenu || submenuGroups) && (
-                  <ChevronDown
-                    size={16}
-                    strokeWidth={2}
-                    className="ml-auto transition-transform duration-200"
-                    style={{ transform: (isScout && expandedScout) || (isSuperAdmin && expandedSuperAdmin) || (isMedical && expandedMedical) || (isJoueurMenu && expandedJoueur) || (isClubAdminMenu && expandedClubAdmin) || (isPreparateurMenu && expandedPreparateur) || (isAnalysteMenu && expandedAnalyste) || (isRecruteurMenu && expandedRecruteur) || (isResponsableMenu && expandedResponsable) || (isCoachMenu && expandedCoach) ? "rotate(180deg)" : "rotate(0deg)" }}
-                  />
+          const resolveLabel = (subPath: string, subLabel: string) => {
+            if (isJoueurMenu && JOUEUR_NAV_KEYS[subPath]) {
+              return t.nav[JOUEUR_NAV_KEYS[subPath]];
+            }
+            return subLabel;
+          };
+
+          if (hasSubmenu) {
+            return (
+              <div key={label} className="space-y-1">
+                {submenu?.map(({ label: subLabel, icon: SubIcon, path: subPath }) =>
+                  renderSubButton(
+                    subPath,
+                    resolveLabel(subPath, subLabel),
+                    SubIcon,
+                    subItemActive(subPath),
+                    `${subPath}-${subLabel}`,
+                  ),
                 )}
-              </button>
+                {submenuGroups?.map((group) => (
+                  <div key={group.label} className="space-y-1 pt-2">
+                    {!compact && (
+                      <p
+                        className="px-3 text-[10px] font-bold uppercase tracking-[0.15em]"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        {group.label}
+                      </p>
+                    )}
+                    {group.items.map(({ label: subLabel, icon: SubIcon, path: subPath }) =>
+                      renderSubButton(
+                        subPath,
+                        subLabel,
+                        SubIcon,
+                        subItemActive(subPath),
+                        `${subPath}-${subLabel}`,
+                      ),
+                    )}
+                  </div>
+                ))}
+              </div>
+            );
+          }
 
-              {isScout && submenuGroups && expandedScout && (
-                <div className="mt-1 max-h-[calc(100vh-220px)] space-y-3 overflow-y-auto pl-2 pr-1">
-                  {submenuGroups.map((group) => (
-                    <div key={group.label}>
-                      <p className="mb-1 px-2 text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: "var(--text-muted)" }}>
-                        {group.label}
-                      </p>
-                      <div className="space-y-0.5">
-                        {group.items.map(({ label: subLabel, icon: SubIcon, path: subPath }) => {
-                          const subActive = location.pathname === subPath || (subPath === "/scout" && location.pathname === "/scout");
-                          return (
-                            <button
-                              key={subLabel}
-                              type="button"
-                              onClick={() => navigate(subPath)}
-                              className="flex w-full items-center gap-3 rounded-[var(--radius-odin-md)] px-3 py-2 text-xs transition-colors duration-150"
-                              style={{
-                                background: subActive ? "rgba(var(--accent-rgb), 0.3)" : "transparent",
-                                color: subActive ? "var(--accent)" : "var(--nav-text)",
-                              }}
-                            >
-                              <SubIcon size={13} strokeWidth={2} />
-                              {subLabel}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {isSuperAdmin && submenuGroups && expandedSuperAdmin && (
-                <div className="mt-1 max-h-[calc(100vh-220px)] space-y-3 overflow-y-auto pl-2 pr-1">
-                  {submenuGroups.map((group) => (
-                    <div key={group.label}>
-                      <p className="mb-1 px-2 text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: "var(--text-muted)" }}>
-                        {group.label}
-                      </p>
-                      <div className="space-y-0.5">
-                        {group.items.map(({ label: subLabel, icon: SubIcon, path: subPath }) => {
-                          const subActive = location.pathname === subPath || location.pathname.startsWith(`${subPath}/`);
-                          return (
-                            <button
-                              key={subPath}
-                              type="button"
-                              onClick={() => navigate(subPath)}
-                              className="flex w-full items-center gap-2.5 rounded-[var(--radius-odin-md)] px-2.5 py-2 text-[13px] transition-colors duration-150"
-                              style={{
-                                background: subActive ? "rgba(var(--accent-rgb), 0.25)" : "transparent",
-                                color: subActive ? "var(--accent)" : "var(--nav-text)",
-                              }}
-                            >
-                              <SubIcon size={14} strokeWidth={2} />
-                              {subLabel}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {isMedical && submenu && expandedMedical && (
-                <div className="mt-1 space-y-1 pl-4">
-                  {submenu.map(({ label: subLabel, icon: SubIcon, path: subPath }) => {
-                    const subActive = location.pathname === subPath || (subPath === "/medical" && location.pathname === "/medical");
-                    return (
-                      <button
-                        key={subLabel}
-                        type="button"
-                        onClick={() => navigate(subPath)}
-                        className="flex w-full items-center gap-3 rounded-[var(--radius-odin-md)] px-3 py-2 text-sm transition-colors duration-150"
-                        style={{
-                          background: subActive ? "rgba(var(--accent-rgb), 0.3)" : "transparent",
-                          color: subActive ? "var(--accent)" : "var(--nav-text)",
-                        }}
-                      >
-                        <SubIcon size={15} strokeWidth={2} />
-                        {subLabel}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-              {isJoueurMenu && submenu && expandedJoueur && (
-                <div className="mt-1 space-y-1 pl-4">
-                  {submenu.map(({ label: subLabel, icon: SubIcon, path: subPath }) => {
-                    const subActive = location.pathname === subPath || (subPath === "/joueurs" && location.pathname === "/joueurs");
-                    return (
-                      <button
-                        key={subLabel}
-                        type="button"
-                        onClick={() => navigate(subPath)}
-                        className="flex w-full items-center gap-3 rounded-[var(--radius-odin-md)] px-3 py-2 text-sm transition-colors duration-150"
-                        style={{
-                          background: subActive ? "rgba(var(--accent-rgb), 0.3)" : "transparent",
-                          color: subActive ? "var(--accent)" : "var(--nav-text)",
-                        }}
-                      >
-                        <SubIcon size={15} strokeWidth={2} />
-                        {subLabel}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-              {isClubAdminMenu && submenu && expandedClubAdmin && (
-                <div className="mt-1 space-y-1 pl-4">
-                  {submenu.map(({ label: subLabel, icon: SubIcon, path: subPath }) => {
-                    const subActive = location.pathname === subPath || (subPath === "/club" && location.pathname === "/club");
-                    return (
-                      <button
-                        key={subLabel}
-                        type="button"
-                        onClick={() => navigate(subPath)}
-                        className="flex w-full items-center gap-3 rounded-[var(--radius-odin-md)] px-3 py-2 text-sm transition-colors duration-150"
-                        style={{
-                          background: subActive ? "rgba(var(--accent-rgb), 0.3)" : "transparent",
-                          color: subActive ? "var(--accent)" : "var(--nav-text)",
-                        }}
-                      >
-                        <SubIcon size={15} strokeWidth={2} />
-                        {subLabel}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-              {isPreparateurMenu && submenuGroups && expandedPreparateur && (
-                <div className="mt-1 max-h-[calc(100vh-220px)] space-y-3 overflow-y-auto pl-2 pr-1">
-                  {submenuGroups.map((group) => (
-                    <div key={group.label}>
-                      <p className="mb-1 px-2 text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: "var(--text-muted)" }}>
-                        {group.label}
-                      </p>
-                      <div className="space-y-0.5">
-                        {group.items.map(({ label: subLabel, icon: SubIcon, path: subPath }) => {
-                          const subActive = location.pathname === subPath || (subPath === "/preparateur" && location.pathname === "/preparateur");
-                          return (
-                            <button
-                              key={subLabel}
-                              type="button"
-                              onClick={() => navigate(subPath)}
-                              className="flex w-full items-center gap-3 rounded-[var(--radius-odin-md)] px-3 py-2 text-xs transition-colors duration-150"
-                              style={{
-                                background: subActive ? "rgba(var(--accent-rgb), 0.3)" : "transparent",
-                                color: subActive ? "var(--accent)" : "var(--nav-text)",
-                              }}
-                            >
-                              <SubIcon size={13} strokeWidth={2} />
-                              {subLabel}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {isAnalysteMenu && submenuGroups && expandedAnalyste && (
-                <div className="mt-1 max-h-[calc(100vh-220px)] space-y-3 overflow-y-auto pl-2 pr-1">
-                  {submenuGroups.map((group) => (
-                    <div key={group.label}>
-                      <p className="mb-1 px-2 text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: "var(--text-muted)" }}>
-                        {group.label}
-                      </p>
-                      <div className="space-y-0.5">
-                        {group.items.map(({ label: subLabel, icon: SubIcon, path: subPath }) => {
-                          const subActive = location.pathname === subPath || (subPath === "/analyste" && location.pathname === "/analyste");
-                          return (
-                            <button
-                              key={subLabel}
-                              type="button"
-                              onClick={() => navigate(subPath)}
-                              className="flex w-full items-center gap-3 rounded-[var(--radius-odin-md)] px-3 py-2 text-xs transition-colors duration-150"
-                              style={{
-                                background: subActive ? "rgba(var(--accent-rgb), 0.3)" : "transparent",
-                                color: subActive ? "var(--accent)" : "var(--nav-text)",
-                              }}
-                            >
-                              <SubIcon size={13} strokeWidth={2} />
-                              {subLabel}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {isRecruteurMenu && submenuGroups && expandedRecruteur && (
-                <div className="mt-1 max-h-[calc(100vh-220px)] space-y-3 overflow-y-auto pl-2 pr-1">
-                  {submenuGroups.map((group) => (
-                    <div key={group.label}>
-                      <p className="mb-1 px-2 text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: "var(--text-muted)" }}>
-                        {group.label}
-                      </p>
-                      <div className="space-y-0.5">
-                        {group.items.map(({ label: subLabel, icon: SubIcon, path: subPath }) => {
-                          const subActive = location.pathname === subPath || (subPath === "/recruteur" && location.pathname === "/recruteur") || (subPath !== "/recruteur" && location.pathname.startsWith(`${subPath}/`));
-                          return (
-                            <button
-                              key={subPath}
-                              type="button"
-                              onClick={() => navigate(subPath)}
-                              className="flex w-full items-center gap-2.5 rounded-[var(--radius-odin-md)] px-2.5 py-2 text-[13px] transition-colors duration-150"
-                              style={{
-                                background: subActive ? "rgba(var(--accent-rgb), 0.25)" : "transparent",
-                                color: subActive ? "var(--accent)" : "var(--nav-text)",
-                              }}
-                            >
-                              <SubIcon size={14} strokeWidth={2} />
-                              {subLabel}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {isResponsableMenu && submenuGroups && expandedResponsable && (
-                <div className="mt-1 max-h-[calc(100vh-220px)] space-y-3 overflow-y-auto pl-2 pr-1">
-                  {submenuGroups.map((group) => (
-                    <div key={group.label}>
-                      <p className="mb-1 px-2 text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: "var(--text-muted)" }}>
-                        {group.label}
-                      </p>
-                      <div className="space-y-0.5">
-                        {group.items.map(({ label: subLabel, icon: SubIcon, path: subPath }) => {
-                          const subActive = location.pathname === subPath || location.pathname.startsWith(`${subPath}/`);
-                          return (
-                            <button
-                              key={subPath}
-                              type="button"
-                              onClick={() => navigate(subPath)}
-                              className="flex w-full items-center gap-2.5 rounded-[var(--radius-odin-md)] px-2.5 py-2 text-[13px] transition-colors duration-150"
-                              style={{
-                                background: subActive ? "rgba(var(--accent-rgb), 0.25)" : "transparent",
-                                color: subActive ? "var(--accent)" : "var(--nav-text)",
-                              }}
-                            >
-                              <SubIcon size={14} strokeWidth={2} />
-                              {subLabel}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {isCoachMenu && submenuGroups && expandedCoach && (
-                <div className="mt-1 max-h-[calc(100vh-220px)] space-y-3 overflow-y-auto pl-2 pr-1">
-                  {submenuGroups.map((group) => (
-                    <div key={group.label}>
-                      <p className="mb-1 px-2 text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: "var(--text-muted)" }}>
-                        {group.label}
-                      </p>
-                      <div className="space-y-0.5">
-                        {group.items.map(({ label: subLabel, icon: SubIcon, path: subPath }) => {
-                          const subActive = location.pathname === subPath || (subPath === "/coach" && location.pathname === "/coach") || (subPath !== "/coach" && location.pathname.startsWith(`${subPath}/`));
-                          return (
-                            <button
-                              key={`${subPath}-${subLabel}`}
-                              type="button"
-                              onClick={() => navigate(subPath)}
-                              className="flex w-full items-center gap-2.5 rounded-[var(--radius-odin-md)] px-2.5 py-2 text-[13px] transition-colors duration-150"
-                              style={{
-                                background: subActive ? "rgba(var(--accent-rgb), 0.25)" : "transparent",
-                                color: subActive ? "var(--accent)" : "var(--nav-text)",
-                              }}
-                            >
-                              <SubIcon size={14} strokeWidth={2} />
-                              {subLabel}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
+          return renderSubButton(path, label, Icon, subItemActive(path));
         })}
+
       </nav>
 
-      <button
-        type="button"
-        onClick={() => navigate("/login")}
-        className="flex w-full items-center gap-3 rounded-[var(--radius-odin-md)] px-3 py-2.5 text-sm transition-colors duration-150"
-        style={{ color: "var(--nav-text)" }}
+      <div
+        className="mt-auto shrink-0 space-y-1 border-t pt-3"
+        style={{ borderColor: "rgba(255,255,255,0.12)" }}
       >
-        <LogOut size={17} strokeWidth={2} />
-        Déconnexion
-      </button>
+        <button
+          type="button"
+          onClick={() => setSettingsOpen(true)}
+          title={compact ? t.nav.settings : undefined}
+          className={`flex w-full items-center rounded-[var(--radius-odin-md)] text-sm transition-colors duration-150 ${compact ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5"}`}
+          style={{ color: "var(--nav-text)" }}
+        >
+          <Settings size={17} strokeWidth={2} />
+          {!compact && t.nav.settings}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            logout();
+            navigate("/login");
+          }}
+          title={compact ? t.nav.logout : undefined}
+          className={`flex w-full items-center rounded-[var(--radius-odin-md)] text-sm transition-colors duration-150 ${compact ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5"}`}
+          style={{ color: "var(--nav-text)" }}
+        >
+          <LogOut size={17} strokeWidth={2} />
+          {!compact && t.nav.logout}
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+      </AnimatePresence>
     </aside>
   );
 }

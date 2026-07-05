@@ -178,7 +178,7 @@ export function Pitch3DSimulator({
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.9, rotate: -180 }}
           className="flex h-9 w-9 items-center justify-center rounded-xl"
-          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
+          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--surface-panel-border)" }}
           title="Réinitialiser"
         >
           <RefreshCw size={14} style={{ color: "var(--text-muted)" }} />
@@ -353,7 +353,7 @@ export function Pitch3DSimulator({
           </div>
 
           {/* Chemistry legend */}
-          <div className="rounded-[20px] border p-4" style={{ background: "rgba(15,29,58,0.9)", borderColor: "rgba(255,255,255,0.05)" }}>
+          <div className="rounded-[20px] border p-4" style={{ background: "rgba(15,29,58,0.9)", borderColor: "var(--surface-panel-border)" }}>
             <h4 className="mb-3 text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Chemistry · Connexions</h4>
             <div className="flex flex-wrap gap-3 text-xs">
               {[
@@ -370,7 +370,7 @@ export function Pitch3DSimulator({
           </div>
 
           {/* AI suggestions with confidence */}
-          <div className="rounded-[20px] border p-5" style={{ background: "rgba(15,29,58,0.9)", borderColor: "rgba(255,255,255,0.05)" }}>
+          <div className="rounded-[20px] border p-5" style={{ background: "rgba(15,29,58,0.9)", borderColor: "var(--surface-panel-border)" }}>
             <div className="mb-3 flex items-center gap-2">
               <Zap size={14} style={{ color: "#8B5CF6" }} />
               <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: "#8B5CF6" }}>AI Suggestions</h3>
@@ -406,7 +406,7 @@ export function Pitch3DSimulator({
       </div>
 
       {/* === BENCH === */}
-      <div className="rounded-[20px] border p-4" style={{ background: "rgba(15,29,58,0.9)", borderColor: "rgba(255,255,255,0.05)" }}>
+      <div className="rounded-[20px] border p-4" style={{ background: "rgba(15,29,58,0.9)", borderColor: "var(--surface-panel-border)" }}>
         <div className="mb-3 flex items-center gap-2">
           <Users size={14} style={{ color: "#6366F1" }} />
           <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Remplaçants</h3>

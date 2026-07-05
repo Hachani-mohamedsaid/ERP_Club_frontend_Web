@@ -145,41 +145,76 @@ export interface FinanceReportData {
   alerts: FinanceAlert[];
 }
 
+// ─── Shared cache (avoids refetch on every finance page navigation) ───────────
+
+const CACHE_MS = 45_000;
+
+let financeCache: {
+  report: FinanceReportData;
+  transfers: BackendTransfer[];
+  at: number;
+} | null = null;
+
+function isCacheFresh() {
+  return financeCache != null && Date.now() - financeCache.at < CACHE_MS;
+}
+
 // ─── Hook ────────────────────────────────────────────────────────────────────
 
 export function useFinanceBackendData() {
-  const [report, setReport] = useState<FinanceReportData | null>(null);
-  const [transfers, setTransfers] = useState<BackendTransfer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [report, setReport] = useState<FinanceReportData | null>(
+    () => financeCache?.report ?? null,
+  );
+  const [transfers, setTransfers] = useState<BackendTransfer[]>(
+    () => financeCache?.transfers ?? [],
+  );
+  const [loading, setLoading] = useState(() => !isCacheFresh());
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
+    if (!force && isCacheFresh() && financeCache) {
+      setReport(financeCache.report);
+      setTransfers(financeCache.transfers);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      // Remove legacy demo rows once (safe to call repeatedly)
-      await clubApi.purgeFinanceDemo().catch(() => null);
-
       const [reportData, transfersData] = await Promise.allSettled([
         clubApi.getFinanceReport() as Promise<FinanceReportData>,
         clubApi.getTransfers() as Promise<BackendTransfer[]>,
       ]);
 
+      let nextReport: FinanceReportData | null = null;
+      let nextTransfers: BackendTransfer[] = [];
+
       if (reportData.status === "fulfilled") {
-        setReport(reportData.value);
+        nextReport = reportData.value;
+        setReport(nextReport);
       } else {
-        setError("Impossible de charger les données financières.");
-      }
-      if (transfersData.status === "fulfilled") {
-        const raw = transfersData.value;
-        setTransfers(
-          Array.isArray(raw)
-            ? raw.map((t) => normalizeTransfer(t as Record<string, unknown>))
-            : [],
+        setError(
+          reportData.reason instanceof Error
+            ? reportData.reason.message
+            : "Impossible de charger les données financières.",
         );
       }
+
+      if (transfersData.status === "fulfilled") {
+        const raw = transfersData.value;
+        nextTransfers = Array.isArray(raw)
+          ? raw.map((t) => normalizeTransfer(t as Record<string, unknown>))
+          : [];
+        setTransfers(nextTransfers);
+      }
+
+      if (nextReport) {
+        financeCache = { report: nextReport, transfers: nextTransfers, at: Date.now() };
+      }
     } catch (e) {
-      setError(String(e));
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
@@ -189,13 +224,18 @@ export function useFinanceBackendData() {
     load();
   }, [load]);
 
-  // Convenience helpers
-  const refetch = useCallback(() => load(), [load]);
+  const refetch = useCallback(() => {
+    financeCache = null;
+    return load(true);
+  }, [load]);
 
   const refetchContracts = useCallback(async () => {
     try {
       const data = await clubApi.getFinanceReport() as FinanceReportData;
       setReport(data);
+      if (financeCache) {
+        financeCache = { ...financeCache, report: data, at: Date.now() };
+      }
     } catch (_) { /* silent */ }
   }, []);
 
@@ -203,6 +243,9 @@ export function useFinanceBackendData() {
     try {
       const data = await clubApi.getFinanceReport() as FinanceReportData;
       setReport(data);
+      if (financeCache) {
+        financeCache = { ...financeCache, report: data, at: Date.now() };
+      }
     } catch (_) { /* silent */ }
   }, []);
 
@@ -210,6 +253,9 @@ export function useFinanceBackendData() {
     try {
       const data = await clubApi.getFinanceReport() as FinanceReportData;
       setReport(data);
+      if (financeCache) {
+        financeCache = { ...financeCache, report: data, at: Date.now() };
+      }
     } catch (_) { /* silent */ }
   }, []);
 

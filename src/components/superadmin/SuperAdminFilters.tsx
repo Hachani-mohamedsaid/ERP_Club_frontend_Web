@@ -55,7 +55,7 @@ export function SuperAdminSelectFilter({ label, value, options, onChange }: Supe
       className="rounded-lg border px-3 py-2 text-sm"
       style={{
         background: "rgba(255,255,255,0.04)",
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: "var(--surface-panel-border)",
         color: "var(--text-primary)",
       }}
       initial={{ opacity: 0, y: 6 }}
@@ -89,7 +89,7 @@ export function SuperAdminSearchInput({
       className={`rounded-lg border px-4 py-2.5 text-sm outline-none ${className}`}
       style={{
         background: "rgba(255,255,255,0.04)",
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: "var(--surface-panel-border)",
         color: "var(--text-primary)",
       }}
       placeholder={placeholder}
@@ -154,7 +154,7 @@ export function SuperAdminGhostButton({
       className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       style={{
         background: "transparent",
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: "var(--surface-panel-border)",
         color: "var(--text-secondary)",
       }}
       whileHover={{

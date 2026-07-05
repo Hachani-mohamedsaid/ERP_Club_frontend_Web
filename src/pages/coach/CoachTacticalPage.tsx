@@ -51,7 +51,7 @@ export function CoachTacticalPage() {
         <div className="flex gap-2">
           <motion.button type="button"
             className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold"
-            style={{ borderColor: "rgba(255,255,255,0.1)", color: "var(--text-muted)" }}
+            style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
             whileHover={{ scale: 1.04 }}>
             <Download size={12} /> Export
           </motion.button>
@@ -202,7 +202,7 @@ export function CoachTacticalPage() {
               placeholder="Ajouter des instructions tactiques, consignes avant match..."
               rows={5}
               className="w-full resize-none rounded-xl border px-3 py-2 text-xs outline-none"
-              style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.09)", color: "var(--text-primary)" }} />
+              style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }} />
             <motion.button type="button"
               className="mt-2 w-full rounded-xl py-2 text-xs font-bold"
               style={{ background: `${COACH_ACCENT}18`, color: COACH_ACCENT }}
@@ -216,7 +216,7 @@ export function CoachTacticalPage() {
             <p className="mb-2 text-[10px] font-bold" style={{ color: "var(--text-muted)" }}>Zones de jeu</p>
             {ZONES.map(z => (
               <div key={z.label} className="flex items-center gap-2 mb-1.5">
-                <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ background: `${z.color}60`, border: `1px solid ${z.color}` }} />
+                <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ background: `${z.color}60`, border: "1px solid var(--surface-panel-border)" }} />
                 <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{z.label}</span>
               </div>
             ))}

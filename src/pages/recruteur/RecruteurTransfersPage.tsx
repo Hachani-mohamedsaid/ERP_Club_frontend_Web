@@ -54,7 +54,7 @@ export function RecruteurTransfersPage() {
               {rows.map((r, i) => {
                 const cfg = TRANSFER_STATUS_CONFIG[r.status];
                 return (
-                  <motion.tr key={r.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }} className="border-t" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+                  <motion.tr key={r.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }} className="border-t" style={{ borderColor: "var(--surface-panel-border)" }}>
                     <td className="px-4 py-3 font-semibold" style={{ color: "var(--text-primary)" }}>{r.player}</td>
                     <td className="px-4 py-3" style={{ color: "var(--text-muted)" }}>{r.club}</td>
                     <td className="px-4 py-3" style={{ color: "var(--text-secondary)" }}>{r.value}</td>

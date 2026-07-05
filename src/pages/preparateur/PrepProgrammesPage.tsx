@@ -95,7 +95,7 @@ export function PrepProgrammesPage() {
                 <span key={name} className="rounded-lg px-2 py-0.5 text-[10px]" style={{ background: "rgba(99,102,241,0.15)", color: "#6366F1" }}>{name.split(" ")[0]}</span>
               ))}
             </div>
-            <div className="mt-4 flex flex-wrap gap-2 border-t pt-3" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+            <div className="mt-4 flex flex-wrap gap-2 border-t pt-3" style={{ borderColor: "var(--surface-panel-border)" }}>
               {prog.status === "brouillon" && (
                 <button type="button" onClick={() => updateStatus(prog.id, "envoye")} className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: "rgba(245,158,11,0.15)", color: "#F59E0B" }}>
                   <Send size={12} /> Envoyer Coach
@@ -130,7 +130,7 @@ export function PrepProgrammesPage() {
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setModalOpen(false)} />
             <motion.div
               className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[20px] border p-6"
-              style={{ background: "rgba(15,29,58,0.98)", borderColor: "rgba(255,255,255,0.05)" }}
+              style={{ background: "rgba(15,29,58,0.98)", borderColor: "var(--surface-panel-border)" }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
@@ -152,7 +152,7 @@ export function PrepProgrammesPage() {
                       onChange={(e) => setForm({ ...form, [key]: e.target.value })}
                       placeholder={placeholder}
                       className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
-                      style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.05)", color: "var(--text-primary)" }}
+                      style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
                     />
                   </div>
                 ))}
@@ -162,7 +162,7 @@ export function PrepProgrammesPage() {
                     value={form.intensity}
                     onChange={(e) => setForm({ ...form, intensity: e.target.value as TrainingProgram["intensity"] })}
                     className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
-                    style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.05)", color: "var(--text-primary)" }}
+                    style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
                   >
                     <option value="Basse">Basse</option>
                     <option value="Moyenne">Moyenne</option>

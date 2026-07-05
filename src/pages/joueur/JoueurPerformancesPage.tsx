@@ -203,7 +203,7 @@ export function JoueurPerformancesPage() {
           <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Radar FIFA</h3>
           <ResponsiveContainer width="100%" height={260}>
             <RadarChart data={radarSolo}>
-              <PolarGrid stroke="rgba(255,255,255,0.08)" />
+              <PolarGrid stroke="var(--chart-grid)" />
               <PolarAngleAxis dataKey="stat" tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
               <Radar dataKey="value" stroke="#FF6B57" fill="#FF6B57" fillOpacity={0.25} animationDuration={1200} />
             </RadarChart>
@@ -215,10 +215,10 @@ export function JoueurPerformancesPage() {
           {perfEvolution.length > 0 ? (
             <ResponsiveContainer width="100%" height={260}>
               <LineChart data={perfEvolution}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
                 <XAxis dataKey="month" tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
                 <YAxis domain={[60, 100]} tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
-                <Tooltip contentStyle={{ background: "#141B2D", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12 }} />
+                <Tooltip contentStyle={{ background: "var(--surface-panel-solid)", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }} />
                 <Line type="monotone" dataKey="score" stroke="#FF6B57" strokeWidth={2} dot={{ r: 4, fill: "#FF6B57" }} animationDuration={1500} />
               </LineChart>
             </ResponsiveContainer>
@@ -237,7 +237,7 @@ export function JoueurPerformancesPage() {
               <BarChart data={matchRatings}>
                 <XAxis dataKey="label" tick={{ fill: "var(--text-muted)", fontSize: 9 }} />
                 <YAxis domain={[5, 10]} tick={{ fill: "var(--text-muted)", fontSize: 10 }} />
-                <Tooltip contentStyle={{ background: "#141B2D", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12 }} />
+                <Tooltip contentStyle={{ background: "var(--surface-panel-solid)", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }} />
                 <Bar dataKey="rating" fill="#FF6B57" radius={[4, 4, 0, 0]} animationDuration={1200} />
               </BarChart>
             </ResponsiveContainer>
@@ -253,7 +253,7 @@ export function JoueurPerformancesPage() {
               <Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} dataKey="value" animationDuration={1200}>
                 {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
               </Pie>
-              <Tooltip contentStyle={{ background: "#141B2D", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12 }} />
+              <Tooltip contentStyle={{ background: "var(--surface-panel-solid)", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }} />
             </PieChart>
           </ResponsiveContainer>
           <div className="mt-2 flex justify-center gap-4">
@@ -291,7 +291,7 @@ export function JoueurPerformancesPage() {
           <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{t.performances.vsTeamAvg}</h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={compareTeamData} barGap={4}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
               <XAxis dataKey="stat" tick={{ fill: "var(--text-muted)", fontSize: 10 }} />
               <YAxis domain={[0, 100]} tick={{ fill: "var(--text-muted)", fontSize: 10 }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -313,7 +313,7 @@ export function JoueurPerformancesPage() {
           </div>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={compareTopData} barGap={4}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
               <XAxis dataKey="stat" tick={{ fill: "var(--text-muted)", fontSize: 10 }} />
               <YAxis domain={[0, 100]} tick={{ fill: "var(--text-muted)", fontSize: 10 }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -338,7 +338,7 @@ export function JoueurPerformancesPage() {
           >
             <motion.div
               className="relative w-full max-w-2xl overflow-hidden rounded-2xl"
-              style={{ background: "#141B2D", border: "1px solid rgba(255,107,87,0.3)" }}
+              style={{ background: "var(--surface-panel-solid)", border: "1px solid rgba(255,107,87,0.3)" }}
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
@@ -359,7 +359,7 @@ export function JoueurPerformancesPage() {
                   type="button"
                   onClick={() => setVideoModal(null)}
                   className="flex h-8 w-8 items-center justify-center rounded-full"
-                  style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
+                  style={{ background: "var(--surface-input)", color: "var(--text-muted)" }}
                 >
                   <X size={16} />
                 </button>

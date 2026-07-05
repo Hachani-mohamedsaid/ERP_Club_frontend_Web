@@ -56,9 +56,9 @@ export function ConfirmDialog({
       <motion.div
         className="relative w-full max-w-md overflow-hidden rounded-[20px] border p-7"
         style={{
-          background: "linear-gradient(145deg, rgba(26,26,46,0.98) 0%, rgba(15,15,30,0.99) 100%)",
+          background: "var(--surface-modal)",
           borderColor: isDanger ? "rgba(239,68,68,0.35)" : "rgba(255,122,0,0.25)",
-          boxShadow: "0 25px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,122,0,0.1)",
+          boxShadow: "var(--shadow-glass-strong)",
         }}
         initial={{ scale: 0.92, y: 20 }}
         animate={{ scale: 1, y: 0 }}
@@ -74,7 +74,7 @@ export function ConfirmDialog({
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
                 style={{
                   background: isDanger ? "rgba(239,68,68,0.15)" : "rgba(255,122,0,0.15)",
-                  border: `1px solid ${isDanger ? "rgba(239,68,68,0.3)" : "rgba(255,122,0,0.3)"}`,
+                  border: "1px solid var(--surface-panel-border)",
                 }}
               >
                 {isDanger ? (
@@ -97,7 +97,7 @@ export function ConfirmDialog({
               onClick={onCancel}
               disabled={loading}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-colors hover:bg-white/10 disabled:opacity-50"
-              style={{ borderColor: "rgba(255,255,255,0.1)", color: "var(--text-secondary)" }}
+              style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-secondary)" }}
             >
               <X size={16} />
             </button>
@@ -112,7 +112,7 @@ export function ConfirmDialog({
               style={{
                 color: "var(--text-secondary)",
                 border: "1px solid rgba(255,255,255,0.1)",
-                background: "rgba(255,255,255,0.04)",
+                background: "var(--surface-input)",
               }}
             >
               {cancelLabel}

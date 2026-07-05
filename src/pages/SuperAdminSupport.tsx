@@ -212,7 +212,7 @@ export function SuperAdminSupport() {
             </div>
           </SuperAdminSection>
         ) : (
-          <div className="flex h-64 items-center justify-center rounded-[20px] border" style={{ borderColor: "rgba(255,255,255,0.05)", background: "rgba(15,29,58,0.6)" }}>
+          <div className="flex h-64 items-center justify-center rounded-[20px] border" style={{ borderColor: "var(--surface-panel-border)", background: "rgba(15,29,58,0.6)" }}>
             <p className="text-sm" style={{ color: "var(--text-muted)" }}>Sélectionnez un ticket</p>
           </div>
         )}

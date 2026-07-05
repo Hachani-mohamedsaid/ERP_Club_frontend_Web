@@ -38,7 +38,7 @@ export const AUTH_CARD_STYLE = {
   background: "rgba(15,20,35,0.55)",
   backdropFilter: "blur(25px)",
   WebkitBackdropFilter: "blur(25px)",
-  borderColor: "rgba(255,255,255,0.08)",
+  borderColor: "var(--surface-panel-border)",
   boxShadow: "0 24px 60px rgba(0,0,0,0.4), 0 0 80px rgba(99,102,241,0.15)",
 } as const;
 
@@ -438,7 +438,7 @@ export function AuthShell({
                     <motion.span
                       key={tag}
                       className="rounded-full border px-2.5 py-1 text-[11px] font-semibold"
-                      style={{ borderColor: "rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "var(--text-secondary)" }}
+                      style={{ borderColor: "var(--surface-panel-border)", background: "rgba(255,255,255,0.04)", color: "var(--text-secondary)" }}
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: booted ? 1 : 0, y: booted ? 0 : 6 }}
                       transition={{ delay: 0.3 + i * 0.1 }}
