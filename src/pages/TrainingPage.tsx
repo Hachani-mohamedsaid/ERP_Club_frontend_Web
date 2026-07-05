@@ -1,339 +1,504 @@
-import { useMemo, useState } from "react";
-import { Clock, MapPin, Users, CalendarDays, Plus, Save, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { GlassCard } from "../components/ui/GlassCard";
-import { Badge } from "../components/ui/Badge";
-import { clubApi } from "../lib/api/club";
-import { useClubResource } from "../hooks/useClubResource";
-import { usePermissions } from "../hooks/usePermissions";
+import { useEffect, useState, useMemo } from "react";
+import { motion } from "framer-motion";
+import { ChevronLeft, ChevronRight, Calendar, MapPin, Loader2 } from "lucide-react";
+import { apiFetch } from "../lib/api/authHeaders";
 
-interface TrainingSession {
-  id: string;
-  title: string;
-  eventDate: string;
-  eventTime: string | null;
-  location: string | null;
-  duration: string | null;
-  durationMinutes: number | null;
-}
+const TYPE_COLORS: Record<string, { main: string; bg: string; border: string }> = {
+  Physique: { main: "#ef4444", bg: "rgba(239,68,68,0.10)", border: "rgba(239,68,68,0.25)" },
+  Tactique: { main: "#8b5cf6", bg: "rgba(139,92,246,0.10)", border: "rgba(139,92,246,0.25)" },
+  Technique: { main: "#3b82f6", bg: "rgba(59,130,246,0.10)", border: "rgba(59,130,246,0.25)" },
+  Vidéo: { main: "#f59e0b", bg: "rgba(245,158,11,0.10)", border: "rgba(245,158,11,0.25)" },
+  Match: { main: "#22c55e", bg: "rgba(34,197,94,0.10)", border: "rgba(34,197,94,0.25)" },
+  Récupération: { main: "#0d9488", bg: "rgba(13,148,136,0.10)", border: "rgba(13,148,136,0.25)" },
+  Musculation: { main: "#f97316", bg: "rgba(249,115,22,0.10)", border: "rgba(249,115,22,0.25)" },
+  ENTRAINEMENT: { main: "#ff7a00", bg: "rgba(255,122,0,0.10)", border: "rgba(255,122,0,0.25)" },
+};
 
-interface TrainingOverview {
-  weekStart: string;
-  summary: {
-    attendancePct: number | null;
-    presentCount: number;
-    totalPlayers: number;
-    seniorCount: number;
-    sessionsThisWeek: number;
-    avgDurationMinutes: number | null;
+const getTypeColor = (type: string) => {
+  for (const [key, val] of Object.entries(TYPE_COLORS)) {
+    if ((type ?? "").toLowerCase().includes(key.toLowerCase())) return val;
+  }
+  return {
+    main: "#ff7a00",
+    bg: "rgba(255,122,0,0.10)",
+    border: "rgba(255,122,0,0.25)",
   };
-  sessions: TrainingSession[];
+};
+
+const DAY_COLORS = ["#3b82f6", "#8b5cf6", "#ef4444", "#f59e0b", "#22c55e", "#0d9488", "#f97316"];
+type CalendarEvent = Record<string, unknown>;
+
+function normalizeCalendar(raw: unknown): CalendarEvent[] {
+  if (Array.isArray(raw)) return raw as CalendarEvent[];
+  if (raw && typeof raw === "object") {
+    const data = raw as Record<string, unknown>;
+    if (Array.isArray(data.events)) return data.events as CalendarEvent[];
+    if (Array.isArray(data.data)) return data.data as CalendarEvent[];
+  }
+  return [];
 }
 
-const DAY_NAMES = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+const DAYS_FR = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
-function formatDuration(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h === 0) return `${m} min`;
-  if (m === 0) return `${h}h`;
-  return `${h}h ${String(m).padStart(2, "0")}`;
-}
-
-function toInputDate(d: Date) {
-  return d.toISOString().split("T")[0];
-}
-
-function TrainingModal({
-  defaultDate,
-  onClose,
-  onSubmit,
-}: {
-  defaultDate: string;
-  onClose: () => void;
-  onSubmit: (values: Record<string, string>) => Promise<void>;
-}) {
-  const [form, setForm] = useState({
-    title: "",
-    eventDate: defaultDate,
-    eventTime: "09:00",
-    duration: "90 min",
-    location: "",
-    intensity: "Moyenne",
+function getWeekDates(offset: number): Date[] {
+  const now = new Date();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - now.getDay() + 1 + offset * 7);
+  monday.setHours(0, 0, 0, 0);
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d;
   });
-  const [saving, setSaving] = useState(false);
-
-  return (
-    <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      onClick={onClose}
-    >
-      <motion.div
-        className="w-full max-w-md rounded-[24px] border p-6"
-        style={{ background: "var(--surface-panel-solid)", borderColor: "rgba(59,130,246,0.35)" }}
-        initial={{ scale: 0.92, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>Nouvelle séance</h2>
-          <button type="button" onClick={onClose} className="rounded-xl p-2 hover:bg-white/10">
-            <X size={18} />
-          </button>
-        </div>
-        <div className="space-y-3">
-          {[
-            { key: "title", label: "Titre", type: "text", placeholder: "Ex: Cardio endurance" },
-            { key: "eventDate", label: "Date", type: "date" },
-            { key: "eventTime", label: "Heure", type: "text", placeholder: "09:00" },
-            { key: "duration", label: "Durée", type: "text", placeholder: "90 min ou 1h 30" },
-            { key: "location", label: "Lieu", type: "text", placeholder: "Centre d'entraînement" },
-          ].map((f) => (
-            <div key={f.key}>
-              <label className="mb-1 block text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-                {f.label}
-              </label>
-              <input
-                type={f.type}
-                value={form[f.key as keyof typeof form]}
-                onChange={(e) => setForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
-                placeholder={f.placeholder}
-                className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
-              />
-            </div>
-          ))}
-          <div>
-            <label className="mb-1 block text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-              Intensité
-            </label>
-            <select
-              value={form.intensity}
-              onChange={(e) => setForm((prev) => ({ ...prev, intensity: e.target.value }))}
-              className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(30,35,50,0.97)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
-            >
-              {["Faible", "Moyenne", "Élevée"].map((o) => (
-                <option key={o} value={o}>{o}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <button
-          type="button"
-          disabled={saving}
-          onClick={async () => {
-            setSaving(true);
-            try {
-              await onSubmit(form);
-              onClose();
-            } catch (err) {
-              alert(err instanceof Error ? err.message : "Erreur");
-            } finally {
-              setSaving(false);
-            }
-          }}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-          style={{ background: "linear-gradient(135deg,#3B82F6,#2563EB)" }}
-        >
-          <Save size={14} /> {saving ? "Enregistrement…" : "Créer la séance"}
-        </button>
-      </motion.div>
-    </motion.div>
-  );
 }
 
 export function TrainingPage() {
-  const { can } = usePermissions();
-  const { data, loading, error, reload } = useClubResource(
-    () => clubApi.getTraining() as Promise<TrainingOverview>,
+  const [loading, setLoading] = useState(true);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [weekOffset, setWeekOffset] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      try {
+        const res = await apiFetch("/club/calendar");
+        if (res.ok) {
+          const json = await res.json();
+          if (!cancelled) setCalendarEvents(normalizeCalendar(json));
+        }
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset]);
+  const weekStart = weekDates[0];
+  const weekEnd = weekDates[6];
+
+  const weekLabel = `${weekStart.toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+  })} — ${weekEnd.toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  })}`;
+
+  const weekEvents = useMemo(
+    () =>
+      calendarEvents.filter((e) => {
+        const d = new Date(String(e.eventDate ?? e.date ?? ""));
+        if (Number.isNaN(d.getTime())) return false;
+        const start = new Date(weekStart);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(weekEnd);
+        end.setHours(23, 59, 59, 999);
+        return d >= start && d <= end;
+      }),
+    [calendarEvents, weekStart, weekEnd],
   );
 
-  const [showAdd, setShowAdd] = useState(false);
-  const [addDate, setAddDate] = useState(() => toInputDate(new Date()));
-
-  const overview = data;
-  const summary = overview?.summary;
-  const sessions = overview?.sessions ?? [];
-
-  const sessionsByDay = useMemo(() => {
-    const map = new Map<string, TrainingSession[]>();
-    for (const s of sessions) {
-      const day = DAY_NAMES[new Date(`${s.eventDate}T12:00:00`).getDay()];
-      if (!map.has(day)) map.set(day, []);
-      map.get(day)!.push(s);
-    }
-    for (const [, list] of map) {
-      list.sort((a, b) => (a.eventTime ?? "").localeCompare(b.eventTime ?? ""));
-    }
-    return [...map.entries()].map(([day, daySessions]) => ({ day, sessions: daySessions }));
-  }, [sessions]);
-
-  const avgLoadLabel =
-    summary?.avgDurationMinutes != null ? formatDuration(summary.avgDurationMinutes) : "—";
-
-  const seniorCount = summary?.seniorCount ?? 0;
-  const canCreate = can("Calendrier", "créer");
+  const grouped = useMemo(
+    () =>
+      weekDates.map((date, i) => ({
+        day: DAYS_FR[i],
+        date,
+        dateStr: date.toLocaleDateString("fr-FR", {
+          day: "numeric",
+          month: "short",
+        }),
+        isToday: date.toDateString() === new Date().toDateString(),
+        events: weekEvents.filter((e) => {
+          const d = new Date(String(e.eventDate ?? e.date ?? ""));
+          return d.toDateString() === date.toDateString();
+        }),
+      })),
+    [weekDates, weekEvents],
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 12,
+          marginBottom: 8,
+        }}
+      >
         <div>
-          <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
-            Entraînements
+          <h1
+            style={{
+              fontSize: 20,
+              fontWeight: 800,
+              color: "var(--text-primary)",
+              marginBottom: 4,
+            }}
+          >
+            Planning des Séances
           </h1>
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            Planning hebdomadaire — Semaine du {overview?.weekStart ?? "…"}
+          <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
+            {weekEvents.length > 0
+              ? `${weekEvents.length} séance(s) planifiée(s) cette semaine`
+              : "Aucune séance cette semaine"}
           </p>
         </div>
-        {canCreate && (
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 14,
+            padding: "6px 10px",
+          }}
+        >
           <button
             type="button"
-            onClick={() => {
-              setAddDate(toInputDate(new Date()));
-              setShowAdd(true);
+            onClick={() => setWeekOffset((w) => w - 1)}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
             }}
-            className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
-            style={{ background: "linear-gradient(135deg,#3B82F6,#2563EB)" }}
           >
-            <Plus size={16} /> Entraînement
+            <ChevronLeft size={15} style={{ color: "var(--text-muted)" }} />
           </button>
-        )}
-      </div>
 
-      {loading && <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement…</p>}
-      {error && <p className="text-sm text-red-400">{error}</p>}
-
-      <GlassCard className="p-4">
-        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Présence moyenne</p>
-        <p className="text-2xl font-semibold" style={{ color: "var(--color-state-success)" }}>
-          {summary?.attendancePct != null ? `${summary.attendancePct}%` : "—"}
-        </p>
-        {(summary?.totalPlayers ?? 0) > 0 && (
-          <p className="mt-1 text-xs" style={{ color: "var(--text-muted)" }}>
-            {summary?.presentCount}/{summary?.totalPlayers} joueurs présents
-          </p>
-        )}
-      </GlassCard>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <GlassCard className="p-4">
-          <div className="flex items-center gap-2 text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
-            <Users size={15} style={{ color: "var(--accent)" }} /> Groupe senior
-          </div>
-          <p className="mt-2 text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
-            {seniorCount} {seniorCount <= 1 ? "joueur" : "joueurs"}
-          </p>
-        </GlassCard>
-        <GlassCard className="p-4">
-          <div className="flex items-center gap-2 text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
-            <CalendarDays size={15} style={{ color: "var(--color-state-info)" }} /> Séances prévues
-          </div>
-          <p className="mt-2 text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
-            {summary?.sessionsThisWeek ?? 0} cette semaine
-          </p>
-        </GlassCard>
-        <GlassCard className="p-4">
-          <div className="flex items-center gap-2 text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
-            <Clock size={15} style={{ color: "var(--color-state-warning)" }} /> Charge moyenne
-          </div>
-          <p className="mt-2 text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
-            {avgLoadLabel}
-          </p>
-        </GlassCard>
-      </div>
-
-      <GlassCard raised className="p-6">
-        <h2 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-          Séances de la semaine
-        </h2>
-        {sessionsByDay.length === 0 ? (
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            Aucune séance planifiée cette semaine.
-            {canCreate && " Cliquez sur « Entraînement » pour en ajouter une."}
-          </p>
-        ) : (
-          <div className="space-y-6">
-            {sessionsByDay.map(({ day, sessions: daySessions }) => (
-              <div key={day}>
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--accent)" }}>
-                    {day}
-                  </p>
-                  {canCreate && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAddDate(daySessions[0]?.eventDate ?? toInputDate(new Date()));
-                        setShowAdd(true);
-                      }}
-                      className="rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wide"
-                      style={{ background: "rgba(59,130,246,0.15)", color: "#3B82F6" }}
-                    >
-                      + Entraînement
-                    </button>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  {daySessions.map((s) => (
-                    <div
-                      key={s.id}
-                      className="flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3"
-                      style={{ borderColor: "var(--surface-panel-border)" }}
-                    >
-                      <div className="flex flex-wrap items-center gap-4">
-                        <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                          {s.eventTime ?? "—"}
-                        </span>
-                        <span className="text-sm" style={{ color: "var(--text-secondary)" }}>{s.title}</span>
-                        {s.duration && (
-                          <span className="flex items-center gap-1 text-xs" style={{ color: "var(--text-muted)" }}>
-                            <Clock size={12} /> {s.duration}
-                          </span>
-                        )}
-                        {s.location && (
-                          <span className="flex items-center gap-1 text-xs" style={{ color: "var(--text-muted)" }}>
-                            <MapPin size={12} /> {s.location}
-                          </span>
-                        )}
-                      </div>
-                      <Badge tone="info">Entraînement</Badge>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </GlassCard>
-
-      <AnimatePresence>
-        {showAdd && (
-          <TrainingModal
-            defaultDate={addDate}
-            onClose={() => setShowAdd(false)}
-            onSubmit={async (v) => {
-              if (!v.title?.trim()) throw new Error("Le titre est requis.");
-              if (!v.eventDate) throw new Error("La date est requise.");
-              await clubApi.createCalendarEvent({
-                title: v.title.trim(),
-                eventDate: v.eventDate,
-                eventTime: v.eventTime || "09:00",
-                eventType: "ENTRAINEMENT",
-                location: v.location?.trim() || undefined,
-                duration: v.duration?.trim() || "90 min",
-                intensity: v.intensity,
-                sessionType: "cardio",
-              });
-              await reload();
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: 700,
+              color: "var(--text-primary)",
+              minWidth: 220,
+              textAlign: "center",
+              padding: "0 8px",
             }}
+          >
+            {weekLabel}
+          </span>
+
+          <button
+            type="button"
+            onClick={() => setWeekOffset((w) => w + 1)}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+            }}
+          >
+            <ChevronRight size={15} style={{ color: "var(--text-muted)" }} />
+          </button>
+
+          {weekOffset !== 0 && (
+            <button
+              type="button"
+              onClick={() => setWeekOffset(0)}
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: "#ff7a00",
+                background: "rgba(255,122,0,0.10)",
+                border: "1px solid rgba(255,122,0,0.25)",
+                borderRadius: 8,
+                padding: "4px 10px",
+                cursor: "pointer",
+                marginLeft: 4,
+              }}
+            >
+              Aujourd&apos;hui
+            </button>
+          )}
+        </div>
+      </div>
+
+      {loading && (
+        <div style={{ textAlign: "center", padding: "40px 0" }}>
+          <Loader2
+            size={28}
+            className="animate-spin"
+            style={{ color: "var(--text-muted)", margin: "0 auto", display: "block" }}
           />
-        )}
-      </AnimatePresence>
+        </div>
+      )}
+
+      {!loading && (
+        <>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {grouped.map((day, di) => {
+              const dayColor = DAY_COLORS[di];
+              const hasEvents = day.events.length > 0;
+
+              return (
+                <motion.div
+                  key={day.day}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: di * 0.04 }}
+                  style={{
+                    borderRadius: 14,
+                    overflow: "hidden",
+                    border: day.isToday
+                      ? "1px solid rgba(255,122,0,0.30)"
+                      : "1px solid rgba(255,255,255,0.06)",
+                    background: day.isToday ? "rgba(255,122,0,0.04)" : "rgba(255,255,255,0.02)",
+                    boxShadow: day.isToday ? "0 0 20px rgba(255,122,0,0.08)" : "none",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "12px 16px",
+                      borderBottom: hasEvents ? "1px solid rgba(255,255,255,0.05)" : "none",
+                      background: day.isToday ? "rgba(255,122,0,0.06)" : "rgba(255,255,255,0.01)",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 4,
+                        height: 32,
+                        borderRadius: 99,
+                        background: day.isToday ? "#ff7a00" : dayColor,
+                        flexShrink: 0,
+                      }}
+                    />
+
+                    <div style={{ minWidth: 100 }}>
+                      <p
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 800,
+                          color: day.isToday ? "#ff7a00" : "var(--text-primary)",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                        }}
+                      >
+                        {day.day}
+                      </p>
+                      <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>
+                        {day.dateStr}
+                      </p>
+                    </div>
+
+                    {day.isToday && (
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          color: "white",
+                          background: "#ff7a00",
+                          padding: "2px 10px",
+                          borderRadius: 99,
+                        }}
+                      >
+                        Aujourd&apos;hui
+                      </span>
+                    )}
+
+                    <div style={{ marginLeft: "auto" }}>
+                      {hasEvents ? (
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: dayColor,
+                            background: `${dayColor}15`,
+                            border: `1px solid ${dayColor}30`,
+                            padding: "3px 10px",
+                            borderRadius: 99,
+                          }}
+                        >
+                          {day.events.length} séance{day.events.length > 1 ? "s" : ""}
+                        </span>
+                      ) : (
+                        <span
+                          style={{
+                            fontSize: 11,
+                            color: "rgba(255,255,255,0.20)",
+                            fontStyle: "italic",
+                          }}
+                        >
+                          Repos
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {hasEvents && (
+                    <div style={{ padding: "8px 16px 12px" }}>
+                      {day.events.map((e, ei) => {
+                        const typeKey =
+                          String(e.title ?? "")
+                            .split("—")[0]
+                            ?.trim() ||
+                          String(e.eventType ?? "");
+                        const c = getTypeColor(typeKey);
+                        return (
+                          <div
+                            key={String(e.id ?? ei)}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 12,
+                              padding: "10px 14px",
+                              borderRadius: 10,
+                              background: c.bg,
+                              border: `1px solid ${c.border}`,
+                              borderLeft: `3px solid ${c.main}`,
+                              marginTop: ei > 0 ? 6 : 0,
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 15,
+                                fontWeight: 800,
+                                color: c.main,
+                                minWidth: 50,
+                                flexShrink: 0,
+                              }}
+                            >
+                              {String(e.eventTime ?? e.time ?? "—")}
+                            </span>
+
+                            <div
+                              style={{
+                                width: 1,
+                                height: 28,
+                                background: `${c.main}40`,
+                                flexShrink: 0,
+                              }}
+                            />
+
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <p
+                                style={{
+                                  fontSize: 13,
+                                  fontWeight: 700,
+                                  color: "var(--text-primary)",
+                                  marginBottom: 3,
+                                }}
+                              >
+                                {String(e.title ?? "")
+                                  .split("—")[1]
+                                  ?.trim() ?? String(e.title ?? "—")}
+                              </p>
+                              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                                {e.location ? (
+                                  <span
+                                    style={{
+                                      fontSize: 11,
+                                      color: "var(--text-muted)",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 3,
+                                    }}
+                                  >
+                                    <MapPin size={9} />
+                                    {String(e.location)}
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color: c.main,
+                                background: `${c.main}15`,
+                                border: `1px solid ${c.border}`,
+                                padding: "4px 12px",
+                                borderRadius: 99,
+                                flexShrink: 0,
+                              }}
+                            >
+                              {typeKey || "Entraînement"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {weekEvents.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              style={{
+                textAlign: "center",
+                padding: "48px 24px",
+                borderRadius: 16,
+                background: "rgba(255,255,255,0.01)",
+                border: "1px dashed rgba(255,255,255,0.08)",
+                marginTop: 8,
+              }}
+            >
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 16,
+                  background: "rgba(255,122,0,0.08)",
+                  border: "1px solid rgba(255,122,0,0.15)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto 16px",
+                }}
+              >
+                <Calendar size={24} style={{ color: "rgba(255,122,0,0.5)" }} />
+              </div>
+              <p
+                style={{
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: "var(--text-primary)",
+                  marginBottom: 6,
+                }}
+              >
+                Aucune séance cette semaine
+              </p>
+              <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.6 }}>
+                Créez des séances depuis le Training Builder
+                <br />
+                et elles apparaîtront automatiquement ici.
+              </p>
+            </motion.div>
+          )}
+        </>
+      )}
     </div>
   );
 }
