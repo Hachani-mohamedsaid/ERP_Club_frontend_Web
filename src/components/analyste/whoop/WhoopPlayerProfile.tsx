@@ -94,8 +94,9 @@ export function WhoopPlayerProfile({ player, onBack }: Props) {
             ))}
           </div>
           <div className="mt-4 rounded-xl border border-white/6 bg-black/30 p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">WHOOP Device</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Viiv Smartwatch</p>
             <p className="mt-1 text-xs text-white">{player.deviceId}</p>
+            <p className="mt-0.5 text-[9px] text-cyan-400/70">Modèle Viiv Pro · ECG · SpO₂ · GPS</p>
             <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-slate-400">
               <span className="flex items-center gap-1"><Battery size={10} /> {player.battery}%</span>
               <span>FW {player.firmware}</span>

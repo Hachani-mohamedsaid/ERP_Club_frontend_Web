@@ -311,7 +311,8 @@ export function AppRouter() {
         <Route path="/analyste/injury-forecast" element={<RequireRole roles={["analyste"]}><AnalysteInjuryForecastPage /></RequireRole>} />
         <Route path="/analyste/live-match" element={<RequireRole roles={["analyste"]}><AnalysteLiveMatchPage /></RequireRole>} />
         <Route path="/analyste/fatigue-heatmap" element={<RequireRole roles={["analyste"]}><AnalysteFatigueHeatmapPage /></RequireRole>} />
-        <Route path="/analyste/whoop" element={<RequireRole roles={["analyste"]}><AnalysteWhoopPage /></RequireRole>} />
+        <Route path="/analyste/viiv" element={<RequireRole roles={["analyste"]}><AnalysteWhoopPage /></RequireRole>} />
+        <Route path="/analyste/whoop" element={<Navigate to="/analyste/viiv" replace />} />
         <Route path="/analyste/video-analysis" element={<RequireRole roles={["analyste"]}><AnalysteVideoAnalysisPage /></RequireRole>} />
         <Route path="/recruteur" element={<RequireRole roles={["recruteur"]}><RecruteurDashboard /></RequireRole>} />
         <Route path="/recruteur/discovery" element={<RequireRole roles={["recruteur"]}><RecruteurDiscoveryPage /></RequireRole>} />

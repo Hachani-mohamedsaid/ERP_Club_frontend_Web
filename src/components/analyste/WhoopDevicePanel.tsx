@@ -69,12 +69,12 @@ export function WhoopDevicePanel(props: WhoopDevicePanelProps) {
 
         <div className="mt-auto grid shrink-0 grid-cols-2 gap-px border-t border-slate-700/60 bg-slate-700/40 text-[10px]">
           {[
-            { label: "Modèle", value: "WHOOP 4.0" },
+            { label: "Modèle", value: "Viiv Pro" },
             { label: "Serial", value: deviceId },
             { label: "Firmware", value: firmware },
             { label: "Athlete ID", value: athleteId },
             { label: "Membre depuis", value: memberSince },
-            { label: "Source", value: "WHOOP API v2" },
+            { label: "Source", value: "Viiv Cloud API" },
           ].map(({ label, value }) => (
             <div key={label} className="bg-slate-900/60 px-4 py-2.5">
               <p className="text-slate-500">{label}</p>
@@ -87,8 +87,8 @@ export function WhoopDevicePanel(props: WhoopDevicePanelProps) {
       {/* App mirror */}
       <div className="flex min-h-[420px] flex-col bg-slate-900/30 p-4">
         <div className="mb-3 flex shrink-0 items-center justify-between">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-orange-400/80">
-            Données app WHOOP · miroir live
+          <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-400/80">
+            Données app Viiv · miroir live
           </p>
           <div className="flex gap-1 rounded-lg border border-slate-700 bg-slate-800/50 p-0.5">
             {(["recovery", "strain", "sleep"] as const).map((t) => (
