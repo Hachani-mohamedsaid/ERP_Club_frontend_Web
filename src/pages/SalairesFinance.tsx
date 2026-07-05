@@ -34,7 +34,7 @@ function paymentStatus(
 }
 
 export function SalairesFinance() {
-  const { contracts, invoices, loading } = useFinanceBackendData();
+  const { contracts, invoices, loading, error, refetch } = useFinanceBackendData();
   const [activeTab, setActiveTab] = useState<"ranking" | "table">("ranking");
 
   const contractList = contracts?.list ?? [];
@@ -101,11 +101,32 @@ export function SalairesFinance() {
     a.click();
   };
 
-  if (loading) {
+  if (loading && !contracts) {
     return (
       <div className="flex items-center justify-center py-20">
         <RefreshCw size={20} className="animate-spin" style={{ color: "var(--accent)" }} />
         <span className="ml-3 text-sm" style={{ color: "var(--text-muted)" }}>Chargement des salaires…</span>
+      </div>
+    );
+  }
+
+  if (error && !contracts) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 py-20">
+        <p className="text-sm font-medium" style={{ color: F.danger }}>{error}</p>
+        <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+          Vérifiez que le backend est démarré (Render peut prendre ~30 s au réveil).
+        </p>
+        <motion.button
+          type="button"
+          onClick={() => refetch()}
+          className="flex items-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-bold"
+          style={{ borderColor: `${F.primary}40`, color: F.primary }}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.96 }}
+        >
+          <RefreshCw size={12} /> Réessayer
+        </motion.button>
       </div>
     );
   }

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence } from "framer-motion";
 import {
@@ -15,6 +15,8 @@ import {
   Volume2,
   X,
   Accessibility,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useLocale } from "../../contexts/LocaleContext";
@@ -112,23 +114,103 @@ function SelectField({
   onChange: (v: string) => void;
   options: { value: string; label: string }[];
 }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const selected = options.find((o) => o.value === String(value))?.label ?? String(value);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
   return (
-    <label className="block">
+    <div ref={rootRef} className="relative block">
       <span className="mb-1.5 block text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
         {label}
       </span>
-      <select
-        value={String(value)}
-        onChange={(e) => onChange(e.target.value)}
-        className="odin-input-surface w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-left text-sm transition-all duration-150"
+        style={{
+          borderColor: open ? "var(--accent)" : "var(--surface-panel-border)",
+          background: open ? "var(--accent-soft)" : "var(--surface-input)",
+          boxShadow: open ? "0 0 0 1px rgba(255,122,0,0.25)" : "none",
+        }}
+        aria-haspopup="listbox"
+        aria-expanded={open}
       >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </label>
+        <span className="min-w-0 truncate font-medium" style={{ color: "var(--text-primary)" }}>
+          {selected}
+        </span>
+        <span
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-transform duration-200"
+          style={{
+            background: "var(--surface-hover)",
+            color: open ? "var(--accent)" : "var(--text-muted)",
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+          }}
+        >
+          <ChevronDown size={16} strokeWidth={2.5} />
+        </span>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.ul
+            role="listbox"
+            className="absolute left-0 right-0 z-20 mt-1.5 max-h-52 overflow-y-auto rounded-xl border p-1.5 shadow-lg"
+            style={{
+              background: "var(--surface-modal)",
+              borderColor: "var(--surface-panel-border)",
+              boxShadow: "var(--shadow-glass-strong)",
+            }}
+            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+            transition={{ duration: 0.15 }}
+          >
+            {options.map((o) => {
+              const active = o.value === String(value);
+              return (
+                <li key={o.value} role="option" aria-selected={active}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChange(o.value);
+                      setOpen(false);
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors"
+                    style={{
+                      background: active ? "var(--accent-soft)" : "transparent",
+                      color: active ? "var(--accent)" : "var(--text-primary)",
+                    }}
+                  >
+                    <span className="min-w-0 flex-1 truncate font-medium">{o.label}</span>
+                    {active && (
+                      <Check size={15} strokeWidth={2.5} style={{ color: "var(--accent)" }} />
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
