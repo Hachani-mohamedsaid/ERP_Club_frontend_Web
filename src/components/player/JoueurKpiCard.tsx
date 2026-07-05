@@ -12,13 +12,15 @@ export function JoueurKpiCard({ children, className = "", delay = 0 }: JoueurKpi
     <motion.div
       className={`rounded-[24px] border p-5 backdrop-blur-sm transition-shadow hover:shadow-xl ${className}`}
       style={{
-        background: "#141B2D",
-        borderColor: "rgba(255,255,255,0.08)",
+        background: "var(--surface-panel-solid)",
+        borderColor: "var(--surface-panel-border)",
+        color: "var(--text-primary)",
+        boxShadow: "var(--shadow-glass)",
       }}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay, ease: "easeOut" }}
-      whileHover={{ scale: 1.02 }}
+      whileHover={{ scale: 1.01 }}
     >
       {children}
     </motion.div>

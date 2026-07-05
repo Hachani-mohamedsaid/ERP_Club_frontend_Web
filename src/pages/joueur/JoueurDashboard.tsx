@@ -17,8 +17,8 @@ const STADIUM_BG = "https://images.unsplash.com/photo-1574629810360-7efbbe195018
 const ACTIVITY_ICONS = { training: Activity, match: Target, medical: Zap };
 
 export function JoueurDashboard() {
-  const { player, photoUrl, handleFileChange } = useCurrentPlayer();
-  const { playerStats, matchStats, calendarEvents, injuries } = useJoueurBackendData();
+  const { player, photoUrl, handleFileChange, backendPlayer } = useCurrentPlayer();
+  const { playerStats, matchStats, calendarEvents, injuries, awards, orgProfile } = useJoueurBackendData();
   const { t } = useLocale();
 
   if (!player) return null;
@@ -69,19 +69,22 @@ export function JoueurDashboard() {
     })),
   ].slice(0, 4);
 
-  // Rewards from awards (latest 3)
-  const rewardsList = [
-    { id: "1", icon: "🏆", color: "#d99a1f", text: t.dashboard.playerOfMonth },
-    { id: "2", icon: "⚽", color: "#FF6B57", text: t.dashboard.topScorer },
-    { id: "3", icon: "🎯", color: "#22C55E", text: t.dashboard.winStreak },
-  ];
+  const clubName = orgProfile?.clubName ?? "—";
+  const leagueName = orgProfile?.league ?? "—";
+
+  // Jersey number from backend player
+  const jerseyNumber = backendPlayer?.jerseyNumber ?? 0;
+
+  // Rewards from backend awards (first 3 award-type items)
+  const awardItems = awards.filter((a) => a.awardType === "award").slice(0, 3);
+  const rewardsList = awardItems.map((a) => ({ id: a.id, icon: a.icon, color: a.color ?? "#d99a1f", text: a.title }));
 
   return (
     <JoueurPageTransition>
       {/* ── HERO ── */}
       <motion.div
         className="relative overflow-hidden rounded-[24px] border"
-        style={{ borderColor: "rgba(255,255,255,0.08)" }}
+        style={{ borderColor: "var(--surface-panel-border)" }}
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
@@ -104,21 +107,28 @@ export function JoueurDashboard() {
                 age={player.age}
                 flag={player.flag}
                 nationality={player.nationality}
-                number={String(player.ovr % 20 + 5)}
+                number={jerseyNumber > 0 ? String(jerseyNumber) : "—"}
                 radar={player.radar}
                 badge="forme"
                 cutoutUrl={photoUrl}
                 onPhotoUpload={handleFileChange}
               />
               <div className="flex flex-wrap justify-center gap-2">
-                <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold"
-                  style={{ background: "rgba(255,107,87,0.15)", color: "#FF6B57" }}>
-                  🔥 {t.dashboard.formExcellent}
-                </div>
-                <div className="flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold"
-                  style={{ background: "rgba(34,197,94,0.12)", color: "#22C55E" }}>
-                  {stats?.form ?? player.ovr}% forme
-                </div>
+                {stats?.form !== undefined && (
+                  <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold"
+                    style={{
+                      background: stats.form >= 75 ? "rgba(255,107,87,0.15)" : "rgba(245,158,11,0.15)",
+                      color: stats.form >= 75 ? "#FF6B57" : "#F59E0B",
+                    }}>
+                    {stats.form >= 80 ? "🔥" : stats.form >= 65 ? "📈" : "📉"} {stats.form >= 80 ? t.dashboard.formExcellent : stats.form >= 65 ? "Bonne forme" : "Forme à améliorer"}
+                  </div>
+                )}
+                {stats?.form !== undefined && (
+                  <div className="flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold"
+                    style={{ background: "rgba(34,197,94,0.12)", color: "#22C55E" }}>
+                    {stats.form}% forme
+                  </div>
+                )}
               </div>
             </div>
 
@@ -126,25 +136,25 @@ export function JoueurDashboard() {
             <div className="flex flex-col gap-4">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#FF6B57" }}>
-                  Saison 2025-26 · {player.position}
+                  Saison {new Date().getFullYear() - 1}-{String(new Date().getFullYear()).slice(2)} · {player.position}
                 </p>
                 <h2 className="text-2xl font-black" style={{ color: "var(--text-primary)" }}>{player.name}</h2>
                 <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-                  {player.flag} {player.nationality} · FC Carthage · {heroMarketValue}
+                  {player.flag} {player.nationality} · {clubName} · {heroMarketValue}
                 </p>
               </div>
 
               {/* Quick stats */}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
-                  { icon: Trophy, label: t.dashboard.positionRanking, value: `#${heroPosRanking}`, sub: "Liga 1", color: "#F59E0B" },
+                  { icon: Trophy, label: t.dashboard.positionRanking, value: `#${heroPosRanking}`, sub: leagueName, color: "#F59E0B" },
                   { icon: Euro, label: t.dashboard.marketValue, value: heroMarketValue, sub: `↗ ${heroMvTrend}`, color: "#22C55E" },
                   { icon: Star, label: t.dashboard.coachRating, value: `${heroCoachRating}`, sub: "/10", color: "#FF6B57" },
                   { icon: Target, label: t.dashboard.nextGoal, value: `${seasonGoals}/${goalTarget}`, sub: "buts", color: "#3B82F6" },
                 ].map(({ icon: Icon, label, value, sub, color }, i) => (
                   <motion.div key={label}
                     className="rounded-[16px] border p-3"
-                    style={{ borderColor: "rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.03)" }}
+                    style={{ borderColor: "var(--surface-panel-border)", background: "var(--surface-input)" }}
                     initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
                     whileHover={{ y: -3, borderColor: `${color}35` }}>
                     <Icon size={13} style={{ color }} />
@@ -158,7 +168,7 @@ export function JoueurDashboard() {
               {/* Training load + fatigue */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <motion.div className="rounded-[18px] border p-4"
-                  style={{ borderColor: "rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.03)" }}
+                  style={{ borderColor: "var(--surface-panel-border)", background: "var(--surface-input)" }}
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
                   <div className="mb-2 flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -167,7 +177,7 @@ export function JoueurDashboard() {
                     </div>
                     <span className="text-sm font-black" style={{ color: loadColor }}>{trainingLoad}%</span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+                  <div className="h-2 overflow-hidden rounded-full" style={{ background: "var(--surface-input)" }}>
                     <motion.div className="h-full rounded-full" style={{ background: loadColor }}
                       initial={{ width: 0 }} animate={{ width: `${trainingLoad}%` }} transition={{ duration: 1 }} />
                   </div>
@@ -184,7 +194,7 @@ export function JoueurDashboard() {
                     <span className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Fatigue prévue</span>
                     <span className="ml-auto text-sm font-black" style={{ color: "#F59E0B" }}>{fatiguePredicted}%</span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+                  <div className="h-2 overflow-hidden rounded-full" style={{ background: "var(--surface-input)" }}>
                     <motion.div className="h-full rounded-full" style={{ background: "#F59E0B" }}
                       initial={{ width: 0 }} animate={{ width: `${fatiguePredicted}%` }} transition={{ duration: 1, delay: 0.1 }} />
                   </div>
@@ -194,7 +204,7 @@ export function JoueurDashboard() {
 
               {/* Last 3 match ratings */}
               {lastMatchRatings.length > 0 && (
-                <div className="rounded-[18px] border p-4" style={{ borderColor: "rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)" }}>
+                <div className="rounded-[18px] border p-4" style={{ borderColor: "var(--surface-panel-border)", background: "var(--surface-input)" }}>
                   <p className="mb-3 text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
                     Derniers matchs
                   </p>
@@ -233,11 +243,11 @@ export function JoueurDashboard() {
           </h3>
           <SeasonProgressBar label={t.dashboard.goalTarget} current={seasonGoals} target={goalTarget} />
           <div className="mt-4 grid grid-cols-2 gap-3 text-center">
-            <div className="rounded-xl border p-2" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+            <div className="rounded-xl border p-2" style={{ borderColor: "var(--surface-panel-border)" }}>
               <p className="text-lg font-bold" style={{ color: "#3B82F6" }}>{seasonAssists}/{assistTarget}</p>
               <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>Assists</p>
             </div>
-            <div className="rounded-xl border p-2" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+            <div className="rounded-xl border p-2" style={{ borderColor: "var(--surface-panel-border)" }}>
               <p className="text-lg font-bold" style={{ color: "#F59E0B" }}>{minutesTotal}</p>
               <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>Minutes</p>
             </div>
@@ -254,7 +264,7 @@ export function JoueurDashboard() {
               <LineChart data={ovrProgression}>
                 <XAxis dataKey="month" tick={{ fill: "var(--text-muted)", fontSize: 10 }} axisLine={false} tickLine={false} />
                 <YAxis domain={[60, 100]} hide />
-                <Tooltip contentStyle={{ background: "#141B2D", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12 }} />
+                <Tooltip contentStyle={{ background: "var(--surface-panel-solid)", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }} />
                 <Line type="monotone" dataKey="ovr" stroke="#FF6B57" strokeWidth={2.5} dot={{ fill: "#FF6B57", r: 4 }} animationDuration={1500} />
               </LineChart>
             </ResponsiveContainer>
@@ -265,16 +275,20 @@ export function JoueurDashboard() {
 
         <JoueurKpiCard delay={0.15}>
           <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>🏆 {t.dashboard.rewards}</h3>
-          <motion.div className="space-y-2" variants={staggerContainer} initial="initial" animate="animate">
-            {rewardsList.map((r) => (
-              <motion.div key={r.id} variants={staggerItem}
-                className="flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all hover:scale-[1.02]"
-                style={{ borderColor: "rgba(255,255,255,0.06)", background: `${r.color}11` }}>
-                <span className="text-xl">{r.icon}</span>
-                <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{r.text}</span>
-              </motion.div>
-            ))}
-          </motion.div>
+          {rewardsList.length > 0 ? (
+            <motion.div className="space-y-2" variants={staggerContainer} initial="initial" animate="animate">
+              {rewardsList.map((r) => (
+                <motion.div key={r.id} variants={staggerItem}
+                  className="flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all hover:scale-[1.02]"
+                  style={{ borderColor: "var(--surface-panel-border)", background: `${r.color}11` }}>
+                  <span className="text-xl">{r.icon}</span>
+                  <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{r.text}</span>
+                </motion.div>
+              ))}
+            </motion.div>
+          ) : (
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>Aucune récompense — ajoutée par le responsable</p>
+          )}
         </JoueurKpiCard>
       </div>
 
@@ -289,7 +303,7 @@ export function JoueurDashboard() {
               { label: "Assists", value: seasonAssists, color: "#3B82F6" },
               { label: "Matchs", value: seasonMatches, color: "#F59E0B" },
             ].map(({ label, value, color }) => (
-              <div key={label} className="rounded-xl border p-2 text-center" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+              <div key={label} className="rounded-xl border p-2 text-center" style={{ borderColor: "var(--surface-panel-border)" }}>
                 <p className="text-lg font-bold" style={{ color }}><CountUpStat end={value} suffix="" /></p>
                 <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{label}</p>
               </div>

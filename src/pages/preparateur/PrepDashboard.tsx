@@ -13,7 +13,7 @@ export function PrepDashboard() {
     <PrepPageTransition>
       <motion.div
         className="rounded-[20px] border p-6"
-        style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(15,29,58,0.9) 100%)", borderColor: "rgba(255,255,255,0.05)" }}
+        style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(15,29,58,0.9) 100%)", borderColor: "var(--surface-panel-border)" }}
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -47,7 +47,7 @@ export function PrepDashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
               <XAxis dataKey="day" tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
               <YAxis tick={{ fill: "var(--text-muted)", fontSize: 11 }} domain={[40, 90]} />
-              <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12 }} />
+              <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }} />
               <Line type="monotone" dataKey="load" stroke="#6366F1" strokeWidth={2.5} dot={{ r: 4, fill: "#6366F1" }} animationDuration={1000} name="Charge %" />
             </LineChart>
           </ResponsiveContainer>
@@ -81,7 +81,7 @@ export function PrepDashboard() {
               </motion.div>
             ))}
           </div>
-          <div className="mt-4 border-t pt-3" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+          <div className="mt-4 border-t pt-3" style={{ borderColor: "var(--surface-panel-border)" }}>
             <p className="mb-2 text-[10px] font-semibold uppercase" style={{ color: "var(--text-muted)" }}>Notifications</p>
             {PREP_NOTIFICATIONS.slice(0, 2).map((n) => (
               <p key={n.id} className="text-xs" style={{ color: n.unread ? "var(--text-secondary)" : "var(--text-muted)" }}>

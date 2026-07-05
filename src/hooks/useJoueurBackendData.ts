@@ -5,6 +5,7 @@
  */
 import { useEffect, useState, useCallback } from "react";
 import { clubApi } from "../lib/api/club";
+import { joueurApi } from "../lib/api/joueur";
 import { useAuth } from "../contexts/AuthContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -13,6 +14,7 @@ export interface BackendPlayer {
   id: string;
   name: string;
   position: string;
+  positionFull: string;
   age: number;
   ovr: number;
   goals: number;
@@ -24,6 +26,29 @@ export interface BackendPlayer {
   photoUrl?: string | null;
   radar?: Record<string, number> | null;
   stats?: PlayerStatsPayload | null;
+  height?: string;
+  weight?: string;
+  strongFoot?: string;
+  birthDate?: string;
+  jerseyNumber?: number;
+  nationality?: string;
+}
+
+export interface BackendContract {
+  id: string;
+  startDate: string;
+  endDate: string;
+  salary: string;
+  releaseClause: string;
+  consumedPct: number;
+}
+
+export interface OrgProfile {
+  clubName: string;
+  league: string;
+  country: string;
+  logoUrl?: string | null;
+  stadium?: string | null;
 }
 
 export interface PlayerStatsPayload {
@@ -57,6 +82,8 @@ export interface BackendMatchStat {
   passAccuracy: number;
   topSpeed: number;
   keyPasses: number;
+  yellowCards: number;
+  redCards: number;
   heatmapData: unknown;
 }
 
@@ -115,6 +142,7 @@ export interface BackendInjury {
   bodyPart: string;
   returnDate: string;
   riskIA: number;
+  createdAt?: string;
 }
 
 interface JoueurBackendData {
@@ -129,9 +157,72 @@ interface JoueurBackendData {
   chemistry: BackendChemistry[];
   calendarEvents: BackendCalendarEvent[];
   injuries: BackendInjury[];
+  orgProfile: OrgProfile | null;
+  myContract: BackendContract | null;
   loading: boolean;
   error: string | null;
   refetchDocuments: () => Promise<void>;
+  refetchPlayer: () => Promise<void>;
+  refetchMedical: () => Promise<void>;
+}
+
+// ─── Normalizers (joueur-scoped API → shared shapes) ──────────────────────────
+
+function normalizeJoueurInjuries(raw: unknown, playerName: string): BackendInjury[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((item, i) => {
+    const row = item as Record<string, unknown>;
+    return {
+      id: String(row.id ?? `inj-${i}`),
+      name: playerName,
+      injury: String(row.type ?? row.injury ?? row.injuryType ?? ""),
+      bodyPart: row.bodyPart != null ? String(row.bodyPart) : "",
+      returnDate: String(row.returnDate ?? "—"),
+      riskIA: Number(row.riskScore ?? row.riskIA ?? 0),
+      createdAt:
+        row.createdAt != null
+          ? String(row.createdAt)
+          : row.date != null
+            ? String(row.date)
+            : undefined,
+    };
+  });
+}
+
+function normalizeJoueurCalendar(raw: unknown): BackendCalendarEvent[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((item, i) => {
+    const row = item as Record<string, unknown>;
+    return {
+      id: String(row.id ?? `ev-${i}`),
+      title: String(row.title ?? ""),
+      eventDate: String(row.eventDate ?? row.date ?? ""),
+      eventTime: row.eventTime != null ? String(row.eventTime) : row.time != null ? String(row.time) : null,
+      eventType: String(row.eventType ?? row.type ?? ""),
+      location: row.location != null ? String(row.location) : null,
+    };
+  });
+}
+
+/**
+ * Player calendar rules:
+ * - Matches, training, recovery, meetings, scout: always visible (team schedule)
+ * - Medical: only RDVs whose title mentions this player (e.g. "Bilan — ilbab")
+ * - Hiding REUNION/SCOUT is deferred (optional later)
+ */
+function filterCalendarForJoueur(
+  events: BackendCalendarEvent[],
+  playerNames: string[],
+): BackendCalendarEvent[] {
+  const names = [...new Set(playerNames.map((n) => n.trim().toLowerCase()).filter(Boolean))];
+
+  return events.filter((ev) => {
+    const type = (ev.eventType ?? "").toUpperCase();
+    if (type !== "MEDICAL") return true;
+    if (names.length === 0) return false;
+    const title = (ev.title ?? "").toLowerCase();
+    return names.some((name) => title.includes(name));
+  });
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -149,6 +240,8 @@ export function useJoueurBackendData(): JoueurBackendData {
   const [chemistry, setChemistry] = useState<BackendChemistry[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<BackendCalendarEvent[]>([]);
   const [injuries, setInjuries] = useState<BackendInjury[]>([]);
+  const [orgProfile, setOrgProfile] = useState<OrgProfile | null>(null);
+  const [myContract, setMyContract] = useState<BackendContract | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resolvedPlayerId, setResolvedPlayerId] = useState<string | null>(null);
@@ -166,6 +259,37 @@ export function useJoueurBackendData(): JoueurBackendData {
     if (resolvedPlayerId) await fetchDocuments(resolvedPlayerId);
   }, [resolvedPlayerId, fetchDocuments]);
 
+  const refetchPlayer = useCallback(async () => {
+    if (!resolvedPlayerId) return;
+    try {
+      const playersRaw = await clubApi.getPlayers().catch(() => []) as BackendPlayer[];
+      const players = Array.isArray(playersRaw) ? playersRaw : [];
+      const own = players.find((p) => p.id === resolvedPlayerId) ?? null;
+      setSquadPlayers(players);
+      if (own) setMyPlayer(own);
+    } catch { /* non-blocking */ }
+  }, [resolvedPlayerId]);
+
+  const refetchMedical = useCallback(async () => {
+    if (!resolvedPlayerId) return;
+    const playerName = myPlayer?.name ?? user?.fullName ?? "";
+    try {
+      const [statsRaw, injRaw, calRaw] = await Promise.all([
+        clubApi.getPlayerStats(resolvedPlayerId).catch(() => null),
+        joueurApi.getInjuries().catch(() => []),
+        joueurApi.getCalendar().catch(() => []),
+      ]);
+      setPlayerStats(statsRaw as PlayerStatsPayload | null);
+      setInjuries(normalizeJoueurInjuries(injRaw, playerName));
+      setCalendarEvents(
+        filterCalendarForJoueur(normalizeJoueurCalendar(calRaw), [
+          playerName,
+          user?.fullName ?? "",
+        ]),
+      );
+    } catch { /* non-blocking */ }
+  }, [resolvedPlayerId, myPlayer?.name, user?.fullName]);
+
   useEffect(() => {
     if (!user) return;
 
@@ -174,6 +298,10 @@ export function useJoueurBackendData(): JoueurBackendData {
 
     (async () => {
       try {
+        // 0. Fetch org profile (club name, league)
+        const profileRaw = await clubApi.getProfile().catch(() => null) as OrgProfile | null;
+        if (!cancelled && profileRaw) setOrgProfile(profileRaw);
+
         // 1. Fetch squad list to resolve current player
         const playersRaw = await clubApi.getPlayers().catch(() => []) as BackendPlayer[];
         const players = Array.isArray(playersRaw) ? playersRaw : [];
@@ -193,18 +321,20 @@ export function useJoueurBackendData(): JoueurBackendData {
         setMyPlayer(own);
         setResolvedPlayerId(pid);
 
-        // 2. Parallel fetch for player-scoped and org-scoped data
+        // 2. Parallel fetch — injuries & calendar from joueur-scoped APIs (same ClubInjury / ClubCalendarEvent as doctor)
         if (pid) {
-          const [statsRaw, matchRaw, awardsRaw, docsRaw, calRaw, injRaw, transfRaw, chemRaw] =
+          const playerName = own?.name ?? user.fullName ?? "";
+          const [statsRaw, matchRaw, awardsRaw, docsRaw, calRaw, injRaw, transfRaw, chemRaw, contractRaw] =
             await Promise.all([
               clubApi.getPlayerStats(pid).catch(() => null),
               clubApi.getMatchStats(pid).catch(() => []),
               clubApi.getAwards(pid).catch(() => []),
               clubApi.getDocuments(pid).catch(() => []),
-              clubApi.getCalendar().catch(() => []),
-              clubApi.getInjuries().catch(() => ({ injured: [] })),
+              joueurApi.getCalendar().catch(() => []),
+              joueurApi.getInjuries().catch(() => []),
               clubApi.getTransfers().catch(() => []),
               clubApi.getChemistry().catch(() => []),
+              clubApi.getPlayerContract(pid).catch(() => null),
             ]);
 
           if (cancelled) return;
@@ -213,25 +343,21 @@ export function useJoueurBackendData(): JoueurBackendData {
           setMatchStats(Array.isArray(matchRaw) ? (matchRaw as BackendMatchStat[]) : []);
           setAwards(Array.isArray(awardsRaw) ? (awardsRaw as BackendAward[]) : []);
           setDocuments(Array.isArray(docsRaw) ? (docsRaw as BackendDocument[]) : []);
-          setCalendarEvents(Array.isArray(calRaw) ? (calRaw as BackendCalendarEvent[]) : []);
-          const injData = injRaw as { injured?: BackendInjury[] };
-          setInjuries(injData?.injured ?? []);
+          setCalendarEvents(
+            filterCalendarForJoueur(normalizeJoueurCalendar(calRaw), [
+              playerName,
+              user.fullName ?? "",
+            ]),
+          );
+          setInjuries(normalizeJoueurInjuries(injRaw, playerName));
           setTransfers(Array.isArray(transfRaw) ? (transfRaw as BackendTransfer[]) : []);
           setChemistry(Array.isArray(chemRaw) ? (chemRaw as BackendChemistry[]) : []);
+          setMyContract((contractRaw as BackendContract) ?? null);
         } else {
-          // No player linked — fetch org-wide data still
-          const [calRaw, injRaw, transfRaw, chemRaw] = await Promise.all([
-            clubApi.getCalendar().catch(() => []),
-            clubApi.getInjuries().catch(() => ({ injured: [] })),
-            clubApi.getTransfers().catch(() => []),
-            clubApi.getChemistry().catch(() => []),
-          ]);
-          if (cancelled) return;
-          setCalendarEvents(Array.isArray(calRaw) ? (calRaw as BackendCalendarEvent[]) : []);
-          const injData = injRaw as { injured?: BackendInjury[] };
-          setInjuries(injData?.injured ?? []);
-          setTransfers(Array.isArray(transfRaw) ? (transfRaw as BackendTransfer[]) : []);
-          setChemistry(Array.isArray(chemRaw) ? (chemRaw as BackendChemistry[]) : []);
+          setCalendarEvents([]);
+          setInjuries([]);
+          setTransfers([]);
+          setChemistry([]);
         }
 
         setError(null);
@@ -257,8 +383,12 @@ export function useJoueurBackendData(): JoueurBackendData {
     chemistry,
     calendarEvents,
     injuries,
+    orgProfile,
+    myContract,
     loading,
     error,
     refetchDocuments,
+    refetchPlayer,
+    refetchMedical,
   };
 }

@@ -178,7 +178,7 @@ export function AIRiskPrediction({
       </div>
 
       {/* Risk by zone breakdown */}
-      <div className="space-y-3 rounded-lg border p-4" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+      <div className="space-y-3 rounded-lg border p-4" style={{ borderColor: "var(--surface-panel-border)" }}>
         <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
           Risques par zone
         </h3>

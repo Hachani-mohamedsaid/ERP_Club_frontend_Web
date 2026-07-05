@@ -53,7 +53,7 @@ export function RecruteurDiscoveryPage() {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-lg border px-3 py-2 text-sm"
-        style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}
+        style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
       >
         {options.map((o) => <option key={o} value={o} style={{ background: "#0F1D3A" }}>{o}</option>)}
       </select>
@@ -65,7 +65,7 @@ export function RecruteurDiscoveryPage() {
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[280px_1fr]">
         <aside
           className="h-fit rounded-[20px] border p-5 backdrop-blur-[10px] xl:sticky xl:top-4"
-          style={{ background: "rgba(15,29,58,0.85)", borderColor: "rgba(255,255,255,0.05)" }}
+          style={{ background: "rgba(15,29,58,0.85)", borderColor: "var(--surface-panel-border)" }}
         >
           <div className="mb-4 flex items-center gap-2">
             <SlidersHorizontal size={16} style={{ color: "#A855F7" }} />
@@ -79,7 +79,7 @@ export function RecruteurDiscoveryPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Rechercher..."
                 className="w-full rounded-lg border py-2 pl-9 pr-3 text-sm"
-                style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}
+                style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
               />
             </div>
             <Select label="Position" value={position} options={POSITIONS} onChange={setPosition} />
@@ -122,7 +122,7 @@ export function RecruteurDiscoveryPage() {
             </AnimatePresence>
           </div>
           {players.length === 0 && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-2 rounded-2xl border border-dashed py-16" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-2 rounded-2xl border border-dashed py-16" style={{ borderColor: "var(--surface-panel-border)" }}>
               <X size={28} style={{ color: "var(--text-muted)" }} />
               <p className="text-sm" style={{ color: "var(--text-muted)" }}>Aucun talent ne correspond à ces critères</p>
             </motion.div>

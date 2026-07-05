@@ -20,11 +20,11 @@ interface DocWithData extends BackendDocument {
   dataUrl?: string;
 }
 
-function generatePDF(doc: BackendDocument, playerName: string): void {
+function generatePDF(doc: BackendDocument, playerName: string, clubName = "—"): void {
   const pdf = new jsPDF();
   pdf.setFontSize(18);
   pdf.setTextColor(40, 40, 40);
-  pdf.text("FC Carthage — Document Officiel", 20, 20);
+  pdf.text(`${clubName} — Document Officiel`, 20, 20);
   pdf.setFontSize(12);
   pdf.setTextColor(80, 80, 80);
   pdf.line(20, 25, 190, 25);
@@ -38,20 +38,22 @@ function generatePDF(doc: BackendDocument, playerName: string): void {
   pdf.text(`Généré le : ${new Date().toLocaleString("fr-TN")}`, 20, 90);
   pdf.line(20, 95, 190, 95);
   pdf.setFontSize(9);
-  pdf.text("Ce document est confidentiel et réservé à l'usage interne de FC Carthage.", 20, 102);
+  pdf.text(`Ce document est confidentiel et réservé à l'usage interne de ${clubName}.`, 20, 102);
   pdf.save(doc.name.replace(/\s+/g, "_").replace(/\.pdf$/i, "") + ".pdf");
 }
 
 export function JoueurDocumentsPage() {
   const { player } = useCurrentPlayer();
-  const { documents, myPlayerId, refetchDocuments } = useJoueurBackendData();
+  const { documents, myPlayerId, refetchDocuments, orgProfile } = useJoueurBackendData();
   const playerName = player?.name ?? "Joueur";
+  const clubName = orgProfile?.clubName ?? "—";
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [previewDoc, setPreviewDoc] = useState<DocWithData | null>(null);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [selectedDocType, setSelectedDocType] = useState("Personnel");
 
   function showToast(msg: string) {
     setToast(msg);
@@ -69,7 +71,7 @@ export function JoueurDocumentsPage() {
       try {
         await clubApi.createDocument(myPlayerId, {
           name: file.name,
-          docType: "Personnel",
+          docType: selectedDocType,
           docDate: new Date().toLocaleDateString("fr-TN"),
           size,
           fileData: dataUrl,
@@ -118,10 +120,10 @@ export function JoueurDocumentsPage() {
         a.click();
         document.body.removeChild(a);
       } else {
-        generatePDF(doc, playerName);
+        generatePDF(doc, playerName, clubName);
       }
     } catch {
-      generatePDF(doc, playerName);
+      generatePDF(doc, playerName, clubName);
     }
     showToast(`Téléchargement de "${doc.name}" lancé`);
   }
@@ -140,15 +142,27 @@ export function JoueurDocumentsPage() {
         }}
       />
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>{documents.length} document(s)</p>
-        <Button onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-          {uploading ? (
-            <span className="flex items-center gap-2"><FilePlus size={16} className="animate-pulse" /> Envoi…</span>
-          ) : (
-            <span className="flex items-center gap-2"><Upload size={16} /> Upload document</span>
-          )}
-        </Button>
+        <div className="flex items-center gap-2">
+          <select
+            value={selectedDocType}
+            onChange={(e) => setSelectedDocType(e.target.value)}
+            className="glass-input py-2 px-3 text-sm rounded-xl"
+            style={{ minWidth: 120 }}
+          >
+            {Object.keys(TYPE_COLORS).map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+          <Button onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+            {uploading ? (
+              <span className="flex items-center gap-2"><FilePlus size={16} className="animate-pulse" /> Envoi…</span>
+            ) : (
+              <span className="flex items-center gap-2"><Upload size={16} /> Upload document</span>
+            )}
+          </Button>
+        </div>
       </div>
 
       {documents.length === 0 ? (
@@ -227,7 +241,7 @@ export function JoueurDocumentsPage() {
           >
             <motion.div
               className="w-full max-w-lg rounded-2xl p-6"
-              style={{ background: "#141B2D", border: `1px solid ${TYPE_COLORS[previewDoc.docType] ?? "var(--accent)"}44` }}
+              style={{ background: "var(--surface-panel-solid)", border: `1px solid ${TYPE_COLORS[previewDoc.docType] ?? "var(--accent)"}44` }}
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
@@ -243,20 +257,20 @@ export function JoueurDocumentsPage() {
                 </div>
                 <button type="button" onClick={() => setPreviewDoc(null)}
                   className="flex h-8 w-8 items-center justify-center rounded-full"
-                  style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}>
+                  style={{ background: "var(--surface-input)", color: "var(--text-muted)" }}>
                   <X size={16} />
                 </button>
               </div>
 
               {previewDoc.dataUrl?.startsWith("data:image") ? (
                 <img src={previewDoc.dataUrl} alt={previewDoc.name} className="max-h-80 w-full rounded-xl object-contain"
-                  style={{ background: "rgba(255,255,255,0.04)" }} />
+                  style={{ background: "var(--surface-input)" }} />
               ) : (
                 <div className="flex h-48 flex-col items-center justify-center gap-3 rounded-xl"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed rgba(255,255,255,0.1)" }}>
+                  style={{ background: "var(--surface-input)", border: "1px dashed var(--surface-panel-border)" }}>
                   <FileText size={40} style={{ color: TYPE_COLORS[previewDoc.docType] ?? "var(--accent)", opacity: 0.6 }} />
                   <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>Aperçu — {previewDoc.docType}</p>
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Document confidentiel FC Carthage</p>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Document confidentiel {clubName}</p>
                 </div>
               )}
 
@@ -280,7 +294,7 @@ export function JoueurDocumentsPage() {
           <motion.div
             key="doc-toast"
             className="fixed bottom-6 right-6 z-[210] flex items-center gap-3 rounded-2xl px-5 py-3 shadow-xl"
-            style={{ background: "#141B2D", border: "1px solid rgba(34,197,94,0.4)", color: "#22C55E" }}
+            style={{ background: "var(--surface-panel-solid)", border: "1px solid rgba(34,197,94,0.4)", color: "#22C55E" }}
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}

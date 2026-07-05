@@ -125,6 +125,17 @@ function buildTopScorers(players: AnalyticsPlayerInput[]): TopScorer[] {
     }));
 }
 
+export function buildBestXiFromPlayers(players: AnalyticsPlayerInput[]) {
+  const normalized = players.map((p) => ({
+    ...p,
+    position: normPos(p.position),
+    status: playerStatus(p),
+  }));
+  const available = normalized.filter((p) => p.status !== "BLESSE" && p.status !== "FIN_CONTRAT");
+  const pool = available.length > 0 ? available : normalized;
+  return { formation: "4-3-3" as const, players: buildBestXi(pool) };
+}
+
 export function buildClubAnalyticsFromPlayers(
   players: AnalyticsPlayerInput[],
   events: AnalyticsCalendarInput[] = [],

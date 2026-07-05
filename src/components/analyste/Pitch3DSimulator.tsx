@@ -1,8 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Zap, RefreshCw, Users, Sparkles } from "lucide-react";
-import type { PitchPlayer, FormationId, TacticalMetrics } from "../../data/analysteData";
-import { computeTacticalMetrics, applyFormation, chemistryColor, fifaOvrColor, TACTICAL_SUGGESTIONS, BENCH_PLAYERS } from "../../data/analysteData";
+import type { PitchPlayer, FormationId, TacticalMetrics, TacticalSuggestion } from "../../data/analysteData";
+import { computeTacticalMetrics, applyFormation, chemistryColor, fifaOvrColor } from "../../data/analysteData";
 import { PlayerCard } from "./PlayerCard";
 import { PlayerInsightDrawer } from "./PlayerInsightDrawer";
 
@@ -33,13 +33,20 @@ function AnimatedNumber({ value, decimals = 0, suffix = "" }: { value: number; d
 
 interface Pitch3DSimulatorProps {
   initialPlayers: PitchPlayer[];
+  initialBench: PitchPlayer[];
+  suggestions: TacticalSuggestion[];
   initialFormation?: FormationId;
 }
 
-export function Pitch3DSimulator({ initialPlayers, initialFormation = "4-3-3" }: Pitch3DSimulatorProps) {
+export function Pitch3DSimulator({
+  initialPlayers,
+  initialBench,
+  suggestions,
+  initialFormation = "4-3-3",
+}: Pitch3DSimulatorProps) {
   const [formation, setFormation] = useState<FormationId>(initialFormation);
   const [players, setPlayers] = useState<PitchPlayer[]>(() => applyFormation(initialPlayers, initialFormation));
-  const [bench, setBench] = useState<PitchPlayer[]>(BENCH_PLAYERS);
+  const [bench, setBench] = useState<PitchPlayer[]>(initialBench);
   const [metrics, setMetrics] = useState<TacticalMetrics>(() => computeTacticalMetrics(initialPlayers, initialFormation));
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -58,7 +65,7 @@ export function Pitch3DSimulator({ initialPlayers, initialFormation = "4-3-3" }:
   function resetFormation() {
     const fresh = applyFormation(initialPlayers, formation);
     setPlayers(fresh);
-    setBench(BENCH_PLAYERS);
+    setBench(initialBench);
     setMetrics(computeTacticalMetrics(fresh, formation));
   }
 
@@ -171,7 +178,7 @@ export function Pitch3DSimulator({ initialPlayers, initialFormation = "4-3-3" }:
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.9, rotate: -180 }}
           className="flex h-9 w-9 items-center justify-center rounded-xl"
-          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
+          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--surface-panel-border)" }}
           title="Réinitialiser"
         >
           <RefreshCw size={14} style={{ color: "var(--text-muted)" }} />
@@ -346,7 +353,7 @@ export function Pitch3DSimulator({ initialPlayers, initialFormation = "4-3-3" }:
           </div>
 
           {/* Chemistry legend */}
-          <div className="rounded-[20px] border p-4" style={{ background: "rgba(15,29,58,0.9)", borderColor: "rgba(255,255,255,0.05)" }}>
+          <div className="rounded-[20px] border p-4" style={{ background: "rgba(15,29,58,0.9)", borderColor: "var(--surface-panel-border)" }}>
             <h4 className="mb-3 text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Chemistry · Connexions</h4>
             <div className="flex flex-wrap gap-3 text-xs">
               {[
@@ -363,13 +370,13 @@ export function Pitch3DSimulator({ initialPlayers, initialFormation = "4-3-3" }:
           </div>
 
           {/* AI suggestions with confidence */}
-          <div className="rounded-[20px] border p-5" style={{ background: "rgba(15,29,58,0.9)", borderColor: "rgba(255,255,255,0.05)" }}>
+          <div className="rounded-[20px] border p-5" style={{ background: "rgba(15,29,58,0.9)", borderColor: "var(--surface-panel-border)" }}>
             <div className="mb-3 flex items-center gap-2">
               <Zap size={14} style={{ color: "#8B5CF6" }} />
               <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: "#8B5CF6" }}>AI Suggestions</h3>
             </div>
             <div className="space-y-2">
-              {TACTICAL_SUGGESTIONS.map((s, i) => (
+              {suggestions.map((s, i) => (
                 <motion.div
                   key={s.id}
                   initial={{ opacity: 0, x: 20 }}
@@ -399,7 +406,7 @@ export function Pitch3DSimulator({ initialPlayers, initialFormation = "4-3-3" }:
       </div>
 
       {/* === BENCH === */}
-      <div className="rounded-[20px] border p-4" style={{ background: "rgba(15,29,58,0.9)", borderColor: "rgba(255,255,255,0.05)" }}>
+      <div className="rounded-[20px] border p-4" style={{ background: "rgba(15,29,58,0.9)", borderColor: "var(--surface-panel-border)" }}>
         <div className="mb-3 flex items-center gap-2">
           <Users size={14} style={{ color: "#6366F1" }} />
           <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Remplaçants</h3>

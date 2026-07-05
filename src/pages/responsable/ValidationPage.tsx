@@ -6,6 +6,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from "recharts";
 import { RPage, RCard, RHeader, RSection, RRow, RPills, RBtn, RKpiCard } from "../../components/responsable";
+import { responsableApi } from "../../lib/api/responsable";
+import { useClubResource } from "../../hooks/useClubResource";
 
 type ReqType = "Recrutement" | "Contrat" | "Budget" | "Convocation" | "Médical";
 type ReqStatus = "En attente" | "Validé" | "Refusé" | "Retour";
@@ -21,16 +23,6 @@ interface ValidationRequest {
   status: ReqStatus;
   date: string;
 }
-
-const INITIAL: ValidationRequest[] = [
-  { id: "V001", type: "Recrutement", title: "Recrutement joueur",     from: "Scout Tarek",    detail: "Youssef Ben Ali — Attaquant — AS Ariana — Potentiel 89",     priority: "Haute",    status: "En attente", date: "19/06 10:30" },
-  { id: "V002", type: "Contrat",     title: "Renouvellement contrat", from: "Coach Sonia",    detail: "Ahmed Ben Salah — +500 DT/mois — Durée 2 ans",               priority: "Haute",    status: "En attente", date: "19/06 09:15" },
-  { id: "V003", type: "Budget",      title: "Achat équipement",       from: "Médecin Ines",   detail: "Matériel médical — 18 500 DT — Fournisseur SportsMed",        priority: "Normale",  status: "En attente", date: "18/06 16:00", amount: "18 500 DT" },
-  { id: "V004", type: "Recrutement", title: "Transfert joueur",       from: "Scout Tarek",    detail: "Nader Trabelsi — Milieu défensif — Stade Tunisien",           priority: "Normale",  status: "Validé",     date: "17/06 11:00" },
-  { id: "V005", type: "Convocation", title: "Sélection équipe",       from: "Coach Sonia",    detail: "Match FC Carthage vs ES Sahel — 21/06/2026 — 15 joueurs",    priority: "Critique", status: "Validé",     date: "17/06 08:30" },
-  { id: "V006", type: "Budget",      title: "Déplacement équipe",     from: "Admin Mohamed",  detail: "Transport + Hôtel — Déplacement Sfax — 8 400 DT",            priority: "Normale",  status: "Refusé",     date: "16/06 14:00", amount: "8 400 DT" },
-  { id: "V007", type: "Médical",     title: "Arrêt médical",          from: "Médecin Ines",   detail: "Karim Gharbi — Fatigue musculaire — Repos 2 semaines",       priority: "Haute",    status: "Validé",     date: "15/06 09:30" },
-];
 
 const TYPE_ICON: Record<ReqType, typeof Clock> = {
   Recrutement: Users,
@@ -64,7 +56,13 @@ const STATUS_COLOR: Record<ReqStatus, string> = {
 const FILTER_OPTIONS = ["Tous", "En attente", "Validé", "Refusé", "Retour"] as const;
 
 export function ValidationPage() {
-  const [requests, setRequests] = useState<ValidationRequest[]>(INITIAL);
+  const { data, loading, reload } = useClubResource(() => responsableApi.getValidation() as Promise<{
+    requests: ValidationRequest[];
+    stats: { pending: number; approved: number; rejected: number; returned: number };
+    byType: { type: string; count: number }[];
+  }>);
+
+  const requests = data?.requests ?? [];
   const [filter, setFilter] = useState<string>("En attente");
   const [selected, setSelected] = useState<ValidationRequest | null>(null);
   const [comment, setComment] = useState("");
@@ -76,10 +74,32 @@ export function ValidationPage() {
 
   const pending = requests.filter(r => r.status === "En attente").length;
 
-  function action(id: string, status: ReqStatus) {
-    setRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+  async function action(id: string, status: ReqStatus) {
+    const actionMap: Record<ReqStatus, "approve" | "reject" | "return" | null> = {
+      "Validé": "approve",
+      "Refusé": "reject",
+      Retour: "return",
+      "En attente": null,
+    };
+    const apiAction = actionMap[status];
+    if (apiAction) {
+      try {
+        await responsableApi.decideValidation(id, apiAction, comment || undefined);
+        await reload();
+      } catch (err) {
+        alert(err instanceof Error ? err.message : "Erreur");
+      }
+    }
     setSelected(null);
     setComment("");
+  }
+
+  if (loading) {
+    return (
+      <RPage>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement des demandes…</p>
+      </RPage>
+    );
   }
 
   return (
@@ -161,7 +181,7 @@ export function ValidationPage() {
                           </div>
                           <p className="mt-0.5 text-xs truncate" style={{ color: "var(--text-muted)" }}>{req.detail}</p>
                           <p className="mt-1 text-[11px]" style={{ color: "var(--text-muted)" }}>
-                            De: <strong style={{ color: "var(--accent)" }}>{req.from}</strong> · {req.date}
+                            Proposé par <strong style={{ color: "var(--accent)" }}>{req.from}</strong> · {req.date}
                           </p>
                           {/* Inline quick actions for pending */}
                           {isPending && (
@@ -213,7 +233,7 @@ export function ValidationPage() {
                   </div>
 
                   {[
-                    { label: "Demandé par", value: selected.from },
+                    { label: "Proposé par", value: selected.from },
                     { label: "Date", value: selected.date },
                     { label: "Priorité", value: selected.priority },
                     { label: "Statut actuel", value: selected.status },
@@ -234,7 +254,7 @@ export function ValidationPage() {
                         onChange={e => setComment(e.target.value)}
                         placeholder="Commentaire (optionnel)..."
                         className="w-full resize-none rounded-xl border px-4 py-3 text-sm outline-none"
-                        style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}
+                        style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
                       />
                       <div className="grid grid-cols-1 gap-2">
                         <RBtn onClick={() => action(selected.id, "Validé")} variant="success">
@@ -271,7 +291,7 @@ export function ValidationPage() {
                         >
                           {["#FF7A00","#22C55E","#EF4444","#8B5CF6"].map((c, i) => <Cell key={i} fill={c} />)}
                         </Pie>
-                        <Tooltip contentStyle={{ background: "rgba(10,16,30,0.95)", border: "1px solid rgba(255,122,0,0.2)", color: "var(--text-primary)", borderRadius: 12 }} />
+                        <Tooltip contentStyle={{ background: "var(--surface-modal)", border: "1px solid rgba(255,122,0,0.2)", color: "var(--text-primary)", borderRadius: 12 }} />
                         <Legend wrapperStyle={{ color: "var(--text-muted)", fontSize: 10 }} />
                       </PieChart>
                     </ResponsiveContainer>
@@ -291,7 +311,7 @@ export function ValidationPage() {
                           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
                           <XAxis dataKey="name" tick={{ fill: "var(--text-muted)", fontSize: 9 }} axisLine={false} tickLine={false} />
                           <YAxis tick={{ fill: "var(--text-muted)", fontSize: 9 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                          <Tooltip contentStyle={{ background: "rgba(10,16,30,0.95)", border: "1px solid rgba(255,122,0,0.2)", color: "var(--text-primary)", borderRadius: 12 }} />
+                          <Tooltip contentStyle={{ background: "var(--surface-modal)", border: "1px solid rgba(255,122,0,0.2)", color: "var(--text-primary)", borderRadius: 12 }} />
                           <Bar dataKey="count" radius={[5, 5, 0, 0]} fill="#FF7A00" fillOpacity={0.85} />
                         </BarChart>
                       </ResponsiveContainer>

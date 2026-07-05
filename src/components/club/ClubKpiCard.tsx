@@ -14,7 +14,7 @@ export function ClubKpiCard({ children, className = "", delay = 0, hover = true 
       className={`rounded-[20px] border p-5 backdrop-blur-[10px] transition-shadow duration-200 ${className}`}
       style={{
         background: "rgba(15, 29, 58, 0.8)",
-        borderColor: "rgba(255,255,255,0.05)",
+        borderColor: "var(--surface-panel-border)",
         boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
       }}
       initial={{ opacity: 0, y: 12 }}

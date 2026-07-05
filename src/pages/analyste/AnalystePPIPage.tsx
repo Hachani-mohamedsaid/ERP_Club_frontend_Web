@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip,
@@ -7,61 +7,13 @@ import {
 import { Star, TrendingUp, TrendingDown, Minus, Zap, Brain } from "lucide-react";
 
 import { AnalystePageTransition } from "../../components/analyste/AnalystePageTransition";
+import { AnalystePageLoader } from "../../components/analyste/AnalystePageLoader";
+import { useAnalystePPI } from "../../hooks/useAnalysteResource";
+import type { PPIPlayer } from "../../data/analysteExtendedData";
 
 const TOOLTIP_STYLE = {
   contentStyle: { background: "rgba(5,8,22,0.96)", border: "1px solid rgba(139,92,246,0.3)", color: "white", borderRadius: 12 },
 };
-
-interface PPIPlayer {
-  id: string; name: string; position: string; age: number; ppi: number;
-  speed: number; pressing: number; xg: number; dribbling: number; defending: number;
-  stamina: number; vision: number; leadership: number;
-  trend: number[]; fatigue: number; form: "rising" | "falling" | "stable";
-  strengths: string[]; weaknesses: string[];
-}
-
-const PLAYERS: PPIPlayer[] = [
-  { id: "1", name: "Ahmed Ben Salah",  position: "BU",  age: 24, ppi: 89,
-    speed: 91, pressing: 87, xg: 85, dribbling: 82, defending: 48, stamina: 60, vision: 78, leadership: 72,
-    trend: [82, 84, 85, 87, 88, 89], fatigue: 85, form: "rising",
-    strengths: ["Vitesse", "xG élevé", "Pressing"],
-    weaknesses: ["Fatigue critique", "Défense"] },
-  { id: "2", name: "Ali Mansouri",     position: "AG",  age: 26, ppi: 84,
-    speed: 88, pressing: 76, xg: 72, dribbling: 85, defending: 55, stamina: 88, vision: 80, leadership: 65,
-    trend: [80, 81, 82, 83, 83, 84], fatigue: 20, form: "stable",
-    strengths: ["Dribbling", "Endurance", "Vision"],
-    weaknesses: ["xG", "Leadership"] },
-  { id: "3", name: "Youssef Trabelsi", position: "MOC", age: 23, ppi: 71,
-    speed: 75, pressing: 72, xg: 70, dribbling: 78, defending: 60, stamina: 65, vision: 85, leadership: 68,
-    trend: [78, 75, 72, 70, 71, 71], fatigue: 35, form: "falling",
-    strengths: ["Vision", "Technique"],
-    weaknesses: ["En rééducation", "Vitesse", "Stamina"] },
-  { id: "4", name: "Mohamed Sassi",    position: "AD",  age: 22, ppi: 80,
-    speed: 86, pressing: 80, xg: 75, dribbling: 79, defending: 50, stamina: 72, vision: 74, leadership: 60,
-    trend: [75, 76, 78, 79, 80, 80], fatigue: 62, form: "rising",
-    strengths: ["Vitesse", "Pressing"],
-    weaknesses: ["Leadership", "Défense"] },
-  { id: "5", name: "Karim Dridi",      position: "MC",  age: 27, ppi: 82,
-    speed: 78, pressing: 85, xg: 65, dribbling: 72, defending: 80, stamina: 70, vision: 82, leadership: 85,
-    trend: [85, 84, 83, 82, 82, 82], fatigue: 78, form: "falling",
-    strengths: ["Leadership", "Vision", "Défense"],
-    weaknesses: ["Fatigue élevée", "xG"] },
-  { id: "6", name: "Sami Bouazizi",    position: "MC",  age: 25, ppi: 78,
-    speed: 76, pressing: 78, xg: 62, dribbling: 70, defending: 76, stamina: 80, vision: 76, leadership: 72,
-    trend: [74, 75, 76, 77, 78, 78], fatigue: 45, form: "rising",
-    strengths: ["Endurance", "Pressing", "Défense"],
-    weaknesses: ["xG"] },
-  { id: "7", name: "Ridha Ammar",      position: "DD",  age: 28, ppi: 76,
-    speed: 74, pressing: 72, xg: 45, dribbling: 62, defending: 88, stamina: 82, vision: 68, leadership: 80,
-    trend: [73, 74, 75, 75, 76, 76], fatigue: 38, form: "stable",
-    strengths: ["Défense", "Leadership", "Endurance"],
-    weaknesses: ["xG", "Dribbling"] },
-  { id: "8", name: "Haddad",           position: "GB",  age: 30, ppi: 85,
-    speed: 68, pressing: 65, xg: 35, dribbling: 55, defending: 90, stamina: 80, vision: 82, leadership: 88,
-    trend: [83, 84, 84, 85, 85, 85], fatigue: 25, form: "stable",
-    strengths: ["Défense", "Leadership", "Vision"],
-    weaknesses: ["xG", "Vitesse"] },
-];
 
 const FORM_CONFIG = {
   rising:  { icon: TrendingUp,   color: "#22C55E", label: "En hausse" },
@@ -104,27 +56,37 @@ const ACard = ({ children, className = "", glow = false }: { children: React.Rea
 const TREND_LABELS = ["S-5","S-4","S-3","S-2","S-1","Actuel"];
 
 export function AnalystePPIPage() {
-  const [selected, setSelected] = useState<PPIPlayer>(PLAYERS[0]);
+  const { data, loading } = useAnalystePPI();
+  const [selected, setSelected] = useState<PPIPlayer | null>(null);
   const [sortBy, setSortBy] = useState<"ppi" | "age" | "fatigue">("ppi");
 
-  const sorted = [...PLAYERS].sort((a, b) =>
+  useEffect(() => {
+    if (data?.players[0]) setSelected(data.players[0]);
+  }, [data]);
+
+  if (loading && !data) return <AnalystePageLoader />;
+
+  const players = data!.players;
+  const active = selected ?? players[0];
+
+  const sorted = [...players].sort((a, b) =>
     sortBy === "ppi" ? b.ppi - a.ppi : sortBy === "age" ? a.age - b.age : b.fatigue - a.fatigue
   );
 
   const radarData = [
-    { subject: "Vitesse",    A: selected.speed     },
-    { subject: "Pressing",   A: selected.pressing  },
-    { subject: "xG",         A: selected.xg        },
-    { subject: "Dribbling",  A: selected.dribbling },
-    { subject: "Défense",    A: selected.defending },
-    { subject: "Vision",     A: selected.vision    },
-    { subject: "Leadership", A: selected.leadership},
-    { subject: "Stamina",    A: selected.stamina   },
+    { subject: "Vitesse",    A: active.speed     },
+    { subject: "Pressing",   A: active.pressing  },
+    { subject: "xG",         A: active.xg        },
+    { subject: "Dribbling",  A: active.dribbling },
+    { subject: "Défense",    A: active.defending },
+    { subject: "Vision",     A: active.vision    },
+    { subject: "Leadership", A: active.leadership},
+    { subject: "Stamina",    A: active.stamina   },
   ];
 
-  const trendData = TREND_LABELS.map((l, i) => ({ week: l, PPI: selected.trend[i] ?? selected.ppi }));
+  const trendData = TREND_LABELS.map((l, i) => ({ week: l, PPI: active.trend[i] ?? active.ppi }));
 
-  const FormIcon = FORM_CONFIG[selected.form].icon;
+  const FormIcon = FORM_CONFIG[active.form].icon;
 
   return (
     <AnalystePageTransition>
@@ -138,7 +100,7 @@ export function AnalystePPIPage() {
             </h3>
             <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}
               className="rounded-xl border px-3 py-1.5 text-xs outline-none"
-              style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}>
+              style={{ background: "rgba(30,35,50,0.97)", borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}>
               <option value="ppi">Trier par PPI</option>
               <option value="age">Trier par âge</option>
               <option value="fatigue">Trier par fatigue</option>
@@ -147,7 +109,7 @@ export function AnalystePPIPage() {
 
           {sorted.map((p, i) => {
             const FormIcon2 = FORM_CONFIG[p.form].icon;
-            const isActive = selected.id === p.id;
+            const isActive = active.id === p.id;
             return (
               <motion.button key={p.id} type="button" onClick={() => setSelected(p)}
                 initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}
@@ -173,39 +135,39 @@ export function AnalystePPIPage() {
 
         {/* Detail panel */}
         <AnimatePresence mode="wait">
-          <motion.div key={selected.id} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+          <motion.div key={active.id} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="space-y-4">
             {/* Hero */}
             <ACard glow>
               <div className="flex items-center gap-4">
-                <PPIRing ppi={selected.ppi} size={72} />
+                <PPIRing ppi={active.ppi} size={72} />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <h2 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>{selected.name}</h2>
+                    <h2 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>{active.name}</h2>
                     <div className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold"
-                      style={{ background: `${FORM_CONFIG[selected.form].color}18`, color: FORM_CONFIG[selected.form].color }}>
-                      <FormIcon size={9} /> {FORM_CONFIG[selected.form].label}
+                      style={{ background: `${FORM_CONFIG[active.form].color}18`, color: FORM_CONFIG[active.form].color }}>
+                      <FormIcon size={9} /> {FORM_CONFIG[active.form].label}
                     </div>
                   </div>
-                  <p className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>{selected.position} · {selected.age} ans</p>
+                  <p className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>{active.position} · {active.age} ans</p>
                   <div className="flex flex-wrap gap-2">
-                    {selected.strengths.map(s => (
+                    {active.strengths.map(s => (
                       <span key={s} className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
                         style={{ background: "rgba(34,197,94,0.12)", color: "#22C55E" }}>+ {s}</span>
                     ))}
-                    {selected.weaknesses.map(w => (
+                    {active.weaknesses.map(w => (
                       <span key={w} className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
                         style={{ background: "rgba(239,68,68,0.12)", color: "#EF4444" }}>- {w}</span>
                     ))}
                   </div>
                 </div>
                 <div className="flex flex-col items-center gap-1 shrink-0">
-                  <span className="text-3xl font-black" style={{ color: selected.ppi >= 85 ? "#22C55E" : "#FF7A00" }}>{selected.ppi}</span>
+                  <span className="text-3xl font-black" style={{ color: active.ppi >= 85 ? "#22C55E" : "#FF7A00" }}>{active.ppi}</span>
                   <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>PPI Score</span>
                   <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{
-                    background: selected.ppi >= 85 ? "rgba(34,197,94,0.12)" : "rgba(255,122,0,0.12)",
-                    color: selected.ppi >= 85 ? "#22C55E" : "#FF7A00"
+                    background: active.ppi >= 85 ? "rgba(34,197,94,0.12)" : "rgba(255,122,0,0.12)",
+                    color: active.ppi >= 85 ? "#22C55E" : "#FF7A00"
                   }}>
-                    {selected.ppi >= 88 ? "Elite" : selected.ppi >= 80 ? "Top" : selected.ppi >= 70 ? "Bon" : "Moyen"}
+                    {active.ppi >= 88 ? "Elite" : active.ppi >= 80 ? "Top" : active.ppi >= 70 ? "Bon" : "Moyen"}
                   </span>
                 </div>
               </div>

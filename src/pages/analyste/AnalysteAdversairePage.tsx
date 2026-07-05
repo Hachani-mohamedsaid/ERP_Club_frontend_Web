@@ -3,11 +3,15 @@ import { Shield, Target, Users, AlertTriangle } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from "recharts";
 import { AnalystePageTransition } from "../../components/analyste/AnalystePageTransition";
 import { AnalysteKpiCard } from "../../components/analyste/AnalysteKpiCard";
+import { AnalystePageLoader } from "../../components/analyste/AnalystePageLoader";
 import { TypewriterText } from "../../components/analyste/TypewriterText";
-import { OPPONENT_INTEL } from "../../data/analysteData";
+import { useAnalysteOpponent } from "../../hooks/useAnalysteResource";
 
 export function AnalysteAdversairePage() {
-  const intel = OPPONENT_INTEL;
+  const { data, loading } = useAnalysteOpponent();
+  if (loading && !data) return <AnalystePageLoader />;
+
+  const intel = data!.intel;
   const attackData = [
     { zone: "Gauche", pct: intel.leftPct, color: "#EF4444" },
     { zone: "Centre", pct: intel.centerPct, color: "#F59E0B" },
@@ -45,7 +49,7 @@ export function AnalysteAdversairePage() {
             <BarChart data={attackData}>
               <XAxis dataKey="zone" tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
               <YAxis tick={{ fill: "var(--text-muted)", fontSize: 11 }} domain={[0, 50]} />
-              <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12 }} />
+              <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }} />
               <Bar dataKey="pct" radius={[8, 8, 0, 0]} animationDuration={1200}>
                 {attackData.map((d) => <Cell key={d.zone} fill={d.color} />)}
               </Bar>

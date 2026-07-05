@@ -110,7 +110,7 @@ export function RecruteurCalendarPage() {
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_320px]">
         {/* Calendar grid */}
-        <div className="rounded-[20px] border p-5" style={{ background: "rgba(14,10,35,0.8)", borderColor: "rgba(255,255,255,0.07)" }}>
+        <div className="rounded-[20px] border p-5" style={{ background: "rgba(14,10,35,0.8)", borderColor: "var(--surface-panel-border)" }}>
           {/* Month nav */}
           <div className="flex items-center justify-between mb-4">
             <motion.button type="button" onClick={prevMonth} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.92 }}
@@ -171,7 +171,7 @@ export function RecruteurCalendarPage() {
         <AnimatePresence mode="wait">
           {selected && selectedEvents.length > 0 ? (
             <motion.div key={selected} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="space-y-3">
-              <div className="rounded-[20px] border p-5" style={{ background: "rgba(14,10,35,0.8)", borderColor: "rgba(255,255,255,0.07)" }}>
+              <div className="rounded-[20px] border p-5" style={{ background: "rgba(14,10,35,0.8)", borderColor: "var(--surface-panel-border)" }}>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
                     {selected ? new Date(selected + "T00:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }) : ""}
@@ -203,7 +203,7 @@ export function RecruteurCalendarPage() {
           ) : (
             <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <div className="flex flex-col items-center justify-center rounded-[20px] border py-16"
-                style={{ background: "rgba(14,10,35,0.8)", borderColor: "rgba(255,255,255,0.07)" }}>
+                style={{ background: "rgba(14,10,35,0.8)", borderColor: "var(--surface-panel-border)" }}>
                 <Calendar size={28} className="mb-3 opacity-25" style={{ color: "var(--text-muted)" }} />
                 <p className="text-sm" style={{ color: "var(--text-muted)" }}>
                   {selected ? "Aucun événement ce jour" : "Cliquez sur un jour pour voir les événements"}
@@ -215,13 +215,13 @@ export function RecruteurCalendarPage() {
       </div>
 
       {/* Upcoming events list */}
-      <div className="rounded-[20px] border p-5" style={{ background: "rgba(14,10,35,0.8)", borderColor: "rgba(255,255,255,0.07)" }}>
+      <div className="rounded-[20px] border p-5" style={{ background: "rgba(14,10,35,0.8)", borderColor: "var(--surface-panel-border)" }}>
         <p className="mb-3 text-sm font-bold" style={{ color: "var(--text-primary)" }}>Prochains événements</p>
         <div className="space-y-2">
           {[...events].sort((a, b) => a.date.localeCompare(b.date)).slice(0, 6).map((ev, i) => (
             <motion.div key={ev.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
               className="flex items-center gap-3 rounded-xl border px-3 py-2.5"
-              style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+              style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
               <div className="h-2 w-2 shrink-0 rounded-full" style={{ background: TYPE_META[ev.type].color }} />
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold truncate" style={{ color: "var(--text-primary)" }}>{ev.title}</p>
@@ -269,21 +269,21 @@ export function RecruteurCalendarPage() {
                     <input type={type} placeholder={placeholder} value={(newEvent as Record<string, string>)[key] ?? ""}
                       onChange={e => setNewEvent(prev => ({ ...prev, [key]: e.target.value }))}
                       className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                      style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }} />
+                      style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }} />
                   </div>
                 ))}
                 <div>
                   <label className="block text-[11px] font-medium mb-1" style={{ color: "var(--text-muted)" }}>Type</label>
                   <select value={newEvent.type} onChange={e => setNewEvent(prev => ({ ...prev, type: e.target.value as EventType }))}
                     className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                    style={{ background: "rgba(10,8,28,0.95)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}>
+                    style={{ background: "var(--surface-modal)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}>
                     {Object.entries(TYPE_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                   </select>
                 </div>
               </div>
               <div className="mt-5 flex justify-end gap-2">
                 <button type="button" onClick={() => setShowModal(false)}
-                  className="rounded-xl border px-4 py-2 text-xs" style={{ borderColor: "rgba(255,255,255,0.1)", color: "var(--text-muted)" }}>
+                  className="rounded-xl border px-4 py-2 text-xs" style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}>
                   Annuler
                 </button>
                 <motion.button type="button" onClick={addEvent}

@@ -159,7 +159,7 @@ export function CoachOpponentPage() {
                   return (
                     <motion.div key={i} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
                       className="flex items-center gap-3 rounded-xl border px-4 py-3"
-                      style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                      style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
                       <span className="text-lg">{i === 0 ? "🏟️" : i === 1 ? "⚽" : "📊"}</span>
                       <p className="flex-1 text-sm font-bold" style={{ color: "var(--text-primary)" }}>{r}</p>
                     </motion.div>

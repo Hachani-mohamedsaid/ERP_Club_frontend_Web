@@ -6,37 +6,16 @@ import {
 } from "recharts";
 import { Link2, Link, Users, TrendingUp, ArrowRight } from "lucide-react";
 import { AnalystePageTransition } from "../../components/analyste/AnalystePageTransition";
+import { AnalystePageLoader } from "../../components/analyste/AnalystePageLoader";
+import { useAnalysteChemistry } from "../../hooks/useAnalysteResource";
+import type { ChemistryLink } from "../../data/analysteExtendedData";
 
 const TOOLTIP_STYLE = {
   contentStyle: { background: "rgba(5,8,22,0.96)", border: "1px solid rgba(139,92,246,0.3)", color: "white", borderRadius: 12 },
 };
 
-const PLAYERS = [
-  "Ahmed", "Ali", "Youssef", "Mohamed", "Karim", "Sami", "Ridha", "Haddad",
-];
-
-interface ChemistryLink {
-  a: string; b: string; score: number;
-  passing: number; movement: number; pressing: number; history: number;
-}
-
-const CHEMISTRY_MATRIX: ChemistryLink[] = [
-  { a: "Ahmed",   b: "Ali",     score: 92, passing: 95, movement: 91, pressing: 88, history: 94 },
-  { a: "Ahmed",   b: "Karim",   score: 45, passing: 42, movement: 48, pressing: 46, history: 44 },
-  { a: "Ahmed",   b: "Mohamed", score: 85, passing: 87, movement: 84, pressing: 82, history: 87 },
-  { a: "Ali",     b: "Youssef", score: 78, passing: 80, movement: 76, pressing: 77, history: 79 },
-  { a: "Ali",     b: "Sami",    score: 82, passing: 83, movement: 80, pressing: 84, history: 81 },
-  { a: "Karim",   b: "Ridha",   score: 88, passing: 86, movement: 89, pressing: 90, history: 87 },
-  { a: "Karim",   b: "Sami",    score: 75, passing: 74, movement: 77, pressing: 73, history: 76 },
-  { a: "Youssef", b: "Mohamed", score: 68, passing: 70, movement: 65, pressing: 68, history: 69 },
-  { a: "Ridha",   b: "Haddad",  score: 91, passing: 88, movement: 90, pressing: 93, history: 93 },
-  { a: "Mohamed", b: "Ali",     score: 79, passing: 80, movement: 78, pressing: 79, history: 79 },
-  { a: "Sami",    b: "Ridha",   score: 84, passing: 82, movement: 85, pressing: 86, history: 83 },
-  { a: "Ahmed",   b: "Haddad",  score: 62, passing: 60, movement: 64, pressing: 63, history: 61 },
-];
-
-function chemScore(a: string, b: string) {
-  return CHEMISTRY_MATRIX.find(m => (m.a === a && m.b === b) || (m.a === b && m.b === a));
+function chemScore(a: string, b: string, matrix: ChemistryLink[]) {
+  return matrix.find(m => (m.a === a && m.b === b) || (m.a === b && m.b === a));
 }
 
 function chemColor(score: number) {
@@ -45,17 +24,6 @@ function chemColor(score: number) {
   if (score >= 55) return "#FF7A00";
   return "#EF4444";
 }
-
-const NODE_POSITIONS: Record<string, { x: number; y: number }> = {
-  Ahmed:   { x: 50,  y: 15  },
-  Ali:     { x: 80,  y: 30  },
-  Youssef: { x: 75,  y: 60  },
-  Mohamed: { x: 50,  y: 80  },
-  Karim:   { x: 20,  y: 60  },
-  Sami:    { x: 15,  y: 30  },
-  Ridha:   { x: 10,  y: 50  },
-  Haddad:  { x: 50,  y: 50  },
-};
 
 const ACard = ({ children, className = "", glow = false }: { children: React.ReactNode; className?: string; glow?: boolean }) => (
   <motion.div className={`rounded-[20px] border p-5 ${className}`}
@@ -70,12 +38,14 @@ const ACard = ({ children, className = "", glow = false }: { children: React.Rea
 );
 
 export function AnalysteChemistrePage() {
+  const { data, loading } = useAnalysteChemistry();
   const [focusPlayer, setFocusPlayer] = useState<string | null>(null);
   const [selectedLink, setSelectedLink] = useState<ChemistryLink | null>(null);
 
-  const teamAvg = Math.round(CHEMISTRY_MATRIX.reduce((s, m) => s + m.score, 0) / CHEMISTRY_MATRIX.length);
-  const bestPair = [...CHEMISTRY_MATRIX].sort((a, b) => b.score - a.score)[0];
-  const worstPair = [...CHEMISTRY_MATRIX].sort((a, b) => a.score - b.score)[0];
+  if (loading && !data) return <AnalystePageLoader />;
+
+  const { players: PLAYERS, matrix: CHEMISTRY_MATRIX, nodePositions: NODE_POSITIONS, summary } = data!;
+  const { teamAvg, bestPair, worstPair } = summary;
 
   const focusLinks = focusPlayer
     ? CHEMISTRY_MATRIX.filter(m => m.a === focusPlayer || m.b === focusPlayer)
@@ -102,7 +72,7 @@ export function AnalysteChemistrePage() {
           { label: "Duo à améliorer",         value: `${worstPair.a} ↔ ${worstPair.b}`, color: "#EF4444", icon: Link },
         ].map(({ label, value, color, icon: Icon }, i) => (
           <motion.div key={label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
-            <div className="rounded-[16px] border p-4" style={{ background: "rgba(5,8,22,0.7)", borderColor: "rgba(255,255,255,0.06)" }}>
+            <div className="rounded-[16px] border p-4" style={{ background: "rgba(5,8,22,0.7)", borderColor: "var(--surface-panel-border)" }}>
               <div className="flex items-center gap-2">
                 <motion.div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
                   style={{ background: `${color}18`, color }}
@@ -265,7 +235,7 @@ export function AnalysteChemistrePage() {
                       { label: "Historique", value: selectedLink.history },
                     ].map(({ label, value }) => (
                       <div key={label} className="rounded-xl border p-2 text-center"
-                        style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                        style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
                         <p className="text-sm font-bold" style={{ color: chemColor(value) }}>{value}%</p>
                         <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{label}</p>
                       </div>
@@ -276,7 +246,7 @@ export function AnalysteChemistrePage() {
             ) : (
               <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 className="flex h-48 items-center justify-center rounded-[20px] border"
-                style={{ borderColor: "rgba(255,255,255,0.05)", background: "rgba(5,8,22,0.5)" }}>
+                style={{ borderColor: "var(--surface-panel-border)", background: "rgba(5,8,22,0.5)" }}>
                 <p className="text-sm" style={{ color: "var(--text-muted)" }}>Sélectionner un lien pour le détail</p>
               </motion.div>
             )}

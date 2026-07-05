@@ -195,14 +195,14 @@ export function ClubStaffPage() {
                     {canEdit && (
                       <div
                         className="mt-4 flex flex-wrap gap-2 border-t pt-3"
-                        style={{ borderColor: "rgba(255,255,255,0.05)" }}
+                        style={{ borderColor: "var(--surface-panel-border)" }}
                       >
                         <button
                           type="button"
                           title="Modifier"
                           onClick={() => setEditMember(member.raw)}
                           className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-white/5"
-                          style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-secondary)" }}
+                          style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-secondary)" }}
                         >
                           <Pencil size={12} /> Modifier
                         </button>
@@ -211,7 +211,7 @@ export function ClubStaffPage() {
                           title="Renouveler contrat"
                           onClick={() => setRenewMember(member.raw)}
                           className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-white/5"
-                          style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-secondary)" }}
+                          style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-secondary)" }}
                         >
                           <FileSignature size={12} /> Renouveler contrat
                         </button>
@@ -220,7 +220,7 @@ export function ClubStaffPage() {
                           title="Voir planning"
                           onClick={() => navigate("/club/calendrier")}
                           className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-white/5"
-                          style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-secondary)" }}
+                          style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-secondary)" }}
                         >
                           <Calendar size={12} /> Voir planning
                         </button>

@@ -2,24 +2,11 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Film, Mic, Play, Star, Camera, Zap, TrendingUp } from "lucide-react";
 import { AnalystePageTransition } from "../../components/analyste/AnalystePageTransition";
+import { AnalystePageLoader } from "../../components/analyste/AnalystePageLoader";
 import { MatchReplayTimeline } from "../../components/analyste/MatchReplayTimeline";
+import { useAnalysteVideoAnalysis } from "../../hooks/useAnalysteResource";
 
 type Tab = "replay" | "ai-coach" | "highlights";
-
-const HIGHLIGHTS = [
-  { id: "h1", time: "12'42", type: "But",       player: "Ali Mansouri",  desc: "Tête sur corner — angle parfait 6m",         conf: 98, tags: ["Coup de tête","Corner","Surface"] },
-  { id: "h2", time: "28'18", type: "Faute",      player: "Karim Dridi",  desc: "Faute tactique — blocage pressing",           conf: 94, tags: ["Pressing haut","Récupération"] },
-  { id: "h3", time: "44'55", type: "Occasion",   player: "Ahmed",        desc: "Frappe 20m — poteau gauche — xG 0.41",       conf: 91, tags: ["Frappe lointaine","xG élevé"] },
-  { id: "h4", time: "61'02", type: "Remplacement",player: "Ahmed → Sami", desc: "Substitution — fatigue 85% détectée",       conf: 99, tags: ["Fatigue","Tactical"] },
-  { id: "h5", time: "78'33", type: "Danger",     player: "Défense",      desc: "Couloir gauche ouvert — contre-attaque",     conf: 87, tags: ["Défense","Contre"] },
-];
-
-const AI_INSIGHTS = [
-  { player: "Ali Mansouri",    rating: 8.8, analysis: "Meilleure performance. 12 dribbles réussis, 92% passes. Pressing efficace premier tiers.", trend: "up" },
-  { player: "Ahmed Ben Salah", rating: 7.2, analysis: "Diminution visible après 60min — fatigue. 3 pertes de balle zone offensive. Remplacement justifié.", trend: "down" },
-  { player: "Karim Dridi",     rating: 7.5, analysis: "Bonne couverture axiale. Leadership défensif. Carton jaune évitable — gestion.",              trend: "stable" },
-  { player: "Ridha Ammar",     rating: 8.1, analysis: "Excellent duel aérien (78%). Sortie propre gardien à 34'. Aucune erreur détectée.",           trend: "up" },
-];
 
 const EVENT_COLORS: Record<string, string> = {
   But: "#22C55E", Faute: "#F59E0B", Occasion: "#8B5CF6", Remplacement: "#3B82F6", Danger: "#EF4444",
@@ -27,14 +14,19 @@ const EVENT_COLORS: Record<string, string> = {
 
 const ACard = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
   <motion.div className={`rounded-[20px] border p-5 ${className}`}
-    style={{ background: "rgba(5,8,22,0.7)", borderColor: "rgba(255,255,255,0.06)", boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}
+    style={{ background: "rgba(5,8,22,0.7)", borderColor: "var(--surface-panel-border)", boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}
     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
     {children}
   </motion.div>
 );
 
 export function AnalysteVideoAnalysisPage() {
+  const { data, loading } = useAnalysteVideoAnalysis();
   const [tab, setTab] = useState<Tab>("replay");
+
+  if (loading && !data) return <AnalystePageLoader />;
+
+  const { matchTitle, highlights: HIGHLIGHTS, insights: AI_INSIGHTS, events } = data!;
 
   const tabs: { id: Tab; label: string; icon: typeof Film }[] = [
     { id: "replay",    label: "Match Replay",   icon: Film },
@@ -81,7 +73,7 @@ export function AnalysteVideoAnalysisPage() {
         {/* Replay tab */}
         {tab === "replay" && (
           <motion.div key="replay" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-            <MatchReplayTimeline />
+            <MatchReplayTimeline events={events} />
           </motion.div>
         )}
 
@@ -96,7 +88,7 @@ export function AnalysteVideoAnalysisPage() {
                   <Mic size={14} />
                 </motion.div>
                 <div>
-                  <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Analyse IA — FC Carthage vs EST</p>
+                  <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Analyse IA — {matchTitle}</p>
                   <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>Rapport automatique · Confiance: 94%</p>
                 </div>
               </div>

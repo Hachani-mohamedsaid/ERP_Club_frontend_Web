@@ -34,7 +34,7 @@ export function ClubFormModal({ title, fields, initialValues, submitLabel = "Enr
     >
       <motion.div
         className="w-full max-w-md rounded-[24px] border p-6"
-        style={{ background: "rgba(10,18,40,0.98)", borderColor: "rgba(255,107,87,0.25)" }}
+        style={{ background: "var(--surface-panel-solid)", borderColor: "rgba(255,107,87,0.25)" }}
         initial={{ scale: 0.92, y: 20 }} animate={{ scale: 1, y: 0 }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -51,7 +51,7 @@ export function ClubFormModal({ title, fields, initialValues, submitLabel = "Enr
                   value={values[f.key] ?? f.options?.[0] ?? ""}
                   onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
                   className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                  style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                  style={{ background: "rgba(30,35,50,0.97)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
                 >
                   {(f.options ?? []).map((opt) => (
                     <option key={opt} value={opt}>{opt}</option>
@@ -64,7 +64,7 @@ export function ClubFormModal({ title, fields, initialValues, submitLabel = "Enr
                   onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
                   placeholder={f.placeholder}
                   className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                  style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                  style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
                 />
               )}
             </div>

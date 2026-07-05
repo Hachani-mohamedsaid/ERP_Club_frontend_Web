@@ -6,7 +6,8 @@ import { useJoueurBackendData } from "../../hooks/useJoueurBackendData";
 
 export function JoueurAwardsPage() {
   const { player } = useCurrentPlayer();
-  const { awards } = useJoueurBackendData();
+  const { awards, orgProfile } = useJoueurBackendData();
+  const clubName = orgProfile?.clubName ?? "—";
 
   const awardsOnly = awards.filter((a) => a.awardType === "award");
   const trophies = awards.filter((a) => a.awardType === "trophy");
@@ -14,7 +15,7 @@ export function JoueurAwardsPage() {
 
   const careerSteps = careerItems.map((c) => ({
     year: c.year ?? c.season,
-    club: c.club ?? "FC Carthage",
+    club: c.club ?? clubName,
     event: c.event ?? c.title,
   }));
 
@@ -74,7 +75,7 @@ export function JoueurAwardsPage() {
                   </motion.span>
                   <p className="mt-2 font-bold" style={{ color: "var(--text-primary)" }}>{trophy.title}</p>
                   <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                    {trophy.year ?? trophy.season} — {trophy.club ?? "FC Carthage"}
+                    {trophy.year ?? trophy.season} — {trophy.club ?? clubName}
                   </p>
                 </GlassCard>
               </motion.div>

@@ -20,7 +20,7 @@ function GaugeBar({ label, value, color }: { label: string; value: number; color
 }
 
 export function JoueurTrainingPage() {
-  const { squadPlayers, playerStats, loading } = useJoueurBackendData();
+  const { squadPlayers, playerStats, loading, orgProfile } = useJoueurBackendData();
   const featured = squadPlayers.slice(0, 4);
 
   const avgPresence = playerStats?.trainingSessions?.completed
@@ -41,7 +41,7 @@ export function JoueurTrainingPage() {
   return (
     <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
       <GlassCard raised className="p-5">
-        <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Training Center — FC Carthage</h3>
+        <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Training Center — {(orgProfile as { clubName?: string } | null)?.clubName ?? "—"}</h3>
         <div className="grid grid-cols-3 gap-4 text-center">
           {[
             { label: "Présence moyenne", value: avgPresence, suffix: "%" },

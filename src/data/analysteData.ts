@@ -136,6 +136,8 @@ export const AI_TACTICAL_CENTER = {
   ],
 };
 
+export type AITacticalCenterData = typeof AI_TACTICAL_CENTER;
+
 export const FORMATION_PRESETS: Record<FormationId, { x: number; y: number }[]> = {
   "4-3-3": [
     { x: 50, y: 92 }, { x: 18, y: 72 }, { x: 38, y: 75 }, { x: 62, y: 75 }, { x: 82, y: 72 },

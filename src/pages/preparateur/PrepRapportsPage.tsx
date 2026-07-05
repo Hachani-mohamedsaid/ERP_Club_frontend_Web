@@ -73,7 +73,7 @@ export function PrepRapportsPage() {
               { label: "Vitesse", value: profile.speed, color: "#FF6B57" },
               { label: "Endurance", value: profile.endurance, color: "#6366F1" },
             ].map((s) => (
-              <div key={s.label} className="rounded-xl border p-3" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+              <div key={s.label} className="rounded-xl border p-3" style={{ borderColor: "var(--surface-panel-border)" }}>
                 <p className="text-[10px] uppercase" style={{ color: "var(--text-muted)" }}>{s.label}</p>
                 <p className="text-xl font-bold" style={{ color: s.color }}>{s.value}</p>
               </div>
@@ -88,7 +88,7 @@ export function PrepRapportsPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                   <XAxis dataKey="month" tick={{ fill: "var(--text-muted)", fontSize: 10 }} />
                   <YAxis tick={{ fill: "var(--text-muted)", fontSize: 10 }} />
-                  <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12 }} />
+                  <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }} />
                   <Line type="monotone" dataKey="speed" stroke="#FF6B57" strokeWidth={2} dot={{ r: 3 }} animationDuration={1000} />
                 </LineChart>
               </ResponsiveContainer>
@@ -100,7 +100,7 @@ export function PrepRapportsPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                   <XAxis dataKey="month" tick={{ fill: "var(--text-muted)", fontSize: 10 }} />
                   <YAxis tick={{ fill: "var(--text-muted)", fontSize: 10 }} />
-                  <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12 }} />
+                  <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }} />
                   <Line type="monotone" dataKey="endurance" stroke="#6366F1" strokeWidth={2} dot={{ r: 3 }} animationDuration={1000} />
                 </LineChart>
               </ResponsiveContainer>

@@ -87,7 +87,7 @@ export function RecruteurAuditPage() {
           { label: "Incidents",       value: LOGS.filter(l => l.severity === "critical").length,   color: "#EF4444" },
         ].map((k, i) => (
           <motion.div key={k.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
-            <div className="rounded-[20px] border p-4" style={{ background: "rgba(14,10,35,0.8)", borderColor: "rgba(255,255,255,0.07)" }}>
+            <div className="rounded-[20px] border p-4" style={{ background: "rgba(14,10,35,0.8)", borderColor: "var(--surface-panel-border)" }}>
               <p className="text-2xl font-extrabold" style={{ color: k.color }}>{k.value}</p>
               <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{k.label}</p>
             </div>
@@ -98,14 +98,14 @@ export function RecruteurAuditPage() {
       {/* Filters */}
       <div className="flex flex-wrap gap-2 items-center">
         <div className="flex items-center gap-2 rounded-xl border px-3 py-2"
-          style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
+          style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--surface-panel-border)" }}>
           <Search size={13} style={{ color: "var(--text-muted)" }} />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher..."
             className="bg-transparent text-sm outline-none w-44" style={{ color: "var(--text-primary)" }} />
         </div>
 
         <div className="flex items-center gap-1.5 rounded-xl border px-2 py-1.5"
-          style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
+          style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--surface-panel-border)" }}>
           <Filter size={11} style={{ color: "var(--text-muted)" }} />
           <select value={actionFilter} onChange={e => setActionFilter(e.target.value as AuditAction | "all")}
             className="bg-transparent text-xs outline-none" style={{ color: "var(--text-muted)" }}>
@@ -130,10 +130,10 @@ export function RecruteurAuditPage() {
       </div>
 
       {/* Log table */}
-      <div className="rounded-[20px] border overflow-hidden" style={{ background: "rgba(14,10,35,0.8)", borderColor: "rgba(255,255,255,0.07)" }}>
+      <div className="rounded-[20px] border overflow-hidden" style={{ background: "rgba(14,10,35,0.8)", borderColor: "var(--surface-panel-border)" }}>
         {/* Head */}
         <div className="grid grid-cols-[1fr_2.5fr_1fr_1fr] gap-3 border-b px-5 py-3 text-[10px] font-semibold uppercase"
-          style={{ borderColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)" }}>
+          style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}>
           <span>Utilisateur</span>
           <span>Description</span>
           <span>Date & Heure</span>

@@ -9,6 +9,15 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss()],
+    optimizeDeps: {
+      include: [
+        'three',
+        '@react-three/fiber',
+        '@react-three/drei',
+        '@react-three/postprocessing',
+        'three/examples/jsm/libs/meshopt_decoder.module.js',
+      ],
+    },
     server: {
       proxy: {
         '/api': {
@@ -16,6 +25,17 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: true,
           rewrite: (path) => path.replace(/^\/api/, ''),
+        },
+        '/uploads': {
+          target: apiTarget,
+          changeOrigin: true,
+          secure: true,
+        },
+        '/socket.io': {
+          target: apiTarget,
+          changeOrigin: true,
+          secure: true,
+          ws: true,
         },
       },
     },

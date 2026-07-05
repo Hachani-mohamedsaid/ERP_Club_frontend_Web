@@ -72,7 +72,7 @@ export function SuperAdminListRow({ children, className = "" }: { children: Reac
       className={`rounded-xl border p-4 ${className}`}
       style={{
         background: "rgba(255,255,255,0.03)",
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: "var(--surface-panel-border)",
       }}
       whileHover={{
         borderColor: "rgba(255,122,0,0.3)",

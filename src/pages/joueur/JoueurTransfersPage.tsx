@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { ArrowRightLeft, TrendingUp } from "lucide-react";
 import { GlassCard } from "../../components/ui/GlassCard";
 import { AnimatedBadge } from "../../components/ui/AnimatedBadge";
-import { useJoueurBackendData } from "../../hooks/useJoueurBackendData";
+import { useJoueurBackendData, type OrgProfile } from "../../hooks/useJoueurBackendData";
 
 function TransferGauge({ value }: { value: number }) {
   const color = value >= 70 ? "#2e9e5b" : value >= 40 ? "#d99a1f" : "#e0584a";
@@ -36,7 +36,8 @@ function statusTone(status: string): "warning" | "info" | "success" | "danger" {
 }
 
 export function JoueurTransfersPage() {
-  const { transfers, squadPlayers } = useJoueurBackendData();
+  const { transfers, squadPlayers, orgProfile } = useJoueurBackendData();
+  const clubName = (orgProfile as OrgProfile | null)?.clubName ?? "—";
 
   const outgoing = transfers.filter((t) => t.transferType === "Sortant");
   const incoming = transfers.filter((t) => t.transferType === "Entrant");
@@ -103,7 +104,7 @@ export function JoueurTransfersPage() {
                   className="rounded-[var(--radius-odin-md)] border p-3"
                   style={{ borderColor: "var(--surface-panel-border)" }}>
                   <p className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{p.name}</p>
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>{p.position} • FC Carthage</p>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>{p.position} • {clubName}</p>
                   <div className="mt-2 flex justify-between text-xs">
                     <span style={{ color: "var(--color-state-success)" }}>{p.marketValue}</span>
                     <span style={{ color: "var(--accent)" }}>OVR {p.ovr}</span>
@@ -128,8 +129,8 @@ export function JoueurTransfersPage() {
                     <p className="text-xs" style={{ color: "var(--text-muted)" }}>{p.position} • Analyse en cours</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-lg font-bold" style={{ color: "var(--accent)" }}>{Math.min(99, p.ovr + Math.round(Math.random() * 10))}%</p>
-                    <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>Match</p>
+                    <p className="text-lg font-bold" style={{ color: "var(--accent)" }}>{Math.min(99, (p.ovr ?? 70) + 7)}%</p>
+                    <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>Match OVR</p>
                   </div>
                 </div>
               ))}

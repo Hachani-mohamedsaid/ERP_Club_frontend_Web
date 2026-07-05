@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -11,7 +11,9 @@ import {
   BarChart, Bar, Cell,
 } from "recharts";
 import { SGauge, SCOUT_TOOLTIP } from "../../components/scout/ScoutUI";
-import { PROSPECTS, S, PRIORITY_META } from "../../data/scoutData";
+import { PROSPECTS, S, PRIORITY_META, type Prospect } from "../../data/scoutData";
+import { scoutApi } from "../../lib/api/scout";
+import { showToast } from "../../components/scout/ScoutToast";
 
 const TABS = ["Performance", "Heatmap", "Historique", "Notes", "Vidéo"] as const;
 type Tab = typeof TABS[number];
@@ -42,19 +44,84 @@ export function ScoutProspectPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>("Performance");
   const [newNote, setNewNote] = useState("");
-  const [notes, setNotes] = useState<{ date: string; text: string }[] | null>(null);
+  const [notes, setNotes] = useState<{ date: string; text: string }[]>([]);
   const [liked, setLiked] = useState(false);
+  const [p, setP] = useState<Prospect | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const p = PROSPECTS.find(pr => pr.id === id);
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    scoutApi
+      .getProspect(id)
+      .then((dto) => {
+        const mock = PROSPECTS.find((pr) => pr.id === dto.legacyId || pr.name === dto.name);
+        setP({
+          ...(mock ?? PROSPECTS[0]),
+          id: dto.id,
+          name: dto.name,
+          age: dto.age,
+          nationality: dto.nationality,
+          flag: dto.flag,
+          club: dto.club,
+          league: dto.league,
+          position: dto.position,
+          potential: dto.potential,
+          currentRating: dto.currentRating,
+          marketValue: dto.marketValue,
+          valueMK: dto.valueMK,
+          priority: dto.priority as Prospect["priority"],
+          status: dto.status as Prospect["status"],
+          aiScore: dto.aiScore,
+          injuryRisk: dto.injuryRisk,
+          foot: dto.foot as Prospect["foot"],
+          height: dto.height,
+          weight: dto.weight,
+          goals: dto.goals,
+          assists: dto.assists,
+          matches: dto.matches,
+          speed: dto.speed,
+          dribble: dto.dribble,
+          passing: dto.passing,
+          defense: dto.defense,
+          physical: dto.physical,
+          mental: dto.mental,
+          contractEnd: dto.contractEnd,
+          agent: dto.agent,
+          addedDate: dto.addedDate,
+          notes: dto.notes?.length ? dto.notes : mock?.notes ?? [],
+          matchHistory: mock?.matchHistory ?? [],
+          monthlyPotential: mock?.monthlyPotential ?? [70, 71, 72, 73, 74, dto.potential],
+          heatmapZones: mock?.heatmapZones ?? [],
+        });
+        setNotes(dto.notes?.length ? dto.notes : mock?.notes ?? []);
+        setLiked(Boolean(dto.inWatchlist));
+      })
+      .catch(() => {
+        const fallback = PROSPECTS.find((pr) => pr.id === id);
+        if (fallback) {
+          setP(fallback);
+          setNotes([...fallback.notes]);
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center text-sm" style={{ color: "var(--text-muted)" }}>
+        Chargement du profil...
+      </div>
+    );
+  }
+
   if (!p) return (
     <div className="flex h-64 items-center justify-center text-sm" style={{ color: "var(--text-muted)" }}>
       Prospect introuvable.
     </div>
   );
 
-  if (notes === null) setNotes([...p.notes]);
-
-  const safeNotes = notes ?? [];
+  const safeNotes = notes;
   const priority = PRIORITY_META[p.priority];
   const injury  = injuryLevel(p.injuryRisk);
   const pc = potColor(p.potential);
@@ -97,7 +164,7 @@ export function ScoutProspectPage() {
       {/* ── PLAYER HERO CARD ─────────────────────────────────────── */}
       <motion.div className="relative overflow-hidden rounded-[28px] border"
         style={{
-          background: "rgba(8,6,24,0.96)",
+          background: "var(--surface-panel-solid)",
           borderColor: `${priority.color}30`,
           boxShadow: `0 0 60px ${priority.color}10, 0 20px 60px rgba(0,0,0,0.4)`,
         }}
@@ -116,11 +183,26 @@ export function ScoutProspectPage() {
           <div className="flex items-center justify-between mb-6">
             <motion.button type="button" onClick={() => navigate(-1)}
               className="flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold"
-              style={{ borderColor: "rgba(255,255,255,0.1)", color: "var(--text-muted)" }}
+              style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
               whileHover={{ scale: 1.06, borderColor: priority.color, color: priority.color }}>
               <ArrowLeft size={12} /> Retour
             </motion.button>
-            <motion.button type="button" onClick={() => setLiked(!liked)}
+            <motion.button type="button" onClick={async () => {
+              if (!p) return;
+              try {
+                if (liked) {
+                  await scoutApi.removeFromWatchlist(p.id);
+                  setLiked(false);
+                  showToast("Retiré de la Watchlist", "info");
+                } else {
+                  await scoutApi.addToWatchlist(p.id);
+                  setLiked(true);
+                  showToast("Ajouté à la Watchlist ✓", "success");
+                }
+              } catch {
+                showToast("Erreur watchlist", "error");
+              }
+            }}
               className="flex h-9 w-9 items-center justify-center rounded-xl border"
               style={{
                 borderColor: liked ? `${S.danger}50` : "rgba(255,255,255,0.1)",
@@ -143,7 +225,7 @@ export function ScoutProspectPage() {
                 transition={{ duration: 3, repeat: Infinity }}>
                 {p.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
                 {/* Jersey number badge */}
-                <div className="absolute -bottom-2 -right-2 flex h-7 w-7 items-center justify-center rounded-xl border-2 border-[rgba(8,6,24,0.96)] text-[10px] font-black"
+                <div className="absolute -bottom-2 -right-2 flex h-7 w-7 items-center justify-center rounded-xl border-2 border-[var(--surface-panel-solid)] text-[10px] font-black"
                   style={{ background: priority.color, color: "white" }}>
                   #{p.id.replace("pr", "")}
                 </div>
@@ -197,15 +279,31 @@ export function ScoutProspectPage() {
               {/* Club pill */}
               <div className="flex flex-wrap gap-2">
                 <span className="flex items-center gap-1.5 rounded-xl border px-3 py-1 text-xs font-semibold"
-                  style={{ borderColor: "rgba(255,255,255,0.1)", color: "var(--text-muted)" }}>
+                  style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}>
                   🏟 {p.club} · {p.league}
                 </span>
                 {p.agent && (
                   <span className="flex items-center gap-1.5 rounded-xl border px-3 py-1 text-xs font-semibold"
-                    style={{ borderColor: "rgba(255,255,255,0.1)", color: "var(--text-muted)" }}>
+                    style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}>
                     🤝 {p.agent}
                   </span>
                 )}
+              </div>
+
+              <div className="flex flex-wrap gap-2 mt-3">
+                {[
+                  { label: "Comparer", path: `/scout/comparison?ids=${p.id}`, color: S.info },
+                  { label: "Vidéos", path: "/scout/videos", color: S.accent },
+                  { label: "Compatibilité", path: "/scout/squad-fit", color: S.success },
+                  { label: "Rapport", path: "/scout/report", color: S.primary },
+                ].map((action) => (
+                  <motion.button key={action.label} type="button" onClick={() => navigate(action.path)}
+                    className="rounded-xl border px-3 py-1.5 text-[10px] font-bold"
+                    style={{ borderColor: `${action.color}35`, color: action.color, background: `${action.color}08` }}
+                    whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
+                    {action.label}
+                  </motion.button>
+                ))}
               </div>
             </div>
 
@@ -283,7 +381,7 @@ export function ScoutProspectPage() {
 
             {/* Notes count */}
             <div className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5"
-              style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}>
+              style={{ borderColor: "var(--surface-panel-border)", background: "rgba(255,255,255,0.02)" }}>
               <CheckCircle2 size={11} style={{ color: S.primary }} />
               <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>
                 {safeNotes.length} note{safeNotes.length !== 1 ? "s" : ""} scout
@@ -301,7 +399,7 @@ export function ScoutProspectPage() {
             style={{
               background: activeTab === tab ? `${S.primary}14` : "rgba(255,255,255,0.03)",
               color: activeTab === tab ? S.primary : "var(--text-muted)",
-              border: `1px solid ${activeTab === tab ? S.primary + "35" : "transparent"}`,
+              border: "1px solid var(--surface-panel-border)",
             }}
             whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.95 }}>
             {activeTab === tab && (
@@ -322,7 +420,7 @@ export function ScoutProspectPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {/* Radar */}
-                <div className="rounded-[20px] border p-5" style={{ background: "rgba(8,6,24,0.9)", borderColor: "rgba(255,255,255,0.07)" }}>
+                <div className="rounded-[20px] border p-5" style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
                   <p className="mb-3 text-xs font-bold" style={{ color: "var(--text-primary)" }}>Profil attributs</p>
                   <div className="h-52">
                     <ResponsiveContainer width="100%" height="100%">
@@ -338,7 +436,7 @@ export function ScoutProspectPage() {
                 </div>
 
                 {/* Potential trend */}
-                <div className="rounded-[20px] border p-5" style={{ background: "rgba(8,6,24,0.9)", borderColor: "rgba(255,255,255,0.07)" }}>
+                <div className="rounded-[20px] border p-5" style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
                   <p className="mb-3 text-xs font-bold" style={{ color: "var(--text-primary)" }}>Évolution potentiel</p>
                   <div className="h-48">
                     <ResponsiveContainer width="100%" height="100%">
@@ -354,7 +452,7 @@ export function ScoutProspectPage() {
                         <YAxis domain={[70, 100]} tick={{ fill: "var(--text-muted)", fontSize: 9 }} axisLine={false} tickLine={false} />
                         <Tooltip {...SCOUT_TOOLTIP} />
                         <Line type="monotone" dataKey="potentiel" stroke={pc} strokeWidth={2.5}
-                          dot={{ fill: pc, r: 4, strokeWidth: 2, stroke: "rgba(8,6,24,0.9)" }}
+                          dot={{ fill: pc, r: 4, strokeWidth: 2, stroke: "var(--surface-panel-solid)" }}
                           animationDuration={1200} name="Potentiel" />
                       </LineChart>
                     </ResponsiveContainer>
@@ -363,7 +461,7 @@ export function ScoutProspectPage() {
               </div>
 
               {/* Attributes bars */}
-              <div className="rounded-[20px] border p-5" style={{ background: "rgba(8,6,24,0.9)", borderColor: "rgba(255,255,255,0.07)" }}>
+              <div className="rounded-[20px] border p-5" style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
                 <p className="mb-4 text-xs font-bold" style={{ color: "var(--text-primary)" }}>Attributs détaillés</p>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {[
@@ -386,7 +484,7 @@ export function ScoutProspectPage() {
               </div>
 
               {/* Stats bar chart */}
-              <div className="rounded-[20px] border p-5" style={{ background: "rgba(8,6,24,0.9)", borderColor: "rgba(255,255,255,0.07)" }}>
+              <div className="rounded-[20px] border p-5" style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
                 <p className="mb-3 text-xs font-bold" style={{ color: "var(--text-primary)" }}>Performance saison</p>
                 <div className="h-36">
                   <ResponsiveContainer width="100%" height="100%">
@@ -412,7 +510,7 @@ export function ScoutProspectPage() {
           {/* ── HEATMAP ── */}
           {activeTab === "Heatmap" && (
             <div className="space-y-4">
-              <div className="rounded-[20px] border p-5" style={{ background: "rgba(8,6,24,0.9)", borderColor: "rgba(255,255,255,0.07)" }}>
+              <div className="rounded-[20px] border p-5" style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Heatmap — {p.name}</p>
@@ -547,7 +645,7 @@ export function ScoutProspectPage() {
               </div>
 
               {/* Zone breakdown */}
-              <div className="rounded-[20px] border p-5" style={{ background: "rgba(8,6,24,0.9)", borderColor: "rgba(255,255,255,0.07)" }}>
+              <div className="rounded-[20px] border p-5" style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
                 <p className="mb-3 text-xs font-bold" style={{ color: "var(--text-primary)" }}>Breakdown par zone</p>
                 <div className="space-y-2">
                   {[...p.heatmapZones].sort((a, b) => b.intensity - a.intensity).map((z, i) => {
@@ -570,7 +668,7 @@ export function ScoutProspectPage() {
 
           {/* ── HISTORIQUE ── */}
           {activeTab === "Historique" && (
-            <div className="rounded-[20px] border p-5" style={{ background: "rgba(8,6,24,0.9)", borderColor: "rgba(255,255,255,0.07)" }}>
+            <div className="rounded-[20px] border p-5" style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
               <p className="mb-4 text-sm font-bold" style={{ color: "var(--text-primary)" }}>Historique matchs</p>
               <div className="space-y-2">
                 {p.matchHistory.map((m, i) => {
@@ -578,7 +676,7 @@ export function ScoutProspectPage() {
                   return (
                     <motion.div key={i} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.07 }}
                       className="flex items-center gap-4 rounded-[16px] border p-4"
-                      style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.07)" }}
+                      style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}
                       whileHover={{ borderColor: `${ratingColor}25`, x: 2 }}>
                       <div className="w-20 shrink-0">
                         <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{m.match}</p>
@@ -613,7 +711,7 @@ export function ScoutProspectPage() {
 
               {/* Season summary */}
               <div className="mt-4 grid grid-cols-3 gap-3 rounded-[16px] border p-4"
-                style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.07)" }}>
+                style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
                 {[
                   { label: "Moy. rating", value: (p.matchHistory.reduce((a, m) => a + m.rating, 0) / p.matchHistory.length).toFixed(1), color: S.success },
                   { label: "Total buts",  value: p.matchHistory.reduce((a, m) => a + m.goals, 0),   color: S.primary },
@@ -630,7 +728,7 @@ export function ScoutProspectPage() {
 
           {/* ── NOTES ── */}
           {activeTab === "Notes" && (
-            <div className="rounded-[20px] border p-5" style={{ background: "rgba(8,6,24,0.9)", borderColor: "rgba(255,255,255,0.07)" }}>
+            <div className="rounded-[20px] border p-5" style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
               <p className="mb-4 text-sm font-bold" style={{ color: "var(--text-primary)" }}>Notes privées scout</p>
               <div className="flex gap-2 mb-4">
                 <input value={newNote} onChange={e => setNewNote(e.target.value)}
@@ -679,7 +777,7 @@ export function ScoutProspectPage() {
 
           {/* ── VIDÉO ── */}
           {activeTab === "Vidéo" && (
-            <div className="rounded-[20px] border p-5" style={{ background: "rgba(8,6,24,0.9)", borderColor: "rgba(255,255,255,0.07)" }}>
+            <div className="rounded-[20px] border p-5" style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
               <div className="flex items-center gap-2 mb-4">
                 <Video size={16} style={{ color: S.primary }} />
                 <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Vidéos scout & highlights</p>
@@ -688,7 +786,7 @@ export function ScoutProspectPage() {
                 {MOCK_VIDEOS.map((v, i) => (
                   <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
                     className="flex items-center gap-4 rounded-[16px] border p-4 cursor-pointer"
-                    style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.07)" }}
+                    style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}
                     whileHover={{ borderColor: `${S.primary}30`, x: 3 }}>
                     <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl"
                       style={{ background: `${S.primary}12`, border: `1.5px solid ${S.primary}30` }}>
@@ -711,7 +809,7 @@ export function ScoutProspectPage() {
                 ))}
               </div>
               <motion.div className="mt-4 rounded-[14px] border-2 border-dashed p-8 text-center cursor-pointer"
-                style={{ borderColor: "rgba(255,255,255,0.1)" }}
+                style={{ borderColor: "var(--surface-panel-border)" }}
                 whileHover={{ borderColor: `${S.primary}40`, background: `${S.primary}04` }}>
                 <Video size={24} className="mx-auto mb-2 opacity-30" style={{ color: S.primary }} />
                 <p className="text-xs" style={{ color: "var(--text-muted)" }}>Glisser une vidéo ou cliquer pour uploader</p>

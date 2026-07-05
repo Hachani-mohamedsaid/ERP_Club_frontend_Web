@@ -82,7 +82,7 @@ export function PlayerInsightDrawer({ player, open, onClose }: PlayerInsightDraw
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="rounded-xl border p-3"
-                style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}
+                style={{ borderColor: "var(--surface-panel-border)", background: "rgba(255,255,255,0.02)" }}
               >
                 <Icon size={14} style={{ color: s.color }} />
                 <p className="mt-1.5 text-[10px] uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{s.label}</p>
@@ -93,7 +93,7 @@ export function PlayerInsightDrawer({ player, open, onClose }: PlayerInsightDraw
         </div>
 
         {/* Radar */}
-        <div className="rounded-2xl border p-4" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+        <div className="rounded-2xl border p-4" style={{ borderColor: "var(--surface-panel-border)" }}>
           <h4 className="mb-2 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Radar performance</h4>
           <ResponsiveContainer width="100%" height={220}>
             <RadarChart data={radarData}>
@@ -105,7 +105,7 @@ export function PlayerInsightDrawer({ player, open, onClose }: PlayerInsightDraw
         </div>
 
         {/* Mini heatmap */}
-        <div className="rounded-2xl border p-4" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+        <div className="rounded-2xl border p-4" style={{ borderColor: "var(--surface-panel-border)" }}>
           <h4 className="mb-2 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Heatmap positionnelle</h4>
           <div
             className="relative mx-auto grid overflow-hidden rounded-lg"
@@ -129,7 +129,7 @@ export function PlayerInsightDrawer({ player, open, onClose }: PlayerInsightDraw
         </div>
 
         {/* Evolution */}
-        <div className="rounded-2xl border p-4" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+        <div className="rounded-2xl border p-4" style={{ borderColor: "var(--surface-panel-border)" }}>
           <h4 className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
             <TrendingUp size={12} /> Évolution OVR
           </h4>
@@ -137,7 +137,7 @@ export function PlayerInsightDrawer({ player, open, onClose }: PlayerInsightDraw
             <LineChart data={evolution}>
               <XAxis dataKey="m" tick={{ fill: "var(--text-muted)", fontSize: 10 }} />
               <YAxis domain={[player.ovr - 6, player.ovr + 2]} hide />
-              <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12 }} />
+              <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }} />
               <Line type="monotone" dataKey="v" stroke={fifa.color} strokeWidth={2.5} dot={{ r: 3 }} animationDuration={900} />
             </LineChart>
           </ResponsiveContainer>

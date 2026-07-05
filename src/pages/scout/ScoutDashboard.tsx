@@ -7,8 +7,9 @@ import {
 } from "recharts";
 import { ScoutPage, SKpi, SCard, SBadge, SCOUT_TOOLTIP } from "../../components/scout/ScoutUI";
 import { PROSPECTS, S, PRIORITY_META, WORKFLOW_COLS } from "../../data/scoutData";
+import { useScoutDashboard } from "../../hooks/useScoutData";
 
-const BY_POS = [
+const BY_POS_FALLBACK = [
   { name: "BU",     v: 8,  fill: "#FF7A00" },
   { name: "MC",     v: 9,  fill: "#6366F1" },
   { name: "DC",     v: 6,  fill: "#3B82F6" },
@@ -17,7 +18,7 @@ const BY_POS = [
   { name: "GK",     v: 3,  fill: "#8B5CF6" },
 ];
 
-const BY_COUNTRY = [
+const BY_COUNTRY_FALLBACK = [
   { name: "Tunisie",       value: 18, fill: "#FF7A00" },
   { name: "Algérie",       value: 10, fill: "#6366F1" },
   { name: "Maroc",         value: 8,  fill: "#3B82F6" },
@@ -25,7 +26,7 @@ const BY_COUNTRY = [
   { name: "Sénégal",       value: 5,  fill: "#F59E0B" },
 ];
 
-const PIPELINE_TREND = [
+const PIPELINE_TREND_FALLBACK = [
   { month: "Jan", prospects: 28, validated: 2 },
   { month: "Fév", prospects: 32, validated: 3 },
   { month: "Mar", prospects: 36, validated: 3 },
@@ -34,7 +35,7 @@ const PIPELINE_TREND = [
   { month: "Jun", prospects: 42, validated: 5 },
 ];
 
-const AI_RECS = [
+const AI_RECS_FALLBACK = [
   {
     id: "pr1", name: "Youssef Ben Ali", pos: "BU", age: 17, club: "AS Ariana", flag: "🇹🇳",
     score: 92, budget: "1.2M €",
@@ -57,9 +58,20 @@ const AI_RECS = [
 
 export function ScoutDashboard() {
   const navigate = useNavigate();
-  const totalBudget = PROSPECTS.filter(p => p.priority === "A").reduce((a, p) => a + p.valueMK, 0);
-  const avgPotential = Math.round(PROSPECTS.reduce((a, p) => a + p.potential, 0) / PROSPECTS.length * 10) / 10;
-  const avgAge = Math.round(PROSPECTS.reduce((a, p) => a + p.age, 0) / PROSPECTS.length * 10) / 10;
+  const { data, loading } = useScoutDashboard();
+
+  const totalCount = data?.kpis.totalProspects ?? PROSPECTS.length;
+  const totalBudget = data?.kpis.priorityABudget ?? PROSPECTS.filter(p => p.priority === "A").reduce((a, p) => a + p.valueMK, 0);
+  const avgPotential = data?.kpis.avgPotential ?? Math.round(PROSPECTS.reduce((a, p) => a + p.potential, 0) / PROSPECTS.length * 10) / 10;
+  const avgAge = data?.kpis.avgAge ?? Math.round(PROSPECTS.reduce((a, p) => a + p.age, 0) / PROSPECTS.length * 10) / 10;
+  const BY_POS = data?.byPosition?.length
+    ? data.byPosition.map((p, i) => ({ ...p, fill: ["#FF7A00", "#6366F1", "#3B82F6", "#22C55E", "#F59E0B", "#8B5CF6"][i % 6] }))
+    : BY_POS_FALLBACK;
+  const BY_COUNTRY = data?.byCountry?.length
+    ? data.byCountry.map((c, i) => ({ ...c, fill: ["#FF7A00", "#6366F1", "#3B82F6", "#22C55E", "#F59E0B"][i % 5] }))
+    : BY_COUNTRY_FALLBACK;
+  const AI_RECS = data?.aiRecs?.length ? data.aiRecs : AI_RECS_FALLBACK;
+  const PIPELINE_TREND = PIPELINE_TREND_FALLBACK;
 
   return (
     <ScoutPage>
@@ -70,7 +82,8 @@ export function ScoutDashboard() {
             Tableau de Bord Scout
           </h1>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            Saison 2025-2026 · FC Carthage · {PROSPECTS.length} prospects suivis
+            Saison 2025-2026 · FC Carthage · {totalCount} prospects suivis
+            {loading ? " · chargement..." : ""}
           </p>
         </div>
         <motion.button type="button" onClick={() => navigate("/scout/search")}
@@ -219,7 +232,7 @@ export function ScoutDashboard() {
           {AI_RECS.map((rec, i) => (
             <motion.div key={rec.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
               className="flex items-start gap-4 rounded-[16px] border p-4 cursor-pointer"
-              style={{ background: "rgba(255,255,255,0.025)", borderColor: "rgba(255,255,255,0.07)" }}
+              style={{ background: "rgba(255,255,255,0.025)", borderColor: "var(--surface-panel-border)" }}
               whileHover={{ borderColor: `${S.accent}40`, y: -2 }}
               onClick={() => navigate(`/scout/prospect/${rec.id}`)}>
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-base font-black text-white"

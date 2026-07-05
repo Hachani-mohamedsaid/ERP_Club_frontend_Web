@@ -1,10 +1,8 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./components/layout/AppShell";
-import { Dashboard } from "./components/dashboard/Dashboard";
 import { LoginPage } from "./pages/LoginPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { RegisterPage } from "./pages/RegisterPage";
-import { PlayersPage } from "./pages/PlayersPage";
 import { TeamsPage } from "./pages/TeamsPage";
 import { TrainingPage } from "./pages/TrainingPage";
 import { MatchesPage } from "./pages/MatchesPage";
@@ -22,10 +20,8 @@ import { MedicalRapportsPage } from "./pages/medical/MedicalRapportsPage";
 import { MedicalRiskPage } from "./pages/medical/MedicalRiskPage";
 import { MedicalEffectifPage } from "./pages/medical/MedicalEffectifPage";
 import { MedicalAIPage } from "./pages/medical/MedicalAIPage";
-import { FinancePage } from "./pages/FinancePage";
 import { DocumentsPage } from "./pages/DocumentsPage";
 import { ReportsPage } from "./pages/ReportsPage";
-import { OdinAiPage } from "./pages/OdinAiPage";
 import { AIAssistantPage } from "./pages/AIAssistantPage";
 import { MessagesPage } from "./pages/MessagesPage";
 import { CoachPage } from "./pages/CoachPage";
@@ -44,10 +40,20 @@ import { ScoutSearchPage } from "./pages/scout/ScoutSearchPage";
 import { ScoutProspectPage } from "./pages/scout/ScoutProspectPage";
 import { ScoutReportPage } from "./pages/scout/ScoutReportPage";
 import { ScoutFavoritesPage } from "./pages/ScoutFavoritesPage";
-import { ScoutComparisonPage } from "./pages/ScoutComparisonPage";
+import { ScoutComparisonPage } from "./pages/scout/ScoutComparisonPage";
 import { ScoutRecruitmentPage } from "./pages/scout/ScoutRecruitmentPage";
 import { ScoutWatchlistPage } from "./pages/scout/ScoutWatchlistPage";
 import { ScoutAIPage } from "./pages/scout/ScoutAIPage";
+import { ScoutReportsHistoryPage } from "./pages/scout/ScoutReportsHistoryPage";
+import { ScoutMissionsPage } from "./pages/scout/ScoutMissionsPage";
+import { ScoutVideoPage } from "./pages/scout/ScoutVideoPage";
+import { ScoutShortlistPage } from "./pages/scout/ScoutShortlistPage";
+import { ScoutAgentsPage } from "./pages/scout/ScoutAgentsPage";
+import { ScoutAnalyticsPage } from "./pages/scout/ScoutAnalyticsPage";
+import { ScoutProspectsPage } from "./pages/scout/ScoutProspectsPage";
+import { ScoutSettingsPage } from "./pages/scout/ScoutSettingsPage";
+import { ScoutMapExplorerPage } from "./pages/scout/ScoutMapExplorerPage";
+import { ScoutSquadFitPage } from "./pages/scout/ScoutSquadFitPage";
 import { PlayerProfilePage } from "./pages/PlayerProfilePage";
 import { FinanceComptabilite } from "./pages/FinanceComptabilite";
 import { ContratsFinance } from "./pages/ContratsFinance";
@@ -87,11 +93,11 @@ import { JoueurPerformancesPage } from "./pages/joueur/JoueurPerformancesPage";
 import { JoueurMedicalPage } from "./pages/joueur/JoueurMedicalPage";
 import { JoueurPlanningPage } from "./pages/joueur/JoueurPlanningPage";
 import { JoueurMonProfilPage } from "./pages/joueur/JoueurMonProfilPage";
-import { JoueurMessagesPage } from "./pages/joueur/JoueurMessagesPage";
 import { ClubDashboard } from "./pages/club/ClubDashboard";
 import { ClubJoueursPage } from "./pages/club/ClubJoueursPage";
 import { ClubStaffPage } from "./pages/club/ClubStaffPage";
 import { ClubFinancesPage } from "./pages/club/ClubFinancesPage";
+import { BudgetPage } from "./pages/responsable/BudgetPage";
 import { ClubContratsPage } from "./pages/club/ClubContratsPage";
 import { ClubCalendrierPage } from "./pages/club/ClubCalendrierPage";
 import { ClubSantePage } from "./pages/club/ClubSantePage";
@@ -129,6 +135,7 @@ import { AnalysteTransferPage } from "./pages/analyste/AnalysteTransferPage";
 import { AnalysteInjuryForecastPage } from "./pages/analyste/AnalysteInjuryForecastPage";
 import { AnalysteLiveMatchPage } from "./pages/analyste/AnalysteLiveMatchPage";
 import { AnalysteFatigueHeatmapPage } from "./pages/analyste/AnalysteFatigueHeatmapPage";
+import { AnalysteWhoopPage } from "./pages/analyste/AnalysteWhoopPage";
 import { AnalysteVideoAnalysisPage } from "./pages/analyste/AnalysteVideoAnalysisPage";
 import { PrepHistoriquePage } from "./pages/preparateur/PrepHistoriquePage";
 import { PrepMatchReadinessPage } from "./pages/preparateur/PrepMatchReadinessPage";
@@ -160,13 +167,8 @@ import { RecruteurNotificationsPage } from "./pages/recruteur/RecruteurNotificat
 import { RecruteurAuditPage } from "./pages/recruteur/RecruteurAuditPage";
 import { ValidationPage } from "./pages/responsable/ValidationPage";
 import { RecrutementPage } from "./pages/responsable/RecrutementPage";
-import { BudgetPage } from "./pages/responsable/BudgetPage";
-import { StaffPage } from "./pages/responsable/StaffPage";
-import { UtilisateursPage } from "./pages/responsable/UtilisateursPage";
-import { ParametresPage } from "./pages/responsable/ParametresPage";
-import { AuditPage } from "./pages/responsable/AuditPage";
-import { NotificationsPage as ResponsableNotificationsPage } from "./pages/responsable/NotificationsPage";
 import { DocumentsPage as ResponsableDocumentsPage } from "./pages/responsable/DocumentsPage";
+import { ResponsablePlayerProfilePage } from "./pages/responsable/ResponsablePlayerProfilePage";
 import { RequireRole } from "./components/auth/RequireRole";
 import { RoleBasedRedirect } from "./components/auth/RoleBasedRedirect";
 
@@ -178,19 +180,21 @@ export function AppRouter() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
       <Route element={<AppShell />}>
-        <Route path="/dashboard" element={<RequireRole roles={["responsable"]}><Dashboard /></RequireRole>} />
+        <Route path="/dashboard" element={<RequireRole roles={["responsable"]}><ClubDashboard /></RequireRole>} />
         <Route path="/responsable/validation" element={<RequireRole roles={["responsable"]}><ValidationPage /></RequireRole>} />
         <Route path="/responsable/recrutement" element={<RequireRole roles={["responsable"]}><RecrutementPage /></RequireRole>} />
         <Route path="/responsable/budget" element={<RequireRole roles={["responsable"]}><BudgetPage /></RequireRole>} />
-        <Route path="/responsable/staff" element={<RequireRole roles={["responsable"]}><StaffPage /></RequireRole>} />
-        <Route path="/responsable/utilisateurs" element={<RequireRole roles={["responsable"]}><UtilisateursPage /></RequireRole>} />
-        <Route path="/responsable/parametres" element={<RequireRole roles={["responsable"]}><ParametresPage /></RequireRole>} />
-        <Route path="/responsable/audit" element={<RequireRole roles={["responsable"]}><AuditPage /></RequireRole>} />
-        <Route path="/responsable/notifications" element={<RequireRole roles={["responsable"]}><ResponsableNotificationsPage /></RequireRole>} />
+        <Route path="/responsable/staff" element={<RequireRole roles={["responsable"]}><ClubStaffPage /></RequireRole>} />
+        <Route path="/responsable/utilisateurs" element={<RequireRole roles={["responsable"]}><ClubUtilisateursPage /></RequireRole>} />
+        <Route path="/responsable/parametres" element={<RequireRole roles={["responsable"]}><ClubParametresPage /></RequireRole>} />
+        <Route path="/responsable/audit" element={<RequireRole roles={["responsable"]}><ClubAuditLogsPage /></RequireRole>} />
+        <Route path="/responsable/notifications" element={<RequireRole roles={["responsable"]}><ClubNotificationsPage /></RequireRole>} />
         <Route path="/responsable/documents" element={<RequireRole roles={["responsable"]}><ResponsableDocumentsPage /></RequireRole>} />
-        <Route path="/players" element={<RequireRole roles={["responsable"]}><PlayersPage /></RequireRole>} />
-        <Route path="/players/:name" element={<RequireRole roles={["responsable","coach"]}><PlayerProfilePage /></RequireRole>} />
-        <Route path="/teams" element={<TeamsPage />} />
+        <Route path="/players" element={<RequireRole roles={["responsable"]}><ClubJoueursPage /></RequireRole>} />
+        <Route path="/players/:id" element={<RequireRole roles={["responsable","adminclub"]}><ResponsablePlayerProfilePage /></RequireRole>} />
+        <Route path="/club/joueurs/:id" element={<RequireRole roles={["adminclub"]}><ResponsablePlayerProfilePage /></RequireRole>} />
+        <Route path="/players/:name" element={<RequireRole roles={["coach"]}><PlayerProfilePage /></RequireRole>} />
+        <Route path="/teams" element={<RequireRole roles={["responsable","coach"]}><TeamsPage /></RequireRole>} />
         <Route path="/training" element={<RequireRole roles={["coach","responsable"]}><TrainingPage /></RequireRole>} />
         <Route path="/matches" element={<RequireRole roles={["coach","responsable"]}><MatchesPage /></RequireRole>} />
         <Route path="/performance" element={<RequireRole roles={["coach"]}><PerformancePage /></RequireRole>} />
@@ -215,11 +219,22 @@ export function AppRouter() {
         <Route path="/scout/recruitment" element={<RequireRole roles={["scout"]}><ScoutRecruitmentPage /></RequireRole>} />
         <Route path="/scout/ai" element={<RequireRole roles={["scout"]}><ScoutAIPage /></RequireRole>} />
         <Route path="/scout/report" element={<RequireRole roles={["scout"]}><ScoutReportPage /></RequireRole>} />
-        <Route path="/scout/favorites" element={<RequireRole roles={["scout"]}><ScoutFavoritesPage /></RequireRole>} />
+        <Route path="/scout/reports" element={<RequireRole roles={["scout"]}><ScoutReportsHistoryPage /></RequireRole>} />
+        <Route path="/scout/missions" element={<RequireRole roles={["scout"]}><ScoutMissionsPage /></RequireRole>} />
+        <Route path="/scout/prospects" element={<RequireRole roles={["scout"]}><ScoutProspectsPage /></RequireRole>} />
         <Route path="/scout/comparison" element={<RequireRole roles={["scout"]}><ScoutComparisonPage /></RequireRole>} />
+        <Route path="/scout/videos" element={<RequireRole roles={["scout"]}><ScoutVideoPage /></RequireRole>} />
+        <Route path="/scout/shortlist" element={<RequireRole roles={["scout"]}><ScoutShortlistPage /></RequireRole>} />
+        <Route path="/scout/map" element={<RequireRole roles={["scout"]}><ScoutMapExplorerPage /></RequireRole>} />
+        <Route path="/scout/squad-fit" element={<RequireRole roles={["scout"]}><ScoutSquadFitPage /></RequireRole>} />
+        <Route path="/scout/analytics" element={<RequireRole roles={["scout"]}><ScoutAnalyticsPage /></RequireRole>} />
+        <Route path="/scout/agents" element={<RequireRole roles={["scout"]}><ScoutAgentsPage /></RequireRole>} />
+        <Route path="/scout/settings" element={<RequireRole roles={["scout"]}><ScoutSettingsPage /></RequireRole>} />
+        <Route path="/scout/favorites" element={<RequireRole roles={["scout"]}><ScoutFavoritesPage /></RequireRole>} />
         <Route path="/player/:id" element={<RequireRole roles={["scout", "coach"]}><PlayerProfilePage /></RequireRole>} />
         <Route path="/ai-scout" element={<RequireRole roles={["scout", "coach"]}><AIAssistantPage /></RequireRole>} />
-        <Route path="/contracts" element={<RequireRole roles={["coach","responsable"]}><ContractsPage /></RequireRole>} />
+        <Route path="/contracts" element={<RequireRole roles={["coach"]}><ContractsPage /></RequireRole>} />
+        <Route path="/responsable/contrats" element={<RequireRole roles={["responsable"]}><ClubContratsPage /></RequireRole>} />
         <Route path="/medical" element={<RequireRole roles={["medical"]}><MedicalPage /></RequireRole>} />
         <Route path="/medical/dossiers" element={<RequireRole roles={["medical"]}><MedicalDossiersPage /></RequireRole>} />
         <Route path="/medical/blessures" element={<RequireRole roles={["medical"]}><MedicalBlessuresPage /></RequireRole>} />
@@ -245,7 +260,7 @@ export function AppRouter() {
         <Route path="/joueurs/analyse" element={<RequireRole roles={["joueur"]}><JoueurMatchAnalysisPage /></RequireRole>} />
         <Route path="/joueurs/recompenses" element={<RequireRole roles={["joueur"]}><JoueurAwardsPage /></RequireRole>} />
         <Route path="/joueurs/chimie" element={<RequireRole roles={["joueur"]}><JoueurChemistryPage /></RequireRole>} />
-        <Route path="/joueurs/messages" element={<RequireRole roles={["joueur"]}><JoueurMessagesPage /></RequireRole>} />
+        <Route path="/joueurs/messages" element={<Navigate to="/messages" replace />} />
         <Route path="/club" element={<RequireRole roles={["adminclub"]}><ClubDashboard /></RequireRole>} />
         <Route path="/club/joueurs" element={<RequireRole roles={["adminclub"]}><ClubJoueursPage /></RequireRole>} />
         <Route path="/club/staff" element={<RequireRole roles={["adminclub"]}><ClubStaffPage /></RequireRole>} />
@@ -296,6 +311,7 @@ export function AppRouter() {
         <Route path="/analyste/injury-forecast" element={<RequireRole roles={["analyste"]}><AnalysteInjuryForecastPage /></RequireRole>} />
         <Route path="/analyste/live-match" element={<RequireRole roles={["analyste"]}><AnalysteLiveMatchPage /></RequireRole>} />
         <Route path="/analyste/fatigue-heatmap" element={<RequireRole roles={["analyste"]}><AnalysteFatigueHeatmapPage /></RequireRole>} />
+        <Route path="/analyste/whoop" element={<RequireRole roles={["analyste"]}><AnalysteWhoopPage /></RequireRole>} />
         <Route path="/analyste/video-analysis" element={<RequireRole roles={["analyste"]}><AnalysteVideoAnalysisPage /></RequireRole>} />
         <Route path="/recruteur" element={<RequireRole roles={["recruteur"]}><RecruteurDashboard /></RequireRole>} />
         <Route path="/recruteur/discovery" element={<RequireRole roles={["recruteur"]}><RecruteurDiscoveryPage /></RequireRole>} />
@@ -316,7 +332,7 @@ export function AppRouter() {
         <Route path="/recruteur/calendar" element={<RequireRole roles={["recruteur"]}><RecruteurCalendarPage /></RequireRole>} />
         <Route path="/recruteur/notifications" element={<RequireRole roles={["recruteur"]}><RecruteurNotificationsPage /></RequireRole>} />
         <Route path="/recruteur/audit" element={<RequireRole roles={["recruteur"]}><RecruteurAuditPage /></RequireRole>} />
-        <Route path="/finance" element={<FinancePage />} />
+        <Route path="/finance" element={<Navigate to="/comptabilite" replace />} />
         <Route path="/comptabilite" element={<RequireRole roles={["finance"]}><FinanceComptabilite /></RequireRole>} />
         <Route path="/finance/dashboard" element={<RequireRole roles={["finance"]}><FinanceComptabilite /></RequireRole>} />
         <Route path="/finance/contrats" element={<RequireRole roles={["finance"]}><ContratsFinance /></RequireRole>} />
@@ -342,7 +358,8 @@ export function AppRouter() {
         <Route path="/superadmin/security" element={<RequireRole roles={["superadmin"]}><SuperAdminSecurity /></RequireRole>} />
         <Route path="/superadmin/settings" element={<RequireRole roles={["superadmin"]}><SuperAdminSettings /></RequireRole>} />
         <Route path="/superadmin/ia" element={<RequireRole roles={["superadmin"]}><SuperAdminIA /></RequireRole>} />
-        <Route path="/reports" element={<RequireRole roles={["coach", "responsable"]}><ReportsPage /></RequireRole>} />
+        <Route path="/reports" element={<RequireRole roles={["coach"]}><ReportsPage /></RequireRole>} />
+        <Route path="/responsable/reports" element={<RequireRole roles={["responsable"]}><ClubAnalyticsPage /></RequireRole>} />
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/administration/documents" element={<DocumentsPage />} />
       </Route>

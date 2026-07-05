@@ -1,11 +1,21 @@
 import { motion } from "framer-motion";
 import { Crosshair, Brain, Activity } from "lucide-react";
 import { AnalystePageTransition } from "../../components/analyste/AnalystePageTransition";
+import { AnalystePageLoader } from "../../components/analyste/AnalystePageLoader";
 import { Pitch3DSimulator } from "../../components/analyste/Pitch3DSimulator";
-import { DEFAULT_SQUAD, AI_TACTICAL_CENTER } from "../../data/analysteData";
 import { TypewriterText } from "../../components/analyste/TypewriterText";
+import { useAnalysteTactical } from "../../hooks/useAnalysteResource";
 
 export function AnalysteTactiquePage() {
+  const { data, loading } = useAnalysteTactical();
+  if (loading && !data) return <AnalystePageLoader />;
+
+  const { squad, bench, suggestions, aiCenter } = data!;
+  const keyPlayerShort = (() => {
+    const parts = aiCenter.keyPlayer.split(" ");
+    return parts.length > 1 ? `${parts[0]} ${parts[1][0]}.` : parts[0];
+  })();
+
   return (
     <AnalystePageTransition>
       {/* Header */}
@@ -36,15 +46,15 @@ export function AnalysteTactiquePage() {
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#8B5CF6" }}>Intelligence Tactique</p>
               <h1 className="text-2xl font-black" style={{ color: "var(--text-primary)" }}>Tactical Simulator 3D</h1>
-              <p className="text-sm" style={{ color: "var(--text-muted)" }}>FC Carthage · Formation {AI_TACTICAL_CENTER.formation} · Métriques IA live</p>
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>FC Carthage · Formation {aiCenter.formation} · Métriques IA live</p>
             </div>
           </div>
 
           {/* Live KPIs */}
           <div className="flex gap-3">
             {[
-              { icon: Brain, label: "Victoire estimée", value: `${AI_TACTICAL_CENTER.winProbability}%`, color: "#8B5CF6" },
-              { icon: Activity, label: "Joueur clé", value: "Ahmed B.", color: "#22C55E" },
+              { icon: Brain, label: "Victoire estimée", value: `${aiCenter.winProbability}%`, color: "#8B5CF6" },
+              { icon: Activity, label: "Joueur clé", value: keyPlayerShort, color: "#22C55E" },
             ].map(({ icon: Icon, label, value, color }) => (
               <div key={label} className="rounded-xl border px-3 py-2 text-center" style={{ borderColor: `${color}30`, background: `${color}08` }}>
                 <Icon size={12} style={{ color }} className="mx-auto mb-1" />
@@ -63,7 +73,12 @@ export function AnalysteTactiquePage() {
       </motion.div>
 
       {/* 3D Simulator */}
-      <Pitch3DSimulator initialPlayers={DEFAULT_SQUAD} />
+      <Pitch3DSimulator
+        initialPlayers={squad}
+        initialBench={bench}
+        suggestions={suggestions}
+        initialFormation={aiCenter.formation}
+      />
     </AnalystePageTransition>
   );
 }

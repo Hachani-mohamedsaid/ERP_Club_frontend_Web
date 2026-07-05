@@ -1,50 +1,68 @@
 import { useAuth } from "../contexts/AuthContext";
-import { getPlayerById } from "../data/joueurMockData";
 import { getPlayerExtended } from "../data/joueurExtendedData";
+import { getPlayerById } from "../data/joueurMockData";
 import { getPlayerIdForEmail } from "../data/joueurPersonalData";
-import { usePlayerPhoto } from "./usePlayerPhoto";
-import { useJoueurBackendData } from "./useJoueurBackendData";
+import { joueurApi } from "../lib/api/joueur";
+import { useClubResource } from "./useClubResource";
 
 export function useCurrentPlayer() {
   const { user } = useAuth();
-  const playerId = user?.playerId ?? getPlayerIdForEmail(user?.email ?? "joueur@club.com");
-  const basePlayer = getPlayerById(playerId);
-  const extended = getPlayerExtended(playerId);
-  const { photoUrl: localPhotoUrl, setPhoto, handleFileChange } = usePlayerPhoto();
-  const { myPlayer: backendPlayer, myPlayerId, playerStats } = useJoueurBackendData();
+  const isJoueur = user?.role === "joueur";
 
-  // Photo: local upload takes priority, then backend photoUrl
-  const photoUrl = localPhotoUrl ?? backendPlayer?.photoUrl ?? null;
+  const { data: apiMe, loading } = useClubResource(
+    () => (isJoueur ? joueurApi.getMe() : Promise.resolve(null)),
+    [isJoueur, user?.email],
+  );
+  const { data: apiExtended } = useClubResource(
+    () => (isJoueur ? joueurApi.getExtended() : Promise.resolve(null)),
+    [isJoueur, user?.email],
+  );
 
-  const player = basePlayer
-    ? {
-        ...basePlayer,
-        name: user?.fullName?.trim() || backendPlayer?.name || basePlayer.name,
-        ovr: backendPlayer?.ovr ?? playerStats?.form ?? basePlayer.ovr,
-        marketValue: playerStats?.dashboardHero?.marketValue ?? backendPlayer?.marketValue ?? basePlayer.marketValue,
-        availability: (backendPlayer?.availability ?? basePlayer.availability) as typeof basePlayer.availability,
-        // Radar from backend ClubPlayer.radar JSON if available
-        radar: backendPlayer?.radar
-          ? {
-              speed: (backendPlayer.radar as Record<string, number>).speed ?? basePlayer.radar.speed,
-              shooting: (backendPlayer.radar as Record<string, number>).shooting ?? basePlayer.radar.shooting,
-              passing: (backendPlayer.radar as Record<string, number>).passing ?? basePlayer.radar.passing,
-              dribbling: (backendPlayer.radar as Record<string, number>).dribbling ?? basePlayer.radar.dribbling,
-              physical: (backendPlayer.radar as Record<string, number>).physical ?? basePlayer.radar.physical,
-              vision: (backendPlayer.radar as Record<string, number>).vision ?? basePlayer.radar.vision,
-            }
-          : basePlayer.radar,
-      }
-    : null;
+  const fallbackId = user?.playerId ?? getPlayerIdForEmail(user?.email ?? "joueur@club.com");
+  const mockPlayer = getPlayerById(fallbackId);
+  const mockExtended = getPlayerExtended(fallbackId);
 
-  return {
-    playerId: myPlayerId ?? playerId,
-    player,
-    extended,
-    photoUrl,
-    setPhoto,
-    handleFileChange,
-    backendPlayer,
-    playerStats,
-  };
+  if (isJoueur && apiMe && !loading) {
+    const ext = apiExtended as {
+      career?: unknown[];
+      evolution?: unknown[];
+      heatmapZones?: unknown[];
+      training?: unknown;
+      matchAnalysis?: unknown;
+      aiInsight?: unknown;
+      awards?: unknown[];
+    } | null;
+
+    return {
+      playerId: apiMe.id,
+      player: {
+        ...mockPlayer,
+        id: apiMe.id,
+        name: apiMe.name,
+        position: apiMe.position,
+        age: apiMe.age,
+        ovr: apiMe.ovr,
+        marketValue: apiMe.marketValue,
+        availability: apiMe.availability,
+        contract: apiMe.contract,
+        radar: apiMe.radar,
+        stats: { ...mockPlayer.stats, goals: apiMe.goals ?? mockPlayer.stats.goals },
+      },
+      extended: ext
+        ? {
+            ...mockExtended,
+            career: ext.career ?? mockExtended.career,
+            evolution: ext.evolution ?? mockExtended.evolution,
+            heatmapZones: ext.heatmapZones ?? mockExtended.heatmapZones,
+            training: ext.training ?? mockExtended.training,
+            matchAnalysis: ext.matchAnalysis ?? mockExtended.matchAnalysis,
+            aiInsight: ext.aiInsight ?? mockExtended.aiInsight,
+            awards: ext.awards ?? mockExtended.awards,
+          }
+        : mockExtended,
+      loading,
+    };
+  }
+
+  return { playerId: fallbackId, player: mockPlayer, extended: mockExtended, loading: false };
 }

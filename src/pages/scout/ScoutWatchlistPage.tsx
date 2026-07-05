@@ -1,57 +1,82 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Pencil, X, CheckCircle2, Plus, Trash2, Eye } from "lucide-react";
+import { Pencil, CheckCircle2, Plus, Trash2, Eye } from "lucide-react";
 import { ScoutPage, SCard, SBadge, SGauge } from "../../components/scout/ScoutUI";
-import { PROSPECTS, S, PRIORITY_META, type Priority } from "../../data/scoutData";
-
-type NoteEntry = { date: string; text: string };
+import { S, PRIORITY_META, type Priority } from "../../data/scoutData";
+import { useScoutWatchlist } from "../../hooks/useScoutData";
+import { scoutApi } from "../../lib/api/scout";
+import { showToast } from "../../components/scout/ScoutToast";
 
 export function ScoutWatchlistPage() {
   const navigate = useNavigate();
+  const { items, loading, refresh } = useScoutWatchlist();
   const [activePriority, setActivePriority] = useState<Priority | "ALL">("ALL");
-  const [notesMap, setNotesMap] = useState<Record<string, NoteEntry[]>>(
-    Object.fromEntries(PROSPECTS.map(p => [p.id, [...p.notes]]))
-  );
   const [noteInput, setNoteInput] = useState<Record<string, string>>({});
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
-  const [priorities, setPriorities] = useState<Record<string, Priority>>(
-    Object.fromEntries(PROSPECTS.map(p => [p.id, p.priority]))
+
+  const priorities: Record<string, Priority> = Object.fromEntries(
+    items.map((p) => [p.id, p.priority]),
   );
 
-  const filtered = PROSPECTS.filter(p =>
-    activePriority === "ALL" || priorities[p.id] === activePriority
+  const filtered = items.filter(
+    (p) => activePriority === "ALL" || priorities[p.id] === activePriority,
   );
 
-  const addNote = (id: string) => {
+  const addNote = async (id: string) => {
     const text = noteInput[id]?.trim();
     if (!text) return;
-    const today = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
-    setNotesMap(prev => ({ ...prev, [id]: [{ date: today, text }, ...(prev[id] ?? [])] }));
-    setNoteInput(prev => ({ ...prev, [id]: "" }));
+    try {
+      await scoutApi.addWatchlistNote(id, text);
+      setNoteInput((prev) => ({ ...prev, [id]: "" }));
+      await refresh();
+      showToast("Note ajoutée ✓", "success");
+    } catch {
+      showToast("Erreur ajout note", "error");
+    }
   };
 
-  const removeNote = (id: string, idx: number) => {
-    setNotesMap(prev => ({ ...prev, [id]: prev[id].filter((_, i) => i !== idx) }));
+  const removeNote = async (id: string, idx: number) => {
+    try {
+      await scoutApi.removeWatchlistNote(id, idx);
+      await refresh();
+    } catch {
+      showToast("Erreur suppression note", "error");
+    }
   };
 
-  const cyclePriority = (id: string) => {
+  const cyclePriority = async (id: string) => {
     const order: Priority[] = ["A", "B", "C"];
-    setPriorities(prev => {
-      const cur = prev[id] ?? "C";
-      const next = order[(order.indexOf(cur) + 1) % order.length];
-      return { ...prev, [id]: next };
-    });
+    const cur = priorities[id] ?? "C";
+    const next = order[(order.indexOf(cur) + 1) % order.length];
+    try {
+      await scoutApi.updateWatchlistPriority(id, next);
+      await refresh();
+    } catch {
+      showToast("Erreur mise à jour priorité", "error");
+    }
   };
 
-  const totals = { A: filtered.filter(p => priorities[p.id] === "A").length, B: filtered.filter(p => priorities[p.id] === "B").length, C: filtered.filter(p => priorities[p.id] === "C").length };
+  const totals = {
+    A: filtered.filter((p) => priorities[p.id] === "A").length,
+    B: filtered.filter((p) => priorities[p.id] === "B").length,
+    C: filtered.filter((p) => priorities[p.id] === "C").length,
+  };
+
+  if (loading) {
+    return (
+      <ScoutPage>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement watchlist...</p>
+      </ScoutPage>
+    );
+  }
 
   return (
     <ScoutPage>
       <div>
         <h1 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>Watchlist</h1>
         <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-          Joueurs suivis avec priorité et notes privées
+          {items.length} joueur{items.length !== 1 ? "s" : ""} suivis avec priorité et notes privées
         </p>
       </div>
 
@@ -63,7 +88,7 @@ export function ScoutWatchlistPage() {
             style={{
               background: activePriority === key ? bg : "rgba(255,255,255,0.04)",
               color: activePriority === key ? color : "var(--text-muted)",
-              border: `1px solid ${activePriority === key ? color + "40" : "transparent"}`,
+              border: "1px solid var(--surface-panel-border)",
             }}
             whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }}>
             {label}
@@ -75,130 +100,119 @@ export function ScoutWatchlistPage() {
       <div className="grid grid-cols-3 gap-3">
         {(["A", "B", "C"] as Priority[]).map(p => {
           const meta = PRIORITY_META[p];
-          const count = PROSPECTS.filter(pr => priorities[pr.id] === p).length;
+          const count = items.filter(pr => priorities[pr.id] === p).length;
           return (
             <motion.div key={p} className="rounded-[18px] border p-3 text-center"
-              style={{ background: meta.bg, borderColor: `${meta.color}30` }}
-              whileHover={{ scale: 1.04 }}>
-              <p className="text-xl font-extrabold" style={{ color: meta.color }}>{count}</p>
-              <p className="text-[10px] font-semibold" style={{ color: meta.color }}>Priorité {p}</p>
+              style={{ background: meta.bg, borderColor: `${meta.color}25` }}
+              whileHover={{ y: -2 }}>
+              <p className="text-2xl font-extrabold" style={{ color: meta.color }}>{count}</p>
+              <p className="text-[9px] font-bold mt-0.5" style={{ color: meta.color }}>{meta.label.split("—")[0]}</p>
             </motion.div>
           );
         })}
       </div>
 
-      {/* Player cards with notes */}
-      <div className="space-y-3">
-        <AnimatePresence mode="popLayout">
-          {filtered.map((p, i) => {
-            const priority = priorities[p.id];
-            const meta = PRIORITY_META[priority];
-            const notes = notesMap[p.id] ?? [];
-            const showNotes = expandedNotes.has(p.id);
+      {filtered.length === 0 ? (
+        <SCard className="!p-8 text-center">
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+            Aucun joueur en watchlist. Ajoutez-en depuis la recherche.
+          </p>
+        </SCard>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map(p => {
+            const priority = PRIORITY_META[priorities[p.id] ?? "B"];
+            const notes = p.notes ?? [];
+            const isExpanded = expandedNotes.has(p.id);
+
             return (
-              <motion.div key={p.id} layout
-                initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ delay: i * 0.04 }}
-                className="rounded-[20px] border overflow-hidden"
-                style={{ background: "rgba(12,9,30,0.85)", borderColor: `${meta.color}20` }}>
-                {/* Header */}
-                <div className="flex items-center gap-3 p-4">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold text-white"
-                    style={{ background: `linear-gradient(135deg,${S.primary},S.primary)` }}>
+              <SCard key={p.id} className="!p-4">
+                <div className="flex flex-wrap items-start gap-3">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold text-white"
+                    style={{ background: `linear-gradient(135deg,${S.primary},${S.primary}99)` }}>
                     {p.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>{p.flag} {p.name}</p>
-                      <motion.button type="button" onClick={() => cyclePriority(p.id)}
-                        className="rounded-full px-2 py-0.5 text-[9px] font-black shrink-0"
-                        style={{ background: meta.color, color: "white" }}
-                        whileHover={{ scale: 1.1 }} title="Cliquer pour changer priorité">
-                        P.{priority}
-                      </motion.button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+                        {p.flag} {p.name}
+                      </p>
+                      <SBadge color={priority.color} bg={priority.bg}>P.{priorities[p.id]}</SBadge>
+                      <SBadge color={S.info} bg={`${S.info}15`}>{p.position}</SBadge>
                     </div>
-                    <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-                      {p.position} · {p.age} ans · {p.club} · {p.marketValue}
+                    <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>
+                      {p.age} ans · {p.club} · Potentiel {p.potential}
                     </p>
-                    <div className="mt-1 flex items-center gap-2">
-                      <SGauge value={p.potential} color={meta.color} />
-                      <span className="text-[10px] font-bold shrink-0" style={{ color: meta.color }}>{p.potential}</span>
+                    <div className="mt-2 max-w-xs">
+                      <SGauge value={p.potential} color={S.primary} />
                     </div>
                   </div>
-                  <div className="flex gap-1.5 shrink-0">
-                    <motion.button type="button" onClick={() => navigate(`/scout/prospect/${p.id}`)}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg border"
-                      style={{ borderColor: `${S.primary}40`, color: S.primary }}
-                      whileHover={{ scale: 1.12 }}>
-                      <Eye size={12} />
+                  <div className="flex gap-2">
+                    <motion.button type="button" onClick={() => cyclePriority(p.id)}
+                      className="rounded-xl border px-3 py-1.5 text-[10px] font-bold"
+                      style={{ borderColor: `${priority.color}40`, color: priority.color }}
+                      whileTap={{ scale: 0.95 }}>
+                      <Pencil size={10} className="inline mr-1" />Priorité
                     </motion.button>
-                    <motion.button type="button"
-                      onClick={() => setExpandedNotes(prev => { const n = new Set(prev); n.has(p.id) ? n.delete(p.id) : n.add(p.id); return n; })}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg border"
-                      style={{
-                        borderColor: showNotes ? `${meta.color}50` : "rgba(255,255,255,0.1)",
-                        color: showNotes ? meta.color : "var(--text-muted)",
-                        background: showNotes ? `${meta.color}10` : "transparent",
-                      }}
-                      whileHover={{ scale: 1.12 }}>
-                      <Pencil size={11} />
+                    <motion.button type="button" onClick={() => navigate(`/scout/prospect/${p.id}`)}
+                      className="rounded-xl border px-3 py-1.5 text-[10px] font-bold"
+                      style={{ borderColor: `${S.info}40`, color: S.info }}
+                      whileTap={{ scale: 0.95 }}>
+                      <Eye size={10} className="inline mr-1" />Profil
                     </motion.button>
                   </div>
                 </div>
 
-                {/* Notes panel */}
-                <AnimatePresence>
-                  {showNotes && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden border-t" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-                      <div className="p-4 pt-3">
-                        {/* Add note */}
-                        <div className="flex items-center gap-2 mb-3">
+                {/* Notes section */}
+                <div className="mt-3 pt-3 border-t" style={{ borderColor: "var(--surface-panel-border)" }}>
+                  <motion.button type="button" onClick={() => {
+                    setExpandedNotes(prev => {
+                      const n = new Set(prev);
+                      if (n.has(p.id)) n.delete(p.id); else n.add(p.id);
+                      return n;
+                    });
+                  }}
+                    className="flex items-center gap-1.5 text-[10px] font-bold mb-2"
+                    style={{ color: "var(--text-muted)" }}>
+                    <CheckCircle2 size={11} /> Notes privées ({notes.length})
+                  </motion.button>
+
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
+                        <div className="flex gap-2 mb-2">
                           <input value={noteInput[p.id] ?? ""} onChange={e => setNoteInput(prev => ({ ...prev, [p.id]: e.target.value }))}
-                            onKeyDown={e => e.key === "Enter" && addNote(p.id)}
-                            placeholder="Note privée scout... (Entrée pour valider)"
-                            className="flex-1 rounded-xl border px-3 py-2 text-xs outline-none"
-                            style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.09)", color: "var(--text-primary)" }} />
-                          <motion.button type="button" onClick={() => addNote(p.id)}
-                            className="flex h-8 w-8 items-center justify-center rounded-xl"
-                            style={{ background: `${meta.color}20`, color: meta.color }}
-                            whileHover={{ scale: 1.1 }}>
+                            placeholder="Ajouter une note..."
+                            className="flex-1 rounded-xl border px-3 py-1.5 text-xs outline-none"
+                            style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
+                            onKeyDown={e => e.key === "Enter" && void addNote(p.id)} />
+                          <motion.button type="button" onClick={() => void addNote(p.id)}
+                            className="rounded-xl px-3 py-1.5 text-xs font-bold text-white"
+                            style={{ background: S.primary }}
+                            whileTap={{ scale: 0.95 }}>
                             <Plus size={12} />
                           </motion.button>
                         </div>
-                        {/* Notes list */}
-                        {notes.length > 0 ? (
-                          <div className="space-y-1.5 max-h-40 overflow-y-auto">
-                            {notes.map((note, ni) => (
-                              <motion.div key={ni} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                                className="group flex items-start gap-2 rounded-xl border px-3 py-2"
-                                style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
-                                <CheckCircle2 size={11} className="mt-0.5 shrink-0" style={{ color: meta.color }} />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--text-muted)" }}>{note.date}</p>
-                                  <p className="text-xs" style={{ color: "var(--text-primary)" }}>{note.text}</p>
-                                </div>
-                                <motion.button type="button" onClick={() => removeNote(p.id, ni)}
-                                  className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                                  whileHover={{ scale: 1.2 }}>
-                                  <X size={10} style={{ color: S.danger }} />
-                                </motion.button>
-                              </motion.div>
-                            ))}
+                        {notes.map((n, i) => (
+                          <div key={i} className="flex items-start gap-2 rounded-xl border px-3 py-2 mb-1.5"
+                            style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
+                            <span className="text-[9px] font-bold shrink-0 mt-0.5" style={{ color: S.primary }}>{n.date}</span>
+                            <p className="flex-1 text-[11px]" style={{ color: "var(--text-muted)" }}>{n.text}</p>
+                            <motion.button type="button" onClick={() => void removeNote(p.id, i)}
+                              whileHover={{ scale: 1.2 }}>
+                              <Trash2 size={11} style={{ color: S.danger }} />
+                            </motion.button>
                           </div>
-                        ) : (
-                          <p className="text-center text-xs py-3" style={{ color: "var(--text-muted)" }}>
-                            Aucune note — saisissez votre première observation
-                          </p>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </SCard>
             );
           })}
-        </AnimatePresence>
-      </div>
+        </div>
+      )}
     </ScoutPage>
   );
 }

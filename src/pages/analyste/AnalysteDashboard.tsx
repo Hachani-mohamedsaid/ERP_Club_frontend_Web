@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import {
   Brain, Crosshair, Film, Shield, Activity, TrendingUp, DollarSign,
   Search, Sparkles, Calendar, BarChart3, ArrowUpRight,
-  Star, GitCompare, UserPlus, Radio, Zap, Camera,
+  Star, GitCompare, UserPlus, Radio, Zap, Camera, Watch,
 } from "lucide-react";
 import { AnalystePageTransition } from "../../components/analyste/AnalystePageTransition";
 import { AITacticalCenter } from "../../components/analyste/AITacticalCenter";
 import { TypewriterText } from "../../components/analyste/TypewriterText";
-import { ANALYSTE_INFO, DETECTED_PATTERNS } from "../../data/analysteData";
+import { AnalystePageLoader } from "../../components/analyste/AnalystePageLoader";
+import { useAnalysteDashboard } from "../../hooks/useAnalysteResource";
 
 const MODULES = [
   { label: "Match Prediction", desc: "RF · XGBoost · CatBoost", icon: Brain,     path: "/analyste/prediction",      color: "#8B5CF6", gradient: "from-violet-500/20 to-purple-900/5" },
@@ -17,6 +18,7 @@ const MODULES = [
   { label: "Live Match",       desc: "Temps réel · Win prob.",   icon: Radio,     path: "/analyste/live-match",      color: "#EF4444", gradient: "from-red-500/20 to-rose-900/5" },
   { label: "Video Analysis",   desc: "Replay · AI Coach · Highlights", icon: Camera, path: "/analyste/video-analysis", color: "#6366F1", gradient: "from-indigo-500/20 to-blue-900/5" },
   { label: "Fatigue Heatmap",  desc: "Par 15 minutes",            icon: Activity,  path: "/analyste/fatigue-heatmap", color: "#FF7A00", gradient: "from-orange-500/20 to-red-900/5" },
+  { label: "WHOOP Wearables",  desc: "Recovery · Strain · HRV",   icon: Watch,     path: "/analyste/whoop",           color: "#FF7A00", gradient: "from-orange-500/20 to-amber-900/5" },
   { label: "Transfer Engine",  desc: "Compatibilité IA",          icon: UserPlus,  path: "/analyste/transfer",        color: "#3B82F6", gradient: "from-blue-500/20 to-sky-900/5" },
   { label: "Injury Forecast",  desc: "Retour estimé ML",          icon: TrendingUp,path: "/analyste/injury-forecast", color: "#EF4444", gradient: "from-red-500/20 to-rose-900/5" },
   { label: "Tactical Sim.",    desc: "Terrain 3D live",           icon: Crosshair, path: "/analyste/tactique",        color: "#8B5CF6", gradient: "from-violet-500/20 to-purple-900/5" },
@@ -30,15 +32,15 @@ const MODULES = [
   { label: "Injury Lab",       desc: "Prédiction ML",             icon: Zap,       path: "/analyste/blessures",       color: "#EF4444", gradient: "from-red-500/20 to-rose-900/5" },
 ];
 
-const LIVE_STATS = [
-  { label: "Possession", value: "64%", color: "#8B5CF6" },
-  { label: "xG Projeté", value: "2.3", color: "#22C55E" },
-  { label: "Risque global", value: "Moyen", color: "#F59E0B" },
-  { label: "Joueurs dispos", value: "21/26", color: "#3B82F6" },
-];
-
 export function AnalysteDashboard() {
   const navigate = useNavigate();
+  const { data, loading } = useAnalysteDashboard();
+
+  if (loading && !data) return <AnalystePageLoader />;
+
+  const info = data!.info;
+  const patterns = data!.patterns;
+  const liveStats = data!.liveStats;
 
   return (
     <AnalystePageTransition>
@@ -81,17 +83,17 @@ export function AnalysteDashboard() {
                 Performance Intelligence Center
               </p>
               <h1 className="mt-0.5 text-3xl font-black" style={{ color: "var(--text-primary)" }}>
-                Bonjour, {ANALYSTE_INFO.name}
+                Bonjour, {info.name}
               </h1>
               <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
-                {ANALYSTE_INFO.club} · Saison {ANALYSTE_INFO.season} · 11 modules IA actifs
+                {info.club} · Saison {info.season} · 11 modules IA actifs
               </p>
             </div>
           </div>
 
           {/* Live stat pills */}
           <div className="flex flex-wrap gap-2">
-            {LIVE_STATS.map((s, i) => (
+            {liveStats.map((s, i) => (
               <motion.div
                 key={s.label}
                 initial={{ opacity: 0, scale: 0.85 }}
@@ -111,7 +113,7 @@ export function AnalysteDashboard() {
         <div className="relative mt-5 rounded-xl border px-4 py-2.5" style={{ borderColor: "rgba(139,92,246,0.15)", background: "rgba(139,92,246,0.05)" }}>
           <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
             <TypewriterText
-              text={`Analyse en cours — ${DETECTED_PATTERNS[0].pattern} (confiance ${DETECTED_PATTERNS[0].confidence}%)`}
+              text={`Analyse en cours — ${patterns[0].pattern} (confiance ${patterns[0].confidence}%)`}
               speed={20}
             />
           </p>
@@ -119,7 +121,7 @@ export function AnalysteDashboard() {
       </motion.div>
 
       {/* AI Tactical Center */}
-      <AITacticalCenter />
+      <AITacticalCenter data={data!.tacticalCenter} />
 
       {/* Modules grid */}
       <div>
@@ -151,7 +153,7 @@ export function AnalysteDashboard() {
                 className="group relative overflow-hidden rounded-[20px] border p-4 text-left"
                 style={{
                   background: "rgba(15,29,58,0.85)",
-                  borderColor: "rgba(255,255,255,0.05)",
+                  borderColor: "var(--surface-panel-border)",
                   boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
                 }}
               >
@@ -191,7 +193,7 @@ export function AnalysteDashboard() {
       {/* Pattern Detection preview */}
       <motion.div
         className="rounded-[20px] border p-5"
-        style={{ background: "rgba(15,29,58,0.85)", borderColor: "rgba(255,255,255,0.05)" }}
+        style={{ background: "rgba(15,29,58,0.85)", borderColor: "var(--surface-panel-border)" }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}
@@ -211,7 +213,7 @@ export function AnalysteDashboard() {
           </button>
         </div>
         <div className="space-y-2">
-          {DETECTED_PATTERNS.slice(0, 3).map((p, i) => (
+          {patterns.slice(0, 3).map((p, i) => (
             <motion.div
               key={p.id}
               initial={{ opacity: 0, x: 30 }}

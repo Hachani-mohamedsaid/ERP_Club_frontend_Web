@@ -3,9 +3,15 @@ import { DollarSign, TrendingUp } from "lucide-react";
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip } from "recharts";
 import { AnalystePageTransition } from "../../components/analyste/AnalystePageTransition";
 import { AnalysteKpiCard } from "../../components/analyste/AnalysteKpiCard";
-import { MARKET_VALUES } from "../../data/analysteData";
+import { AnalystePageLoader } from "../../components/analyste/AnalystePageLoader";
+import { useAnalysteMarketValue } from "../../hooks/useAnalysteResource";
 
 export function AnalysteValeurPage() {
+  const { data, loading } = useAnalysteMarketValue();
+  if (loading && !data) return <AnalystePageLoader />;
+
+  const { values } = data!;
+
   return (
     <AnalystePageTransition>
       <div className="flex items-center gap-3">
@@ -16,7 +22,7 @@ export function AnalysteValeurPage() {
         </div>
       </div>
 
-      {MARKET_VALUES.map((p, i) => {
+      {values.map((p, i) => {
         const radarData = p.factors.map((f) => ({ factor: f.label, score: f.score }));
         return (
           <div key={p.player} className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -48,7 +54,7 @@ export function AnalysteValeurPage() {
                   <PolarGrid stroke="rgba(255,255,255,0.1)" />
                   <PolarAngleAxis dataKey="factor" tick={{ fill: "var(--text-muted)", fontSize: 10 }} />
                   <Radar dataKey="score" stroke="#F59E0B" fill="#F59E0B" fillOpacity={0.3} animationDuration={1200} />
-                  <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12 }} />
+                  <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }} />
                 </RadarChart>
               </ResponsiveContainer>
             </AnalysteKpiCard>

@@ -2,13 +2,11 @@ import { ChevronDown, Search, Bell, MessageSquare, Plus, Building2, Users, Credi
 import { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ThemeToggle } from "../ui/ThemeToggle";
 import { useAuth } from "../../contexts/AuthContext";
-import { ChatDrawer } from "../medical/ChatDrawer";
+import { useLocale } from "../../contexts/LocaleContext";
 import { MedicalNotificationsDropdown } from "../medical/MedicalNotificationsDropdown";
 import { PrepNotificationsDropdown } from "../preparateur/PrepNotificationsDropdown";
 import { JoueurNotificationsDropdown } from "../player/JoueurNotificationsDropdown";
-import { JoueurChatDrawer } from "../player/JoueurChatDrawer";
 import { getPlayerById } from "../../data/joueurMockData";
 import { FinanceNotificationsDropdown } from "../finance/FinanceNotificationsDropdown";
 import { ClubNotificationsDropdown } from "../club/ClubNotificationsDropdown";
@@ -93,7 +91,7 @@ const TITLE_BY_PATH: Record<string, { title: string; subtitle: string }> = {
   "/preparateur/wellness": { title: "Wellness Questionnaire", subtitle: "Pré-entraînement — Sommeil, fatigue, stress, humeur" },
   "/preparateur/recovery": { title: "Recovery Center", subtitle: "Cryothérapie, massage, repos et hydratation" },
   "/preparateur/notifications": { title: "Notifications", subtitle: "Blessures, fatigue, validations et alertes" },
-  "/analyste": { title: "Performance Intelligence Center", subtitle: "Sami Gharbi — FC Carthage" },
+  "/analyste": { title: "Performance Intelligence Center", subtitle: "" },
   "/analyste/tactique": { title: "Tactical Simulator", subtitle: "Terrain 3D · Drag & Drop · Métriques IA" },
   "/analyste/replay": { title: "Match Replay Intelligence", subtitle: "Détection auto · Timeline · Jump vidéo" },
   "/analyste/adversaire": { title: "Opponent Intelligence", subtitle: "Plan de match · Heatmap · Faiblesses" },
@@ -112,6 +110,7 @@ const TITLE_BY_PATH: Record<string, { title: string; subtitle: string }> = {
   "/analyste/injury-forecast": { title: "Injury Recovery Forecast", subtitle: "Protocole rééducation · Retour estimé · Risque rechute" },
   "/analyste/live-match": { title: "Live Match Dashboard", subtitle: "Temps réel · Win probability · Fatigue · Substitutions IA" },
   "/analyste/fatigue-heatmap": { title: "Fatigue Heatmap", subtitle: "Par tranche 15min · Effondrement physique · Actions & Erreurs" },
+  "/analyste/whoop": { title: "WHOOP Wearables Hub", subtitle: "Smartwatch 3D · Recovery · Strain · HRV · Sync joueurs" },
   "/analyste/video-analysis": { title: "Video Analysis Center", subtitle: "Replay · AI Coach · Highlights auto-détectés" },
   "/recruteur": { title: "Dashboard Recruteur", subtitle: "Karim Belaïd — Cellule de recrutement" },
   "/recruteur/discovery": { title: "Talent Discovery", subtitle: "Filtres avancés · Score IA · Base mondiale" },
@@ -238,7 +237,7 @@ function SuperAdminGlobalSearch() {
             transition={{ duration: 0.2 }}
             className="absolute left-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-2xl border p-3 shadow-2xl"
             style={{
-              background: "rgba(10,18,40,0.97)",
+              background: "var(--surface-panel-solid)",
               borderColor: "rgba(255,122,0,0.2)",
               backdropFilter: "blur(20px)",
               boxShadow: "0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(255,122,0,0.06)",
@@ -335,7 +334,7 @@ function SuperAdminQuickActions() {
             transition={{ duration: 0.18 }}
             className="absolute right-0 top-full z-50 mt-2 min-w-[180px] overflow-hidden rounded-2xl border p-2 shadow-2xl"
             style={{
-              background: "rgba(10,18,40,0.97)",
+              background: "var(--surface-panel-solid)",
               borderColor: "rgba(255,122,0,0.2)",
               backdropFilter: "blur(20px)",
               boxShadow: "0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(255,122,0,0.06)",
@@ -484,13 +483,13 @@ function ResponsableGlobalSearch() {
             transition={{ duration: 0.2 }}
             className="absolute left-0 top-full z-50 mt-2 w-96 overflow-hidden rounded-2xl border shadow-2xl"
             style={{
-              background: "rgba(8,14,30,0.98)",
+              background: "var(--surface-modal)",
               borderColor: "rgba(255,122,0,0.2)",
               backdropFilter: "blur(24px)",
               boxShadow: "0 24px 64px rgba(0,0,0,0.6), 0 0 40px rgba(255,122,0,0.06)",
             }}
           >
-            <div className="border-b px-4 py-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+            <div className="border-b px-4 py-3" style={{ borderColor: "var(--surface-panel-border)" }}>
               <p className="text-[10px] uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
                 {query ? `Résultats pour "${query}"` : "Recherche globale — Joueurs, Contrats, Documents, Staff"}
               </p>
@@ -528,11 +527,11 @@ function ResponsableGlobalSearch() {
                 <p className="py-8 text-center text-xs" style={{ color: "var(--text-muted)" }}>Aucun résultat pour "{query}"</p>
               )}
             </div>
-            <div className="border-t px-4 py-2.5" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+            <div className="border-t px-4 py-2.5" style={{ borderColor: "var(--surface-panel-border)" }}>
               <div className="flex gap-3 text-[10px]" style={{ color: "var(--text-muted)" }}>
-                <span><kbd className="rounded px-1 py-0.5" style={{ background: "rgba(255,255,255,0.08)" }}>↵</kbd> Naviguer</span>
-                <span><kbd className="rounded px-1 py-0.5" style={{ background: "rgba(255,255,255,0.08)" }}>Esc</kbd> Fermer</span>
-                <span><kbd className="rounded px-1 py-0.5" style={{ background: "rgba(255,255,255,0.08)" }}>⌘K</kbd> Ouvrir</span>
+                <span><kbd className="rounded px-1 py-0.5" style={{ background: "var(--surface-input)" }}>↵</kbd> Naviguer</span>
+                <span><kbd className="rounded px-1 py-0.5" style={{ background: "var(--surface-input)" }}>Esc</kbd> Fermer</span>
+                <span><kbd className="rounded px-1 py-0.5" style={{ background: "var(--surface-input)" }}>⌘K</kbd> Ouvrir</span>
               </div>
             </div>
           </motion.div>
@@ -548,7 +547,7 @@ export function Topbar() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { adminName, clubName, season, logoUrl } = useClubProfile();
-  const [chatOpen, setChatOpen] = useState(false);
+  const { t, locale } = useLocale();
   const isMedical = user?.role === "medical";
   const isJoueur = user?.role === "joueur";
   const isPreparateur = user?.role === "preparateur";
@@ -564,13 +563,64 @@ export function Topbar() {
   const currentPlayer = isJoueur ? getPlayerById(user?.playerId ?? "1") : null;
 
   const joueurTitles: Record<string, { title: string; subtitle: string }> = {
-    "/joueurs": { title: "Mon Dashboard", subtitle: `Vue personnelle — ${currentPlayer?.name ?? "Joueur"}` },
-    "/joueurs/performances": { title: "Mes Performances", subtitle: "Radar FIFA, évolution et comparaison équipe" },
-    "/joueurs/medical": { title: "Mon Suivi Médical", subtitle: "Statut, blessures et rendez-vous" },
-    "/joueurs/planning": { title: "Mon Planning", subtitle: "Matchs, entraînements et repos" },
-    "/joueurs/ia": { title: "AI Coach", subtitle: "Assistant personnel intelligent" },
-    "/joueurs/profil": { title: "Mon Profil", subtitle: currentPlayer?.name ?? "Profil joueur" },
-    "/joueurs/messages": { title: "Messages", subtitle: "Coach, Médecin, Direction" },
+    "/joueurs": {
+      title: t.nav.dashboard,
+      subtitle:
+        locale === "ar"
+          ? `عرض شخصي — ${currentPlayer?.name ?? "لاعب"}`
+          : locale === "en"
+            ? `Personal view — ${currentPlayer?.name ?? "Player"}`
+            : `Vue personnelle — ${currentPlayer?.name ?? "Joueur"}`,
+    },
+    "/joueurs/performances": {
+      title: t.nav.performances,
+      subtitle:
+        locale === "ar"
+          ? "رادار FIFA والتطور ومقارنة الفريق"
+          : locale === "en"
+            ? "FIFA radar, progression and team comparison"
+            : "Radar FIFA, évolution et comparaison équipe",
+    },
+    "/joueurs/medical": {
+      title: t.nav.medical,
+      subtitle:
+        locale === "ar"
+          ? "الحالة والإصابات والمواعيد"
+          : locale === "en"
+            ? "Status, injuries and appointments"
+            : "Statut, blessures et rendez-vous",
+    },
+    "/joueurs/planning": {
+      title: t.nav.planning,
+      subtitle:
+        locale === "ar"
+          ? "مباريات وتدريبات وراحة"
+          : locale === "en"
+            ? "Matches, training and rest"
+            : "Matchs, entraînements et repos",
+    },
+    "/joueurs/ia": {
+      title: t.nav.aiCoach,
+      subtitle:
+        locale === "ar"
+          ? "مساعد شخصي ذكي"
+          : locale === "en"
+            ? "Personal intelligent assistant"
+            : "Assistant personnel intelligent",
+    },
+    "/joueurs/profil": {
+      title: t.nav.profile,
+      subtitle: currentPlayer?.name ?? (locale === "ar" ? "ملف اللاعب" : locale === "en" ? "Player profile" : "Profil joueur"),
+    },
+    "/messages": {
+      title: t.nav.messages,
+      subtitle:
+        locale === "ar"
+          ? "التواصل الداخلي للنادي"
+          : locale === "en"
+            ? "Internal club communication"
+            : "Communication interne du club",
+    },
   };
 
   const prepFicheMatch = location.pathname.match(/^\/preparateur\/fiche\/(.+)$/);
@@ -609,7 +659,14 @@ export function Topbar() {
           ? clubSubtitle
           : `${clubName} · Saison ${season}`,
       }
-    : current;
+    : location.pathname.startsWith("/analyste")
+      ? {
+          title: current.title,
+          subtitle: location.pathname === "/analyste"
+            ? `${adminName} — ${clubName}`
+            : current.subtitle,
+        }
+      : current;
 
   return (
     <header className="flex items-center justify-between gap-4 px-8 py-5">
@@ -680,11 +737,10 @@ export function Topbar() {
         {(isMedical || isJoueur) && (
           <button
             type="button"
-            onClick={() => setChatOpen(true)}
+            onClick={() => navigate("/messages")}
             className="glass-input relative flex h-10 w-10 items-center justify-center"
           >
             <MessageSquare size={16} style={{ color: "var(--text-secondary)" }} />
-            <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full" style={{ background: "var(--accent)" }} />
           </button>
         )}
 
@@ -716,11 +772,7 @@ export function Topbar() {
           <ChevronDown size={14} style={{ color: "var(--text-muted)" }} />
         </button>
 
-        <ThemeToggle />
       </div>
-
-      {isMedical && <ChatDrawer open={chatOpen} onClose={() => setChatOpen(false)} />}
-      {isJoueur && <JoueurChatDrawer open={chatOpen} onClose={() => setChatOpen(false)} />}
     </header>
   );
 }

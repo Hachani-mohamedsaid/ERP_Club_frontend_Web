@@ -103,7 +103,7 @@ export function ContractsPage() {
                 <Pie data={PIE_DATA} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={4}>
                   {PIE_DATA.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} />)}
                 </Pie>
-                <Tooltip contentStyle={{ background: "rgba(10,16,30,0.95)", border: "1px solid rgba(255,122,0,0.2)", color: "var(--text-primary)", borderRadius: 12 }} />
+                <Tooltip contentStyle={{ background: "var(--surface-modal)", border: "1px solid rgba(255,122,0,0.2)", color: "var(--text-primary)", borderRadius: 12 }} />
                 <Legend wrapperStyle={{ color: "var(--text-muted)", fontSize: 11 }} />
               </PieChart>
             </ResponsiveContainer>
@@ -118,7 +118,7 @@ export function ContractsPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
                 <XAxis dataKey="name" tick={{ fill: "var(--text-muted)", fontSize: 10 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: "var(--text-muted)", fontSize: 10 }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ background: "rgba(10,16,30,0.95)", border: "1px solid rgba(255,122,0,0.2)", color: "var(--text-primary)", borderRadius: 12 }} formatter={(v: number) => [`${v}k DT`, "Salaire"]} />
+                <Tooltip contentStyle={{ background: "var(--surface-modal)", border: "1px solid rgba(255,122,0,0.2)", color: "var(--text-primary)", borderRadius: 12 }} formatter={(v: number) => [`${v}k DT`, "Salaire"]} />
                 <Bar dataKey="salary" radius={[6, 6, 0, 0]}
                   fill="url(#salGrad)" />
                 <defs>
@@ -246,7 +246,7 @@ export function ContractsPage() {
                     { label: "Jours restants",value: selected.daysLeft === 0 ? "Expiré" : `${selected.daysLeft} jours`, color: STATUS_COLOR[selected.status] },
                   ].map(({ label, value, color }) => (
                     <div key={label} className="flex items-center justify-between rounded-xl border px-4 py-3"
-                      style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                      style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
                       <span className="text-sm" style={{ color: "var(--text-muted)" }}>{label}</span>
                       <span className="text-sm font-semibold" style={{ color: color ?? "var(--text-primary)" }}>{value}</span>
                     </div>
@@ -280,7 +280,7 @@ export function ContractsPage() {
                         <Pie data={PIE_DATA} dataKey="value" nameKey="name" innerRadius={45} outerRadius={72} paddingAngle={4}>
                           {PIE_DATA.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} />)}
                         </Pie>
-                        <Tooltip contentStyle={{ background: "rgba(10,16,30,0.95)", border: "1px solid rgba(255,122,0,0.2)", color: "var(--text-primary)", borderRadius: 12 }} />
+                        <Tooltip contentStyle={{ background: "var(--surface-modal)", border: "1px solid rgba(255,122,0,0.2)", color: "var(--text-primary)", borderRadius: 12 }} />
                         <Legend wrapperStyle={{ color: "var(--text-muted)", fontSize: 11 }} />
                       </PieChart>
                     </ResponsiveContainer>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -6,62 +6,13 @@ import {
 } from "recharts";
 import { Activity, Clock, TrendingDown, CheckCircle2, AlertTriangle, Brain } from "lucide-react";
 import { AnalystePageTransition } from "../../components/analyste/AnalystePageTransition";
+import { AnalystePageLoader } from "../../components/analyste/AnalystePageLoader";
+import { useAnalysteInjuryForecast } from "../../hooks/useAnalysteResource";
+import type { InjuryForecastEntry } from "../../data/analysteExtendedData";
 
 const TOOLTIP_STYLE = {
   contentStyle: { background: "rgba(5,8,22,0.96)", border: "1px solid rgba(139,92,246,0.3)", color: "white", borderRadius: 12 },
 };
-
-interface InjuryForecast {
-  id: string; name: string; position: string; injury: string;
-  startDate: string; returnDays: number; confidence: number;
-  recoverySteps: { day: number; label: string; done: boolean }[];
-  riskAfterReturn: number; load: number; fatigue: number;
-  recoveryTimeline: { day: string; fitness: number }[];
-}
-
-const FORECASTS: InjuryForecast[] = [
-  { id: "f1", name: "Ahmed Ben Salah", position: "BU", injury: "Ischio-jambier droit Grade II",
-    startDate: "10/06/2026", returnDays: 14, confidence: 87,
-    recoverySteps: [
-      { day: 1,  label: "RICE Protocol — repos + glace", done: true  },
-      { day: 3,  label: "Électrostimulation + bain froid", done: true  },
-      { day: 7,  label: "Course légère 30min", done: true  },
-      { day: 10, label: "Exercices sans ballon", done: false },
-      { day: 14, label: "Retour entraînement complet", done: false },
-    ],
-    riskAfterReturn: 38, load: 92, fatigue: 85,
-    recoveryTimeline: [
-      { day: "J0", fitness: 30 }, { day: "J3", fitness: 40 }, { day: "J5", fitness: 52 },
-      { day: "J7", fitness: 63 }, { day: "J10", fitness: 74 }, { day: "J12", fitness: 82 },
-      { day: "J14", fitness: 91 },
-    ] },
-  { id: "f2", name: "Youssef Trabelsi", position: "MOC", injury: "Entorse cheville Grade I",
-    startDate: "01/06/2026", returnDays: 7, confidence: 92,
-    recoverySteps: [
-      { day: 1,  label: "Immobilisation + anti-inflammatoires", done: true  },
-      { day: 3,  label: "Kiné quotidienne",                     done: true  },
-      { day: 5,  label: "Proprioception",                       done: true  },
-      { day: 7,  label: "Retour entraînement partiel",          done: false },
-    ],
-    riskAfterReturn: 25, load: 55, fatigue: 35,
-    recoveryTimeline: [
-      { day: "J0", fitness: 45 }, { day: "J2", fitness: 55 }, { day: "J4", fitness: 65 },
-      { day: "J5", fitness: 73 }, { day: "J6", fitness: 80 }, { day: "J7", fitness: 88 },
-    ] },
-  { id: "f3", name: "Karim Dridi", position: "MC", injury: "Douleur genou (inflammation légère)",
-    startDate: "15/06/2026", returnDays: 5, confidence: 78,
-    recoverySteps: [
-      { day: 1, label: "Cryothérapie quotidienne", done: true  },
-      { day: 2, label: "Repos actif — vélo",        done: true  },
-      { day: 4, label: "Injection anti-inflammatoire", done: false },
-      { day: 5, label: "Feu vert médecin",             done: false },
-    ],
-    riskAfterReturn: 45, load: 88, fatigue: 78,
-    recoveryTimeline: [
-      { day: "J0", fitness: 55 }, { day: "J1", fitness: 60 }, { day: "J3", fitness: 70 },
-      { day: "J4", fitness: 78 }, { day: "J5", fitness: 84 },
-    ] },
-];
 
 function ProgressRing({ pct, color, size = 64 }: { pct: number; color: string; size?: number }) {
   const r = size / 2 - 5;
@@ -84,17 +35,27 @@ function ProgressRing({ pct, color, size = 64 }: { pct: number; color: string; s
 
 const ACard = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
   <motion.div className={`rounded-[20px] border p-5 ${className}`}
-    style={{ background: "rgba(5,8,22,0.7)", borderColor: "rgba(255,255,255,0.06)", boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}
+    style={{ background: "rgba(5,8,22,0.7)", borderColor: "var(--surface-panel-border)", boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}
     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
     {children}
   </motion.div>
 );
 
 export function AnalysteInjuryForecastPage() {
-  const [selected, setSelected] = useState<InjuryForecast>(FORECASTS[0]);
+  const { data, loading } = useAnalysteInjuryForecast();
+  const [selected, setSelected] = useState<InjuryForecastEntry | null>(null);
 
-  const progDone = selected.recoverySteps.filter(s => s.done).length;
-  const progTotal = selected.recoverySteps.length;
+  useEffect(() => {
+    if (data?.forecasts[0]) setSelected(data.forecasts[0]);
+  }, [data]);
+
+  if (loading && !data) return <AnalystePageLoader />;
+
+  const { forecasts: FORECASTS, summary } = data!;
+  const active = selected ?? FORECASTS[0];
+
+  const progDone = active.recoverySteps.filter(s => s.done).length;
+  const progTotal = active.recoverySteps.length;
   const progPct = Math.round((progDone / progTotal) * 100);
 
   return (
@@ -102,13 +63,13 @@ export function AnalysteInjuryForecastPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: "Joueurs blessés",         value: String(FORECASTS.length),      color: "#EF4444", icon: Activity     },
-          { label: "Retour le plus rapide",   value: `${Math.min(...FORECASTS.map(f => f.returnDays))} jours`, color: "#22C55E", icon: Clock },
-          { label: "Confiance moyenne",       value: `${Math.round(FORECASTS.reduce((s,f) => s+f.confidence,0)/FORECASTS.length)}%`, color: "#8B5CF6", icon: Brain },
-          { label: "Risque rechute moyen",    value: `${Math.round(FORECASTS.reduce((s,f) => s+f.riskAfterReturn,0)/FORECASTS.length)}%`, color: "#FF7A00", icon: AlertTriangle },
+          { label: "Joueurs blessés",         value: String(summary.injuredCount),      color: "#EF4444", icon: Activity     },
+          { label: "Retour le plus rapide",   value: `${summary.fastestReturnDays} jours`, color: "#22C55E", icon: Clock },
+          { label: "Confiance moyenne",       value: `${summary.avgConfidence}%`, color: "#8B5CF6", icon: Brain },
+          { label: "Risque rechute moyen",    value: `${summary.avgRelapseRisk}%`, color: "#FF7A00", icon: AlertTriangle },
         ].map(({ label, value, color, icon: Icon }, i) => (
           <motion.div key={label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
-            <div className="rounded-[16px] border p-4" style={{ background: "rgba(5,8,22,0.7)", borderColor: "rgba(255,255,255,0.06)" }}>
+            <div className="rounded-[16px] border p-4" style={{ background: "rgba(5,8,22,0.7)", borderColor: "var(--surface-panel-border)" }}>
               <div className="flex items-center gap-2">
                 <motion.div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
                   style={{ background: `${color}18`, color }}
@@ -131,7 +92,7 @@ export function AnalysteInjuryForecastPage() {
         <div className="space-y-3">
           <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Joueurs en rééducation</h3>
           {FORECASTS.map((f, i) => {
-            const isActive = selected.id === f.id;
+            const isActive = active.id === f.id;
             const doneSteps = f.recoverySteps.filter(s => s.done).length;
             const prog = Math.round((doneSteps / f.recoverySteps.length) * 100);
             return (
@@ -162,26 +123,26 @@ export function AnalysteInjuryForecastPage() {
 
         {/* Detail */}
         <AnimatePresence mode="wait">
-          <motion.div key={selected.id} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+          <motion.div key={active.id} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="space-y-4">
             {/* Hero */}
             <ACard>
               <div className="flex items-center gap-4 mb-4">
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-base font-black text-white"
                   style={{ background: "rgba(239,68,68,0.18)", color: "#EF4444" }}>
-                  {selected.name.split(" ").map(n => n[0]).join("")}
+                  {active.name.split(" ").map(n => n[0]).join("")}
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-base font-extrabold" style={{ color: "var(--text-primary)" }}>{selected.name}</h3>
-                  <p className="text-xs" style={{ color: "#EF4444" }}>{selected.injury}</p>
-                  <p className="text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }}>Blessure depuis: {selected.startDate}</p>
+                  <h3 className="text-base font-extrabold" style={{ color: "var(--text-primary)" }}>{active.name}</h3>
+                  <p className="text-xs" style={{ color: "#EF4444" }}>{active.injury}</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }}>Blessure depuis: {active.startDate}</p>
                 </div>
                 <div className="shrink-0 text-center">
                   <motion.p className="text-3xl font-black" style={{ color: "#22C55E" }}
                     animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 2, repeat: Infinity }}>
-                    {selected.returnDays}j
+                    {active.returnDays}j
                   </motion.p>
                   <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>Retour estimé</p>
-                  <p className="text-[10px] font-bold mt-0.5" style={{ color: "#8B5CF6" }}>Confiance {selected.confidence}%</p>
+                  <p className="text-[10px] font-bold mt-0.5" style={{ color: "#8B5CF6" }}>Confiance {active.confidence}%</p>
                 </div>
               </div>
 
@@ -189,7 +150,7 @@ export function AnalysteInjuryForecastPage() {
               <p className="text-xs font-semibold mb-2" style={{ color: "var(--text-muted)" }}>Courbe de récupération (fitness %)</p>
               <div className="h-36">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={selected.recoveryTimeline}>
+                  <AreaChart data={active.recoveryTimeline}>
                     <defs>
                       <linearGradient id="recovGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#22C55E" stopOpacity={0.4} />
@@ -217,7 +178,7 @@ export function AnalysteInjuryForecastPage() {
                   initial={{ width: 0 }} animate={{ width: `${progPct}%` }} transition={{ duration: 1 }} />
               </div>
               <div className="space-y-2">
-                {selected.recoverySteps.map((step, i) => (
+                {active.recoverySteps.map((step, i) => (
                   <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}
                     className="flex items-center gap-3 rounded-xl border p-2.5"
                     style={{
@@ -248,16 +209,16 @@ export function AnalysteInjuryForecastPage() {
               <div className="flex items-center gap-4">
                 <motion.div className="flex h-14 w-14 items-center justify-center rounded-full border-4 text-lg font-black shrink-0"
                   style={{
-                    borderColor: selected.riskAfterReturn >= 40 ? "#FF7A00" : "#22C55E",
+                    borderColor: active.riskAfterReturn >= 40 ? "#FF7A00" : "#22C55E",
                     color: "var(--text-primary)",
                   }}>
-                  {selected.riskAfterReturn}%
+                  {active.riskAfterReturn}%
                 </motion.div>
                 <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-                  <p className="mb-1">Charge actuelle: <strong style={{ color: "#FF7A00" }}>{selected.load}%</strong></p>
-                  <p>Fatigue: <strong style={{ color: "#EF4444" }}>{selected.fatigue}%</strong></p>
-                  <p className="mt-1" style={{ color: selected.riskAfterReturn >= 40 ? "#FF7A00" : "#22C55E" }}>
-                    {selected.riskAfterReturn >= 40
+                  <p className="mb-1">Charge actuelle: <strong style={{ color: "#FF7A00" }}>{active.load}%</strong></p>
+                  <p>Fatigue: <strong style={{ color: "#EF4444" }}>{active.fatigue}%</strong></p>
+                  <p className="mt-1" style={{ color: active.riskAfterReturn >= 40 ? "#FF7A00" : "#22C55E" }}>
+                    {active.riskAfterReturn >= 40
                       ? "⚠ Réduction charge recommandée au retour"
                       : "✓ Retour sans restriction envisageable"}
                   </p>

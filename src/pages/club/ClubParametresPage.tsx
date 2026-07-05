@@ -20,7 +20,7 @@ function Field({ label, value, onChange, type = "text", placeholder = "" }: {
       <input
         type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
         className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-        style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}
+        style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
         onFocus={e => { e.target.style.borderColor = "rgba(255,107,87,0.5)"; }}
         onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.08)"; }}
       />
@@ -36,7 +36,7 @@ function Toggle({ label, description, on, onChange, defaultOn = true }: {
   const toggle = () => (onChange ? onChange(!isOn) : setLocal(!local));
   return (
     <div className="flex items-center justify-between gap-4 rounded-2xl border p-4"
-      style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+      style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
       <div>
         <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{label}</p>
         {description && <p className="text-xs" style={{ color: "var(--text-muted)" }}>{description}</p>}
@@ -64,7 +64,7 @@ function PasswordField({ label }: { label: string }) {
       <div className="relative">
         <input type={show ? "text" : "password"} placeholder="••••••••••"
           className="w-full rounded-xl border py-2.5 pl-4 pr-10 text-sm outline-none"
-          style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }} />
+          style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }} />
         <button type="button" onClick={() => setShow(!show)}
           className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-muted)" }}>
           {show ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -78,7 +78,7 @@ function SaveRow({ onSave }: { onSave: () => Promise<void> }) {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   return (
-    <div className="flex justify-end gap-3 border-t pt-4" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+    <div className="flex justify-end gap-3 border-t pt-4" style={{ borderColor: "var(--surface-panel-border)" }}>
       <motion.button
         type="button" onClick={async () => { setSaving(true); try { await onSave(); setSaved(true); setTimeout(() => setSaved(false), 2500); } finally { setSaving(false); } }}
         className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
@@ -219,7 +219,7 @@ export function ClubParametresPage() {
                   <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Adresse</label>
                   <textarea rows={3} value={form.address} onChange={(e) => set("address")(e.target.value)}
                     className="w-full resize-none rounded-xl border px-4 py-2.5 text-sm outline-none"
-                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }} />
+                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }} />
                 </div>
                 <div className="space-y-3">
                   <Field label="Ville" value={form.city} onChange={set("city")} />
@@ -246,7 +246,7 @@ export function ClubParametresPage() {
                   <label className="cursor-pointer">
                     <motion.div
                       className="flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium"
-                      style={{ borderColor: "rgba(255,255,255,0.1)", color: "var(--text-secondary)" }}
+                      style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-secondary)" }}
                       whileHover={{ borderColor: "#FF6B57", color: "#FF6B57" }}>
                       <Upload size={14} /> Changer le logo
                     </motion.div>
@@ -282,7 +282,7 @@ export function ClubParametresPage() {
               </div>
 
               {/* Preview */}
-              <div className="mb-6 rounded-2xl border p-4" style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+              <div className="mb-6 rounded-2xl border p-4" style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
                 <p className="mb-3 text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Aperçu</p>
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl text-xs font-bold text-white"

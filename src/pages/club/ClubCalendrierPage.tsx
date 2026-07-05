@@ -94,7 +94,7 @@ function EventFormModal({
     >
       <motion.div
         className="w-full max-w-md rounded-[24px] border p-6"
-        style={{ background: "rgba(10,18,40,0.98)", borderColor: "rgba(255,107,87,0.25)" }}
+        style={{ background: "var(--surface-panel-solid)", borderColor: "rgba(255,107,87,0.25)" }}
         initial={{ scale: 0.92, y: 20 }} animate={{ scale: 1, y: 0 }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -119,7 +119,7 @@ function EventFormModal({
                 onChange={(e) => setForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
                 placeholder={f.placeholder}
                 className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
               />
             </div>
           ))}
@@ -131,7 +131,7 @@ function EventFormModal({
               value={form.eventType}
               onChange={(e) => setForm((prev) => ({ ...prev, eventType: e.target.value }))}
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(30,35,50,0.97)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             >
               {EVENT_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
@@ -295,7 +295,7 @@ export function ClubCalendrierPage() {
           })}
         </div>
 
-        <div className="mt-5 flex flex-wrap gap-4 border-t pt-4" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+        <div className="mt-5 flex flex-wrap gap-4 border-t pt-4" style={{ borderColor: "var(--surface-panel-border)" }}>
           {EVENT_TYPES.map(({ value, label }) => (
             <div key={value} className="flex items-center gap-2 text-xs font-medium" style={{ color: "var(--text-muted)" }}>
               <div className="h-2.5 w-2.5 rounded-full" style={{ background: EVENT_COLORS[value] }} />
@@ -311,7 +311,7 @@ export function ClubCalendrierPage() {
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedEvent(null)} />
             <motion.div
               className="relative w-full max-w-md rounded-[20px] border p-6"
-              style={{ background: "rgba(15,29,58,0.98)", borderColor: "rgba(255,255,255,0.08)" }}
+              style={{ background: "rgba(15,29,58,0.98)", borderColor: "var(--surface-panel-border)" }}
               initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
             >
               <div className="mb-4 flex items-start justify-between">

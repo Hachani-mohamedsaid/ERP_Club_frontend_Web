@@ -3,7 +3,8 @@ import { motion } from "framer-motion";
 import { Mic, Play, Volume2, Star, AlertCircle, Target, TrendingUp } from "lucide-react";
 import { AnalystePageTransition } from "../../components/analyste/AnalystePageTransition";
 import { AnalysteKpiCard } from "../../components/analyste/AnalysteKpiCard";
-import { VIDEO_COACH_INSIGHTS } from "../../data/analysteData";
+import { AnalystePageLoader } from "../../components/analyste/AnalystePageLoader";
+import { useAnalysteVideoCoach } from "../../hooks/useAnalysteResource";
 
 const CATEGORY_CONFIG = {
   top: { icon: Star, color: "#22C55E", label: "Top actions" },
@@ -13,7 +14,12 @@ const CATEGORY_CONFIG = {
 };
 
 export function AnalysteVideoCoachPage() {
+  const { data, loading } = useAnalysteVideoCoach();
   const [playing, setPlaying] = useState(false);
+
+  if (loading && !data) return <AnalystePageLoader />;
+
+  const { insights } = data!;
 
   return (
     <AnalystePageTransition>
@@ -68,7 +74,7 @@ export function AnalysteVideoCoachPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 + i * 0.1 }}
                 className="flex w-full items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition-colors hover:bg-white/[0.04]"
-                style={{ borderColor: "rgba(255,255,255,0.05)", color: "var(--text-secondary)" }}
+                style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-secondary)" }}
               >
                 <Volume2 size={14} style={{ color: "#FF6B57" }} /> {s}
               </motion.button>
@@ -78,7 +84,7 @@ export function AnalysteVideoCoachPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {VIDEO_COACH_INSIGHTS.map((insight, i) => {
+        {insights.map((insight, i) => {
           const cfg = CATEGORY_CONFIG[insight.category];
           const Icon = cfg.icon;
           return (
