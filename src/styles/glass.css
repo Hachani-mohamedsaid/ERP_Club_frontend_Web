@@ -40,6 +40,10 @@
   border-right: 1px solid var(--surface-panel-border);
 }
 
+[data-theme="light"] .glass-nav {
+  box-shadow: 2px 0 16px rgba(15, 23, 42, 0.06);
+}
+
 .glass-input {
   background: var(--surface-panel);
   backdrop-filter: blur(12px);
@@ -299,4 +303,20 @@
 .app-logo:hover {
   transform: scale(1.08);
   filter: drop-shadow(0 0 20px rgba(255, 122, 0, 0.8)) drop-shadow(0 0 40px rgba(255, 122, 0, 0.4));
+}
+
+/* Logo has white lettering — keep a dark plate in light sidebar */
+[data-theme="light"] .glass-nav .app-logo-wrap {
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+  border-radius: var(--radius-odin-lg);
+  padding: 10px 14px;
+  background: linear-gradient(165deg, #1c1c32 0%, #0f1424 100%);
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+}
+
+[data-theme="light"] .glass-nav .app-logo-wrap .app-logo {
+  filter: drop-shadow(0 0 10px rgba(255, 122, 0, 0.45));
 }

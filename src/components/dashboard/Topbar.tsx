@@ -1,163 +1,17 @@
-import { ChevronDown, Search, Bell, MessageSquare, Plus, Building2, Users, CreditCard, X } from "lucide-react";
+import { Search, Bell, MessageSquare, Plus, Building2, Users, CreditCard, X } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../contexts/AuthContext";
-import { useLocale } from "../../contexts/LocaleContext";
 import { MedicalNotificationsDropdown } from "../medical/MedicalNotificationsDropdown";
 import { PrepNotificationsDropdown } from "../preparateur/PrepNotificationsDropdown";
 import { JoueurNotificationsDropdown } from "../player/JoueurNotificationsDropdown";
-import { getPlayerById } from "../../data/joueurMockData";
 import { FinanceNotificationsDropdown } from "../finance/FinanceNotificationsDropdown";
 import { ClubNotificationsDropdown } from "../club/ClubNotificationsDropdown";
 import { SuperAdminNotificationsDropdown } from "../superadmin/SuperAdminNotificationsDropdown";
 import { FinanceGlobalSearch } from "../finance/FinanceGlobalSearch";
 import { useClubProfile } from "../../hooks/useClubProfile";
 import { ClubLogo } from "../club/ClubLogo";
-
-const JOUEUR_STATIC = ["performances", "medical", "planning", "profil", "ia", "messages"];
-
-const TITLE_BY_PATH: Record<string, { title: string; subtitle: string }> = {
-  "/dashboard": { title: "Dashboard Responsable Club", subtitle: "Vue exécutive du club" },
-  "/responsable/validation":   { title: "Centre de Validation", subtitle: "Recrutements, contrats et budgets en attente" },
-  "/responsable/recrutement":  { title: "Module Recrutement", subtitle: "Prospects, shortlist, agents et rapports scouting" },
-  "/responsable/budget":       { title: "Gestion Budget", subtitle: "Budgets par catégorie et approbation des dépenses" },
-  "/responsable/staff":        { title: "Gestion Staff", subtitle: "Coaches, médecins, analystes et personnel du club" },
-  "/responsable/utilisateurs": { title: "Gestion Utilisateurs", subtitle: "Comptes, rôles et accès au sein du club" },
-  "/responsable/parametres":   { title: "Paramètres Club", subtitle: "Général, identité visuelle et sécurité" },
-  "/responsable/audit":        { title: "Journal d'Activité", subtitle: "Historique complet des actions — AUDIT_VIEW" },
-  "/responsable/notifications": { title: "Centre de Notifications", subtitle: "Contrats, validations, blessures et alertes" },
-  "/responsable/documents":    { title: "Gestion Documents", subtitle: "Contrats, rapports, médical et licences PDF" },
-  "/players": { title: "Joueurs", subtitle: "" },
-  "/teams": { title: "Équipes", subtitle: "Effectifs, staff et classement" },
-  "/training": { title: "Entraînements", subtitle: "Présence et organisation des séances" },
-  "/matches": { title: "Matchs", subtitle: "Composition, analyse et MVP" },
-  "/performance": { title: "Performances", subtitle: "Indicateurs équipe & joueurs" },
-  "/recruitment": { title: "Recrutement", subtitle: "Demandes et priorités pour le staff" },
-  "/scouting": { title: "Scouting", subtitle: "Prospects et demandes de recrutement" },
-  "/scout": { title: "Scout Dashboard", subtitle: "KPIs · Pipeline · Recommandations ODIN" },
-  "/scout/search": { title: "Recherche Prospects", subtitle: "Filtres avancés · Profil complet · Watchlist" },
-  "/scout/watchlist": { title: "Watchlist", subtitle: "Priorité A/B/C · Notes privées scout" },
-  "/scout/recruitment": { title: "Workflow Recrutement", subtitle: "Kanban drag & drop · 5 étapes pipeline" },
-  "/scout/ai": { title: "ODIN AI Scout", subtitle: "Recommandation intelligente · Analyse de compatibilité" },
-  "/scout/report": { title: "Rapports Scouts", subtitle: "Rapports d'observation et analyses" },
-  "/scout/favorites": { title: "Joueurs Favoris", subtitle: "Sélection et comparaison de prospects" },
-  "/scout/comparison": { title: "Comparaison Joueurs", subtitle: "Analyse comparative multi-critères" },
-  "/coach": { title: "Entraîneur", subtitle: "Tableau de bord de l'entraîneur" },
-  "/contracts": { title: "Contrats", subtitle: "Contrats, alertes et renouvellement" },
-  "/medical": { title: "Dashboard Médical", subtitle: "Vue synthétique — blessures, récupération et risques" },
-  "/medical/dossiers": { title: "Dossiers Médicaux", subtitle: "Fiches joueurs complètes — FIFA Medical Card" },
-  "/medical/blessures": { title: "Blessures", subtitle: "Suivi actif des blessures et gravité" },
-  "/medical/reeducation": { title: "Rééducation", subtitle: "Board Kanban — phases de récupération" },
-  "/medical/rendez-vous": { title: "Rendez-vous", subtitle: "Calendrier médical — consultations, IRM, rééducation" },
-  "/medical/documents": { title: "Documents Médicaux", subtitle: "IRM, radios, certificats et analyses" },
-  "/medical/rapports": { title: "Rapports Médicaux", subtitle: "Export PDF/Excel — rapports mensuels et joueurs" },
-  "/medical/risque": { title: "Joueurs à Risque", subtitle: "Prédiction IA — heatmap et risk score" },
-  "/medical/effectif": { title: "Effectif Disponible", subtitle: "Statut disponibilité pour le coach" },
-  "/medical/ia": { title: "Medical AI", subtitle: "Assistant médical intelligent" },
-  "/joueurs": { title: "Mon Dashboard", subtitle: "Vue personnelle — Ahmed Ben Salah" },
-  "/joueurs/performances": { title: "Mes Performances", subtitle: "Radar FIFA, évolution et comparaison équipe" },
-  "/joueurs/medical": { title: "Mon Suivi Médical", subtitle: "Statut, blessures et rendez-vous" },
-  "/joueurs/planning": { title: "Mon Planning", subtitle: "Matchs, entraînements et repos" },
-  "/joueurs/ia": { title: "AI Coach", subtitle: "Assistant personnel intelligent" },
-  "/joueurs/profil": { title: "Mon Profil", subtitle: "Informations, contrat et documents" },
-  "/club": { title: "Dashboard Club", subtitle: "" },
-  "/club/joueurs": { title: "Gestion Joueurs", subtitle: "Effectif, statuts et comparaisons" },
-  "/club/staff": { title: "Staff Technique", subtitle: "Coach, médecin, scout et préparateurs" },
-  "/club/finances": { title: "Finances Club", subtitle: "Budget, dépenses et revenus" },
-  "/club/contrats": { title: "Contrats", subtitle: "Alertes et renouvellements" },
-  "/club/calendrier": { title: "Calendrier Club", subtitle: "Matchs, entraînements et réunions" },
-  "/club/sante": { title: "Santé Club", subtitle: "Blessures, risques et disponibilité" },
-  "/club/infrastructures": { title: "Infrastructures", subtitle: "Terrains, salles et centre médical" },
-  "/club/analytics": { title: "Analytics Club", subtitle: "Performance, buteurs et valeur marchande" },
-  "/club/ia": { title: "Assistant IA Club", subtitle: "Analyse intelligente du club" },
-  "/club/parametres": { title: "Paramètres Club", subtitle: "Général, sécurité et notifications" },
-  "/club/utilisateurs": { title: "Gestion Utilisateurs", subtitle: "Membres, rôles et accès du club" },
-  "/club/permissions": { title: "Permissions & Rôles", subtitle: "Matrice RBAC des droits d'accès" },
-  "/club/audit-logs": { title: "Audit Logs", subtitle: "Historique complet des actions" },
-  "/club/notifications": { title: "Notifications", subtitle: "Alertes, contrats, finance et médical" },
-  "/preparateur": { title: "Dashboard Préparateur", subtitle: "Hichem Mansouri — FC Carthage" },
-  "/preparateur/charge": { title: "Charge d'Entraînement", subtitle: "Suivi charge, fatigue et récupération" },
-  "/preparateur/condition": { title: "Condition Physique", subtitle: "Profils FIFA et évolution joueurs" },
-  "/preparateur/risques": { title: "Risque Blessures", subtitle: "Heatmap, IA et recommandations coach" },
-  "/preparateur/programmes": { title: "Programmes Physiques", subtitle: "Création, affectation et calendrier" },
-  "/preparateur/historique": { title: "Historique Séances", subtitle: "Sessions passées et planifiées" },
-  "/preparateur/disponibilite": { title: "Disponibilité Match", subtitle: "Fitness, fatigue et readiness joueurs" },
-  "/preparateur/rapports": { title: "Rapports Physiques", subtitle: "Historique, export PDF et Excel" },
-  "/preparateur/ia": { title: "Assistant IA Préparateur", subtitle: "Analyse charge, fatigue et disponibilité" },
-  "/preparateur/seances": { title: "Gestion des Séances", subtitle: "Créer, modifier, supprimer séances · Présence joueurs" },
-  "/preparateur/calendrier": { title: "Calendrier", subtitle: "Entraînements, matchs, récupération et programmes" },
-  "/preparateur/comparaison": { title: "Comparaison Joueurs", subtitle: "Radar et métriques avancées côte à côte" },
-  "/preparateur/wellness": { title: "Wellness Questionnaire", subtitle: "Pré-entraînement — Sommeil, fatigue, stress, humeur" },
-  "/preparateur/recovery": { title: "Recovery Center", subtitle: "Cryothérapie, massage, repos et hydratation" },
-  "/preparateur/notifications": { title: "Notifications", subtitle: "Blessures, fatigue, validations et alertes" },
-  "/analyste": { title: "Performance Intelligence Center", subtitle: "" },
-  "/analyste/tactique": { title: "Tactical Simulator", subtitle: "Terrain 3D · Drag & Drop · Métriques IA" },
-  "/analyste/replay": { title: "Match Replay Intelligence", subtitle: "Détection auto · Timeline · Jump vidéo" },
-  "/analyste/adversaire": { title: "Opponent Intelligence", subtitle: "Plan de match · Heatmap · Faiblesses" },
-  "/analyste/blessures": { title: "Injury Prediction Lab", subtitle: "Modèle ML · Probabilités 7/14/30 jours" },
-  "/analyste/evolution": { title: "Physical Evolution Lab", subtitle: "Deep Learning · Forecast ML" },
-  "/analyste/valeur": { title: "Market Value Predictor", subtitle: "Estimation IA · Projection 3/6 mois" },
-  "/analyste/scouting": { title: "Scouting Intelligence", subtitle: "Similarité IA · Top 10 joueurs" },
-  "/analyste/patterns": { title: "Deep Learning Insights", subtitle: "Pattern Detection Premium" },
-  "/analyste/training": { title: "Training Optimizer", subtitle: "Programme IA · Calendar DnD" },
-  "/analyste/video-coach": { title: "AI Video Coach", subtitle: "Summary post-match · Voice AI" },
-  "/analyste/executive": { title: "Executive Dashboard", subtitle: "KPIs direction · ROI · Stratégie IA" },
-  "/analyste/prediction": { title: "Match Prediction Engine", subtitle: "Random Forest · XGBoost · CatBoost — Ensemble ML" },
-  "/analyste/ppi": { title: "Player Performance Index", subtitle: "Score IA global — Profil FIFA · Évolution · Ranking" },
-  "/analyste/chemistry": { title: "Team Chemistry Analysis", subtitle: "Graphe relationnel · Chimie par duo · Recommandations" },
-  "/analyste/transfer": { title: "Transfer Recommendation Engine", subtitle: "Compatibilité IA · Gain xG · Budget estimé" },
-  "/analyste/injury-forecast": { title: "Injury Recovery Forecast", subtitle: "Protocole rééducation · Retour estimé · Risque rechute" },
-  "/analyste/live-match": { title: "Live Match Dashboard", subtitle: "Temps réel · Win probability · Fatigue · Substitutions IA" },
-  "/analyste/fatigue-heatmap": { title: "Fatigue Heatmap", subtitle: "Par tranche 15min · Effondrement physique · Actions & Erreurs" },
-  "/analyste/whoop": { title: "WHOOP Wearables Hub", subtitle: "Smartwatch 3D · Recovery · Strain · HRV · Sync joueurs" },
-  "/analyste/video-analysis": { title: "Video Analysis Center", subtitle: "Replay · AI Coach · Highlights auto-détectés" },
-  "/recruteur": { title: "Dashboard Recruteur", subtitle: "Karim Belaïd — Cellule de recrutement" },
-  "/recruteur/discovery": { title: "Talent Discovery", subtitle: "Filtres avancés · Score IA · Base mondiale" },
-  "/recruteur/shortlist": { title: "Shortlist", subtitle: "Cibles prioritaires et suivi" },
-  "/recruteur/ai": { title: "AI Recruitment", subtitle: "Recherche intelligente par critères" },
-  "/recruteur/video": { title: "Video Scouting", subtitle: "Analyse vidéo IA · Timeline · Heatmap" },
-  "/recruteur/compare": { title: "Player Compare", subtitle: "Comparaison split-screen · Radar" },
-  "/recruteur/market": { title: "Market Value", subtitle: "Valeur, historique et prévision IA" },
-  "/recruteur/negotiations": { title: "Negotiations", subtitle: "Pipeline Kanban des transferts" },
-  "/recruteur/contracts": { title: "Contracts", subtitle: "Génération et conseil IA" },
-  "/recruteur/transfers": { title: "Transfer Center", subtitle: "Offres, statuts et budget" },
-  "/recruteur/requests": { title: "Requests & Validation", subtitle: "Workflow Scout → Responsable" },
-  "/recruteur/reports": { title: "Reports", subtitle: "Export PDF · Excel · PowerPoint" },
-  "/recruteur/scouts": { title: "Gestion Scouts", subtitle: "Liste · Zones géographiques · Performance" },
-  "/recruteur/agents": { title: "Gestion Agents", subtitle: "Contacts · Joueurs représentés · Négociations" },
-  "/recruteur/pipeline": { title: "Talent Pipeline", subtitle: "Kanban: Détecté → Analysé → Shortlist → Offre → Transfert" },
-  "/recruteur/calendar": { title: "Calendrier Recrutement", subtitle: "Matchs à observer · RDV agents · Signatures" },
-  "/recruteur/notifications": { title: "Notifications Recrutement", subtitle: "Offres · Contrats · Talents · Budget" },
-  "/recruteur/audit": { title: "Journal d'Audit", subtitle: "Traçabilité complète des actions recrutement" },
-  "/coach": { title: "Dashboard Coach", subtitle: "Vue générale · Effectif · Prochains matchs" },
-  "/coach/effectif": { title: "Effectif / Squad", subtitle: "Liste joueurs · Forme · Fatigue · Blessures · Contrats" },
-  "/coach/lineup": { title: "Composition d'Équipe", subtitle: "Lineup builder · Formations · Titulaires · Remplaçants" },
-  "/coach/medical": { title: "Centre Médical", subtitle: "Blessures · Retours · Fatigue · Disponibilités" },
-  "/coach/attendance": { title: "Présence Joueurs", subtitle: "Présent · Absent · Retard · Séances" },
-  "/coach/training-builder": { title: "Training Builder", subtitle: "Créer et planifier les séances d'entraînement" },
-  "/coach/tactical": { title: "Tableau Tactique", subtitle: "Positions · Mouvements · Pressing · Séquences" },
-  "/coach/match-analysis": { title: "Analyse de Match", subtitle: "Avant · Pendant · Après — Vue complète" },
-  "/coach/ai": { title: "ODIN AI Coach", subtitle: "Assistant IA · Recommandations tactiques & effectif" },
-  "/coach/opponent": { title: "Analyse Adversaire", subtitle: "Forces · Faiblesses · Joueurs clés · Stratégie" },
-  "/finance": { title: "Finance", subtitle: "Budget, revenus et dépenses" },
-  "/reports": { title: "Rapports", subtitle: "Rapports sportifs, financiers et recrutement" },
-  "/messages": { title: "Messages", subtitle: "Communication interne du club" },
-  "/odin-ai": { title: "ODIN AI", subtitle: "Analyses intelligentes et prévisions" },
-  "/administration/documents": { title: "Administration documentaire", subtitle: "Archivage et pièces de support" },
-  "/superadmin/dashboard": { title: "Super Admin Dashboard", subtitle: "Vue globale de la plateforme SaaS" },
-  "/superadmin/clubs": { title: "Clubs", subtitle: "Gestion des clubs et abonnements" },
-  "/superadmin/users": { title: "Utilisateurs", subtitle: "Gestion des comptes et permissions" },
-  "/superadmin/payments": { title: "Paiements", subtitle: "Suivi des factures et transactions" },
-  "/superadmin/bi": { title: "Business Intelligence", subtitle: "Prévisions et recommandations IA" },
-  "/superadmin/revenue-analytics": { title: "Revenue Analytics", subtitle: "MRR, ARR et churn" },
-  "/superadmin/subscriptions": { title: "Abonnements", subtitle: "Revue des plans SaaS" },
-  "/superadmin/analytics": { title: "Analytics", subtitle: "Tendances SaaS et performance" },
-  "/superadmin/support": { title: "Support", subtitle: "Tickets et assistance" },
-  "/superadmin/security": { title: "Sécurité", subtitle: "Risques et contrôles d'accès" },
-  "/superadmin/settings": { title: "Paramètres", subtitle: "Configuration de la plateforme" },
-  "/superadmin/ia": { title: "IA Admin", subtitle: "Supervision des services IA" },
-};
 
 /* ─── Super Admin Global Search ────────────────────────────────── */
 const SA_SEARCH_DATA = [
@@ -200,25 +54,25 @@ function SuperAdminGlobalSearch() {
   }, []);
 
   return (
-    <div ref={containerRef} className="relative hidden sm:block">
+    <div ref={containerRef} className="relative w-full max-w-xl hidden sm:block">
       <div
-        className="flex items-center gap-2 rounded-xl border px-3 py-2 transition-all"
+        className="glass-input flex items-center gap-2.5 rounded-xl px-3 py-2.5 transition-all"
         style={{
-          background: "rgba(255,255,255,0.04)",
-          borderColor: open ? "rgba(255,122,0,0.45)" : "rgba(255,255,255,0.08)",
+          background: "var(--surface-raised)",
+          borderColor: open ? "rgba(255,122,0,0.45)" : "var(--surface-panel-border)",
           boxShadow: open ? "0 0 0 2px rgba(255,122,0,0.1)" : "none",
-          width: open ? 280 : 220,
+          width: open ? 320 : 280,
           transition: "all 0.25s ease",
         }}
         onClick={() => { setOpen(true); setTimeout(() => inputRef.current?.focus(), 50); }}
       >
-        <Search size={13} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+        <Search size={15} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
         <input
           ref={inputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Rechercher clubs, users, paiements..."
-          className="w-full bg-transparent text-xs outline-none"
+          className="w-full bg-transparent text-sm outline-none"
           style={{ color: "var(--text-primary)" }}
         />
         {query && (
@@ -446,25 +300,25 @@ function ResponsableGlobalSearch() {
   };
 
   return (
-    <div ref={containerRef} className="relative hidden sm:block">
+    <div ref={containerRef} className="relative w-full max-w-xl hidden sm:block">
       <motion.div
-        className="flex cursor-text items-center gap-2 rounded-xl border px-3 py-2"
+        className="glass-input flex cursor-text items-center gap-2.5 rounded-xl px-3 py-2.5"
         style={{
-          background: "rgba(255,255,255,0.04)",
-          borderColor: open ? "rgba(255,122,0,0.45)" : "rgba(255,255,255,0.08)",
+          background: "var(--surface-raised)",
+          borderColor: open ? "rgba(255,122,0,0.45)" : "var(--surface-panel-border)",
           boxShadow: open ? "0 0 0 2px rgba(255,122,0,0.1)" : "none",
         }}
-        animate={{ width: open ? 300 : 230 }}
+        animate={{ width: open ? 360 : 300 }}
         transition={{ duration: 0.22 }}
         onClick={() => { setOpen(true); setTimeout(() => inputRef.current?.focus(), 50); }}
       >
-        <Search size={13} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+        <Search size={15} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
         <input
           ref={inputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Joueurs, contrats, staff… ⌘K"
-          className="w-full bg-transparent text-xs outline-none"
+          className="w-full bg-transparent text-sm outline-none"
           style={{ color: "var(--text-primary)" }}
         />
         {query && (
@@ -546,8 +400,7 @@ export function Topbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { adminName, clubName, season, logoUrl } = useClubProfile();
-  const { t, locale } = useLocale();
+  const { clubName, logoUrl } = useClubProfile();
   const isMedical = user?.role === "medical";
   const isJoueur = user?.role === "joueur";
   const isPreparateur = user?.role === "preparateur";
@@ -556,132 +409,9 @@ export function Topbar() {
   const isFinance = user?.role === "finance" || location.pathname.startsWith("/finance");
   const isClubAdmin = user?.role === "adminclub";
 
-  const profileMatch = location.pathname.match(/^\/joueurs\/([^/]+)$/);
-  const profileId = profileMatch?.[1];
-  const isProfilePage = profileId && !JOUEUR_STATIC.includes(profileId);
-  const profilePlayer = isProfilePage && profileId ? getPlayerById(profileId) : null;
-  const currentPlayer = isJoueur ? getPlayerById(user?.playerId ?? "1") : null;
-
-  const joueurTitles: Record<string, { title: string; subtitle: string }> = {
-    "/joueurs": {
-      title: t.nav.dashboard,
-      subtitle:
-        locale === "ar"
-          ? `عرض شخصي — ${currentPlayer?.name ?? "لاعب"}`
-          : locale === "en"
-            ? `Personal view — ${currentPlayer?.name ?? "Player"}`
-            : `Vue personnelle — ${currentPlayer?.name ?? "Joueur"}`,
-    },
-    "/joueurs/performances": {
-      title: t.nav.performances,
-      subtitle:
-        locale === "ar"
-          ? "رادار FIFA والتطور ومقارنة الفريق"
-          : locale === "en"
-            ? "FIFA radar, progression and team comparison"
-            : "Radar FIFA, évolution et comparaison équipe",
-    },
-    "/joueurs/medical": {
-      title: t.nav.medical,
-      subtitle:
-        locale === "ar"
-          ? "الحالة والإصابات والمواعيد"
-          : locale === "en"
-            ? "Status, injuries and appointments"
-            : "Statut, blessures et rendez-vous",
-    },
-    "/joueurs/planning": {
-      title: t.nav.planning,
-      subtitle:
-        locale === "ar"
-          ? "مباريات وتدريبات وراحة"
-          : locale === "en"
-            ? "Matches, training and rest"
-            : "Matchs, entraînements et repos",
-    },
-    "/joueurs/ia": {
-      title: t.nav.aiCoach,
-      subtitle:
-        locale === "ar"
-          ? "مساعد شخصي ذكي"
-          : locale === "en"
-            ? "Personal intelligent assistant"
-            : "Assistant personnel intelligent",
-    },
-    "/joueurs/profil": {
-      title: t.nav.profile,
-      subtitle: currentPlayer?.name ?? (locale === "ar" ? "ملف اللاعب" : locale === "en" ? "Player profile" : "Profil joueur"),
-    },
-    "/messages": {
-      title: t.nav.messages,
-      subtitle:
-        locale === "ar"
-          ? "التواصل الداخلي للنادي"
-          : locale === "en"
-            ? "Internal club communication"
-            : "Communication interne du club",
-    },
-  };
-
-  const prepFicheMatch = location.pathname.match(/^\/preparateur\/fiche\/(.+)$/);
-  const prepFicheTitle = prepFicheMatch
-    ? { title: "Fiche Joueur", subtitle: "Profil complet — charge, fatigue, blessures & KPI avancés" }
-    : null;
-
-  const recruteurPlayerMatch = location.pathname.match(/^\/recruteur\/player\/(.+)$/);
-  const recruteurPlayerTitle = recruteurPlayerMatch
-    ? { title: "Profil Joueur", subtitle: "Informations · Stats · Valeur marchande · Risque blessure" }
-    : null;
-
-  const coachPlayerMatch = location.pathname.match(/^\/coach\/player\/(.+)$/);
-  const coachPlayerTitle = coachPlayerMatch
-    ? { title: "Fiche Joueur", subtitle: "Performance · Médical · Historique · IA Coach" }
-    : null;
-
-  const scoutProspectMatch = location.pathname.match(/^\/scout\/prospect\/(.+)$/);
-  const scoutProspectTitle = scoutProspectMatch
-    ? { title: "Fiche Prospect", subtitle: "Performance · Heatmap · Historique · Notes · Vidéo" }
-    : null;
-
-  const current = (scoutProspectTitle ?? coachPlayerTitle ?? recruteurPlayerTitle ?? prepFicheTitle
-    ?? (isProfilePage && profilePlayer
-      ? { title: profilePlayer.name, subtitle: `${profilePlayer.position} • OVR ${profilePlayer.ovr} • ${profilePlayer.marketValue}` }
-      : isJoueur && joueurTitles[location.pathname]
-        ? joueurTitles[location.pathname]
-        : TITLE_BY_PATH[location.pathname]))
-    ?? TITLE_BY_PATH["/dashboard"];
-
-  const clubSubtitle = `Bonjour ${adminName} — ${clubName}, Saison ${season}`;
-  const pageMeta = isClubAdmin && location.pathname.startsWith("/club")
-    ? {
-        title: current.title,
-        subtitle: location.pathname === "/club"
-          ? clubSubtitle
-          : `${clubName} · Saison ${season}`,
-      }
-    : location.pathname.startsWith("/analyste")
-      ? {
-          title: current.title,
-          subtitle: location.pathname === "/analyste"
-            ? `${adminName} — ${clubName}`
-            : current.subtitle,
-        }
-      : current;
-
   return (
-    <header className="flex items-center justify-between gap-4 px-8 py-5">
-      {location.pathname !== "/players" && (
-        <div>
-          <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
-            {pageMeta.title}
-          </h1>
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            {pageMeta.subtitle}
-          </p>
-        </div>
-      )}
-
-      <div className="flex items-center gap-3">
+    <header className="flex items-center gap-4 px-8 py-5">
+      <div className="flex min-w-0 flex-1 items-center">
         {isSuperAdmin ? (
           <SuperAdminGlobalSearch />
         ) : isResponsable ? (
@@ -689,7 +419,7 @@ export function Topbar() {
         ) : isFinance ? (
           <FinanceGlobalSearch />
         ) : !isJoueur && (
-          <div className="relative hidden sm:block">
+          <div className="relative hidden w-full max-w-xl sm:block">
             <Search
               size={15}
               className="absolute left-3 top-1/2 -translate-y-1/2"
@@ -698,11 +428,14 @@ export function Topbar() {
             <input
               type="text"
               placeholder="Rechercher un joueur, un contrat, un prospect..."
-              className="glass-input w-64 py-2 pl-9 pr-3 text-sm"
+              className="glass-input w-full py-2.5 pl-9 pr-3 text-sm"
+              style={{ background: "var(--surface-raised)" }}
             />
           </div>
         )}
+      </div>
 
+      <div className="flex shrink-0 items-center gap-3">
         {isSuperAdmin && <SuperAdminQuickActions />}
 
         {isMedical ? (
@@ -744,7 +477,7 @@ export function Topbar() {
           </button>
         )}
 
-        <button className="glass-input flex items-center gap-2 py-2 pl-2 pr-3">
+        <div className="glass-input flex items-center gap-2 py-2 pl-2 pr-3">
           {isSuperAdmin ? (
             <div
               className="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold"
@@ -769,8 +502,7 @@ export function Topbar() {
                 ? clubName
                 : (user?.fullName ?? "Utilisateur")}
           </span>
-          <ChevronDown size={14} style={{ color: "var(--text-muted)" }} />
-        </button>
+        </div>
 
       </div>
     </header>

@@ -4,7 +4,7 @@ import {
   motion, AnimatePresence, useMotionValue, useSpring, useTransform, type MotionValue,
 } from "framer-motion";
 import {
-  Sparkles, Bell, CheckCircle2, Cpu, ArrowRight, Loader2, Radar, LayoutDashboard,
+  CheckCircle2, Cpu, ArrowRight, Loader2, LayoutDashboard,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useUserPreferences } from "../contexts/UserPreferencesContext";
@@ -29,12 +29,6 @@ const HERO_COUNTERS = [
   { end: 750, decimals: 0, suffix: "", label: "Joueurs" },
   { end: 18, decimals: 0, suffix: "", label: "Staff" },
   { end: 3.2, decimals: 1, suffix: "M", label: "Events analysés" },
-];
-
-const LIVE_NOTIFS = [
-  { icon: CheckCircle2, text: "FC Carthage connecté", color: "#22C55E" },
-  { icon: Radar, text: "Nouveau rapport scouting", color: "#3B82F6" },
-  { icon: Sparkles, text: "Analyse IA terminée", color: "#A855F7" },
 ];
 
 function pentagon(cx: number, cy: number, r: number, rot: number) {
@@ -216,26 +210,6 @@ function BootScreen() {
   );
 }
 
-function NeonCursor() {
-  const x = useMotionValue(-100);
-  const y = useMotionValue(-100);
-  const ringX = useSpring(x, { stiffness: 200, damping: 20 });
-  const ringY = useSpring(y, { stiffness: 200, damping: 20 });
-
-  useEffect(() => {
-    const move = (e: MouseEvent) => { x.set(e.clientX); y.set(e.clientY); };
-    window.addEventListener("mousemove", move);
-    return () => window.removeEventListener("mousemove", move);
-  }, [x, y]);
-
-  return (
-    <>
-      <motion.div className="neon-cursor-dot" style={{ x, y, width: 7, height: 7, marginLeft: -3.5, marginTop: -3.5, background: "#8B5CF6", boxShadow: "0 0 10px #8B5CF6" }} />
-      <motion.div className="neon-cursor-ring" style={{ x: ringX, y: ringY, width: 30, height: 30, marginLeft: -15, marginTop: -15, border: "1.5px solid rgba(139,92,246,0.6)", boxShadow: "0 0 14px rgba(139,92,246,0.4)" }} />
-    </>
-  );
-}
-
 function Particles() {
   const dots = useMemo(
     () => Array.from({ length: 30 }).map((_, i) => ({
@@ -316,40 +290,6 @@ function AIOrb({ px, py }: { px: MotionValue<number>; py: MotionValue<number> })
         </div>
       </div>
     </motion.div>
-  );
-}
-
-function LiveNotifications() {
-  const [idx, setIdx] = useState(0);
-  const [show, setShow] = useState(true);
-  useEffect(() => {
-    const t = setInterval(() => {
-      setShow(false);
-      setTimeout(() => { setIdx((i) => (i + 1) % LIVE_NOTIFS.length); setShow(true); }, 400);
-    }, 3200);
-    return () => clearInterval(t);
-  }, []);
-  const n = LIVE_NOTIFS[idx];
-  const Icon = n.icon;
-  return (
-    <div className="pointer-events-none absolute right-6 top-6 z-20 hidden md:block">
-      <AnimatePresence mode="wait">
-        {show && (
-          <motion.div
-            key={idx}
-            initial={{ opacity: 0, x: 40, scale: 0.9 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 40, scale: 0.9 }}
-            className="flex items-center gap-3 rounded-2xl border px-4 py-2.5 backdrop-blur-xl"
-            style={{ background: "rgba(255,255,255,0.04)", borderColor: `${n.color}40`, boxShadow: `0 8px 30px rgba(0,0,0,0.3)` }}
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: `${n.color}1f`, color: n.color }}><Icon size={16} /></div>
-            <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{n.text}</span>
-            <Bell size={13} style={{ color: "var(--text-muted)" }} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
   );
 }
 
@@ -469,14 +409,12 @@ export function LoginPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden" onMouseMove={handlePointer} style={{ cursor: "none" }}>
+    <div className="relative min-h-screen overflow-hidden" onMouseMove={handlePointer}>
       <div className="login-aurora"><div className="login-grid" /></div>
       <Stars />
       <FaintNumbers px={px} py={py} start={booted} />
       <BackgroundBall />
       <Particles />
-      <NeonCursor />
-      <LiveNotifications />
       <FloatingStats px={px} py={py} start={booted} />
       <AIOrb px={px} py={py} />
 
