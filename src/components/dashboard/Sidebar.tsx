@@ -351,7 +351,7 @@ const NAV_ITEMS: NavItem[] = [
         label: "TACTIQUE & VIDÉO",
         items: [
           { label: "Tactical Simulator",    icon: Crosshair,        path: "/analyste/tactique" },
-          { label: "Video Analysis Center", icon: Film,             path: "/analyste/video-analysis" },
+          { label: "Video Analysis Pro", icon: Film,             path: "/analyste/video-analysis" },
           { label: "Opponent Intel",        icon: Shield,           path: "/analyste/adversaire" },
           { label: "Fatigue Heatmap",       icon: Activity,         path: "/analyste/fatigue-heatmap" },
         ],
@@ -359,7 +359,7 @@ const NAV_ITEMS: NavItem[] = [
       {
         label: "SANTÉ & MARCHÉ",
         items: [
-          { label: "WHOOP Wearables",       icon: Watch,            path: "/analyste/whoop" },
+          { label: "Viiv Smartwatch",       icon: Watch,            path: "/analyste/viiv" },
           { label: "Injury Lab",            icon: Bandage,          path: "/analyste/blessures" },
           { label: "Injury Forecast",       icon: TrendingUp,       path: "/analyste/injury-forecast" },
           { label: "Transfer Engine",       icon: UserPlus,         path: "/analyste/transfer" },

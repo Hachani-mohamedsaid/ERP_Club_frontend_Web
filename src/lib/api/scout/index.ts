@@ -1,5 +1,12 @@
 import { parseApiError } from "../config";
-import { apiFetch } from "../authHeaders";
+import { apiFetch, apiFetchWithTimeout } from "../authHeaders";
+import {
+  applyLocalProspectFilters,
+  buildAiSearchQuery,
+  mapAiHitToProspect,
+  type ScoutSearchFilters,
+  type SearchPlayerResult,
+} from "./searchFallback";
 
 async function parse<T>(response: Response): Promise<T> {
   if (!response.ok) throw new Error(await parseApiError(response));
@@ -325,6 +332,95 @@ export const scoutApi = {
       durationMs: number;
       model: string;
     }>),
+
+  searchProspects: async (filters: ScoutSearchFilters) => {
+    type SearchResponse = {
+      summary: string;
+      results: SearchPlayerResult[];
+      aiEnabled: boolean;
+      sources: { database: number; ai: number };
+      durationMs?: number;
+      model: string;
+    };
+
+    try {
+      const response = await apiFetchWithTimeout(
+        "/scout/search",
+        { method: "POST", body: JSON.stringify(filters) },
+        60_000,
+      );
+      if (response.ok) return parse<SearchResponse>(response);
+      if (response.status !== 404 && response.status !== 405) {
+        throw new Error(await parseApiError(response));
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      const isMissingRoute = /404|405|not found/i.test(msg);
+      if (!isMissingRoute && !(err instanceof DOMException && err.name === "AbortError")) {
+        throw err;
+      }
+    }
+
+    const [prospectsRes, aiRes] = await Promise.allSettled([
+      apiFetch("/scout/prospects"),
+      apiFetchWithTimeout(
+        "/scout/ai/search",
+        { method: "POST", body: JSON.stringify({ query: buildAiSearchQuery(filters) }) },
+        60_000,
+      ),
+    ]);
+
+    let dbResults: SearchPlayerResult[] = [];
+    if (prospectsRes.status === "fulfilled" && prospectsRes.value.ok) {
+      const all = (await prospectsRes.value.json()) as ScoutProspectDto[];
+      dbResults = applyLocalProspectFilters(all, filters).map((p) => ({
+        ...p,
+        inDatabase: true,
+        source: "database" as const,
+      }));
+    }
+
+    let aiResults: SearchPlayerResult[] = [];
+    let aiEnabled = false;
+    let model = "fallback-local";
+
+    if (aiRes.status === "fulfilled" && aiRes.value.ok) {
+      const data = (await aiRes.value.json()) as {
+        results?: {
+          id: string;
+          name: string;
+          club: string;
+          position: string;
+          age: number;
+          potential: number;
+          flag: string;
+          aiScore: number;
+          inDatabase?: boolean;
+        }[];
+        model?: string;
+      };
+      aiEnabled = true;
+      model = data.model ?? "openai";
+      const dbNames = new Set(dbResults.map((p) => p.name.toLowerCase()));
+      aiResults = (data.results ?? [])
+        .filter((r) => !dbNames.has(r.name.toLowerCase()))
+        .map((r, i) => mapAiHitToProspect(r, i, filters.country));
+    }
+
+    const merged = [...dbResults, ...aiResults].sort((a, b) => b.potential - a.potential);
+    return {
+      summary:
+        aiResults.length > 0
+          ? `${merged.length} joueurs — ${dbResults.length} en base, ${aiResults.length} via IA (mode compat)`
+          : dbResults.length > 0
+            ? `${dbResults.length} joueur(s) en base (endpoint /scout/search indisponible)`
+            : "Aucun résultat — déployez le backend ou vérifiez OPENAI_API_KEY",
+      results: merged,
+      aiEnabled,
+      sources: { database: dbResults.length, ai: aiResults.length },
+      model,
+    } satisfies SearchResponse;
+  },
 
   getAgents: (refresh = false) =>
     apiFetch(`/scout/agents${refresh ? "?refresh=1" : ""}`).then(parse<{
