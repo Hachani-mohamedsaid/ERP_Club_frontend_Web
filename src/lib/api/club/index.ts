@@ -1,5 +1,5 @@
 import { parseApiError } from "../config";
-import { apiFetch } from "../authHeaders";
+import { apiFetch, apiFetchWithTimeout } from "../authHeaders";
 
 async function parse<T>(response: Response): Promise<T> {
   if (!response.ok) throw new Error(await parseApiError(response));
@@ -134,7 +134,7 @@ export const clubApi = {
     apiFetch(`/club/players/${playerId}/appointment`, { method: "POST", body: JSON.stringify(body) }).then(parse),
 
   // ─── Finance Extensions ──────────────────────────────────────
-  getFinanceReport: () => apiFetch("/club/finance/report").then(parse),
+  getFinanceReport: () => apiFetchWithTimeout("/club/finance/report", {}, 20000).then(parse),
   purgeFinanceDemo: () => apiFetch("/club/finance/purge-demo", { method: "POST" }).then(parse),
   updateFinanceEntry: (id: string, body: Record<string, unknown>) =>
     apiFetch(`/club/finance/${id}`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
