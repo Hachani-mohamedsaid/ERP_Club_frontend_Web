@@ -148,15 +148,14 @@
   --accent-soft: rgba(255, 122, 0, 0.12);
   --accent-rgb: 255, 122, 0;
 
-  --nav-bg: rgba(15, 15, 28, 0.98);
-  --nav-text: rgba(255, 255, 255, 0.68);
+  --nav-bg: rgba(248, 250, 252, 0.98);
+  --nav-text: #64748b;
   --nav-text-active: #ffffff;
-  /* Sidebar chrome stays dark in both themes */
-  --nav-panel: #16162a;
-  --nav-panel-border: rgba(255, 255, 255, 0.12);
-  --nav-panel-input: rgba(255, 255, 255, 0.08);
-  --nav-panel-text: #f5f6fa;
-  --nav-panel-muted: #a8abb8;
+  --nav-panel: #ffffff;
+  --nav-panel-border: rgba(15, 23, 42, 0.1);
+  --nav-panel-input: rgba(15, 23, 42, 0.04);
+  --nav-panel-text: #0f172a;
+  --nav-panel-muted: #64748b;
 
   --divider: rgba(15, 23, 42, 0.1);
   --chart-grid: rgba(15, 23, 42, 0.1);
