@@ -64,7 +64,7 @@ export function ScoutRecruitmentPage() {
             { label: "Budget total", value: `${(totalValue / 1000).toFixed(1)}M €`, color: S.warning },
           ].map(k => (
             <div key={k.label} className="rounded-xl border px-3 py-2 text-center"
-              style={{ background: "rgba(12,9,30,0.85)", borderColor: "rgba(255,255,255,0.07)" }}>
+              style={{ background: "rgba(12,9,30,0.85)", borderColor: "var(--surface-panel-border)" }}>
               <p className="text-sm font-extrabold" style={{ color: k.color }}>{k.value}</p>
               <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>{k.label}</p>
             </div>
@@ -123,7 +123,7 @@ export function ScoutRecruitmentPage() {
                             whileHover={{ y: -2, boxShadow: `0 8px 24px rgba(0,0,0,0.35)` }}>
                             {/* Drag handle + priority */}
                             <div className="flex items-center gap-2 mb-2">
-                              <GripVertical size={12} style={{ color: "rgba(255,255,255,0.25)" }} />
+                              <GripVertical size={12} style={{ color: "var(--text-muted)" }} />
                               <div className="flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-extrabold text-white flex-1 max-w-[28px]"
                                 style={{ background: `linear-gradient(135deg,${S.primary},S.primary)` }}>
                                 {p.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
@@ -159,7 +159,7 @@ export function ScoutRecruitmentPage() {
                     </AnimatePresence>
 
                     {colProspects.length === 0 && !isDragTarget && (
-                      <div className="py-6 text-center text-[10px]" style={{ color: "rgba(255,255,255,0.15)" }}>
+                      <div className="py-6 text-center text-[10px]" style={{ color: "var(--text-muted)" }}>
                         Déposer ici
                       </div>
                     )}

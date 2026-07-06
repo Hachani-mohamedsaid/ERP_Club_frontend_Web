@@ -64,34 +64,46 @@
    ============================================================ */
 :root,
 [data-theme="dark"] {
-  --surface-canvas: #0d0d18;
-  --surface-canvas-2: #14141f;
-  --surface-panel: rgba(35, 35, 57, 0.55);
-  --surface-panel-solid: #1a1a2e;
-  --surface-panel-border: rgba(255, 255, 255, 0.08);
-  --surface-raised: rgba(46, 46, 72, 0.6);
-  --bg-primary: #0d0d18;
+  --surface-canvas: #0b0b14;
+  --surface-canvas-2: #12121c;
+  --surface-panel: rgba(28, 28, 46, 0.72);
+  --surface-panel-solid: #16162a;
+  --surface-panel-border: rgba(255, 255, 255, 0.12);
+  --surface-raised: rgba(40, 40, 64, 0.85);
+  --surface-input: rgba(255, 255, 255, 0.06);
+  --surface-hover: rgba(255, 255, 255, 0.06);
+  --surface-modal: #141428;
+  --bg-primary: #0b0b14;
 
-  --text-primary: #f4f5f7;
-  --text-secondary: #c2c5cc;
-  --text-muted: #8d8fa3;
+  --text-primary: #f5f6fa;
+  --text-secondary: #cfd1d9;
+  --text-muted: #a8abb8;
   --text-on-accent: #ffffff;
 
   --accent: #ff7a00;
   --accent-strong: #e66000;
   --accent-dark: #c0392b;
-  --accent-soft: rgba(255, 122, 0, 0.16);
+  --accent-soft: rgba(255, 122, 0, 0.18);
   --accent-rgb: 255, 122, 0;
-  --pitch-line: rgba(255, 255, 255, 0.12);
+  --pitch-line: rgba(255, 255, 255, 0.14);
 
-  --nav-bg: rgba(13, 13, 24, 0.92);
-  --nav-text: rgba(255, 255, 255, 0.55);
+  --nav-bg: rgba(11, 11, 20, 0.96);
+  --nav-text: rgba(255, 255, 255, 0.62);
   --nav-text-active: #ffffff;
+  --nav-panel: #16162a;
+  --nav-panel-border: rgba(255, 255, 255, 0.12);
+  --nav-panel-input: rgba(255, 255, 255, 0.08);
+  --nav-panel-text: #f5f6fa;
+  --nav-panel-muted: #a8abb8;
+
+  --divider: rgba(255, 255, 255, 0.1);
+  --chart-grid: rgba(255, 255, 255, 0.1);
+  --chart-axis: rgba(255, 255, 255, 0.45);
 
   --glass-blur: 20px;
-  --glass-sheen: rgba(255, 255, 255, 0.06);
-  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.35);
-  --shadow-glass-strong: 0 20px 60px rgba(0, 0, 0, 0.5);
+  --glass-sheen: rgba(255, 255, 255, 0.07);
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-glass-strong: 0 20px 60px rgba(0, 0, 0, 0.55);
 
   /* ---- Medical module semantic colors ---- */
   --color-state-purple: #7c3aed;
@@ -113,18 +125,21 @@
 }
 
 [data-theme="light"] {
-  --surface-canvas: #f0f2f5;
-  --surface-canvas-2: #e4e8ed;
-  --surface-panel: rgba(255, 255, 255, 0.90);
+  --surface-canvas: #eef1f6;
+  --surface-canvas-2: #e2e7ef;
+  --surface-panel: rgba(255, 255, 255, 0.92);
   --surface-panel-solid: #ffffff;
-  --surface-panel-border: rgba(0, 0, 0, 0.08);
+  --surface-panel-border: rgba(15, 23, 42, 0.1);
   --pitch-line: #5f6b7a;
-  --surface-raised: rgba(255, 255, 255, 0.95);
-  --bg-primary: #f0f2f5;
+  --surface-raised: #ffffff;
+  --surface-input: rgba(15, 23, 42, 0.04);
+  --surface-hover: rgba(15, 23, 42, 0.04);
+  --surface-modal: #ffffff;
+  --bg-primary: #eef1f6;
 
-  --text-primary: #1a1a2e;
-  --text-secondary: #3a3a5c;
-  --text-muted: #6b7280;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
   --text-on-accent: #ffffff;
 
   --accent: #ff7a00;
@@ -133,14 +148,23 @@
   --accent-soft: rgba(255, 122, 0, 0.12);
   --accent-rgb: 255, 122, 0;
 
-  --nav-bg: rgba(26, 26, 46, 0.96);
-  --nav-text: rgba(255, 255, 255, 0.65);
+  --nav-bg: rgba(248, 250, 252, 0.98);
+  --nav-text: #64748b;
   --nav-text-active: #ffffff;
+  --nav-panel: #ffffff;
+  --nav-panel-border: rgba(15, 23, 42, 0.1);
+  --nav-panel-input: rgba(15, 23, 42, 0.04);
+  --nav-panel-text: #0f172a;
+  --nav-panel-muted: #64748b;
+
+  --divider: rgba(15, 23, 42, 0.1);
+  --chart-grid: rgba(15, 23, 42, 0.1);
+  --chart-axis: rgba(15, 23, 42, 0.45);
 
   --glass-blur: 18px;
-  --glass-sheen: rgba(255, 255, 255, 0.5);
-  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.08);
-  --shadow-glass-strong: 0 12px 40px rgba(26, 26, 46, 0.16), 0 0 0 1px rgba(109, 119, 132, 0.35);
+  --glass-sheen: rgba(255, 255, 255, 0.55);
+  --shadow-glass: 0 8px 28px rgba(15, 23, 42, 0.08);
+  --shadow-glass-strong: 0 14px 40px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(15, 23, 42, 0.06);
 
   /* ---- Medical module semantic colors (light — darker for readability) ---- */
   --color-state-purple: #6d28d9;
@@ -173,6 +197,51 @@ body,
   color: var(--text-primary);
 }
 
+/* Theme-aware surfaces — prefer these over hardcoded dark hex/rgba */
+.odin-card {
+  background: var(--surface-panel-solid);
+  border: 1px solid var(--surface-panel-border);
+  color: var(--text-primary);
+}
+
+.odin-modal {
+  background: var(--surface-modal);
+  border: 1px solid var(--surface-panel-border);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-glass-strong);
+}
+
+.odin-input-surface {
+  background: var(--surface-input);
+  border: 1px solid var(--surface-panel-border);
+  color: var(--text-primary);
+}
+
+/* Inputs / selects inherit readable colors in both themes */
+input,
+textarea,
+select {
+  color: var(--text-primary);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* Native date/select icons readable on dark panels */
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="time"],
+[data-theme="dark"] select {
+  color-scheme: dark;
+}
+
+[data-theme="light"] input[type="date"],
+[data-theme="light"] input[type="time"],
+[data-theme="light"] select {
+  color-scheme: light;
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);
@@ -203,6 +272,24 @@ body {
   35% { opacity: 0.85; }
   100% { transform: translateX(130%) skewX(-14deg); opacity: 0; }
 }
+
+[data-reduced-motion="true"] *,
+[data-reduced-motion="true"] *::before,
+[data-reduced-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+[data-large-text="true"] {
+  font-size: 106%;
+}
+
+[data-large-text="true"] .text-xs { font-size: 0.82rem; }
+[data-large-text="true"] .text-sm { font-size: 0.95rem; }
+[data-large-text="true"] .text-base { font-size: 1.08rem; }
+[data-large-text="true"] .text-lg { font-size: 1.22rem; }
 
 .group:hover .fifa-card-shine-hover {
   animation: fifa-card-shine 0.85s ease-in-out;

@@ -50,7 +50,7 @@ export function AnalysteScoutingPage() {
               <PolarAngleAxis dataKey="stat" tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
               <Radar name={compare.internal.name.split(" ")[0]} dataKey="internal" stroke="#8B5CF6" fill="#8B5CF6" fillOpacity={0.25} animationDuration={1000} />
               <Radar name={compare.external.name.split(" ")[0]} dataKey="external" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.2} animationDuration={1000} />
-              <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12 }} />
+              <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }} />
               <Legend />
             </RadarChart>
           </ResponsiveContainer>
@@ -67,7 +67,7 @@ export function AnalysteScoutingPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + i * 0.05 }}
               className="rounded-xl border p-3 transition-colors hover:bg-white/[0.04]"
-              style={{ borderColor: "rgba(255,255,255,0.05)" }}
+              style={{ borderColor: "var(--surface-panel-border)" }}
             >
               <p className="text-xs font-bold" style={{ color: "#3B82F6" }}>#{i + 1}</p>
               <p className="mt-1 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{p.name}</p>

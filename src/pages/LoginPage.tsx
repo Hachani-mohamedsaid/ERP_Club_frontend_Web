@@ -4,15 +4,18 @@ import {
   motion, AnimatePresence, useMotionValue, useSpring, useTransform, type MotionValue,
 } from "framer-motion";
 import {
-  Sparkles, Bell, CheckCircle2, Cpu, ArrowRight, Loader2, Radar, LayoutDashboard,
+  CheckCircle2, Cpu, ArrowRight, Loader2, LayoutDashboard,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import { PLATFORM_ROLES, LOGIN_QUICK_ROLES, type PlatformRole } from "../data/platformRoles";
+import { useUserPreferences } from "../contexts/UserPreferencesContext";
+import { getLandingPage } from "../lib/preferences/landingRoutes";
+import type { Role } from "../contexts/AuthContext";
+import { type PlatformRole } from "../data/platformRoles";
 import odinLogo from "../assets/odin-logo.png";
 
 type RoleDef = PlatformRole;
 
-const ROLES: RoleDef[] = LOGIN_QUICK_ROLES;
+const AUTH_STEPS = ["Connexion...", "Authentification...", "Chargement IA..."];
 
 const FLOATING_STATS = [
   { label: "Joueurs", end: 24, decimals: 0, prefix: "", suffix: "", x: "7%", y: "20%", color: "#3B82F6" },
@@ -26,12 +29,6 @@ const HERO_COUNTERS = [
   { end: 750, decimals: 0, suffix: "", label: "Joueurs" },
   { end: 18, decimals: 0, suffix: "", label: "Staff" },
   { end: 3.2, decimals: 1, suffix: "M", label: "Events analysés" },
-];
-
-const LIVE_NOTIFS = [
-  { icon: CheckCircle2, text: "FC Carthage connecté", color: "#22C55E" },
-  { icon: Radar, text: "Nouveau rapport scouting", color: "#3B82F6" },
-  { icon: Sparkles, text: "Analyse IA terminée", color: "#A855F7" },
 ];
 
 function pentagon(cx: number, cy: number, r: number, rot: number) {
@@ -213,26 +210,6 @@ function BootScreen() {
   );
 }
 
-function NeonCursor() {
-  const x = useMotionValue(-100);
-  const y = useMotionValue(-100);
-  const ringX = useSpring(x, { stiffness: 200, damping: 20 });
-  const ringY = useSpring(y, { stiffness: 200, damping: 20 });
-
-  useEffect(() => {
-    const move = (e: MouseEvent) => { x.set(e.clientX); y.set(e.clientY); };
-    window.addEventListener("mousemove", move);
-    return () => window.removeEventListener("mousemove", move);
-  }, [x, y]);
-
-  return (
-    <>
-      <motion.div className="neon-cursor-dot" style={{ x, y, width: 7, height: 7, marginLeft: -3.5, marginTop: -3.5, background: "#8B5CF6", boxShadow: "0 0 10px #8B5CF6" }} />
-      <motion.div className="neon-cursor-ring" style={{ x: ringX, y: ringY, width: 30, height: 30, marginLeft: -15, marginTop: -15, border: "1.5px solid rgba(139,92,246,0.6)", boxShadow: "0 0 14px rgba(139,92,246,0.4)" }} />
-    </>
-  );
-}
-
 function Particles() {
   const dots = useMemo(
     () => Array.from({ length: 30 }).map((_, i) => ({
@@ -316,76 +293,6 @@ function AIOrb({ px, py }: { px: MotionValue<number>; py: MotionValue<number> })
   );
 }
 
-function LiveNotifications() {
-  const [idx, setIdx] = useState(0);
-  const [show, setShow] = useState(true);
-  useEffect(() => {
-    const t = setInterval(() => {
-      setShow(false);
-      setTimeout(() => { setIdx((i) => (i + 1) % LIVE_NOTIFS.length); setShow(true); }, 400);
-    }, 3200);
-    return () => clearInterval(t);
-  }, []);
-  const n = LIVE_NOTIFS[idx];
-  const Icon = n.icon;
-  return (
-    <div className="pointer-events-none absolute right-6 top-6 z-20 hidden md:block">
-      <AnimatePresence mode="wait">
-        {show && (
-          <motion.div
-            key={idx}
-            initial={{ opacity: 0, x: 40, scale: 0.9 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 40, scale: 0.9 }}
-            className="flex items-center gap-3 rounded-2xl border px-4 py-2.5 backdrop-blur-xl"
-            style={{ background: "rgba(255,255,255,0.04)", borderColor: `${n.color}40`, boxShadow: `0 8px 30px rgba(0,0,0,0.3)` }}
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: `${n.color}1f`, color: n.color }}><Icon size={16} /></div>
-            <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{n.text}</span>
-            <Bell size={13} style={{ color: "var(--text-muted)" }} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function RoleCard({ role, onClick }: { role: RoleDef; onClick: () => void }) {
-  const Icon = role.icon;
-  return (
-    <motion.button
-      type="button"
-      onClick={onClick}
-      variants={{ hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } }}
-      transition={{ duration: 0.25, ease: "easeOut" }}
-      whileHover={{
-        scale: 1.02,
-        y: -3,
-        backgroundColor: `${role.color}14`,
-        borderColor: role.color,
-        boxShadow: `0 0 0 1px ${role.color}, 0 0 22px ${role.color}80, 0 16px 44px ${role.color}40`,
-      }}
-      whileTap={{ scale: 0.98 }}
-      className="group flex items-center gap-3 rounded-2xl border p-3 text-left"
-      style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.08)" }}
-    >
-      <div
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:-rotate-12 group-hover:scale-110"
-        style={{ background: `${role.color}1f`, color: role.color }}
-      >
-        <Icon size={20} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-bold" style={{ color: "var(--text-primary)" }}>{role.label}</div>
-        <div className="truncate text-[11px]" style={{ color: "var(--text-muted)" }}>{role.desc}</div>
-      </div>
-      <ArrowRight size={15} className="shrink-0 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100" style={{ color: role.color }} />
-    </motion.button>
-  );
-}
-
-const AUTH_STEPS = ["Connexion...", "Authentification...", "Chargement IA..."];
-
 function AuthOverlay({ role, onDone }: { role: RoleDef; onDone: () => void }) {
   const [step, setStep] = useState(0);
   const [welcome, setWelcome] = useState(false);
@@ -442,7 +349,8 @@ function AuthOverlay({ role, onDone }: { role: RoleDef; onDone: () => void }) {
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { loginWithCredentials, loginDemo } = useAuth();
+  const { loginWithCredentials } = useAuth();
+  const { preferences } = useUserPreferences();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
@@ -467,30 +375,18 @@ export function LoginPage() {
   }
 
   function getDestination(role: string) {
-    return role === "coach" ? "/coach" :
-      role === "scout" ? "/scout" :
-      role === "medical" ? "/medical" :
-      role === "finance" ? "/comptabilite" :
-      role === "superadmin" ? "/superadmin/dashboard" :
-      role === "adminclub" ? "/club" :
-      role === "responsable" ? "/dashboard" :
-      role === "preparateur" ? "/preparateur" :
-      role === "analyste" ? "/analyste" :
-      role === "recruteur" ? "/recruteur" :
-      role === "joueur" ? "/joueurs" :
-      "/dashboard";
+    return getLandingPage(role as Role, preferences.landingPages);
   }
 
   function startLogin(loginEmail: string, role: string, label?: string) {
     pendingDest.current = getDestination(role);
-    const def = ROLES.find((r) => r.email === loginEmail.toLowerCase())
-      ?? {
-        email: loginEmail,
-        label: label ?? "Espace Club",
-        desc: "",
-        icon: LayoutDashboard,
-        color: "#C0392B",
-      };
+    const def: RoleDef = {
+      email: loginEmail,
+      label: label ?? "Espace Club",
+      desc: "",
+      icon: LayoutDashboard,
+      color: "#C0392B",
+    };
     setPending(true);
     setAuthRole(def);
   }
@@ -512,21 +408,13 @@ export function LoginPage() {
     }
   }
 
-  function handleDemoLogin(loginEmail: string) {
-    setLoginError("");
-    const role = loginDemo(loginEmail);
-    startLogin(loginEmail, role);
-  }
-
   return (
-    <div className="relative min-h-screen overflow-hidden" onMouseMove={handlePointer} style={{ cursor: "none" }}>
+    <div className="relative min-h-screen overflow-hidden" onMouseMove={handlePointer}>
       <div className="login-aurora"><div className="login-grid" /></div>
       <Stars />
       <FaintNumbers px={px} py={py} start={booted} />
       <BackgroundBall />
       <Particles />
-      <NeonCursor />
-      <LiveNotifications />
       <FloatingStats px={px} py={py} start={booted} />
       <AIOrb px={px} py={py} />
 
@@ -553,7 +441,7 @@ export function LoginPage() {
                 <motion.span
                   key={tag}
                   className="rounded-full border px-2.5 py-1 text-[11px] font-semibold"
-                  style={{ borderColor: "rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "var(--text-secondary)" }}
+                  style={{ borderColor: "var(--surface-panel-border)", background: "rgba(255,255,255,0.04)", color: "var(--text-secondary)" }}
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: booted ? 1 : 0, y: booted ? 0 : 6 }}
                   transition={{ delay: 0.3 + i * 0.1 }}
@@ -586,7 +474,7 @@ export function LoginPage() {
               background: "rgba(15,20,35,0.55)",
               backdropFilter: "blur(25px)",
               WebkitBackdropFilter: "blur(25px)",
-              borderColor: "rgba(255,255,255,0.08)",
+              borderColor: "var(--surface-panel-border)",
               boxShadow: "0 24px 60px rgba(0,0,0,0.4), 0 0 80px rgba(99,102,241,0.15)",
             }}
             animate={booted ? { y: [0, -6, 0] } : { y: 0 }}
@@ -619,23 +507,6 @@ export function LoginPage() {
                 <p className="text-center text-xs font-medium" style={{ color: "#EF4444" }}>{loginError}</p>
               )}
             </form>
-
-            <div className="my-5 flex items-center gap-3">
-              <div className="h-px flex-1" style={{ background: "var(--surface-panel-border)" }} />
-              <span className="text-xs" style={{ color: "var(--text-muted)" }}>ou — accès rapide par rôle</span>
-              <div className="h-px flex-1" style={{ background: "var(--surface-panel-border)" }} />
-            </div>
-
-            <motion.div
-              className="grid max-h-[320px] grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2"
-              variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05 } } }}
-              initial="hidden"
-              animate={booted ? "show" : "hidden"}
-            >
-              {ROLES.map((role) => (
-                <RoleCard key={role.email} role={role} onClick={() => handleDemoLogin(role.email)} />
-              ))}
-            </motion.div>
 
             <p className="mt-5 text-center text-sm">
               Pas encore de compte ?{" "}

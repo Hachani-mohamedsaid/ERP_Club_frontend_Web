@@ -101,7 +101,7 @@ function DocumentImportModal({
     >
       <motion.div
         className="w-full max-w-md rounded-[24px] border p-6"
-        style={{ background: "rgba(10,16,30,0.97)", borderColor: "rgba(255,122,0,0.3)" }}
+        style={{ background: "var(--surface-modal)", borderColor: "rgba(255,122,0,0.3)" }}
         initial={{ scale: 0.92, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         onClick={(e) => e.stopPropagation()}
@@ -139,7 +139,7 @@ function DocumentImportModal({
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             />
           </div>
           <div>
@@ -148,7 +148,7 @@ function DocumentImportModal({
               value={form.category}
               onChange={(e) => setForm((f) => ({ ...f, category: e.target.value as DocCategory }))}
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(30,35,50,0.97)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             >
               {CATEGORIES.map((c) => (
                 <option key={c} value={c}>{c}</option>
@@ -162,7 +162,7 @@ function DocumentImportModal({
               onChange={(e) => setForm((f) => ({ ...f, playerName: e.target.value }))}
               placeholder="Ex: wahbi kharsri"
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             />
           </div>
           <div>
@@ -171,7 +171,7 @@ function DocumentImportModal({
               value={form.status}
               onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as Doc["status"] }))}
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(30,35,50,0.97)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             >
               {(["Valide", "En révision", "Expiré"] as const).map((s) => (
                 <option key={s} value={s}>{s}</option>

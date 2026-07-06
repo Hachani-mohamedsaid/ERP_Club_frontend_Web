@@ -54,7 +54,7 @@ export function AnalysteValeurPage() {
                   <PolarGrid stroke="rgba(255,255,255,0.1)" />
                   <PolarAngleAxis dataKey="factor" tick={{ fill: "var(--text-muted)", fontSize: 10 }} />
                   <Radar dataKey="score" stroke="#F59E0B" fill="#F59E0B" fillOpacity={0.3} animationDuration={1200} />
-                  <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12 }} />
+                  <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }} />
                 </RadarChart>
               </ResponsiveContainer>
             </AnalysteKpiCard>

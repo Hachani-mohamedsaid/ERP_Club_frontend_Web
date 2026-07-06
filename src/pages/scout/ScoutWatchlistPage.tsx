@@ -88,7 +88,7 @@ export function ScoutWatchlistPage() {
             style={{
               background: activePriority === key ? bg : "rgba(255,255,255,0.04)",
               color: activePriority === key ? color : "var(--text-muted)",
-              border: `1px solid ${activePriority === key ? color + "40" : "transparent"}`,
+              border: "1px solid var(--surface-panel-border)",
             }}
             whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }}>
             {label}
@@ -164,7 +164,7 @@ export function ScoutWatchlistPage() {
                 </div>
 
                 {/* Notes section */}
-                <div className="mt-3 pt-3 border-t" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+                <div className="mt-3 pt-3 border-t" style={{ borderColor: "var(--surface-panel-border)" }}>
                   <motion.button type="button" onClick={() => {
                     setExpandedNotes(prev => {
                       const n = new Set(prev);
@@ -184,7 +184,7 @@ export function ScoutWatchlistPage() {
                           <input value={noteInput[p.id] ?? ""} onChange={e => setNoteInput(prev => ({ ...prev, [p.id]: e.target.value }))}
                             placeholder="Ajouter une note..."
                             className="flex-1 rounded-xl border px-3 py-1.5 text-xs outline-none"
-                            style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                            style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
                             onKeyDown={e => e.key === "Enter" && void addNote(p.id)} />
                           <motion.button type="button" onClick={() => void addNote(p.id)}
                             className="rounded-xl px-3 py-1.5 text-xs font-bold text-white"
@@ -195,7 +195,7 @@ export function ScoutWatchlistPage() {
                         </div>
                         {notes.map((n, i) => (
                           <div key={i} className="flex items-start gap-2 rounded-xl border px-3 py-2 mb-1.5"
-                            style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                            style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
                             <span className="text-[9px] font-bold shrink-0 mt-0.5" style={{ color: S.primary }}>{n.date}</span>
                             <p className="flex-1 text-[11px]" style={{ color: "var(--text-muted)" }}>{n.text}</p>
                             <motion.button type="button" onClick={() => void removeNote(p.id, i)}

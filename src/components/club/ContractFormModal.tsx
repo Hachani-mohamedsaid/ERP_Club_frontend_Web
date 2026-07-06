@@ -85,7 +85,7 @@ export function ContractFormModal({
     >
       <motion.div
         className="w-full max-w-md rounded-[24px] border p-6"
-        style={{ background: "rgba(10,18,40,0.98)", borderColor: "rgba(255,107,87,0.25)" }}
+        style={{ background: "var(--surface-panel-solid)", borderColor: "rgba(255,107,87,0.25)" }}
         initial={{ scale: 0.92, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         onClick={(e) => e.stopPropagation()}
@@ -113,7 +113,7 @@ export function ContractFormModal({
                 className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none opacity-80"
                 style={{
                   background: "rgba(255,255,255,0.04)",
-                  borderColor: "rgba(255,255,255,0.1)",
+                  borderColor: "var(--surface-panel-border)",
                   color: "var(--text-primary)",
                 }}
               />
@@ -124,7 +124,7 @@ export function ContractFormModal({
                 className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
                 style={{
                   background: "rgba(30,35,50,0.97)",
-                  borderColor: "rgba(255,255,255,0.1)",
+                  borderColor: "var(--surface-panel-border)",
                   color: "var(--text-primary)",
                 }}
               >
@@ -143,7 +143,7 @@ export function ContractFormModal({
                 className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
                 style={{
                   background: "rgba(255,255,255,0.04)",
-                  borderColor: "rgba(255,255,255,0.1)",
+                  borderColor: "var(--surface-panel-border)",
                   color: "var(--text-primary)",
                 }}
               />
@@ -165,7 +165,7 @@ export function ContractFormModal({
                 className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
                 style={{
                   background: "rgba(255,255,255,0.04)",
-                  borderColor: "rgba(255,255,255,0.1)",
+                  borderColor: "var(--surface-panel-border)",
                   color: "var(--text-primary)",
                 }}
               />

@@ -34,7 +34,7 @@ function HeatCell({ value }: { value: number }) {
 
 const ACard = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
   <motion.div className={`rounded-[20px] border p-5 ${className}`}
-    style={{ background: "rgba(5,8,22,0.7)", borderColor: "rgba(255,255,255,0.06)", boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}
+    style={{ background: "rgba(5,8,22,0.7)", borderColor: "var(--surface-panel-border)", boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}
     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
     {children}
   </motion.div>
@@ -65,7 +65,7 @@ export function AnalysteFatigueHeatmapPage() {
           { label: "Actions 75-90 vs 0-15",    value: `${summary.actionsDelta}`,                       color: "#F59E0B", icon: Clock },
         ].map(({ label, value, color, icon: Icon }, i) => (
           <motion.div key={label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
-            <div className="rounded-[16px] border p-4" style={{ background: "rgba(5,8,22,0.7)", borderColor: "rgba(255,255,255,0.06)" }}>
+            <div className="rounded-[16px] border p-4" style={{ background: "rgba(5,8,22,0.7)", borderColor: "var(--surface-panel-border)" }}>
               <div className="flex items-center gap-2">
                 <motion.div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
                   style={{ background: `${color}18`, color }}
@@ -192,7 +192,7 @@ export function AnalysteFatigueHeatmapPage() {
                 style={{
                   background: selectedPlayer === p.name ? "rgba(139,92,246,0.2)" : "rgba(255,255,255,0.04)",
                   color: selectedPlayer === p.name ? "#8B5CF6" : "var(--text-muted)",
-                  border: `1px solid ${selectedPlayer === p.name ? "rgba(139,92,246,0.4)" : "rgba(255,255,255,0.06)"}`,
+                  border: "1px solid var(--surface-panel-border)",
                 }}
                 whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }}>
                 {p.name}

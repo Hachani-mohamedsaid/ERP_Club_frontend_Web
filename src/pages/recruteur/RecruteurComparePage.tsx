@@ -41,7 +41,7 @@ export function RecruteurComparePage() {
         setCompare(next);
       }}
       className="rounded-lg border px-3 py-1.5 text-sm"
-      style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+      style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
     >
       {SCOUT_PLAYERS.map((p) => <option key={p.id} value={p.id} style={{ background: "#0F1D3A" }}>{p.name}</option>)}
     </select>

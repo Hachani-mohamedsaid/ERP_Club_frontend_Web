@@ -65,7 +65,7 @@ export function PrepDashboard() {
       {/* Header */}
       <motion.div
         className="rounded-[20px] border p-6"
-        style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(15,29,58,0.9) 100%)", borderColor: "rgba(255,255,255,0.05)" }}
+        style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(15,29,58,0.9) 100%)", borderColor: "var(--surface-panel-border)" }}
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
       >

@@ -70,7 +70,7 @@ export function ClubHeatInjuryMap({ clubName, heatZones, bodyZones }: ClubHeatIn
               Hotspots
             </p>
             {heatZones.length === 0 ? (
-              <p className="rounded-xl border px-3 py-4 text-center text-xs" style={{ borderColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)" }}>
+              <p className="rounded-xl border px-3 py-4 text-center text-xs" style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}>
                 Aucune zone à risque
               </p>
             ) : (

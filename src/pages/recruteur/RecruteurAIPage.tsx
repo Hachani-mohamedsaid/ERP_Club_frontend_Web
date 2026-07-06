@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles, Send, Loader2, Brain, Star, TrendingUp, AlertTriangle,
@@ -12,7 +12,8 @@ import { RecruteurPageTransition } from "../../components/recruteur/RecruteurPag
 import { ParticlesField } from "../../components/recruteur/ParticlesField";
 import { PlayerProfileDrawer } from "../../components/recruteur/PlayerProfileDrawer";
 import { TypewriterText } from "../../components/analyste/TypewriterText";
-import { SCOUT_PLAYERS, AI_SEARCH_PRESETS, type ScoutPlayer } from "../../data/recruteurData";
+import { recruteurApi, type RecruteurAiPlayerResult } from "../../lib/api/recruteur";
+import type { ScoutPlayer } from "../../data/recruteurData";
 
 const TOOLTIP_STYLE = {
   contentStyle: { background: "rgba(5,8,22,0.96)", border: "1px solid rgba(139,92,246,0.3)", color: "white", borderRadius: 12 },
@@ -20,30 +21,25 @@ const TOOLTIP_STYLE = {
 
 const RANK_BADGES = ["🥇","🥈","🥉"];
 
-interface ScoredPlayer { player: ScoutPlayer; matchScore: number; strengths: string[]; warnings: string[]; whyPick: string }
+interface ScoredPlayer {
+  player: RecruteurAiPlayerResult;
+  matchScore: number;
+  strengths: string[];
+  warnings: string[];
+  whyPick: string;
+}
 
-function scorePlayer(p: ScoutPlayer, query: string): ScoredPlayer {
-  const base = p.aiScore + Math.random() * 5;
-  const strengths: string[] = [];
-  const warnings: string[] = [];
-
-  if (p.aiScore >= 90) strengths.push("Score IA exceptionnel");
-  if (p.potential >= 88) strengths.push(`Potentiel ${p.potential}%`);
-  if (p.teamCompat >= 88) strengths.push(`Compatibilité équipe ${p.teamCompat}%`);
-  if (p.injuryRisk < 20) strengths.push("Risque blessure faible");
-  if (p.age <= 21) strengths.push("Jeune talent à valoriser");
-  if (p.valueNum < 1.5) strengths.push("Budget accessible");
-
-  if (p.injuryRisk > 35) warnings.push(`Risque blessure ${p.injuryRisk}%`);
-  if (p.valueNum > 2.5) warnings.push(`Valeur élevée ${p.value}`);
-  if (p.age > 26) warnings.push("Profil senior");
-  if (p.teamCompat < 80) warnings.push("Compatibilité modérée");
-
-  const whyPick = query.toLowerCase().includes("défenseur") || query.toLowerCase().includes("dc")
-    ? `${p.name} offre une solidité défensive combinée à une distribution élevée (vision ${p.vision}/100).`
-    : `${p.name} répond précisément aux critères: ${p.age} ans, ${p.value}, ${p.league}.`;
-
-  return { player: p, matchScore: Math.min(99, Math.round(base)), strengths, warnings, whyPick };
+function toDrawerPlayer(p: RecruteurAiPlayerResult): ScoutPlayer {
+  return {
+    ...p,
+    foot: p.foot === "Gauche" ? "Gauche" : "Droit",
+    salary: "—",
+    xg: 0,
+    matches: p.goals + p.assists,
+    similarTo: p.similarTo ?? [],
+    replaces: "",
+    valueHistory: [],
+  };
 }
 
 function Gauge({ value, color }: { value: number; color: string }) {
@@ -133,7 +129,7 @@ function RankCard({ scored, rank, onProfile }: { scored: ScoredPlayer; rank: num
         {expanded && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden border-t"
-            style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+            style={{ borderColor: "var(--surface-panel-border)" }}>
             <div className="p-4 grid grid-cols-1 gap-4 sm:grid-cols-[1fr_160px]">
               {/* Left */}
               <div className="space-y-3">
@@ -188,7 +184,7 @@ function RankCard({ scored, rank, onProfile }: { scored: ScoredPlayer; rank: num
                 </div>
 
                 {/* Similarity */}
-                {p.similarTo.length > 0 && (
+                {p.similarTo && p.similarTo.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
                     {p.similarTo.map(s => (
                       <span key={s.name} className="rounded-full px-2 py-0.5 text-[9px] font-semibold"
@@ -245,31 +241,58 @@ function RankCard({ scored, rank, onProfile }: { scored: ScoredPlayer; rank: num
 export function RecruteurAIPage() {
   const [query, setQuery] = useState("");
   const [phase, setPhase] = useState<"idle" | "thinking" | "results">("idle");
-  const [rawResults, setRawResults] = useState<ScoutPlayer[]>([]);
+  const [scoredResults, setScoredResults] = useState<ScoredPlayer[]>([]);
+  const [summary, setSummary] = useState("");
+  const [totalScanned, setTotalScanned] = useState(0);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [aiMeta, setAiMeta] = useState<Awaited<ReturnType<typeof recruteurApi.getAi>> | null>(null);
   const [drawerId, setDrawerId] = useState<string | null>(null);
 
-  const scoredResults = useMemo<ScoredPlayer[]>(() =>
-    rawResults.map(p => scorePlayer(p, query)),
-    [rawResults, query]
-  );
+  useEffect(() => {
+    recruteurApi.getAi().then(setAiMeta).catch(() => null);
+  }, []);
 
-  const run = (q: string) => {
-    if (!q.trim()) return;
+  const presets = aiMeta?.suggestedQueries ?? [
+    "Défenseur central, budget 500k, moins de 24 ans",
+    "Ailier rapide, pied gauche, Afrique du Nord",
+    "Buteur potentiel > 90%, moins de 20 ans",
+    "Milieu créatif, vision > 85, budget 2M€",
+  ];
+
+  async function run(q: string) {
+    if (!q.trim() || aiMeta?.status === "no_key" || aiMeta?.status === "disabled") return;
     setQuery(q);
     setPhase("thinking");
-    setTimeout(() => {
-      const ranked = [...SCOUT_PLAYERS]
-        .map(p => ({ p, s: p.aiScore + Math.random() * 8 }))
-        .sort((a, b) => b.s - a.s)
-        .map(x => x.p);
-      setRawResults(ranked);
+    setSearchError(null);
+    try {
+      const res = await recruteurApi.searchAi(q.trim());
+      setScoredResults(
+        res.results.map((p) => ({
+          player: p,
+          matchScore: p.matchScore,
+          strengths: p.strengths,
+          warnings: p.warnings,
+          whyPick: p.whyPick,
+        })),
+      );
+      setSummary(res.summary);
+      setTotalScanned(res.totalScanned);
       setPhase("results");
-    }, 1900);
-  };
+    } catch (err) {
+      setSearchError(err instanceof Error ? err.message : "Erreur recherche IA.");
+      setPhase("idle");
+    }
+  }
 
-  const drawerPlayer = drawerId ? SCOUT_PLAYERS.find(p => p.id === drawerId) ?? null : null;
+  const drawerPlayer = (() => {
+    if (!drawerId) return null;
+    const p = scoredResults.find((s) => s.player.id === drawerId)?.player;
+    return p ? toDrawerPlayer(p) : null;
+  })();
 
-  const avgScore = scoredResults.length ? Math.round(scoredResults.reduce((a, s) => a + s.matchScore, 0) / scoredResults.length) : 0;
+  const avgScore = scoredResults.length
+    ? Math.round(scoredResults.reduce((a, s) => a + s.matchScore, 0) / scoredResults.length)
+    : 0;
 
   return (
     <RecruteurPageTransition>
@@ -285,8 +308,16 @@ export function RecruteurAIPage() {
           </motion.div>
           <h1 className="mt-4 text-2xl font-extrabold" style={{ color: "var(--text-primary)" }}>AI Recruitment Engine</h1>
           <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
-            Décrivez le profil — l'IA scanne 2 847 joueurs, les classe et génère un rapport de compatibilité détaillé.
+            Décrivez le profil — l'IA scanne {aiMeta?.totalProspects ?? "…"} joueurs en base, les classe et génère un rapport de compatibilité détaillé.
           </p>
+
+          {searchError && (
+            <p className="mt-3 text-sm text-red-400">{searchError}</p>
+          )}
+
+          {aiMeta?.status === "no_key" && (
+            <p className="mt-3 text-sm text-amber-400">Clé OpenAI non configurée côté serveur.</p>
+          )}
 
           <div className="mt-6 flex items-center gap-2 rounded-2xl border p-2"
             style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(139,92,246,0.3)" }}>
@@ -299,7 +330,7 @@ export function RecruteurAIPage() {
                 <X size={14} />
               </button>
             )}
-            <motion.button type="button" onClick={() => run(query)}
+            <motion.button type="button" onClick={() => run(query)} disabled={aiMeta?.status !== "available"}
               className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
               style={{ background: "linear-gradient(135deg,#8B5CF6,#6366F1)" }}
               whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
@@ -308,10 +339,10 @@ export function RecruteurAIPage() {
           </div>
 
           <div className="mt-4 flex flex-wrap justify-center gap-2">
-            {AI_SEARCH_PRESETS.map(p => (
+            {presets.map(p => (
               <motion.button key={p} type="button" onClick={() => run(p)}
                 className="rounded-full border px-3 py-1.5 text-xs"
-                style={{ borderColor: "rgba(255,255,255,0.12)", color: "var(--text-muted)" }}
+                style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
                 whileHover={{ borderColor: "rgba(139,92,246,0.4)", color: "#8B5CF6" }}>
                 {p}
               </motion.button>
@@ -329,7 +360,7 @@ export function RecruteurAIPage() {
               animate={{ scale: [1,1.1,1], rotate: [0,180,360] }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}>
               <Loader2 size={26} className="text-white" />
             </motion.div>
-            <TypewriterText text="Analyse de 2 847 profils · Calcul de compatibilité · Scoring IA multi-critères..." className="text-sm" style={{ color: "var(--text-muted)" }} />
+            <TypewriterText text={`Analyse de ${totalScanned || aiMeta?.totalProspects || "…"} profils · Calcul compatibilité · Scoring IA multi-critères...`} className="text-sm" style={{ color: "var(--text-muted)" }} />
           </motion.div>
         )}
 
@@ -340,7 +371,7 @@ export function RecruteurAIPage() {
               <div className="flex items-center gap-2">
                 <Sparkles size={16} style={{ color: "#A855F7" }} />
                 <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-                  {scoredResults.length} candidats analysés — Top {Math.min(scoredResults.length, 10)} recommandés
+                  {scoredResults.length} candidats recommandés — {summary}
                 </h3>
               </div>
               <div className="flex flex-wrap gap-3 text-xs" style={{ color: "var(--text-muted)" }}>
@@ -351,7 +382,7 @@ export function RecruteurAIPage() {
 
             {/* AI summary chart */}
             {scoredResults.length > 0 && (
-              <div className="rounded-[20px] border p-5" style={{ background: "rgba(14,10,35,0.8)", borderColor: "rgba(255,255,255,0.07)" }}>
+              <div className="rounded-[20px] border p-5" style={{ background: "rgba(14,10,35,0.8)", borderColor: "var(--surface-panel-border)" }}>
                 <p className="mb-3 text-sm font-bold" style={{ color: "var(--text-primary)" }}>Comparaison scores IA — Top 8</p>
                 <div className="h-44">
                   <ResponsiveContainer width="100%" height="100%">
@@ -377,7 +408,7 @@ export function RecruteurAIPage() {
         )}
       </AnimatePresence>
 
-      <PlayerProfileDrawer player={drawerPlayer} open={!!drawerId} onClose={() => setDrawerId(null)} />
+      <PlayerProfileDrawer player={drawerPlayer} open={!!drawerPlayer} onClose={() => setDrawerId(null)} />
     </RecruteurPageTransition>
   );
 }

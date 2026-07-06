@@ -64,7 +64,7 @@ export function RecruteurNegotiationsPage() {
                         exit={{ opacity: 0, scale: 0.9 }}
                         whileHover={{ y: -2 }}
                         className="cursor-grab rounded-xl border p-3 active:cursor-grabbing"
-                        style={{ background: "rgba(20,32,64,0.95)", borderColor: "rgba(255,255,255,0.07)", borderLeft: `3px solid ${prio.color}` }}
+                        style={{ background: "rgba(20,32,64,0.95)", borderColor: "var(--surface-panel-border)", borderLeft: `3px solid ${prio.color}` }}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">

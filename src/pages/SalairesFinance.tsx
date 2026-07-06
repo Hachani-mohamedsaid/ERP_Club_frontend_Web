@@ -14,39 +14,53 @@ const STATUS_META: Record<string, { color: string; bg: string }> = {
   Retard: { color: F.danger, bg: "rgba(239,68,68,0.1)" },
 };
 
-// Derive payment status from contract consumed percentage (deterministic)
-function paymentStatus(c: BackendContract): "Payé" | "En attente" | "Retard" {
+// Payment status from related invoices
+function paymentStatus(
+  c: BackendContract,
+  invoices: { fournisseur: string; status: string; description: string | null }[],
+): "Payé" | "En attente" | "Retard" {
+  const name = c.holderName.toLowerCase();
+  const related = invoices.filter(
+    (inv) =>
+      inv.fournisseur.toLowerCase().includes(name) ||
+      name.includes(inv.fournisseur.toLowerCase()) ||
+      (inv.description?.toLowerCase().includes(name) ?? false),
+  );
+  if (related.some((i) => i.status === "Retard")) return "Retard";
+  if (related.some((i) => i.status === "En attente")) return "En attente";
   const daysLeft = Math.ceil((new Date(c.endDate).getTime() - Date.now()) / 86400000);
   if (daysLeft < 0) return "Retard";
-  // Use id hash for deterministic status
-  const hash = c.id.charCodeAt(c.id.length - 1) % 10;
-  if (hash < 7) return "Payé";
-  if (hash < 9) return "En attente";
-  return "Retard";
+  return "Payé";
 }
 
 export function SalairesFinance() {
-  const { contracts, loading } = useFinanceBackendData();
+  const { contracts, invoices, loading, error, refetch } = useFinanceBackendData();
   const [activeTab, setActiveTab] = useState<"ranking" | "table">("ranking");
 
   const contractList = contracts?.list ?? [];
+  const invoiceList = invoices?.list ?? [];
   const totalMonthlySalary = contracts?.totalMonthlySalary ?? 0;
 
-  // Build enriched employee list from contracts
-  const employees = contractList.map(c => ({
+  const employees = contractList.map((c) => ({
     ...c,
-    statut: paymentStatus(c),
+    statut: paymentStatus(c, invoiceList),
     salaireAnnuel: c.salaryMonthly * 12,
   }));
 
   const sorted = [...employees].sort((a, b) => b.salaryMonthly - a.salaryMonthly);
   const max = sorted.length > 0 ? sorted[0].salaryMonthly : 1;
 
+  const isCoach = (name: string) => /coach|entraîneur|entraineur/i.test(name);
+  const players = contractList.filter((c) => c.salaryMonthly >= 50000 && !isCoach(c.holderName));
+  const coaches = contractList.filter((c) => isCoach(c.holderName));
+  const staff = contractList.filter((c) => !players.includes(c) && !coaches.includes(c));
+  const payrollTotal = contractList.reduce((s, c) => s + c.salaryMonthly, 0) || 1;
+
   const distData = [
-    { name: "Joueurs", value: Math.round(contractList.filter(c => c.salaryMonthly >= 50000).length / (contractList.length || 1) * 100) || 75 },
-    { name: "Coachs", value: 15 },
-    { name: "Staff", value: 10 },
-  ];
+    { name: "Joueurs", value: Math.round((players.reduce((s, c) => s + c.salaryMonthly, 0) / payrollTotal) * 100) },
+    { name: "Coachs", value: Math.round((coaches.reduce((s, c) => s + c.salaryMonthly, 0) / payrollTotal) * 100) },
+    { name: "Staff", value: Math.round((staff.reduce((s, c) => s + c.salaryMonthly, 0) / payrollTotal) * 100) },
+  ].filter((d) => d.value > 0);
   const DIST_COLORS = [F.primary, F.info, F.success];
 
   const kpiCards = [
@@ -87,11 +101,32 @@ export function SalairesFinance() {
     a.click();
   };
 
-  if (loading) {
+  if (loading && !contracts) {
     return (
       <div className="flex items-center justify-center py-20">
         <RefreshCw size={20} className="animate-spin" style={{ color: "var(--accent)" }} />
         <span className="ml-3 text-sm" style={{ color: "var(--text-muted)" }}>Chargement des salaires…</span>
+      </div>
+    );
+  }
+
+  if (error && !contracts) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 py-20">
+        <p className="text-sm font-medium" style={{ color: F.danger }}>{error}</p>
+        <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+          Vérifiez que le backend est démarré (Render peut prendre ~30 s au réveil).
+        </p>
+        <motion.button
+          type="button"
+          onClick={() => refetch()}
+          className="flex items-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-bold"
+          style={{ borderColor: `${F.primary}40`, color: F.primary }}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.96 }}
+        >
+          <RefreshCw size={12} /> Réessayer
+        </motion.button>
       </div>
     );
   }
@@ -102,7 +137,7 @@ export function SalairesFinance() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-extrabold" style={{ color: "var(--text-primary)" }}>Gestion des Salaires</h1>
-          <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>Masse salariale & rémunérations · Saison en cours</p>
+          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Masse salariale & rémunérations · Saison en cours</p>
         </div>
         <div className="flex gap-2">
           <motion.button
@@ -131,7 +166,7 @@ export function SalairesFinance() {
           return (
             <motion.div
               key={i} className="rounded-[18px] border p-4"
-              style={{ background: "rgba(8,6,24,0.88)", borderColor: "rgba(255,255,255,0.07)" }}
+              style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}
               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
               whileHover={{ y: -2 }}
             >
@@ -141,7 +176,7 @@ export function SalairesFinance() {
                 </div>
                 <span className="text-[9px] font-bold" style={{ color: k.color }}>{k.trend}</span>
               </div>
-              <p className="text-[9px] uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.4)" }}>{k.label}</p>
+              <p className="text-[9px] uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{k.label}</p>
               <p className="text-sm font-extrabold mt-0.5" style={{ color: k.color }}>{k.value}</p>
             </motion.div>
           );
@@ -157,7 +192,7 @@ export function SalairesFinance() {
             style={{
               background: activeTab === tab ? `${F.primary}14` : "rgba(255,255,255,0.04)",
               color: activeTab === tab ? F.primary : "rgba(255,255,255,0.4)",
-              border: `1px solid ${activeTab === tab ? F.primary + "35" : "transparent"}`,
+              border: "1px solid var(--surface-panel-border)",
             }}
             whileHover={{ scale: 1.05 }}
           >
@@ -168,16 +203,16 @@ export function SalairesFinance() {
 
       {employees.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center rounded-[20px] border"
-          style={{ background: "rgba(8,6,24,0.88)", borderColor: "rgba(255,255,255,0.07)" }}>
-          <DollarSign size={40} style={{ color: "rgba(255,255,255,0.2)" }} className="mb-3" />
-          <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>Aucun contrat enregistré</p>
-          <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.25)" }}>
+          style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
+          <DollarSign size={40} style={{ color: "var(--text-muted)" }} className="mb-3" />
+          <p className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>Aucun contrat enregistré</p>
+          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
             Ajoutez des contrats dans la page Contrats pour voir les salaires
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_260px]">
-          <div className="rounded-[20px] border p-5" style={{ background: "rgba(8,6,24,0.88)", borderColor: "rgba(255,255,255,0.07)" }}>
+          <div className="rounded-[20px] border p-5" style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
             {activeTab === "ranking" && (
               <>
                 <p className="text-xs font-bold mb-4" style={{ color: "var(--text-primary)" }}>
@@ -204,7 +239,7 @@ export function SalairesFinance() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-bold truncate" style={{ color: "var(--text-primary)" }}>{emp.holderName}</p>
-                            <p className="text-[9px]" style={{ color: "rgba(255,255,255,0.4)" }}>
+                            <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>
                               Fin: {new Date(emp.endDate).toLocaleDateString("fr-FR")}
                             </p>
                           </div>
@@ -212,7 +247,7 @@ export function SalairesFinance() {
                             <p className="text-xs font-extrabold" style={{ color: F.primary }}>
                               {(emp.salaryMonthly / 1000).toFixed(0)}K DT
                             </p>
-                            <p className="text-[8px]" style={{ color: "rgba(255,255,255,0.3)" }}>/ mois</p>
+                            <p className="text-[8px]" style={{ color: "var(--text-muted)" }}>/ mois</p>
                           </div>
                           <span className="rounded-full px-2 py-0.5 text-[8px] font-bold shrink-0"
                             style={{ background: stMeta.bg, color: stMeta.color }}>
@@ -228,7 +263,7 @@ export function SalairesFinance() {
                               transition={{ duration: 0.85, ease: "easeOut", delay: i * 0.06 }}
                             />
                           </div>
-                          <span className="text-[8px] w-8 text-right shrink-0" style={{ color: "rgba(255,255,255,0.3)" }}>
+                          <span className="text-[8px] w-8 text-right shrink-0" style={{ color: "var(--text-muted)" }}>
                             {pct.toFixed(0)}%
                           </span>
                         </div>
@@ -247,7 +282,7 @@ export function SalairesFinance() {
                     <thead>
                       <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
                         {["Titulaire", "Mensuel", "Annuel", "Fin contrat", "Statut"].map(h => (
-                          <th key={h} className="pb-2 pr-4 text-left font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>{h}</th>
+                          <th key={h} className="pb-2 pr-4 text-left font-bold" style={{ color: "var(--text-muted)" }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
@@ -268,7 +303,7 @@ export function SalairesFinance() {
                             <td className="py-2.5 pr-4 font-bold text-right" style={{ color: "var(--text-primary)" }}>
                               {(emp.salaireAnnuel / 1000).toFixed(0)}K DT
                             </td>
-                            <td className="py-2.5 pr-4" style={{ color: "rgba(255,255,255,0.5)" }}>
+                            <td className="py-2.5 pr-4" style={{ color: "var(--text-muted)" }}>
                               {new Date(emp.endDate).toLocaleDateString("fr-FR")}
                             </td>
                             <td className="py-2.5">
@@ -288,7 +323,7 @@ export function SalairesFinance() {
 
           {/* Right panel */}
           <div className="space-y-3">
-            <div className="rounded-[20px] border p-5" style={{ background: "rgba(8,6,24,0.88)", borderColor: "rgba(255,255,255,0.07)" }}>
+            <div className="rounded-[20px] border p-5" style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
               <p className="text-xs font-bold mb-3" style={{ color: "var(--text-primary)" }}>Répartition estimée</p>
               <div className="h-44">
                 <ResponsiveContainer width="100%" height="100%">
@@ -297,7 +332,7 @@ export function SalairesFinance() {
                       {distData.map((_, i) => <Cell key={i} fill={DIST_COLORS[i]} />)}
                     </Pie>
                     <Tooltip
-                      contentStyle={{ background: "rgba(8,6,24,0.97)", border: "none", color: "white", borderRadius: 10 }}
+                      contentStyle={{ background: "var(--surface-panel-solid)", border: "none", color: "white", borderRadius: 10 }}
                       formatter={(v: number) => [`${v}%`]}
                     />
                   </PieChart>
@@ -307,7 +342,7 @@ export function SalairesFinance() {
                 {distData.map((d, i) => (
                   <div key={d.name} className="flex items-center gap-2 text-[10px]">
                     <div className="h-2 w-2 rounded-full shrink-0" style={{ background: DIST_COLORS[i] }} />
-                    <span className="flex-1" style={{ color: "rgba(255,255,255,0.5)" }}>{d.name}</span>
+                    <span className="flex-1" style={{ color: "var(--text-muted)" }}>{d.name}</span>
                     <span className="font-extrabold" style={{ color: DIST_COLORS[i] }}>{d.value}%</span>
                   </div>
                 ))}
@@ -316,7 +351,7 @@ export function SalairesFinance() {
 
             {/* Pending payments */}
             {employees.filter(e => e.statut !== "Payé").length > 0 && (
-              <div className="rounded-[20px] border p-4" style={{ background: "rgba(8,6,24,0.88)", borderColor: "rgba(245,158,11,0.2)" }}>
+              <div className="rounded-[20px] border p-4" style={{ background: "var(--surface-panel-solid)", borderColor: "rgba(245,158,11,0.2)" }}>
                 <p className="text-[10px] font-bold mb-2" style={{ color: F.warning }}>⏳ En attente de paiement</p>
                 <div className="space-y-1.5">
                   {employees.filter(e => e.statut !== "Payé").map(e => (

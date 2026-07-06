@@ -37,7 +37,7 @@ export function MatchReplayTimeline({ events, videoDuration = 5400 }: MatchRepla
 
   return (
     <div className="space-y-4">
-      <div className="relative overflow-hidden rounded-[20px] border" style={{ borderColor: "rgba(255,255,255,0.05)", background: "#000" }}>
+      <div className="relative overflow-hidden rounded-[20px] border" style={{ borderColor: "var(--surface-panel-border)", background: "#000" }}>
         <video
           ref={videoRef}
           className="aspect-video w-full object-cover opacity-80"

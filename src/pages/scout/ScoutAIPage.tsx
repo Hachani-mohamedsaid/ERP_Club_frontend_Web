@@ -1,109 +1,67 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Brain, Send, Loader2, ChevronDown, ChevronUp, Zap } from "lucide-react";
+import { Brain, Send, Loader2, ChevronDown, ChevronUp, Zap, AlertTriangle } from "lucide-react";
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip } from "recharts";
 import { ScoutPage, SCard, SBadge, SGauge, SCOUT_TOOLTIP } from "../../components/scout/ScoutUI";
-import { S, PRIORITY_META, type Prospect } from "../../data/scoutData";
+import { S, PRIORITY_META } from "../../data/scoutData";
 import { useScoutProspects } from "../../hooks/useScoutData";
 import { showToast } from "../../components/scout/ScoutToast";
+import { scoutApi } from "../../lib/api/scout";
 
-const QUICK_PROMPTS = [
-  "Cherche un BU ≤21 ans, potentiel >85, budget <1.5M",
-  "Meilleur MC créateur en Afrique du Nord",
-  "DC rapide avec bon jeu aérien ≤24 ans",
-  "Ailier gauche technique contrat libre ou <1M",
-  "Top 3 profils immédiatement disponibles",
-  "Qui a le meilleur rapport potentiel / valeur ?",
-];
-
-interface AIResult {
-  id: string;
-  rank: number;
-  compatibility: number;
-  reasoning: string[];
-  warnings: string[];
-  recommendation: string;
-}
-
-function runAI(query: string, pool: Prospect[]): AIResult[] {
-  const q = query.toLowerCase();
-
-  let candidates = [...pool];
-
-  if (q.includes("bu") || q.includes("buteur") || q.includes("avant")) {
-    candidates = candidates.filter(p => p.position === "BU");
-  } else if (q.includes("mc") || q.includes("milieu")) {
-    candidates = candidates.filter(p => p.position === "MC");
-  } else if (q.includes("dc") || q.includes("défenseur")) {
-    candidates = candidates.filter(p => p.position === "DC");
-  } else if (q.includes("ailier")) {
-    candidates = candidates.filter(p => p.position.includes("Ailier"));
-  }
-
-  if (q.match(/\d+\s*ans?/) || q.includes("≤21") || q.includes("21 ans")) {
-    candidates = candidates.filter(p => p.age <= 21);
-  } else if (q.includes("≤24") || q.includes("24 ans")) {
-    candidates = candidates.filter(p => p.age <= 24);
-  }
-
-  if (q.includes(">85") || q.includes("85")) {
-    candidates = candidates.filter(p => p.potential >= 85);
-  }
-
-  if (q.includes("1.5m") || q.includes("1m") || q.includes("<1m")) {
-    candidates = candidates.filter(p => p.valueMK <= 1500);
-  }
-
-  if (q.includes("disponible") || q.includes("libre")) {
-    candidates = candidates.sort((a, b) => a.contractEnd.localeCompare(b.contractEnd));
-  }
-
-  if (candidates.length === 0) candidates = [...pool];
-
-  candidates.sort((a, b) => b.aiScore - a.aiScore);
-
-  return candidates.slice(0, 5).map((p, i) => {
-    const compat = Math.max(55, p.aiScore - i * 4);
-    const reasoning: string[] = [];
-    if (p.potential >= 85) reasoning.push(`Potentiel élite (${p.potential}/100)`);
-    if (p.age <= 21) reasoning.push(`Profil jeune à fort potentiel de développement (${p.age} ans)`);
-    if (p.goals >= 10) reasoning.push(`Productivité offensive élevée (${p.goals} buts)`);
-    if (p.assists >= 8) reasoning.push(`Passes décisives remarquables (${p.assists} assists)`);
-    if (p.contractEnd <= "2027-01") reasoning.push(`Contrat expirant ${p.contractEnd} — opportunité de négociation`);
-    if (!p.agent) reasoning.push("Sans agent — négociation directe possible");
-    if (p.speed >= 88) reasoning.push(`Vitesse exceptionnelle (${p.speed}/100)`);
-    if (p.passing >= 85) reasoning.push(`Vision de jeu très développée (${p.passing}/100)`);
-    if (reasoning.length === 0) reasoning.push(`ODIN Score ${p.aiScore}% de compatibilité avec le profil recherché`);
-
-    const warnings: string[] = [];
-    if (p.injuryRisk > 25) warnings.push(`Risque blessure ${p.injuryRisk}% — suivi médical recommandé`);
-    if (p.valueMK > 1000) warnings.push(`Budget élevé: ${p.marketValue}`);
-    if (p.agent) warnings.push(`Agent impliqué: ${p.agent}`);
-
-    return { id: p.id, rank: i + 1, compatibility: compat, reasoning, warnings, recommendation: p.name };
-  });
-}
+type SearchResult = Awaited<ReturnType<typeof scoutApi.searchAi>>["results"][0];
 
 export function ScoutAIPage() {
   const navigate = useNavigate();
   const { prospects, watchlistIds, toggleWatchlist } = useScoutProspects();
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<AIResult[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [summaryText, setSummaryText] = useState("");
   const [loading, setLoading] = useState(false);
   const [ran, setRan] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [aiMeta, setAiMeta] = useState<Awaited<ReturnType<typeof scoutApi.getAi>> | null>(null);
 
-  const launch = (q: string) => {
-    if (!q.trim() || loading) return;
+  const quickPrompts = aiMeta?.suggestedQueries ?? [
+    "Cherche un BU ≤21 ans, potentiel >85, budget <1.5M",
+    "Meilleur MC créateur en Afrique du Nord",
+    "DC rapide avec bon jeu aérien ≤24 ans",
+    "Ailier gauche technique contrat libre ou <1M",
+    "Top 3 profils immédiatement disponibles",
+    "Qui a le meilleur rapport potentiel / valeur ?",
+  ];
+
+  const loadMeta = useCallback(async () => {
+    try {
+      const res = await scoutApi.getAi();
+      setAiMeta(res);
+    } catch {
+      /* optional meta */
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadMeta();
+  }, [loadMeta]);
+
+  const launch = async (q: string) => {
+    if (!q.trim() || loading || aiMeta?.status === "no_key" || aiMeta?.status === "disabled") return;
     setLoading(true);
     setRan(false);
     setResults([]);
-    setTimeout(() => {
-      setResults(runAI(q, prospects as unknown as Prospect[]));
-      setLoading(false);
+    setSummaryText("");
+    setError(null);
+    try {
+      const res = await scoutApi.searchAi(q.trim());
+      setResults(res.results);
+      setSummaryText(res.text);
       setRan(true);
-    }, 1600);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur recherche IA.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const RANK_COLORS = ["#F59E0B", S.accent, "#3B82F6", S.success, "#8B5CF6"];
@@ -119,9 +77,23 @@ export function ScoutAIPage() {
         </motion.div>
         <div>
           <h1 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>ODIN AI Scout</h1>
-          <p className="text-xs" style={{ color: "var(--text-muted)" }}>Moteur de recommandation intelligent · Analyse de compatibilité</p>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            Moteur OpenAI · {aiMeta?.summary.clubs ?? 60}+ clubs · {aiMeta?.summary.prospects ?? 0} prospects en base
+          </p>
         </div>
       </div>
+
+      {aiMeta?.status === "no_key" && (
+        <div className="flex items-start gap-2 rounded-xl border p-3 text-sm text-amber-300"
+          style={{ borderColor: "rgba(245,158,11,0.3)", background: "rgba(245,158,11,0.08)" }}>
+          <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+          Clé OpenAI non configurée côté serveur.
+        </div>
+      )}
+
+      {error && (
+        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</div>
+      )}
 
       {/* Search input */}
       <SCard glow>
@@ -145,8 +117,8 @@ export function ScoutAIPage() {
 
         {/* Quick prompts */}
         <div className="flex flex-wrap gap-1.5">
-          {QUICK_PROMPTS.map(q => (
-            <motion.button key={q} type="button" onClick={() => { setQuery(q); launch(q); }}
+          {quickPrompts.map(q => (
+            <motion.button key={q} type="button" onClick={() => { setQuery(q); void launch(q); }}
               className="rounded-full border px-3 py-1 text-[10px]"
               style={{ borderColor: `${S.accent}25`, color: "var(--text-muted)", background: `${S.accent}05` }}
               whileHover={{ borderColor: S.accent, color: S.accent, scale: 1.04 }} whileTap={{ scale: 0.96 }}>
@@ -185,6 +157,11 @@ export function ScoutAIPage() {
       <AnimatePresence>
         {ran && results.length > 0 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+            {summaryText && (
+              <SCard className="!p-4 text-sm whitespace-pre-line" style={{ color: "var(--text-secondary)" }}>
+                {summaryText}
+              </SCard>
+            )}
             <div className="flex items-center gap-3">
               <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
                 {results.length} résultats trouvés pour: <em style={{ color: S.accent }}>"{query}"</em>
@@ -192,17 +169,17 @@ export function ScoutAIPage() {
             </div>
 
             {results.map((res, i) => {
-              const p = prospects.find(pr => pr.id === res.id)!;
+              const p = prospects.find(pr => pr.id === res.id);
               const rankColor = RANK_COLORS[i] ?? S.accent;
               const isExp = expanded === res.id;
-              const radarData = [
+              const radarData = p ? [
                 { subject: "Vitesse",  A: p.speed    },
                 { subject: "Dribble",  A: p.dribble  },
                 { subject: "Passes",   A: p.passing  },
                 { subject: "Défense",  A: p.defense  },
                 { subject: "Physique", A: p.physical },
                 { subject: "Mental",   A: p.mental   },
-              ];
+              ] : [];
               return (
                 <motion.div key={res.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
                   className="rounded-[20px] border overflow-hidden"
@@ -215,11 +192,13 @@ export function ScoutAIPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-extrabold" style={{ color: "var(--text-primary)" }}>{p.flag} {p.name}</p>
-                        <SBadge color={PRIORITY_META[p.priority].color} bg={PRIORITY_META[p.priority].bg}>P.{p.priority}</SBadge>
+                        <p className="text-sm font-extrabold" style={{ color: "var(--text-primary)" }}>{res.flag} {res.name}</p>
+                        {p && <SBadge color={PRIORITY_META[p.priority].color} bg={PRIORITY_META[p.priority].bg}>P.{p.priority}</SBadge>}
+                        {!res.inDatabase && <SBadge color={S.info} bg={`${S.info}20`}>IA</SBadge>}
                       </div>
                       <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                        {p.position} · {p.age} ans · {p.club} · {p.marketValue}
+                        {res.position} · {res.age} ans · {res.club}
+                        {p ? ` · ${p.marketValue}` : ""}
                       </p>
                     </div>
                     {/* Compat score */}
@@ -260,9 +239,9 @@ export function ScoutAIPage() {
                   <AnimatePresence>
                     {isExp && (
                       <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden border-t" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+                        className="overflow-hidden border-t" style={{ borderColor: "var(--surface-panel-border)" }}>
                         <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2">
-                          {/* Radar */}
+                          {p && radarData.length > 0 && (
                           <div>
                             <p className="mb-2 text-xs font-bold" style={{ color: "var(--text-primary)" }}>Profil attributs</p>
                             <div className="h-44">
@@ -276,6 +255,7 @@ export function ScoutAIPage() {
                               </ResponsiveContainer>
                             </div>
                           </div>
+                          )}
                           {/* Reasoning list */}
                           <div>
                             <p className="mb-2 text-xs font-bold" style={{ color: "var(--text-primary)" }}>Analyse complète ODIN</p>
@@ -296,6 +276,7 @@ export function ScoutAIPage() {
                               ))}
                             </div>
                             <div className="mt-3 grid grid-cols-2 gap-2">
+                              {res.inDatabase && (
                               <motion.button type="button"
                                 onClick={() => navigate(`/scout/prospect/${res.id}`)}
                                 className="rounded-xl py-2 text-[10px] font-bold text-white"
@@ -303,6 +284,8 @@ export function ScoutAIPage() {
                                 whileHover={{ scale: 1.04 }}>
                                 Voir profil complet
                               </motion.button>
+                              )}
+                              {res.inDatabase && (
                               <motion.button type="button"
                                 onClick={async () => {
                                   if (watchlistIds.has(res.id)) {
@@ -317,6 +300,7 @@ export function ScoutAIPage() {
                                 whileHover={{ scale: 1.04 }}>
                                 {watchlistIds.has(res.id) ? "En watchlist ✓" : "Ajouter Watchlist"}
                               </motion.button>
+                              )}
                             </div>
                           </div>
                         </div>

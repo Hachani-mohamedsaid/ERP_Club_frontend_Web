@@ -20,7 +20,6 @@ import { MedicalRapportsPage } from "./pages/medical/MedicalRapportsPage";
 import { MedicalRiskPage } from "./pages/medical/MedicalRiskPage";
 import { MedicalEffectifPage } from "./pages/medical/MedicalEffectifPage";
 import { MedicalAIPage } from "./pages/medical/MedicalAIPage";
-import { FinancePage } from "./pages/FinancePage";
 import { DocumentsPage } from "./pages/DocumentsPage";
 import { ReportsPage } from "./pages/ReportsPage";
 import { AIAssistantPage } from "./pages/AIAssistantPage";
@@ -94,7 +93,6 @@ import { JoueurPerformancesPage } from "./pages/joueur/JoueurPerformancesPage";
 import { JoueurMedicalPage } from "./pages/joueur/JoueurMedicalPage";
 import { JoueurPlanningPage } from "./pages/joueur/JoueurPlanningPage";
 import { JoueurMonProfilPage } from "./pages/joueur/JoueurMonProfilPage";
-import { JoueurMessagesPage } from "./pages/joueur/JoueurMessagesPage";
 import { ClubDashboard } from "./pages/club/ClubDashboard";
 import { ClubJoueursPage } from "./pages/club/ClubJoueursPage";
 import { ClubStaffPage } from "./pages/club/ClubStaffPage";
@@ -262,7 +260,7 @@ export function AppRouter() {
         <Route path="/joueurs/analyse" element={<RequireRole roles={["joueur"]}><JoueurMatchAnalysisPage /></RequireRole>} />
         <Route path="/joueurs/recompenses" element={<RequireRole roles={["joueur"]}><JoueurAwardsPage /></RequireRole>} />
         <Route path="/joueurs/chimie" element={<RequireRole roles={["joueur"]}><JoueurChemistryPage /></RequireRole>} />
-        <Route path="/joueurs/messages" element={<RequireRole roles={["joueur"]}><JoueurMessagesPage /></RequireRole>} />
+        <Route path="/joueurs/messages" element={<Navigate to="/messages" replace />} />
         <Route path="/club" element={<RequireRole roles={["adminclub"]}><ClubDashboard /></RequireRole>} />
         <Route path="/club/joueurs" element={<RequireRole roles={["adminclub"]}><ClubJoueursPage /></RequireRole>} />
         <Route path="/club/staff" element={<RequireRole roles={["adminclub"]}><ClubStaffPage /></RequireRole>} />
@@ -313,7 +311,8 @@ export function AppRouter() {
         <Route path="/analyste/injury-forecast" element={<RequireRole roles={["analyste"]}><AnalysteInjuryForecastPage /></RequireRole>} />
         <Route path="/analyste/live-match" element={<RequireRole roles={["analyste"]}><AnalysteLiveMatchPage /></RequireRole>} />
         <Route path="/analyste/fatigue-heatmap" element={<RequireRole roles={["analyste"]}><AnalysteFatigueHeatmapPage /></RequireRole>} />
-        <Route path="/analyste/whoop" element={<RequireRole roles={["analyste"]}><AnalysteWhoopPage /></RequireRole>} />
+        <Route path="/analyste/viiv" element={<RequireRole roles={["analyste"]}><AnalysteWhoopPage /></RequireRole>} />
+        <Route path="/analyste/whoop" element={<Navigate to="/analyste/viiv" replace />} />
         <Route path="/analyste/video-analysis" element={<RequireRole roles={["analyste"]}><AnalysteVideoAnalysisPage /></RequireRole>} />
         <Route path="/recruteur" element={<RequireRole roles={["recruteur"]}><RecruteurDashboard /></RequireRole>} />
         <Route path="/recruteur/discovery" element={<RequireRole roles={["recruteur"]}><RecruteurDiscoveryPage /></RequireRole>} />
@@ -334,7 +333,7 @@ export function AppRouter() {
         <Route path="/recruteur/calendar" element={<RequireRole roles={["recruteur"]}><RecruteurCalendarPage /></RequireRole>} />
         <Route path="/recruteur/notifications" element={<RequireRole roles={["recruteur"]}><RecruteurNotificationsPage /></RequireRole>} />
         <Route path="/recruteur/audit" element={<RequireRole roles={["recruteur"]}><RecruteurAuditPage /></RequireRole>} />
-        <Route path="/finance" element={<FinancePage />} />
+        <Route path="/finance" element={<Navigate to="/comptabilite" replace />} />
         <Route path="/comptabilite" element={<RequireRole roles={["finance"]}><FinanceComptabilite /></RequireRole>} />
         <Route path="/finance/dashboard" element={<RequireRole roles={["finance"]}><FinanceComptabilite /></RequireRole>} />
         <Route path="/finance/contrats" element={<RequireRole roles={["finance"]}><ContratsFinance /></RequireRole>} />

@@ -68,7 +68,7 @@ export function ScoutSettingsPage() {
           </div>
           <p className="text-base font-extrabold mt-3" style={{ color: "var(--text-primary)" }}>{profile.fullName}</p>
           <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>Scout · FC Carthage</p>
-          <div className="mt-4 rounded-xl border p-3 text-left" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+          <div className="mt-4 rounded-xl border p-3 text-left" style={{ borderColor: "var(--surface-panel-border)" }}>
             <p className="text-[10px] font-bold uppercase mb-2" style={{ color: "var(--text-muted)" }}>Statistiques</p>
             {[
               ["Missions ce mois", "4"],
@@ -104,7 +104,7 @@ export function ScoutSettingsPage() {
                     value={profile[f.key as keyof typeof profile] as string}
                     onChange={(e) => setProfile({ ...profile, [f.key]: e.target.value })}
                     className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
                   />
                 </div>
               ))}
@@ -128,7 +128,7 @@ export function ScoutSettingsPage() {
                     value={profile[f.key as keyof typeof profile] as string}
                     onChange={(e) => setProfile({ ...profile, [f.key]: e.target.value })}
                     className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
                   />
                 </div>
               ))}
@@ -157,7 +157,7 @@ export function ScoutSettingsPage() {
                   style={{
                     background: profile.regions.includes(r) ? `${S.info}20` : "rgba(255,255,255,0.05)",
                     color: profile.regions.includes(r) ? S.info : "var(--text-muted)",
-                    border: `1px solid ${profile.regions.includes(r) ? S.info + "40" : "transparent"}`,
+                    border: "1px solid var(--surface-panel-border)",
                   }}
                   whileTap={{ scale: 0.95 }}>
                   {r}
@@ -177,7 +177,7 @@ export function ScoutSettingsPage() {
               { key: "notifyMissionReminder", label: "Rappels missions terrain (24h avant)" },
             ].map((n) => (
               <label key={n.key} className="flex items-center justify-between py-2.5 border-b cursor-pointer"
-                style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+                style={{ borderColor: "var(--surface-panel-border)" }}>
                 <span className="text-xs" style={{ color: "var(--text-muted)" }}>{n.label}</span>
                 <input
                   type="checkbox"

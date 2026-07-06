@@ -76,7 +76,7 @@ function ProspectAddModal({
     >
       <motion.div
         className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-[24px] border p-6"
-        style={{ background: "rgba(10,18,40,0.98)", borderColor: "rgba(255,122,0,0.3)" }}
+        style={{ background: "var(--surface-panel-solid)", borderColor: "rgba(255,122,0,0.3)" }}
         initial={{ scale: 0.92, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         onClick={(e) => e.stopPropagation()}
@@ -107,7 +107,7 @@ function ProspectAddModal({
                 onChange={(e) => setForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
                 placeholder={f.placeholder}
                 className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
               />
             </div>
           ))}
@@ -118,7 +118,7 @@ function ProspectAddModal({
               value={form.position}
               onChange={(e) => setForm((prev) => ({ ...prev, position: e.target.value }))}
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(30,35,50,0.97)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             >
               {POSITIONS.map((p) => (
                 <option key={p} value={p}>{p}</option>
@@ -134,7 +134,7 @@ function ProspectAddModal({
               onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
               placeholder="Profil, points forts, observations..."
               className="w-full resize-none rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             />
           </div>
         </div>
@@ -192,7 +192,7 @@ function ProspectReportModal({
     >
       <motion.div
         className="w-full max-w-lg rounded-[24px] border p-6"
-        style={{ background: "rgba(10,18,40,0.98)", borderColor: "rgba(139,92,246,0.35)" }}
+        style={{ background: "var(--surface-panel-solid)", borderColor: "rgba(139,92,246,0.35)" }}
         initial={{ scale: 0.92, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         onClick={(e) => e.stopPropagation()}
@@ -215,7 +215,7 @@ function ProspectReportModal({
             ["Nationalité", prospect.nat],
             ["Statut", prospect.status],
           ].map(([label, value]) => (
-            <div key={label} className="rounded-xl border px-3 py-2" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+            <div key={label} className="rounded-xl border px-3 py-2" style={{ borderColor: "var(--surface-panel-border)" }}>
               <p className="text-[10px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>{label}</p>
               <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{value}</p>
             </div>
@@ -233,7 +233,7 @@ function ProspectReportModal({
                 value={score}
                 onChange={(e) => setScore(e.target.value)}
                 className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
               />
             </div>
             <div>
@@ -245,7 +245,7 @@ function ProspectReportModal({
                 value={potential}
                 onChange={(e) => setPotential(e.target.value)}
                 className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+                style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
               />
             </div>
           </div>
@@ -257,7 +257,7 @@ function ProspectReportModal({
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Points forts, axes d'amélioration, recommandation..."
               className="w-full resize-none rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}
+              style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
             />
           </div>
         </div>
@@ -267,7 +267,7 @@ function ProspectReportModal({
             type="button"
             onClick={onClose}
             className="flex-1 rounded-xl border py-2.5 text-sm"
-            style={{ borderColor: "rgba(255,255,255,0.1)", color: "var(--text-muted)" }}
+            style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
           >
             Fermer
           </button>

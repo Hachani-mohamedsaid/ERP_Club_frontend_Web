@@ -16,9 +16,9 @@ const MODULES = [
   { label: "Player PPI",       desc: "FIFA-like Score IA",       icon: Star,      path: "/analyste/ppi",             color: "#F59E0B", gradient: "from-yellow-500/20 to-amber-900/5" },
   { label: "Team Chemistry",   desc: "Graphe relationnel",        icon: GitCompare,path: "/analyste/chemistry",       color: "#22C55E", gradient: "from-green-500/20 to-emerald-900/5" },
   { label: "Live Match",       desc: "Temps réel · Win prob.",   icon: Radio,     path: "/analyste/live-match",      color: "#EF4444", gradient: "from-red-500/20 to-rose-900/5" },
-  { label: "Video Analysis",   desc: "Replay · AI Coach · Highlights", icon: Camera, path: "/analyste/video-analysis", color: "#6366F1", gradient: "from-indigo-500/20 to-blue-900/5" },
+  { label: "Video Analysis Pro", desc: "Upload · Vitesse · IA Vision", icon: Camera, path: "/analyste/video-analysis", color: "#6366F1", gradient: "from-indigo-500/20 to-blue-900/5" },
   { label: "Fatigue Heatmap",  desc: "Par 15 minutes",            icon: Activity,  path: "/analyste/fatigue-heatmap", color: "#FF7A00", gradient: "from-orange-500/20 to-red-900/5" },
-  { label: "WHOOP Wearables",  desc: "Recovery · Strain · HRV",   icon: Watch,     path: "/analyste/whoop",           color: "#FF7A00", gradient: "from-orange-500/20 to-amber-900/5" },
+  { label: "Viiv Smartwatch",  desc: "Recovery · Énergie · HRV · GPS",   icon: Watch,     path: "/analyste/viiv",           color: "#22d3ee", gradient: "from-cyan-500/20 to-slate-900/5" },
   { label: "Transfer Engine",  desc: "Compatibilité IA",          icon: UserPlus,  path: "/analyste/transfer",        color: "#3B82F6", gradient: "from-blue-500/20 to-sky-900/5" },
   { label: "Injury Forecast",  desc: "Retour estimé ML",          icon: TrendingUp,path: "/analyste/injury-forecast", color: "#EF4444", gradient: "from-red-500/20 to-rose-900/5" },
   { label: "Tactical Sim.",    desc: "Terrain 3D live",           icon: Crosshair, path: "/analyste/tactique",        color: "#8B5CF6", gradient: "from-violet-500/20 to-purple-900/5" },
@@ -153,7 +153,7 @@ export function AnalysteDashboard() {
                 className="group relative overflow-hidden rounded-[20px] border p-4 text-left"
                 style={{
                   background: "rgba(15,29,58,0.85)",
-                  borderColor: "rgba(255,255,255,0.05)",
+                  borderColor: "var(--surface-panel-border)",
                   boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
                 }}
               >
@@ -193,7 +193,7 @@ export function AnalysteDashboard() {
       {/* Pattern Detection preview */}
       <motion.div
         className="rounded-[20px] border p-5"
-        style={{ background: "rgba(15,29,58,0.85)", borderColor: "rgba(255,255,255,0.05)" }}
+        style={{ background: "rgba(15,29,58,0.85)", borderColor: "var(--surface-panel-border)" }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}

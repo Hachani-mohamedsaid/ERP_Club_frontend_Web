@@ -1,0 +1,290 @@
+
+9:51:39 PM [vite] (client) Re-optimizing dependencies because lockfile h
+9:51:39 PM [vite] (client) Re-optimizing dependencies because lockfile has changed
+
+  VITE v8.0.16  ready in 330 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+  ➜  press h + enter to show help
+9:51:41 PM [vite] (client) Pre-transform error: Failed to resolve import
+9:51:41 PM [vite] (client) Pre-transform error: Failed to resolve import "html2canvas" from "node_modules/.vite/deps/jspdf.js?v=0581a4e1". Does
+9:51:41 PM [vite] (client) Pre-transform error: Failed to resolve import "html2canvas" from "node_modules/.vite/deps/jspdf.js?v=0581a4e1". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/.vi
+  File: /Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/.vite/deps/jspdf.js?v=0581a4e1:19317:66
+  19315 |  }(E.API), function  19316 |       function r() {
+  19317 |               return (i.html2canvas ? Promise.resolve(i.html2c
+  19317 |               return (i.html2canvas ? Promise.resolve(i.html2canvas) : import("html2canvas")).catch(function(t) {
+        |                                                               
+        |                                                                    ^
+  19318 |                       return Promise.reject(/* @__PURE__ */ ne
+  19318 |                       return Promise.reject(/* @__PURE__ */ new Error("Could not load html2canvas: " + t));
+  19319 |               }).then(function(t) {
+9:51:41 PM [vite] (client) Pre-transform error: Failed to resolve import
+9:51:41 PM [vite] (client) Pre-transform error: Failed to resolve import "html2canvas" from "node_modules/.vite/deps/jspdf.js?v=0581a4e1". Does
+9:51:41 PM [vite] (client) Pre-transform error: Failed to resolve import "html2canvas" from "node_modules/.vite/deps/jspdf.js?v=0581a4e1". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/.vi
+  File: /Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/.vite/deps/jspdf.js?v=0581a4e1:19317:66
+  19315 |  }(E.API), function(e) {
+  19316 |       function r() {
+  19317 |               return (i.html2canvas ? Promise.resolve(i.html2c
+  19317 |               return (i.html2canvas ? Promise.resolve(i.html2canvas) : import("html2canvas")).catch(function(t) {
+        |                                                               
+        |                                                                    ^
+  19318 |                       return Promise.reject(/* @__PURE__ */ ne
+  19318 |                       return Promise.reject(/* @__PURE__ */ new Error("Could not load html2canvas: " + t));
+  19319 |               }).then(function(t) { (x2)
+9:51:41 PM [vite] (client) Pre-transform error: Failed to resolve import
+9:51:41 PM [vite] (client) Pre-transform error: Failed to resolve import "html2canvas" from "node_modules/.vite/deps/jspdf.js?v=0581a4e1". Does
+9:51:41 PM [vite] (client) Pre-transform error: Failed to resolve import "html2canvas" from "node_modules/.vite/deps/jspdf.js?v=0581a4e1". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/.vi
+  File: /Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/.vite/deps/jspdf.js?v=0581a4e1:19317:66
+  19315 |  }(E.API), function(e) {
+  19316 |       function r() {
+  19317 |               return (i.html2canvas ? Promise.resolve(i.html2c
+  19317 |               return (i.html2canvas ? Promise.resolve(i.html2canvas) : import("html2canvas")).catch(function(t) {
+        |                                                               
+        |                                                                    ^
+  19318 |                       return Promise.reject(/* @__PURE__ */ ne
+  19318 |                       return Promise.reject(/* @__PURE__ */ new Error("Could not load html2canvas: " + t));
+  19319 |               }).then(function(t) { (x3)
+9:51:41 PM [vite] (client) Pre-transform error: Failed to resolve import
+9:51:41 PM [vite] (client) Pre-transform error: Failed to resolve import "html2canvas" from "node_modules/.vite/deps/jspdf.js?v=0581a4e1". Does
+9:51:41 PM [vite] (client) Pre-transform error: Failed to resolve import "html2canvas" from "node_modules/.vite/deps/jspdf.js?v=0581a4e1". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/.vi
+  File: /Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/.vite/deps/jspdf.js?v=0581a4e1:19317:66
+  19315 |  }(E.API), function(e) {
+  19316 |       function r() {
+  19317 |               return (i.html2canvas ? Promise.resolve(i.html2c
+  19317 |               return (i.html2canvas ? Promise.resolve(i.html2canvas) : import("html2canvas")).catch(function(t) {
+        |                                                               
+        |                                                                    ^
+  19318 |                       return Promise.reject(/* @__PURE__ */ ne
+  19318 |                       return Promise.reject(/* @__PURE__ */ new Error("Could not load html2canvas: " + t));
+  19319 |               }).then(function(t) { (x4)
+9:51:41 PM [vite] Internal server error: Failed to resolve import "html2
+9:51:41 PM [vite] Internal server error: Failed to resolve import "html2canvas" from "node_modules/.vite/deps/jspdf.js?v=0581a4e1". Does the fil
+9:51:41 PM [vite] Internal server error: Failed to resolve import "html2canvas" from "node_modules/.vite/deps/jspdf.js?v=0581a4e1". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/.vi
+  File: /Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/.vite/deps/jspdf.js?v=0581a4e1:19317:66
+  19315 |  }(E.API), function(e) {
+  19316 |       function r() {
+  19317 |               return (i.html2canvas ? Promise.resolve(i.html2c
+  19317 |               return (i.html2canvas ? Promise.resolve(i.html2canvas) : import("html2canvas")).catch(function(t) {
+        |                                                               
+        |                                                                    ^
+  19318 |                       return Promise.reject(/* @__PURE__ */ ne
+  19318 |                       return Promise.reject(/* @__PURE__ */ new Error("Could not load html2canvas: " + t));
+  19319 |               }).then(function(t) {
+      at TransformPluginContext._formatLog (file:///Users/mohamedsaidhac
+      at TransformPluginContext._formatLog (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30
+      at TransformPluginContext._formatLog (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30602:39)
+      at TransformPluginContext.error (file:///Users/mohamedsaidhachani/
+      at TransformPluginContext.error (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30599:1
+      at TransformPluginContext.error (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30599:14)
+      at normalizeUrl (file:///Users/mohamedsaidhachani/erp-club-fronten
+      at normalizeUrl (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:27842:18)
+      at async file:///Users/mohamedsaidhachani/erp-club-frontend-Web/no
+      at async file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:27905:30
+      at async Promise.all (index 1)
+      at async TransformPluginContext.transform (file:///Users/mohamedsa
+      at async TransformPluginContext.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.
+      at async TransformPluginContext.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:27873:4)
+      at async EnvironmentPluginContainer.transform (file:///Users/moham
+      at async EnvironmentPluginContainer.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/n
+      at async EnvironmentPluginContainer.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30387:14)
+      at async loadAndTransform (file:///Users/mohamedsaidhachani/erp-cl
+      at async loadAndTransform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:24646:26)
+      at async viteTransformMiddleware (file:///Users/mohamedsaidhachani
+      at async viteTransformMiddleware (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:24440:
+      at async viteTransformMiddleware (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:24440:20)
+9:52:06 PM [vite] Internal server error: Failed to resolve import "html2
+9:52:06 PM [vite] Internal server error: Failed to resolve import "html2canvas" from "node_modules/.vite/deps/jspdf.js?v=0581a4e1". Does the fil
+9:52:06 PM [vite] Internal server error: Failed to resolve import "html2canvas" from "node_modules/.vite/deps/jspdf.js?v=0581a4e1". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/.vi
+  File: /Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/.vite/deps/jspdf.js?v=0581a4e1:19317:66
+  19315 |  }(E.API), function(e) {
+  19316 |       function r() {
+  19317 |               return (i.html2canvas ? Promise.resolve(i.html2c
+  19317 |               return (i.html2canvas ? Promise.resolve(i.html2canvas) : import("html2canvas")).catch(function(t) {
+        |                                                               
+        |                                                                    ^
+  19318 |                       return Promise.reject(/* @__PURE__ */ ne
+  19318 |                       return Promise.reject(/* @__PURE__ */ new Error("Could not load html2canvas: " + t));
+  19319 |               }).then(function(t) {
+      at TransformPluginContext._formatLog (file:///Users/mohamedsaidhac
+      at TransformPluginContext._formatLog (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30
+      at TransformPluginContext._formatLog (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30602:39)
+      at TransformPluginContext.error (file:///Users/mohamedsaidhachani/
+      at TransformPluginContext.error (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30599:1
+      at TransformPluginContext.error (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30599:14)
+      at normalizeUrl (file:///Users/mohamedsaidhachani/erp-club-fronten
+      at normalizeUrl (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:27842:18)
+      at async file:///Users/mohamedsaidhachani/erp-club-frontend-Web/no
+      at async file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:27905:30
+      at async Promise.all (index 1)
+      at async TransformPluginContext.transform (file:///Users/mohamedsa
+      at async TransformPluginContext.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.
+      at async TransformPluginContext.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:27873:4)
+      at async EnvironmentPluginContainer.transform (file:///Users/moham
+      at async EnvironmentPluginContainer.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/n
+      at async EnvironmentPluginContainer.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30387:14)
+      at async loadAndTransform (file:///Users/mohamedsaidhachani/erp-cl
+      at async loadAndTransform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:24646:26)
+      at async viteTransformMiddleware (file:///Users/mohamedsaidhachani
+      at async viteTransformMiddleware (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:24440:
+      at async viteTransformMiddleware (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:24440:20) (x2)
+9:52:24 PM [vite] Internal server error: Failed to resolve import "html2
+9:52:24 PM [vite] Internal server error: Failed to resolve import "html2canvas" from "node_modules/.vite/deps/jspdf.js?v=0581a4e1". Does the fil
+9:52:24 PM [vite] Internal server error: Failed to resolve import "html2canvas" from "node_modules/.vite/deps/jspdf.js?v=0581a4e1". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/.vi
+  File: /Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/.vite/deps/jspdf.js?v=0581a4e1:19317:66
+  19315 |  }(E.API), function(e) {
+  19316 |       function r() {
+  19317 |               return (i.html2canvas ? Promise.resolve(i.html2c
+  19317 |               return (i.html2canvas ? Promise.resolve(i.html2canvas) : import("html2canvas")).catch(function(t) {
+        |                                                               
+        |                                                                    ^
+  19318 |                       return Promise.reject(/* @__PURE__ */ ne
+  19318 |                       return Promise.reject(/* @__PURE__ */ new Error("Could not load html2canvas: " + t));
+  19319 |               }).then(function(t) {
+      at TransformPluginContext._formatLog (file:///Users/mohamedsaidhac
+      at TransformPluginContext._formatLog (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30
+      at TransformPluginContext._formatLog (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30602:39)
+      at TransformPluginContext.error (file:///Users/mohamedsaidhachani/
+      at TransformPluginContext.error (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30599:1
+      at TransformPluginContext.error (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30599:14)
+      at normalizeUrl (file:///Users/mohamedsaidhachani/erp-club-fronten
+      at normalizeUrl (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:27842:18)
+      at async file:///Users/mohamedsaidhachani/erp-club-frontend-Web/no
+      at async file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:27905:30
+      at async Promise.all (index 1)
+      at async TransformPluginContext.transform (file:///Users/mohamedsa
+      at async TransformPluginContext.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.
+      at async TransformPluginContext.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:27873:4)
+      at async EnvironmentPluginContainer.transform (file:///Users/moham
+      at async EnvironmentPluginContainer.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/n
+      at async EnvironmentPluginContainer.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30387:14)
+      at async loadAndTransform (file:///Users/mohamedsaidhachani/erp-cl
+      at async loadAndTransform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:24646:26)
+      at async viteTransformMiddleware (file:///Users/mohamedsaidhachani
+      at async viteTransformMiddleware (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:24440:
+      at async viteTransformMiddleware (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:24440:20) (x3)
+9:52:24 PM [vite] Internal server error: Failed to resolve import "dompu
+9:52:24 PM [vite] Internal server error: Failed to resolve import "dompurify" from "node_modules/.vite/deps/jspdf.js?v=0581a4e1". Does the file
+9:52:24 PM [vite] Internal server error: Failed to resolve import "dompurify" from "node_modules/.vite/deps/jspdf.js?v=0581a4e1". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/.vi
+  File: /Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/.vite/deps/jspdf.js?v=0581a4e1:19324:62
+  19322 |       }
+  19323 |       function n() {
+  19324 |               return (i.DOMPurify ? Promise.resolve(i.DOMPurif
+  19324 |               return (i.DOMPurify ? Promise.resolve(i.DOMPurify) : import("dompurify")).catch(function(t) {
+        |                                                               
+        |                                                                ^
+  19325 |                       return Promise.reject(/* @__PURE__ */ ne
+  19325 |                       return Promise.reject(/* @__PURE__ */ new Error("Could not load dompurify: " + t));
+  19326 |               }).then(function(t) {
+      at TransformPluginContext._formatLog (file:///Users/mohamedsaidhac
+      at TransformPluginContext._formatLog (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30
+      at TransformPluginContext._formatLog (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30602:39)
+      at TransformPluginContext.error (file:///Users/mohamedsaidhachani/
+      at TransformPluginContext.error (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30599:1
+      at TransformPluginContext.error (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30599:14)
+      at normalizeUrl (file:///Users/mohamedsaidhachani/erp-club-fronten
+      at normalizeUrl (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:27842:18)
+      at async file:///Users/mohamedsaidhachani/erp-club-frontend-Web/no
+      at async file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:27905:30
+      at async Promise.all (index 2)
+      at async TransformPluginContext.transform (file:///Users/mohamedsa
+      at async TransformPluginContext.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.
+      at async TransformPluginContext.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:27873:4)
+      at async EnvironmentPluginContainer.transform (file:///Users/moham
+      at async EnvironmentPluginContainer.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/n
+      at async EnvironmentPluginContainer.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30387:14)
+      at async loadAndTransform (file:///Users/mohamedsaidhachani/erp-cl
+      at async loadAndTransform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:24646:26)
+      at async viteTransformMiddleware (file:///Users/mohamedsaidhachani
+      at async viteTransformMiddleware (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:24440:
+      at async viteTransformMiddleware (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:24440:20)
+9:52:39 PM [vite] Internal server error: Failed to resolve import "html2
+9:52:39 PM [vite] Internal server error: Failed to resolve import "html2canvas" from "node_modules/.vite/deps/jspdf.js?v=0581a4e1". Does the fil
+9:52:39 PM [vite] Internal server error: Failed to resolve import "html2canvas" from "node_modules/.vite/deps/jspdf.js?v=0581a4e1". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/.vi
+  File: /Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/.vite/deps/jspdf.js?v=0581a4e1:19317:66
+  19315 |  }(E.API), function(e) {
+  19316 |       function r() {
+  19317 |               return (i.html2canvas ? Promise.resolve(i.html2c
+  19317 |               return (i.html2canvas ? Promise.resolve(i.html2canvas) : import("html2canvas")).catch(function(t) {
+        |                                                               
+        |                                                                    ^
+  19318 |                       return Promise.reject(/* @__PURE__ */ ne
+  19318 |                       return Promise.reject(/* @__PURE__ */ new Error("Could not load html2canvas: " + t));
+  19319 |               }).then(function(t) {
+      at TransformPluginContext._formatLog (file:///Users/mohamedsaidhac
+      at TransformPluginContext._formatLog (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30
+      at TransformPluginContext._formatLog (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30602:39)
+      at TransformPluginContext.error (file:///Users/mohamedsaidhachani/
+      at TransformPluginContext.error (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30599:1
+      at TransformPluginContext.error (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30599:14)
+      at normalizeUrl (file:///Users/mohamedsaidhachani/erp-club-fronten
+      at normalizeUrl (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:27842:18)
+      at async file:///Users/mohamedsaidhachani/erp-club-frontend-Web/no
+      at async file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:27905:30
+      at async Promise.all (index 1)
+      at async TransformPluginContext.transform (file:///Users/mohamedsa
+      at async TransformPluginContext.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.
+      at async TransformPluginContext.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:27873:4)
+      at async EnvironmentPluginContainer.transform (file:///Users/moham
+      at async EnvironmentPluginContainer.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/n
+      at async EnvironmentPluginContainer.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30387:14)
+      at async loadAndTransform (file:///Users/mohamedsaidhachani/erp-cl
+      at async loadAndTransform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:24646:26)
+      at async viteTransformMiddleware (file:///Users/mohamedsaidhachani
+      at async viteTransformMiddleware (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:24440:
+      at async viteTransformMiddleware (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:24440:20)
+9:52:39 PM [vite] Internal server error: Failed to resolve import "html2
+9:52:39 PM [vite] Internal server error: Failed to resolve import "html2canvas" from "node_modules/.vite/deps/jspdf.js?v=0581a4e1". Does the fil
+9:52:39 PM [vite] Internal server error: Failed to resolve import "html2canvas" from "node_modules/.vite/deps/jspdf.js?v=0581a4e1". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/.vi
+  File: /Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/.vite/deps/jspdf.js?v=0581a4e1:19317:66
+  19315 |  }(E.API), function(e) {
+  19316 |       function r() {
+  19317 |               return (i.html2canvas ? Promise.resolve(i.html2c
+  19317 |               return (i.html2canvas ? Promise.resolve(i.html2canvas) : import("html2canvas")).catch(function(t) {
+        |                                                               
+        |                                                                    ^
+  19318 |                       return Promise.reject(/* @__PURE__ */ ne
+  19318 |                       return Promise.reject(/* @__PURE__ */ new Error("Could not load html2canvas: " + t));
+  19319 |               }).then(function(t) {
+      at TransformPluginContext._formatLog (file:///Users/mohamedsaidhac
+      at TransformPluginContext._formatLog (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30
+      at TransformPluginContext._formatLog (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30602:39)
+      at TransformPluginContext.error (file:///Users/mohamedsaidhachani/
+      at TransformPluginContext.error (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30599:1
+      at TransformPluginContext.error (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30599:14)
+      at normalizeUrl (file:///Users/mohamedsaidhachani/erp-club-fronten
+      at normalizeUrl (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:27842:18)
+      at async file:///Users/mohamedsaidhachani/erp-club-frontend-Web/no
+      at async file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:27905:30
+      at async Promise.all (index 1)
+      at async TransformPluginContext.transform (file:///Users/mohamedsa
+      at async TransformPluginContext.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.
+      at async TransformPluginContext.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:27873:4)
+      at async EnvironmentPluginContainer.transform (file:///Users/moham
+      at async EnvironmentPluginContainer.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/n
+      at async EnvironmentPluginContainer.transform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:30387:14)
+      at async loadAndTransform (file:///Users/mohamedsaidhachani/erp-cl
+      at async loadAndTransform (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:24646:26)
+      at async viteTransformMiddleware (file:///Users/mohamedsaidhachani
+      at async viteTransformMiddleware (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:24440:
+      at async viteTransformMiddleware (file:///Users/mohamedsaidhachani/erp-club-frontend-Web/node_modules/vite/dist/node/chunks/node.js:24440:20) (x2)

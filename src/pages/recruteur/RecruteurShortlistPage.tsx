@@ -48,7 +48,7 @@ export function RecruteurShortlistPage() {
       )}
 
       {players.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed py-16" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed py-16" style={{ borderColor: "var(--surface-panel-border)" }}>
           <Star size={28} style={{ color: "var(--text-muted)" }} />
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>Aucune cible en shortlist — ajoutez des talents depuis Talent Discovery</p>
           <button type="button" onClick={() => navigate("/recruteur/discovery")} className="mt-2 rounded-lg px-3 py-1.5 text-xs font-semibold text-white" style={{ background: "linear-gradient(135deg,#8B5CF6,#6366F1)" }}>

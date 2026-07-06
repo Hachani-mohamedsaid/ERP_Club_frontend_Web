@@ -40,16 +40,12 @@ export function TresorerieFinance() {
 
   const kpiCards = [
     { label: "Solde Actuel", value: `${(profit / 1_000_000).toFixed(2)} M DT`, change: profit >= 0 ? "+positif" : "déficit", icon: DollarSign, color: profit >= 0 ? "#10B981" : "#EF4444" },
-    { label: "Flux Entrant", value: `${(revenue / 1_000_000).toFixed(2)} M DT`, change: "+saison", icon: TrendingUp, color: "#3B82F6" },
-    { label: "Flux Sortant", value: `${(expenses / 1_000_000).toFixed(2)} M DT`, change: "-saison", icon: TrendingDown, color: "#EF4444" },
-    { label: "Solde Prévisionnel", value: `${((profit * 1.05) / 1_000_000).toFixed(2)} M DT`, change: "+5% estimé", icon: TrendingUp, color: "#8B5CF6" },
+    { label: "Flux Entrant", value: `${(revenue / 1_000_000).toFixed(2)} M DT`, change: revenue > 0 ? "+saison" : "—", icon: TrendingUp, color: "#3B82F6" },
+    { label: "Flux Sortant", value: `${(expenses / 1_000_000).toFixed(2)} M DT`, change: expenses > 0 ? "-saison" : "—", icon: TrendingDown, color: "#EF4444" },
+    { label: "Résultat Net", value: `${(profit / 1_000_000).toFixed(2)} M DT`, change: profit >= 0 ? "positif" : "déficit", icon: TrendingUp, color: profit >= 0 ? "#8B5CF6" : "#EF4444" },
   ];
 
-  const financialAlerts = alerts.length > 0
-    ? alerts
-    : [
-        { icon: "📊", message: "Toutes les données financières sont à jour", severity: "info" },
-      ];
+  const financialAlerts = alerts;
 
   if (loading) {
     return (
@@ -114,8 +110,9 @@ export function TresorerieFinance() {
       {/* Alerts */}
       <div>
         <h2 className="mb-3 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>🚨 Alertes Financières</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {financialAlerts.map((alert, idx) => (
+        {financialAlerts.length > 0 ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {financialAlerts.map((alert, idx) => (
             <GlassCard key={idx} className="p-4">
               <div className="flex items-start gap-3">
                 <span className="text-lg">{alert.icon}</span>
@@ -127,8 +124,11 @@ export function TresorerieFinance() {
                 </div>
               </div>
             </GlassCard>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>Aucune alerte pour le moment</p>
+        )}
       </div>
     </div>
   );

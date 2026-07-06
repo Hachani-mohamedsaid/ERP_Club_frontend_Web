@@ -36,6 +36,16 @@ export const COUNTRY_COORDS: Record<string, LngLat> = {
   be: [4.5, 50.8],
   br: [-47.9, -15.8],
   ar: [-58.4, -34.6],
+  tr: [28.97, 41.01],
+  sa: [46.72, 24.71],
+  ae: [54.37, 24.45],
+  jp: [139.69, 35.68],
+  kr: [127.03, 37.55],
+  us: [-118.24, 34.05],
+  mx: [-99.13, 19.43],
+  ca: [-79.38, 43.65],
+  au: [151.21, -33.87],
+  nz: [174.76, -36.85],
 };
 
 /** City coordinates for clubs */
@@ -88,6 +98,24 @@ export const TEAM_COORDS: Record<string, LngLat> = {
   palmeiras: [-46.72, -23.53],
   boca: [-58.37, -34.61],
   river: [-58.45, -34.55],
+  galatasaray: [28.97, 41.04],
+  fenerbahce: [29.04, 40.99],
+  hilal: [46.72, 24.71],
+  nassr: [46.68, 24.74],
+  ittihad: [39.17, 21.54],
+  ain: [55.76, 24.21],
+  vissel: [135.19, 34.69],
+  marinos: [139.64, 35.44],
+  ulsan: [129.26, 35.54],
+  jeonbuk: [127.12, 35.82],
+  "inter-miami": [-80.24, 25.96],
+  lafc: [-118.24, 34.01],
+  america: [-99.2, 19.3],
+  chivas: [-103.35, 20.67],
+  toronto: [-79.42, 43.63],
+  sydney: [151.0, -33.86],
+  melbourne: [144.96, -37.81],
+  auckland: [174.76, -36.85],
 };
 
 const CONTINENT_VIEWS: Record<string, MapViewConfig> = {
@@ -117,6 +145,16 @@ const COUNTRY_VIEWS: Record<string, MapViewConfig> = {
   be: { center: [4.5, 50.8], scale: 4000 },
   br: { center: [-52, -14], scale: 900 },
   ar: { center: [-64, -34], scale: 1800 },
+  tr: { center: [35, 39], scale: 2200 },
+  sa: { center: [45, 24], scale: 1800 },
+  ae: { center: [54, 24], scale: 2800 },
+  jp: { center: [138, 36], scale: 1800 },
+  kr: { center: [127.5, 36.5], scale: 2800 },
+  us: { center: [-98, 39], scale: 900 },
+  mx: { center: [-102, 23], scale: 1200 },
+  ca: { center: [-96, 56], scale: 700 },
+  au: { center: [134, -25], scale: 900 },
+  nz: { center: [172, -41], scale: 2200 },
 };
 
 export const WORLD_VIEW: MapViewConfig = { center: [10, 12], scale: 135 };

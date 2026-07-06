@@ -155,7 +155,7 @@ export function ScoutReportsHistoryPage() {
                   ["Vit.", selected.vitesse],
                 ].map(([label, val]) => (
                   <div key={String(label)} className="rounded-xl border p-2 text-center"
-                    style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+                    style={{ borderColor: "var(--surface-panel-border)" }}>
                     <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>{label}</p>
                     <p className="text-sm font-extrabold" style={{ color: S.primary }}>{val}</p>
                   </div>

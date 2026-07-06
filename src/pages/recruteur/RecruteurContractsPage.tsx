@@ -48,7 +48,7 @@ export function RecruteurContractsPage() {
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
         <RecruteurKpiCard hover={false}>
-          <div className="mb-4 flex items-center gap-3 border-b pb-4" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+          <div className="mb-4 flex items-center gap-3 border-b pb-4" style={{ borderColor: "var(--surface-panel-border)" }}>
             <PlayerAvatar name={player.name} size={56} ring={false} className="!rounded-xl" />
             <div className="flex-1">
               <h3 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Contrat — {player.name}</h3>
@@ -81,7 +81,7 @@ export function RecruteurContractsPage() {
               <span className="flex items-center gap-1.5 text-sm" style={{ color: "var(--text-secondary)" }}><Award size={14} style={{ color: "#22C55E" }} /> Primes de performance ({advice.suggestedBonus})</span>
               <span className="flex h-5 w-5 items-center justify-center rounded-md" style={{ background: bonus ? "#22C55E" : "rgba(255,255,255,0.1)" }}>{bonus && <Check size={14} className="text-white" />}</span>
             </button>
-            <div className="rounded-xl border p-3" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.08)" }}>
+            <div className="rounded-xl border p-3" style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--surface-panel-border)" }}>
               <div className="text-xs" style={{ color: "var(--text-muted)" }}>Clause libératoire suggérée</div>
               <div className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>{advice.releaseClause}</div>
             </div>

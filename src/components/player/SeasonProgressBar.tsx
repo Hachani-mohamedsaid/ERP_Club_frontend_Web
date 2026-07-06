@@ -20,7 +20,7 @@ export function SeasonProgressBar({ current, target, label, color = "#FF6B57" }:
           </span>
         </div>
       )}
-      <div className="h-2.5 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
+      <div className="h-2.5 overflow-hidden rounded-full" style={{ background: "var(--surface-input)" }}>
         <motion.div
           className="h-full rounded-full"
           style={{ background: `linear-gradient(90deg, ${color}, ${color}cc)` }}

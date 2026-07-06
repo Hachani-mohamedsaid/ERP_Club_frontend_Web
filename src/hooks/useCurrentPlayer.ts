@@ -1,4 +1,5 @@
 import { useAuth } from "../contexts/AuthContext";
+import { getPlayerExtended } from "../data/joueurExtendedData";
 import { getPlayerById } from "../data/joueurMockData";
 import { getPlayerIdForEmail } from "../data/joueurPersonalData";
 import { joueurApi } from "../lib/api/joueur";

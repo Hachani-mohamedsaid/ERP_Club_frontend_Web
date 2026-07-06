@@ -24,7 +24,7 @@ interface CompPlayer {
 }
 
 const TOOLTIP_STYLE = {
-  contentStyle: { background: "rgba(10,16,30,0.95)", border: "1px solid rgba(255,122,0,0.2)", color: "white", borderRadius: 12 },
+  contentStyle: { background: "var(--surface-modal)", border: "1px solid rgba(255,122,0,0.2)", color: "white", borderRadius: 12 },
 };
 
 function radarData(p: CompPlayer) {
@@ -56,7 +56,7 @@ function DiffBadge({ a, b, label }: { a: number; b: number; label: string }) {
   const color = diff === 0 ? "#94A3B8" : diff > 0 ? "#22C55E" : "#EF4444";
   return (
     <div className="flex items-center justify-between rounded-xl border px-3 py-2 text-xs"
-      style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+      style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
       <span style={{ color: "var(--text-muted)" }}>{label}</span>
       <div className="flex items-center gap-1.5">
         <span className="font-bold" style={{ color: "var(--accent)" }}>{a}</span>

@@ -241,7 +241,7 @@ export function JoueurDocumentsPage() {
           >
             <motion.div
               className="w-full max-w-lg rounded-2xl p-6"
-              style={{ background: "#141B2D", border: `1px solid ${TYPE_COLORS[previewDoc.docType] ?? "var(--accent)"}44` }}
+              style={{ background: "var(--surface-panel-solid)", border: `1px solid ${TYPE_COLORS[previewDoc.docType] ?? "var(--accent)"}44` }}
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
@@ -257,17 +257,17 @@ export function JoueurDocumentsPage() {
                 </div>
                 <button type="button" onClick={() => setPreviewDoc(null)}
                   className="flex h-8 w-8 items-center justify-center rounded-full"
-                  style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}>
+                  style={{ background: "var(--surface-input)", color: "var(--text-muted)" }}>
                   <X size={16} />
                 </button>
               </div>
 
               {previewDoc.dataUrl?.startsWith("data:image") ? (
                 <img src={previewDoc.dataUrl} alt={previewDoc.name} className="max-h-80 w-full rounded-xl object-contain"
-                  style={{ background: "rgba(255,255,255,0.04)" }} />
+                  style={{ background: "var(--surface-input)" }} />
               ) : (
                 <div className="flex h-48 flex-col items-center justify-center gap-3 rounded-xl"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed rgba(255,255,255,0.1)" }}>
+                  style={{ background: "var(--surface-input)", border: "1px dashed var(--surface-panel-border)" }}>
                   <FileText size={40} style={{ color: TYPE_COLORS[previewDoc.docType] ?? "var(--accent)", opacity: 0.6 }} />
                   <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>Aperçu — {previewDoc.docType}</p>
                   <p className="text-xs" style={{ color: "var(--text-muted)" }}>Document confidentiel {clubName}</p>
@@ -294,7 +294,7 @@ export function JoueurDocumentsPage() {
           <motion.div
             key="doc-toast"
             className="fixed bottom-6 right-6 z-[210] flex items-center gap-3 rounded-2xl px-5 py-3 shadow-xl"
-            style={{ background: "#141B2D", border: "1px solid rgba(34,197,94,0.4)", color: "#22C55E" }}
+            style={{ background: "var(--surface-panel-solid)", border: "1px solid rgba(34,197,94,0.4)", color: "#22C55E" }}
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}

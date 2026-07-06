@@ -168,7 +168,7 @@ function ZoomControls({
   return (
     <div
       className="absolute top-3 right-3 flex flex-col gap-1.5 rounded-xl border p-1.5"
-      style={{ background: "rgba(8,10,16,0.92)", borderColor: "rgba(255,255,255,0.08)" }}
+      style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}
     >
       <button type="button" className={btn} onClick={onZoomIn} aria-label="Zoom avant" style={{ color: "var(--text-muted)" }}>
         <ZoomIn size={15} />
@@ -369,7 +369,7 @@ export function ScoutGeoMap({
       className={`relative w-full overflow-hidden rounded-2xl border ${className}`}
       style={{
         background: "linear-gradient(180deg, #0a0d14 0%, #060810 100%)",
-        borderColor: "rgba(255,255,255,0.06)",
+        borderColor: "var(--surface-panel-border)",
         minHeight: 440,
         aspectRatio: "16/9",
       }}
@@ -460,7 +460,7 @@ export function ScoutGeoMap({
             style={{
               left: Math.min(tooltip.x + 12, size.width - 210),
               top: Math.max(tooltip.y - 76, 8),
-              background: "rgba(10,12,20,0.97)",
+              background: "var(--surface-modal)",
               borderColor: `${tooltip.node.color}40`,
               boxShadow: "0 12px 32px rgba(0,0,0,0.5)",
             }}
@@ -488,7 +488,7 @@ export function ScoutGeoMap({
 
       <div
         className="absolute bottom-3 inset-x-3 flex items-center justify-between gap-3 rounded-xl border px-3 py-2"
-        style={{ background: "rgba(8,10,16,0.94)", borderColor: "rgba(255,255,255,0.05)" }}
+        style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}
       >
         <span className="text-[10px] text-white/40">{hint}</span>
         <span className="text-[10px] text-white/35 flex items-center gap-1.5">
