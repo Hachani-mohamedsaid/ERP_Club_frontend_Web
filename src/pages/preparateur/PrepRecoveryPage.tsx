@@ -1,77 +1,142 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Snowflake, Waves, BedDouble, Droplets, CheckCircle2,
-  TrendingUp, Users, Plus, Clock,
+  TrendingUp, Plus, Clock, Trash2,
 } from "lucide-react";
 import { PrepPageTransition } from "../../components/preparateur/PrepPageTransition";
 import { PrepKpiCard } from "../../components/preparateur/PrepKpiCard";
-import { PLAYER_DETAILS } from "../../data/preparateurData";
+import { clubApi } from "../../lib/api/club";
 
 type RecovMethod = "Cryothérapie" | "Massage" | "Repos" | "Hydratation";
 type RecovStatus = "Planifié" | "En cours" | "Terminé";
 
 interface RecovSession {
-  id: string; playerId: string; playerName: string; method: RecovMethod;
-  date: string; duration: string; status: RecovStatus; notes: string;
+  id: string;
+  playerId: string;
+  playerName: string;
+  method: RecovMethod;
+  date: string;
+  duration: string;
+  status: RecovStatus;
+  notes: string;
 }
 
-const METHOD_CONFIG: Record<RecovMethod, { icon: typeof Snowflake; color: string; desc: string }> = {
-  Cryothérapie: { icon: Snowflake, color: "#3B82F6", desc: "Bain froid ou cryo-chambre" },
-  Massage:      { icon: Waves,    color: "#8B5CF6", desc: "Massage sportif décontracturant" },
-  Repos:        { icon: BedDouble,color: "#22C55E", desc: "Repos complet ou actif léger"   },
-  Hydratation:  { icon: Droplets, color: "#FF7A00", desc: "Protocole hydratation & nutrition" },
-};
+interface Recommendation {
+  playerId: string;
+  player: string;
+  rec: string;
+  urgency: "high" | "medium" | "low";
+}
 
-const INIT_SESSIONS: RecovSession[] = [
-  { id: "r1", playerId: "1", playerName: "Ahmed Ben Salah",  method: "Cryothérapie", date: "2026-06-21", duration: "15 min",  status: "En cours", notes: "Bain froid 10°C — récupération ischio" },
-  { id: "r2", playerId: "5", playerName: "Karim Dridi",     method: "Massage",       date: "2026-06-21", duration: "45 min",  status: "Planifié", notes: "Massage cuisse — tension articulaire genou" },
-  { id: "r3", playerId: "3", playerName: "Youssef Trabelsi",method: "Repos",         date: "2026-06-21", duration: "Journée", status: "En cours", notes: "Repos total — cheville en rééducation" },
-  { id: "r4", playerId: "2", playerName: "Ali Mansouri",    method: "Hydratation",   date: "2026-06-20", duration: "Journée", status: "Terminé",  notes: "Protocole post-match — réhydratation complète" },
-  { id: "r5", playerId: "4", playerName: "Mohamed Sassi",   method: "Massage",       date: "2026-06-20", duration: "30 min",  status: "Terminé",  notes: "Massage lombaire — lombalgie légère" },
-];
+interface ApiPlayer { id: string; name: string; }
+
+const METHOD_CONFIG: Record<RecovMethod, { icon: typeof Snowflake; color: string; desc: string }> = {
+  Cryothérapie: { icon: Snowflake, color: "#3B82F6", desc: "Bain froid ou cryo-chambre"          },
+  Massage:      { icon: Waves,     color: "#8B5CF6", desc: "Massage sportif décontracturant"      },
+  Repos:        { icon: BedDouble, color: "#22C55E", desc: "Repos complet ou actif léger"         },
+  Hydratation:  { icon: Droplets,  color: "#FF7A00", desc: "Protocole hydratation & nutrition"    },
+};
 
 const STATUS_COLOR: Record<RecovStatus, string> = {
   Planifié: "#FF7A00", "En cours": "#3B82F6", Terminé: "#22C55E",
 };
 
+const STATUSES: RecovStatus[] = ["Planifié", "En cours", "Terminé"];
+
+function PageSkeleton() {
+  return (
+    <div className="space-y-3">
+      {[1, 2, 3].map(i => (
+        <div key={i} className="h-20 animate-pulse rounded-[20px]" style={{ background: "rgba(255,255,255,0.04)" }} />
+      ))}
+    </div>
+  );
+}
+
 export function PrepRecoveryPage() {
-  const [sessions, setSessions] = useState<RecovSession[]>(INIT_SESSIONS);
-  const [modal, setModal] = useState(false);
-  const [form, setForm] = useState({ playerId: "1", method: "Repos" as RecovMethod, date: "", duration: "", notes: "" });
-  const [filter, setFilter] = useState<RecovMethod | "Tous">("Tous");
+  const [sessions, setSessions]     = useState<RecovSession[]>([]);
+  const [recs, setRecs]             = useState<Recommendation[]>([]);
+  const [players, setPlayers]       = useState<ApiPlayer[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [modal, setModal]           = useState(false);
+  const [saving, setSaving]         = useState(false);
+  const [filter, setFilter]         = useState<RecovMethod | "Tous">("Tous");
+  const [form, setForm]             = useState({
+    playerId: "", method: "Repos" as RecovMethod, date: "", duration: "", notes: "",
+  });
+
+  const fetchData = useCallback(() => {
+    setLoading(true);
+    Promise.all([
+      clubApi.getRecoverySessions() as Promise<{ sessions: RecovSession[]; recommendations: Recommendation[] }>,
+      clubApi.getPlayers() as Promise<ApiPlayer[]>,
+    ])
+      .then(([data, pls]) => {
+        setSessions(data.sessions);
+        setRecs(data.recommendations);
+        setPlayers(pls);
+        if (pls.length > 0) setForm(f => ({ ...f, playerId: pls[0].id }));
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const filteredSessions = filter === "Tous" ? sessions : sessions.filter(s => s.method === filter);
   const inProgress = sessions.filter(s => s.status === "En cours").length;
   const planned    = sessions.filter(s => s.status === "Planifié").length;
   const done       = sessions.filter(s => s.status === "Terminé").length;
 
-  function saveForm() {
-    const player = PLAYER_DETAILS.find(p => p.id === form.playerId)!;
-    setSessions(prev => [...prev, {
-      id: `r${Date.now()}`, playerId: form.playerId, playerName: player.name,
-      method: form.method, date: form.date, duration: form.duration,
-      status: "Planifié", notes: form.notes,
-    }]);
-    setModal(false);
+  async function saveForm() {
+    if (!form.playerId || !form.date || !form.duration) return;
+    setSaving(true);
+    try {
+      const created = await (clubApi.createRecoverySession({
+        playerId: form.playerId,
+        method:   form.method,
+        date:     form.date,
+        duration: form.duration,
+        notes:    form.notes,
+      }) as Promise<RecovSession>);
+      setSessions(prev => [created, ...prev]);
+      setModal(false);
+      setForm(f => ({ ...f, date: "", duration: "", notes: "" }));
+    } catch {
+      // keep modal open on error
+    } finally {
+      setSaving(false);
+    }
   }
 
-  const recs = [
-    { player: "Ahmed Ben Salah", rec: "Cryo + repos 48h", urgency: "high" },
-    { player: "Karim Dridi",     rec: "Massage + cryothérapie",   urgency: "high" },
-    { player: "Youssef Trabelsi",rec: "Repos complet + kiné",     urgency: "medium" },
-    { player: "Mohamed Sassi",   rec: "Hydratation renforcée",    urgency: "low" },
-  ];
+  async function updateStatus(id: string, status: RecovStatus) {
+    setSessions(prev => prev.map(s => s.id === id ? { ...s, status } : s));
+    try {
+      await (clubApi.updateRecoverySession(id, { status }) as Promise<unknown>);
+    } catch {
+      setSessions(prev => prev.map(s => s.id === id ? { ...s, status: s.status } : s));
+    }
+  }
+
+  async function deleteSession(id: string) {
+    setSessions(prev => prev.filter(s => s.id !== id));
+    try {
+      await (clubApi.deleteRecoverySession(id) as Promise<unknown>);
+    } catch {
+      fetchData();
+    }
+  }
 
   return (
     <PrepPageTransition>
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: "Sessions totales", value: String(sessions.length), color: "#3B82F6", icon: CheckCircle2 },
-          { label: "En cours",         value: String(inProgress),       color: "#FF7A00", icon: Clock       },
-          { label: "Planifiées",       value: String(planned),          color: "#8B5CF6", icon: Plus        },
-          { label: "Terminées",        value: String(done),             color: "#22C55E", icon: TrendingUp  },
+          { label: "Sessions totales", value: loading ? "…" : String(sessions.length), color: "#3B82F6", icon: CheckCircle2 },
+          { label: "En cours",         value: loading ? "…" : String(inProgress),       color: "#FF7A00", icon: Clock        },
+          { label: "Planifiées",       value: loading ? "…" : String(planned),          color: "#8B5CF6", icon: Plus         },
+          { label: "Terminées",        value: loading ? "…" : String(done),             color: "#22C55E", icon: TrendingUp   },
         ].map(({ label, value, color, icon: Icon }, i) => (
           <motion.div key={label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}>
             <PrepKpiCard hover={false}>
@@ -92,15 +157,14 @@ export function PrepRecoveryPage() {
         ))}
       </div>
 
-      {/* Method cards */}
+      {/* Method filter cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {(Object.keys(METHOD_CONFIG) as RecovMethod[]).map(m => {
-          const cfg = METHOD_CONFIG[m];
+          const cfg  = METHOD_CONFIG[m];
           const Icon = cfg.icon;
           const count = sessions.filter(s => s.method === m).length;
           return (
-            <motion.div key={m} onClick={() => setFilter(filter === m ? "Tous" : m)}
-              className="cursor-pointer">
+            <motion.div key={m} onClick={() => setFilter(filter === m ? "Tous" : m)} className="cursor-pointer">
               <PrepKpiCard hover={false} className={filter === m ? "ring-1 ring-orange-500/50" : ""}>
                 <div className="flex items-center gap-2.5">
                   <motion.div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
@@ -135,59 +199,100 @@ export function PrepRecoveryPage() {
               <Plus size={12} /> Planifier
             </motion.button>
           </div>
-          <AnimatePresence>
-            {filteredSessions.map((s, i) => {
-              const cfg = METHOD_CONFIG[s.method];
-              const Icon = cfg.icon;
-              const statusColor = STATUS_COLOR[s.status];
-              return (
-                <motion.div key={s.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} transition={{ delay: i * 0.04 }}>
-                  <PrepKpiCard hover={false}>
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                        style={{ background: `${cfg.color}18` }}>
-                        <Icon size={14} style={{ color: cfg.color }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{s.playerName}</p>
-                          <span className="rounded-full px-2 py-0.5 text-[10px] font-bold"
-                            style={{ background: `${statusColor}18`, color: statusColor }}>
-                            {s.status}
-                          </span>
+
+          {loading ? (
+            <PageSkeleton />
+          ) : filteredSessions.length === 0 ? (
+            <p className="py-10 text-center text-sm" style={{ color: "var(--text-muted)" }}>
+              Aucune session — cliquez sur « Planifier »
+            </p>
+          ) : (
+            <AnimatePresence>
+              {filteredSessions.map((s, i) => {
+                const cfg         = METHOD_CONFIG[s.method] ?? METHOD_CONFIG["Repos"];
+                const Icon        = cfg.icon;
+                const statusColor = STATUS_COLOR[s.status] ?? "#94A3B8";
+                return (
+                  <motion.div key={s.id}
+                    initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }} transition={{ delay: i * 0.04 }}>
+                    <PrepKpiCard hover={false}>
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                          style={{ background: `${cfg.color}18` }}>
+                          <Icon size={14} style={{ color: cfg.color }} />
                         </div>
-                        <p className="text-xs mt-0.5" style={{ color: cfg.color }}>{s.method}</p>
-                        <p className="text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }}>{s.date} · {s.duration}</p>
-                        {s.notes && <p className="text-[11px] mt-1 italic" style={{ color: "var(--text-muted)" }}>{s.notes}</p>}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{s.playerName}</p>
+                            <div className="flex items-center gap-1.5">
+                              <select
+                                value={s.status}
+                                onChange={e => updateStatus(s.id, e.target.value as RecovStatus)}
+                                className="rounded-full border-0 px-2 py-0.5 text-[10px] font-bold outline-none cursor-pointer"
+                                style={{ background: `${statusColor}18`, color: statusColor }}>
+                                {STATUSES.map(st => <option key={st} value={st}>{st}</option>)}
+                              </select>
+                              <motion.button type="button" onClick={() => deleteSession(s.id)}
+                                className="rounded-lg p-1 opacity-40 hover:opacity-100"
+                                style={{ color: "#EF4444" }}
+                                whileTap={{ scale: 0.9 }}>
+                                <Trash2 size={11} />
+                              </motion.button>
+                            </div>
+                          </div>
+                          <p className="mt-0.5 text-xs" style={{ color: cfg.color }}>{s.method}</p>
+                          <p className="mt-0.5 text-[11px]" style={{ color: "var(--text-muted)" }}>
+                            {new Date(s.date).toLocaleDateString("fr-FR")} · {s.duration}
+                          </p>
+                          {s.notes && (
+                            <p className="mt-1 text-[11px] italic" style={{ color: "var(--text-muted)" }}>{s.notes}</p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </PrepKpiCard>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
+                    </PrepKpiCard>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          )}
         </div>
 
-        {/* AI recommendations */}
+        {/* AI Recommendations */}
         <PrepKpiCard hover={false}>
           <p className="mb-4 text-sm font-bold" style={{ color: "var(--text-primary)" }}>
             Recommandations récupération IA
           </p>
-          <div className="space-y-3">
-            {recs.map((r, i) => {
-              const color = r.urgency === "high" ? "#EF4444" : r.urgency === "medium" ? "#FF7A00" : "#22C55E";
-              return (
-                <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
-                  className="rounded-xl border p-3"
-                  style={{ background: `${color}06`, borderColor: `${color}20` }}>
-                  <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{r.player}</p>
-                  <p className="text-[11px] mt-1" style={{ color }}>→ {r.rec}</p>
-                </motion.div>
-              );
-            })}
-          </div>
-          <div className="mt-5 rounded-xl border p-3" style={{ background: "rgba(255,122,0,0.06)", borderColor: "rgba(255,122,0,0.2)" }}>
-            <p className="text-xs font-bold mb-1" style={{ color: "#FF7A00" }}>Protocole équipe recommandé</p>
+          {loading ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-14 animate-pulse rounded-xl" style={{ background: "rgba(255,255,255,0.04)" }} />
+              ))}
+            </div>
+          ) : recs.length === 0 ? (
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+              Aucun joueur avec fatigue ou risque élevé détecté.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {recs.map((r, i) => {
+                const color = r.urgency === "high" ? "#EF4444" : r.urgency === "medium" ? "#FF7A00" : "#22C55E";
+                return (
+                  <motion.div key={r.playerId ?? i}
+                    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.08 }}
+                    className="rounded-xl border p-3"
+                    style={{ background: `${color}06`, borderColor: `${color}20` }}>
+                    <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{r.player}</p>
+                    <p className="mt-1 text-[11px]" style={{ color }}>→ {r.rec}</p>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+          <div className="mt-5 rounded-xl border p-3"
+            style={{ background: "rgba(255,122,0,0.06)", borderColor: "rgba(255,122,0,0.2)" }}>
+            <p className="mb-1 text-xs font-bold" style={{ color: "#FF7A00" }}>Protocole équipe recommandé</p>
             <ul className="space-y-1 text-[11px]" style={{ color: "var(--text-muted)" }}>
               <li>• Hydratation 3L/jour après match</li>
               <li>• Cryothérapie dans 24h post-match</li>
@@ -198,7 +303,7 @@ export function PrepRecoveryPage() {
         </PrepKpiCard>
       </div>
 
-      {/* Modal */}
+      {/* Modal — Planifier une session */}
       <AnimatePresence>
         {modal && (
           <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -207,14 +312,16 @@ export function PrepRecoveryPage() {
             <motion.div className="w-full max-w-md rounded-[24px] border p-6"
               style={{ background: "rgba(8,14,30,0.98)", borderColor: "rgba(255,122,0,0.3)" }}
               initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9 }}>
-              <h3 className="text-base font-bold mb-4" style={{ color: "var(--text-primary)" }}>Planifier une récupération</h3>
+              <h3 className="mb-4 text-base font-bold" style={{ color: "var(--text-primary)" }}>
+                Planifier une récupération
+              </h3>
               <div className="space-y-3">
                 <div>
                   <label className="mb-1 block text-xs" style={{ color: "var(--text-muted)" }}>Joueur</label>
                   <select value={form.playerId} onChange={e => setForm(p => ({ ...p, playerId: e.target.value }))}
                     className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
                     style={{ background: "rgba(30,35,50,0.97)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }}>
-                    {PLAYER_DETAILS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    {players.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
                 </div>
                 <div>
@@ -225,17 +332,19 @@ export function PrepRecoveryPage() {
                     {(Object.keys(METHOD_CONFIG) as RecovMethod[]).map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
                 </div>
-                {[
-                  { label: "Date", field: "date" as const, type: "date" },
-                  { label: "Durée", field: "duration" as const, type: "text", placeholder: "Ex: 30 min" },
-                ].map(({ label, field, type, placeholder }) => (
-                  <div key={field}>
-                    <label className="mb-1 block text-xs" style={{ color: "var(--text-muted)" }}>{label}</label>
-                    <input type={type} placeholder={placeholder} value={form[field]} onChange={e => setForm(p => ({ ...p, [field]: e.target.value }))}
-                      className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
-                      style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }} />
-                  </div>
-                ))}
+                <div>
+                  <label className="mb-1 block text-xs" style={{ color: "var(--text-muted)" }}>Date</label>
+                  <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
+                    className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs" style={{ color: "var(--text-muted)" }}>Durée</label>
+                  <input type="text" placeholder="Ex: 30 min" value={form.duration}
+                    onChange={e => setForm(p => ({ ...p, duration: e.target.value }))}
+                    className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }} />
+                </div>
                 <div>
                   <label className="mb-1 block text-xs" style={{ color: "var(--text-muted)" }}>Notes</label>
                   <textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
@@ -244,13 +353,13 @@ export function PrepRecoveryPage() {
                 </div>
               </div>
               <div className="mt-4 flex gap-2">
-                <motion.button type="button" onClick={saveForm}
-                  className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+                <motion.button type="button" onClick={saveForm} disabled={saving}
+                  className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
                   style={{ background: "linear-gradient(135deg,var(--accent),#E66000)" }}
-                  whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                  <CheckCircle2 size={13} /> Planifier
+                  whileHover={{ scale: saving ? 1 : 1.03 }} whileTap={{ scale: saving ? 1 : 0.97 }}>
+                  <CheckCircle2 size={13} /> {saving ? "Enregistrement…" : "Planifier"}
                 </motion.button>
-                <motion.button type="button" onClick={() => setModal(false)}
+                <motion.button type="button" onClick={() => setModal(false)} disabled={saving}
                   className="rounded-xl border px-4 py-2.5 text-sm"
                   style={{ borderColor: "rgba(255,255,255,0.1)", color: "var(--text-muted)" }}
                   whileHover={{ borderColor: "rgba(255,122,0,0.3)" }}>
