@@ -194,7 +194,7 @@ export function PrepConditionPage() {
                     <LineChart data={player.evolution}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                       <XAxis dataKey="month" tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
-                      <YAxis domain={[50, 100]} tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
+                      <YAxis domain={[65, 95]} tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
                       <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12 }} />
                       <Line type="monotone" dataKey="speed"     stroke="#FF6B57" strokeWidth={2} dot={{ r: 4 }} animationDuration={1000} name="Vitesse" />
                       <Line type="monotone" dataKey="endurance" stroke="#6366F1" strokeWidth={2} dot={{ r: 4 }} animationDuration={1000} name="Endurance" />

@@ -1,5 +1,5 @@
 import { parseApiError } from "../config";
-import { apiFetch } from "../authHeaders";
+import { apiFetch, apiFetchWithTimeout } from "../authHeaders";
 
 async function parse<T>(response: Response): Promise<T> {
   if (!response.ok) throw new Error(await parseApiError(response));
@@ -84,7 +84,7 @@ export const clubApi = {
   createInfrastructure: (body: Record<string, unknown>) =>
     apiFetch("/club/infrastructures", { method: "POST", body: JSON.stringify(body) }).then(parse),
 
-  // ─── Player Photo ────────────────────────────────────────────
+  // ─── Player ──────────────────────────────────────────────────
   updatePlayerPhoto: (id: string, photoUrl: string) =>
     apiFetch(`/club/players/${id}/photo`, { method: "PATCH", body: JSON.stringify({ photoUrl }) }).then(parse),
 
@@ -127,8 +127,10 @@ export const clubApi = {
   bookAppointment: (playerId: string, body: Record<string, unknown>) =>
     apiFetch(`/club/players/${playerId}/appointment`, { method: "POST", body: JSON.stringify(body) }).then(parse),
 
-  getFinanceReport: () => apiFetch("/club/finance/report").then(parse),
+  // ─── Finance Extensions ───────────────────────────────────────
+  getFinanceReport: () => apiFetchWithTimeout("/club/finance/report", {}, 20000).then(parse),
   seedFinance: () => apiFetch("/club/finance/seed", { method: "POST" }).then(parse),
+  purgeFinanceDemo: () => apiFetch("/club/finance/purge-demo", { method: "POST" }).then(parse),
   updateFinanceEntry: (id: string, body: Record<string, unknown>) =>
     apiFetch(`/club/finance/${id}`, { method: "PATCH", body: JSON.stringify(body) }).then(parse),
   deleteFinanceEntry: (id: string) =>
@@ -154,6 +156,34 @@ export const clubApi = {
     apiFetch(`/club/invoices/${id}/pay`, { method: "PATCH" }).then(parse),
   deleteInvoice: (id: string) =>
     apiFetch(`/club/invoices/${id}`, { method: "DELETE" }).then(parse),
+
+  // ─── AI ──────────────────────────────────────────────────────
+  getAi: () => apiFetch("/club/ai").then(parse<{
+    status: string;
+    model: string;
+    provider: string;
+    hasApiKey: boolean;
+    clubName: string;
+    season: string;
+    insights: { text: string; severity: string }[];
+    summary: string[];
+    suggestedActions: { label: string; path: string }[];
+    suggestedQuestions: string[];
+    avgResponseTime: string;
+    snapshot: {
+      playersCount: number;
+      staffCount: number;
+      injuredCount: number;
+      contractsToRenew: number;
+      budgetUsedPct: number;
+    };
+  }>),
+
+  chatAi: (question: string, context?: string) =>
+    apiFetch("/club/ai/chat", {
+      method: "POST",
+      body: JSON.stringify({ question, context }),
+    }).then(parse<{ question: string; answer: string; durationMs: number; model: string; clubName: string }>),
 
   // ─── Préparateur ─────────────────────────────────────────────
   getPhysicalCondition: () => apiFetch("/club/preparateur/condition").then(parse),

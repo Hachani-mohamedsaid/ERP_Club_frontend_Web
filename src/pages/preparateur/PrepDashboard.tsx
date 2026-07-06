@@ -99,7 +99,7 @@ export function PrepDashboard() {
             <LineChart data={loadHistory}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
               <XAxis dataKey="day" tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
-              <YAxis tick={{ fill: "var(--text-muted)", fontSize: 11 }} domain={[0, 100]} />
+              <YAxis tick={{ fill: "var(--text-muted)", fontSize: 11 }} domain={[40, 90]} />
               <Tooltip
                 contentStyle={{ background: "#0F1D3A", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12 }}
                 formatter={(v: number) => [`${v}%`, "Charge"]}

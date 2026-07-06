@@ -30,3 +30,13 @@ export async function apiFetch(path: string, init?: RequestInit): Promise<Respon
     },
   });
 }
+
+export async function apiFetchWithTimeout(path: string, init?: RequestInit, timeoutMs = 10000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await apiFetch(path, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
