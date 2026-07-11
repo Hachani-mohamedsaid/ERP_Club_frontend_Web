@@ -61,7 +61,7 @@ export function CoachLineupPage() {
         <div className="flex gap-2">
           <motion.button type="button" onClick={resetLineup}
             className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold"
-            style={{ borderColor: "rgba(255,255,255,0.1)", color: "var(--text-muted)" }}
+            style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
             <RotateCcw size={12} /> Reset
           </motion.button>
@@ -268,7 +268,7 @@ export function CoachLineupPage() {
                 {subs.map(p => (
                   <motion.div key={p.id} initial={{ scale: 0.8 }} animate={{ scale: 1 }}
                     className="flex items-center gap-1.5 rounded-xl border px-2 py-1.5 cursor-pointer"
-                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)" }}
+                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)" }}
                     onClick={() => removeSub(p.id)}>
                     <div className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold"
                       style={{ background: "rgba(255,122,0,0.2)", color: COACH_ACCENT }}>{p.number}</div>
@@ -312,7 +312,7 @@ export function CoachLineupPage() {
                 { label: "Forme moy.", value: starters.filter(Boolean).length > 0 ? Math.round(starters.filter(Boolean).reduce((a, p) => a + (p?.forme ?? 0), 0) / starters.filter(Boolean).length) : "—", max: null, color: "#22C55E" },
               ].map(k => (
                 <div key={k.label} className="rounded-xl border p-2"
-                  style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                  style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
                   <p className="text-lg font-extrabold" style={{ color: k.color }}>
                     {k.max ? `${k.value}/${k.max}` : k.value}
                   </p>
@@ -331,7 +331,7 @@ export function CoachLineupPage() {
               {bench.map((p, i) => (
                 <motion.div key={p.id} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }}
                   className="group flex items-center gap-2 rounded-xl border px-2.5 py-2"
-                  style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
+                  style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--surface-panel-border)" }}>
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-extrabold"
                     style={{ background: `linear-gradient(135deg,${COACH_ACCENT},#E66000)`, color: "white" }}>
                     {p.number}
@@ -373,7 +373,7 @@ export function CoachLineupPage() {
               </p>
               <select value={captain ?? ""} onChange={e => setCaptain(e.target.value || null)}
                 className="w-full rounded-xl border px-3 py-2 text-xs outline-none"
-                style={{ background: "rgba(10,8,28,0.9)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }}>
+                style={{ background: "var(--surface-modal)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}>
                 <option value="">— Choisir capitaine —</option>
                 {starters.filter(Boolean).map(p => (
                   <option key={p!.id} value={p!.id}>{p!.name} (#{p!.number})</option>

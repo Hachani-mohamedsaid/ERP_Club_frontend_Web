@@ -272,7 +272,7 @@ export function PrepWellnessPage() {
             style={{ background: "rgba(0,0,0,0.75)" }}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <motion.div className="w-full max-w-md rounded-[24px] border p-6"
-              style={{ background: "rgba(8,14,30,0.98)", borderColor: "rgba(255,122,0,0.3)" }}
+              style={{ background: "var(--surface-modal)", borderColor: "rgba(255,122,0,0.3)" }}
               initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9 }}>
               <h3 className="mb-1 text-base font-bold" style={{ color: "var(--text-primary)" }}>
                 Questionnaire Wellness
@@ -314,7 +314,7 @@ export function PrepWellnessPage() {
                 </motion.button>
                 <motion.button type="button" onClick={() => setFormPlayer(null)} disabled={saving}
                   className="rounded-xl border px-4 py-2.5 text-sm"
-                  style={{ borderColor: "rgba(255,255,255,0.1)", color: "var(--text-muted)" }}
+                  style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
                   whileHover={{ borderColor: "rgba(255,122,0,0.3)" }}>
                   Annuler
                 </motion.button>

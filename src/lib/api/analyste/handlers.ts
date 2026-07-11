@@ -135,6 +135,99 @@ export function handleAnalysteRoute(
     });
   }
 
+  if (method === "POST" && path === "/analyste/video-analysis/process") {
+    const body = (init?.body ? JSON.parse(init.body as string) : {}) as {
+      playerName?: string;
+      durationSec?: number;
+      frames?: { timeSec: number }[];
+    };
+    const frames = body.frames ?? [];
+    return ok({
+      summary: `Analyse locale — ${body.playerName ?? "Joueur"}. Connectez le backend Render pour OpenAI + Claude.`,
+      confidence: 75,
+      models: { openai: null, claude: null },
+      aiEnabled: false,
+      player: { name: body.playerName ?? "Joueur", detected: true, jersey: "#8", position: "MIL" },
+      speed: {
+        maxKmh: 31,
+        avgKmh: 19,
+        sprints: 4,
+        timeline: frames.map((f, i) => ({ timeSec: f.timeSec, speedKmh: 16 + i * 2 })),
+      },
+      physical: { distanceKm: 1.7, highIntensityRuns: 5, accelerationPeaks: 7, decelerationPeaks: 6, workRate: "Modéré" },
+      technical: [
+        { category: "Course", score: 80, details: ["Mode démo local"] },
+        { category: "Technique", score: 74, details: ["Mode démo local"] },
+      ],
+      events: frames.slice(0, 6).map((f, i) => ({
+        timeSec: f.timeSec,
+        timeLabel: `${String(Math.floor(f.timeSec / 60)).padStart(2, "0")}:${String(Math.floor(f.timeSec % 60)).padStart(2, "0")}`,
+        type: "Sprint",
+        description: `Segment ${i + 1} — analyse démo`,
+        speedKmh: 18 + i * 2,
+        confidence: 72,
+      })),
+      tactical: {
+        strengths: ["Bon engagement"],
+        weaknesses: ["À affiner avec IA"],
+        recommendations: ["Configurer OPENAI_API_KEY sur Render"],
+      },
+      coachReport: "Rapport démo — déployez le backend avec les clés IA pour une analyse vidéo professionnelle complète.",
+      durationSec: body.durationSec ?? 90,
+      processedFrames: frames.length,
+      durationMs: 1200,
+      playerProfile: {
+        ppi: 82, ppiTrend: [78, 79, 80, 81, 82, 83], form: "rising", age: 26,
+        attributes: { speed: 78, pressing: 85, xg: 65, dribbling: 72, defending: 80, stamina: 70, vision: 82, leadership: 85 },
+        fatigue: 68, injuryRisk: 22, potential: 86, marketValue: "1.2M€",
+        rawAnalysis: `Profil RAW démo — ${body.playerName ?? "Joueur"}. Analyse complète disponible avec clés IA.`,
+        predictions: [
+          { label: "PPI 90j", value: "84", confidence: 86, horizon: "90 jours" },
+          { label: "Forme prochain match", value: "Titulaire", confidence: 88, horizon: "7 jours" },
+        ],
+      },
+      videoPredictions: frames.map((f, i) => ({
+        timeSec: f.timeSec,
+        speedKmh: 16 + i * 2,
+        action: ["Marche", "Course", "Sprint", "Accélération"][i % 4],
+        actionNext: "Course",
+        fatiguePct: 15 + i * 8,
+        ppiLive: 84 - i,
+        injuryRiskPct: 18 + i * 2,
+        intensity: (i > 2 ? "high" : "medium") as "medium" | "high",
+        confidence: 80,
+      })),
+      movementFrames: frames.map((f, i) => ({
+        timeSec: f.timeSec,
+        timeLabel: `${String(Math.floor(f.timeSec / 60)).padStart(2, "0")}:${String(Math.floor(f.timeSec % 60)).padStart(2, "0")}`,
+        action: ["Appui", "Accélération", "Sprint", "Contact balle"][i % 4],
+        speedKmh: 16 + i * 2,
+        accelerationMs2: 1.2 + i * 0.8,
+        strideLengthCm: 120 + i * 4,
+        cadenceSpm: 160 + i * 3,
+        centerOfMass: "medium" as const,
+        ballContact: i % 3 === 2,
+        zone: "Zone médiane",
+        direction: "Avant",
+        biomechanics: `Analyse frame ${i + 1} — posture et appuis analysés (mode démo).`,
+        technicalNote: "Configurer clés IA pour analyse NASA-level.",
+        postureScore: 78 + i * 2,
+        symmetryIndex: 82 + i,
+        confidence: 75,
+      })),
+      biomechanics: {
+        avgStrideLengthCm: 128,
+        avgCadenceSpm: 168,
+        symmetryIndex: 85,
+        postureScore: 82,
+        explosivenessIndex: 76,
+        loadIndex: 58,
+        keyFindings: ["Mode démo — biomécanique frame-par-frame avec clés IA"],
+        microAdjustments: ["Déployer backend avec OPENAI + ANTHROPIC"],
+      },
+    });
+  }
+
   if (method === "GET" && path === "/analyste/video-coach") {
     return ok({ insights: VIDEO_COACH_INSIGHTS });
   }

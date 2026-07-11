@@ -3,6 +3,7 @@ import { MapPin, Calendar, Clock } from "lucide-react";
 import { MatchCountdown } from "./MatchCountdown";
 import { CountUpStat } from "./CountUpStat";
 import { useJoueurBackendData } from "../../hooks/useJoueurBackendData";
+import { useLocale } from "../../contexts/LocaleContext";
 
 interface MatchPreviewCardProps {
   starterLabel: string;
@@ -54,6 +55,7 @@ const STADIUM_BG_URL = "https://images.unsplash.com/photo-1574629810360-7efbbe19
 
 export function MatchPreviewCard({ starterLabel }: MatchPreviewCardProps) {
   const { calendarEvents, playerStats, orgProfile } = useJoueurBackendData();
+  const { t } = useLocale();
 
   const now = new Date();
   const nextMatch = calendarEvents
@@ -90,11 +92,16 @@ export function MatchPreviewCard({ starterLabel }: MatchPreviewCardProps) {
     return (
       <motion.div
         className="relative overflow-hidden rounded-[22px] border flex items-center justify-center p-8"
-        style={{ borderColor: "rgba(255,107,87,0.25)", background: "rgba(8,12,28,0.85)", minHeight: 200 }}
+        style={{
+          borderColor: "rgba(255,107,87,0.25)",
+          background: "var(--surface-panel-solid)",
+          minHeight: 200,
+          boxShadow: "var(--shadow-glass)",
+        }}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Aucun match prévu — à planifier par le staff</p>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>{t.planningExtra.noMatch}</p>
       </motion.div>
     );
   }
@@ -102,19 +109,23 @@ export function MatchPreviewCard({ starterLabel }: MatchPreviewCardProps) {
   return (
     <motion.div
       className="relative overflow-hidden rounded-[22px] border"
-      style={{ borderColor: "rgba(255,107,87,0.25)", background: "rgba(8,12,28,0.85)" }}
+      style={{
+        borderColor: "rgba(255,107,87,0.25)",
+        background: "var(--surface-panel-solid)",
+        boxShadow: "var(--shadow-glass)",
+      }}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.15 }}
     >
       <div className="relative h-20 overflow-hidden">
         <img src={STADIUM_BG_URL} alt="Stade" className="h-full w-full object-cover opacity-50" />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent, rgba(8,12,28,0.95))" }} />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent, var(--surface-panel-solid))" }} />
         <div className="absolute bottom-2 left-4">
           <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "#FF6B57" }}>
             {league}
           </p>
-          <p className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.7)" }}>{stadium}</p>
+          <p className="text-xs font-semibold text-white/80">{stadium}</p>
         </div>
       </div>
 
@@ -122,7 +133,7 @@ export function MatchPreviewCard({ starterLabel }: MatchPreviewCardProps) {
         <div className="flex items-center justify-center gap-4 py-2">
           <TeamBadge short={getShort(home)} color={homeColor} name={home} />
           <div className="flex flex-col items-center">
-            <span className="text-2xl font-black" style={{ color: "rgba(255,255,255,0.25)" }}>VS</span>
+            <span className="text-2xl font-black" style={{ color: "var(--text-muted)" }}>VS</span>
             <div className="mt-1 flex items-center gap-1.5 text-[10px]" style={{ color: "var(--text-muted)" }}>
               <Calendar size={10} /> {dateLabel}
             </div>
@@ -133,7 +144,7 @@ export function MatchPreviewCard({ starterLabel }: MatchPreviewCardProps) {
           <TeamBadge short={getShort(away)} color={awayColor} name={away} />
         </div>
 
-        <div className="my-3 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+        <div className="my-3 h-px" style={{ background: "var(--surface-input)" }} />
 
         <MatchCountdown targetDate={targetDate} label="Compte à rebours" />
 

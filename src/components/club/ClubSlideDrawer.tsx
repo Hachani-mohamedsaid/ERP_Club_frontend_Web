@@ -25,13 +25,13 @@ export function ClubSlideDrawer({ open, onClose, title, subtitle, children, widt
           />
           <motion.div
             className={`fixed inset-y-0 right-0 z-50 flex w-full ${width} flex-col border-l shadow-2xl`}
-            style={{ background: "rgba(15,29,58,0.98)", borderColor: "rgba(255,255,255,0.05)" }}
+            style={{ background: "rgba(15,29,58,0.98)", borderColor: "var(--surface-panel-border)" }}
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ duration: 0.25, ease: "easeOut" }}
           >
-            <div className="flex items-start justify-between border-b p-5" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+            <div className="flex items-start justify-between border-b p-5" style={{ borderColor: "var(--surface-panel-border)" }}>
               <div>
                 <h2 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>{title}</h2>
                 {subtitle && <p className="text-sm" style={{ color: "var(--text-muted)" }}>{subtitle}</p>}

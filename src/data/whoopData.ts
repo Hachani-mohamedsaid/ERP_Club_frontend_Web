@@ -78,6 +78,12 @@ export interface WhoopPlayerMetrics {
   aiInsight: string;
   aiRecommendations: string[];
   aiConfidence: number;
+  /** Viiv Smartwatch — score énergie corps (body battery) */
+  viivEnergy: number;
+  /** VO₂ max estimé (ml/kg/min) */
+  vo2Max: number;
+  /** Dernière activité GPS enregistrée */
+  gpsActivity: string;
 }
 
 const BASE_TIMELINE: WhoopTimelineEvent[] = [
@@ -99,8 +105,8 @@ const BASE_SYNC: SyncEvent[] = [
   { time: "14:28:38", type: "HRV synchronisé", status: "ok" },
 ];
 
-type PlayerInput = Omit<WhoopPlayerMetrics, "club" | "age" | "height" | "weight" | "bloodGroup" | "dominantFoot" | "injuryHistory" | "recoveryDelta" | "spo2" | "stress" | "calories" | "steps" | "fitnessScore" | "fitToPlay" | "injuryRisk" | "timeline" | "alerts" | "coachNotes" | "upcomingMatch" | "weather" | "todayGoals" | "aiRecommendations" | "aiConfidence"> &
-  Partial<Pick<WhoopPlayerMetrics, "club" | "age" | "height" | "weight" | "bloodGroup" | "dominantFoot" | "injuryHistory" | "recoveryDelta" | "spo2" | "stress" | "calories" | "steps" | "fitnessScore" | "fitToPlay" | "injuryRisk" | "timeline" | "alerts" | "coachNotes" | "upcomingMatch" | "weather" | "todayGoals" | "aiRecommendations" | "aiConfidence">>;
+type PlayerInput = Omit<WhoopPlayerMetrics, "club" | "age" | "height" | "weight" | "bloodGroup" | "dominantFoot" | "injuryHistory" | "recoveryDelta" | "spo2" | "stress" | "calories" | "steps" | "fitnessScore" | "fitToPlay" | "injuryRisk" | "timeline" | "alerts" | "coachNotes" | "upcomingMatch" | "weather" | "todayGoals" | "aiRecommendations" | "aiConfidence" | "viivEnergy" | "vo2Max" | "gpsActivity"> &
+  Partial<Pick<WhoopPlayerMetrics, "club" | "age" | "height" | "weight" | "bloodGroup" | "dominantFoot" | "injuryHistory" | "recoveryDelta" | "spo2" | "stress" | "calories" | "steps" | "fitnessScore" | "fitToPlay" | "injuryRisk" | "timeline" | "alerts" | "coachNotes" | "upcomingMatch" | "weather" | "todayGoals" | "aiRecommendations" | "aiConfidence" | "viivEnergy" | "vo2Max" | "gpsActivity">>;
 
 function enrich(p: PlayerInput): WhoopPlayerMetrics {
   return {
@@ -127,6 +133,9 @@ function enrich(p: PlayerInput): WhoopPlayerMetrics {
     todayGoals: ["Hydratation 3L", "Étirements 15 min", "Couche 22h30"],
     aiRecommendations: ["Maintenir charge actuelle", "Monitoring HRV"],
     aiConfidence: 91,
+    viivEnergy: 78,
+    vo2Max: 54.2,
+    gpsActivity: "12.4 km · Entraînement",
     ...p,
   };
 }
@@ -138,8 +147,8 @@ export const WHOOP_SQUAD: WhoopPlayerMetrics[] = [
     position: "ATT",
     number: 9,
     photo: "https://images.unsplash.com/photo-1574629810360-43c2d185f1d8?w=120&h=120&fit=crop&crop=faces",
-    deviceId: "W4-9A2F-8841",
-    firmware: "5.2.1",
+    deviceId: "VV-9A2F-8841",
+    firmware: "Viiv OS 2.4",
     athleteId: "ATH-88412",
     memberSince: "Août 2024",
     connected: true,
@@ -194,8 +203,8 @@ export const WHOOP_SQUAD: WhoopPlayerMetrics[] = [
     position: "MIL",
     number: 8,
     photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=120&fit=crop&crop=faces",
-    deviceId: "W4-7C1B-2290",
-    firmware: "5.2.1",
+    deviceId: "VV-7C1B-2290",
+    firmware: "Viiv OS 2.4",
     athleteId: "ATH-22908",
     memberSince: "Jan 2025",
     connected: true,
@@ -261,8 +270,8 @@ export const WHOOP_SQUAD: WhoopPlayerMetrics[] = [
     position: "DEF",
     number: 4,
     photo: "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=120&h=120&fit=crop&crop=faces",
-    deviceId: "W4-3D8E-7712",
-    firmware: "5.2.0",
+    deviceId: "VV-3D8E-7712",
+    firmware: "Viiv OS 2.4",
     athleteId: "ATH-77124",
     memberSince: "Mars 2024",
     connected: true,
@@ -316,8 +325,8 @@ export const WHOOP_SQUAD: WhoopPlayerMetrics[] = [
     position: "GAR",
     number: 1,
     photo: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&h=120&fit=crop&crop=faces",
-    deviceId: "W4-1F4A-0038",
-    firmware: "5.1.9",
+    deviceId: "VV-1F4A-0038",
+    firmware: "Viiv OS 2.3",
     athleteId: "ATH-00381",
     memberSince: "Juin 2024",
     connected: false,
@@ -375,11 +384,13 @@ export const WHOOP_SQUAD: WhoopPlayerMetrics[] = [
       { id: "y2", message: "Batterie 12%", type: "warn", time: "22:14" },
       { id: "y3", message: "Joueur déconnecté", type: "error", time: "22:14" },
     ],
-    aiRecommendations: ["Repos actif", "Resync WHOOP", "Évaluation médicale"],
+    aiRecommendations: ["Repos actif", "Resync Viiv", "Évaluation médicale"],
     aiConfidence: 89,
     coachNotes: "Ne pas convoquer sans avis médical.",
   }),
 ];
+
+export const VIIV_SQUAD = WHOOP_SQUAD;
 
 export function readinessColor(r: WhoopPlayerMetrics["readiness"]) {
   switch (r) {

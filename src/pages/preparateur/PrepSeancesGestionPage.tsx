@@ -43,7 +43,7 @@ function Field({ label, type = "text", value, onChange, placeholder }: {
       <label className="mb-1 block text-xs" style={{ color: "var(--text-muted)" }}>{label}</label>
       <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
         className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
-        style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }} />
+        style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }} />
     </div>
   );
 }
@@ -399,7 +399,7 @@ export function PrepSeancesGestionPage() {
             style={{ background: "rgba(0,0,0,0.75)" }}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <motion.div className="w-full max-w-lg rounded-[24px] border p-6"
-              style={{ background: "rgba(8,14,30,0.98)", borderColor: "rgba(255,122,0,0.3)" }}
+              style={{ background: "var(--surface-modal)", borderColor: "rgba(255,122,0,0.3)" }}
               initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9 }}>
               <h3 className="text-base font-bold mb-4" style={{ color: "var(--text-primary)" }}>
                 {modal === "add" ? "Créer une séance" : "Modifier la séance"}
@@ -437,7 +437,7 @@ export function PrepSeancesGestionPage() {
                   <textarea value={form.exercises} onChange={e => setForm(p => ({ ...p, exercises: e.target.value }))}
                     rows={3} placeholder="Ex: Course 20min · Fartlek 20min · Étirements 20min"
                     className="w-full resize-none rounded-xl border px-3 py-2.5 text-sm outline-none"
-                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-primary)" }} />
+                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }} />
                 </div>
               </div>
               <div className="mt-4 flex gap-2">

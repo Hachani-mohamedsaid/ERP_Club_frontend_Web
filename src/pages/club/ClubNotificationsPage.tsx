@@ -121,13 +121,13 @@ export function ClubNotificationsPage() {
           <div className="flex gap-2">
             <motion.button type="button" onClick={markAllRead}
               className="flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium"
-              style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
+              style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
               whileHover={{ borderColor: "#22C55E", color: "#22C55E" }}>
               <CheckCheck size={13} /> Tout marquer lu
             </motion.button>
             <motion.button type="button" onClick={clearRead}
               className="flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium"
-              style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
+              style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
               whileHover={{ borderColor: "#EF4444", color: "#EF4444" }}>
               <Trash2 size={13} /> Supprimer lues
             </motion.button>
@@ -168,7 +168,7 @@ export function ClubNotificationsPage() {
               style={{
                 background: active ? `${color}20` : "rgba(255,255,255,0.04)",
                 color: active ? color : "var(--text-muted)",
-                border: `1px solid ${active ? color + "50" : "rgba(255,255,255,0.08)"}`,
+                border: "1px solid var(--surface-panel-border)",
               }}
               whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
             >

@@ -45,7 +45,7 @@ export function AnalysteEvolutionPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
               <XAxis dataKey="month" tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
               <YAxis domain={[80, 96]} tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
-              <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12 }} />
+              <Tooltip contentStyle={{ background: "#0F1D3A", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }} />
               <ReferenceLine x="Juin" stroke="rgba(139,92,246,0.5)" strokeDasharray="4 4" label={{ value: "Aujourd'hui", fill: "#8B5CF6", fontSize: 10 }} />
               <Line type="monotone" dataKey="value" stroke="#8B5CF6" strokeWidth={2.5} dot={{ r: 4 }} animationDuration={1500} name="Réel" connectNulls />
             </LineChart>

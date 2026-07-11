@@ -117,7 +117,7 @@ export function ClubInfrastructuresPage() {
                       key={entry.id}
                       className="rounded-xl border px-3 py-2.5"
                       style={{
-                        borderColor: "rgba(255,255,255,0.06)",
+                        borderColor: "var(--surface-panel-border)",
                         background: "rgba(255,255,255,0.02)",
                       }}
                     >

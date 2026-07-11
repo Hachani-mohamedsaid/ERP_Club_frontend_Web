@@ -15,7 +15,7 @@ import { PrepKpiCard } from "../../components/preparateur/PrepKpiCard";
 import { PLAYER_DETAILS } from "../../data/preparateurData";
 
 const TOOLTIP_STYLE = {
-  contentStyle: { background: "rgba(10,16,30,0.95)", border: "1px solid rgba(255,122,0,0.2)", color: "white", borderRadius: 12 },
+  contentStyle: { background: "var(--surface-modal)", border: "1px solid rgba(255,122,0,0.2)", color: "white", borderRadius: 12 },
 };
 
 const CHARGE_HISTORY = [
@@ -87,7 +87,7 @@ export function PrepFichePage() {
       <div className="flex items-center gap-3">
         <motion.button type="button" onClick={() => navigate(-1)}
           className="flex items-center gap-2 rounded-xl border px-3 py-2 text-sm"
-          style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-secondary)" }}
+          style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-secondary)" }}
           whileHover={{ borderColor: "rgba(255,122,0,0.35)", color: "var(--accent)" }} whileTap={{ scale: 0.96 }}>
           <ArrowLeft size={14} /> Retour
         </motion.button>
@@ -150,7 +150,7 @@ export function PrepFichePage() {
             { label: "RPE",           value: `${ext.rpe}/10`,          color: ext.rpe >= 8 ? "#EF4444" : "#FF7A00" },
           ].map(m => (
             <div key={m.label} className="rounded-xl border p-2.5 text-center"
-              style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.06)" }}>
+              style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)" }}>
               <p className="text-lg font-extrabold" style={{ color: m.color }}>{m.value}</p>
               <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{m.label}</p>
             </div>
@@ -273,7 +273,7 @@ export function PrepFichePage() {
                   { label: "Récupération",    value: `${player.recovery}%`, color: "#22C55E" },
                 ].map(m => (
                   <div key={m.label} className="rounded-xl border p-3 text-center"
-                    style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.06)" }}>
+                    style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--surface-panel-border)" }}>
                     <p className="text-xl font-extrabold" style={{ color: m.color }}>{m.value}</p>
                     <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>{m.label}</p>
                   </div>

@@ -72,7 +72,7 @@ export function ScoutVideoPage() {
       {active && (
         <SCard className="!p-0 overflow-hidden" glow>
           <div className="relative aspect-video flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg,rgba(8,6,24,0.98),rgba(20,15,45,0.98))" }}>
+            style={{ background: "linear-gradient(135deg,var(--surface-panel-solid),rgba(20,15,45,0.98))" }}>
             <div className="text-center">
               <motion.div
                 className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full"
@@ -113,7 +113,7 @@ export function ScoutVideoPage() {
       {/* Search & filters */}
       <div className="flex flex-wrap gap-2 items-center">
         <div className="flex flex-1 min-w-[200px] items-center gap-2 rounded-xl border px-3 py-2"
-          style={{ background: "rgba(8,6,24,0.85)", borderColor: "rgba(255,255,255,0.09)" }}>
+          style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
           <Search size={14} style={{ color: "var(--text-muted)" }} />
           <input value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="Rechercher joueur ou clip..."
@@ -139,7 +139,7 @@ export function ScoutVideoPage() {
           return (
             <motion.div key={v.id}
               className="rounded-[18px] border overflow-hidden cursor-pointer"
-              style={{ background: "rgba(12,9,30,0.92)", borderColor: "rgba(255,255,255,0.07)" }}
+              style={{ background: "rgba(12,9,30,0.92)", borderColor: "var(--surface-panel-border)" }}
               whileHover={{ y: -3, borderColor: `${typeColor}40` }}
               onClick={() => setPlaying(v.id)}>
               <div className="relative aspect-video flex items-center justify-center"

@@ -1,4 +1,7 @@
-export const API_URL = (import.meta.env.VITE_API_URL ?? "http://localhost:3000").replace(/\/$/, "");
+/** In dev, route through Vite proxy (/api → backend) for faster, reliable local calls. */
+export const API_URL = import.meta.env.DEV
+  ? "/api"
+  : (import.meta.env.VITE_API_URL ?? "http://localhost:3000").replace(/\/$/, "");
 
 export function getApiErrorMessage(data: unknown, fallback: string): string {
   const d = data as { message?: string | string[]; error?: string };

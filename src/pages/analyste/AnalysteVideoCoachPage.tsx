@@ -74,7 +74,7 @@ export function AnalysteVideoCoachPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 + i * 0.1 }}
                 className="flex w-full items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition-colors hover:bg-white/[0.04]"
-                style={{ borderColor: "rgba(255,255,255,0.05)", color: "var(--text-secondary)" }}
+                style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-secondary)" }}
               >
                 <Volume2 size={14} style={{ color: "#FF6B57" }} /> {s}
               </motion.button>

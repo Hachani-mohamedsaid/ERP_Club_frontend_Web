@@ -121,7 +121,7 @@ export function SuperAdminNotificationsDropdown() {
             transition={{ duration: 0.18 }}
             className="absolute right-0 top-full z-50 mt-2 w-[360px] overflow-hidden rounded-[22px] border shadow-2xl"
             style={{
-              background: "rgba(8,14,30,0.98)",
+              background: "var(--surface-modal)",
               borderColor: "rgba(255,122,0,0.2)",
               backdropFilter: "blur(20px)",
               boxShadow: "0 24px 64px rgba(0,0,0,0.65)",
@@ -129,7 +129,7 @@ export function SuperAdminNotificationsDropdown() {
           >
             <div
               className="flex items-center justify-between border-b px-4 py-3.5"
-              style={{ borderColor: "rgba(255,255,255,0.07)" }}
+              style={{ borderColor: "var(--surface-panel-border)" }}
             >
               <div className="flex items-center gap-2">
                 <Bell size={14} style={{ color: ACCENT }} />
@@ -164,8 +164,8 @@ export function SuperAdminNotificationsDropdown() {
                 </p>
               ) : notifs.length === 0 ? (
                 <div className="flex flex-col items-center py-12 text-center">
-                  <Bell size={28} style={{ color: "rgba(255,255,255,0.1)" }} className="mb-2" />
-                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+                  <Bell size={28} style={{ color: "var(--text-muted)" }} className="mb-2" />
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                     Aucune notification
                   </p>
                 </div>
@@ -235,7 +235,7 @@ export function SuperAdminNotificationsDropdown() {
 
             <div
               className="flex items-center justify-between border-t px-4 py-2.5"
-              style={{ borderColor: "rgba(255,255,255,0.06)" }}
+              style={{ borderColor: "var(--surface-panel-border)" }}
             >
               <span className="text-[9px]" style={{ color: "var(--text-muted)" }}>
                 ODIN ERP · Super Admin

@@ -27,7 +27,7 @@ function StatsSidebar() {
     <div
       className="sticky top-6 rounded-2xl border p-6"
       style={{
-        borderColor: "rgba(255,255,255,0.1)",
+        borderColor: "var(--surface-panel-border)",
         background: "rgba(15,20,35,0.85)",
         backdropFilter: "blur(24px)",
         boxShadow: "0 20px 50px rgba(0,0,0,0.35)",
@@ -286,7 +286,7 @@ export function RegisterPage() {
                 <label
                   htmlFor="clubLogo"
                   className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed px-3 py-2.5 text-xs font-medium transition-colors hover:bg-white/5"
-                  style={{ borderColor: "rgba(255,255,255,0.15)", color: "var(--text-secondary)" }}
+                  style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-secondary)" }}
                 >
                   <Upload size={14} /> Upload
                 </label>
@@ -318,7 +318,7 @@ export function RegisterPage() {
           <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>Club Access Key · laisser vide si ouvert</p>
         </Field>
 
-        <div className="space-y-2.5 rounded-xl border p-3" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+        <div className="space-y-2.5 rounded-xl border p-3" style={{ borderColor: "var(--surface-panel-border)" }}>
           <label className="flex cursor-pointer items-start gap-3">
             <input type="checkbox" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} className="mt-1" disabled={pending} />
             <span className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>

@@ -164,7 +164,7 @@ export function ScoutReportPage() {
             {showProspectList && (
               <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                 className="absolute z-10 w-full mt-1 rounded-xl border overflow-hidden"
-                style={{ background: "rgba(8,6,24,0.98)", borderColor: "rgba(255,255,255,0.1)" }}>
+                style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
                 {prospectOptions.map(p => (
                   <motion.button key={p.id} type="button" onClick={() => { setSelectedProspect(p); setShowProspectList(false); setAiResult(null); }}
                     className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm"
@@ -198,7 +198,7 @@ export function ScoutReportPage() {
                 value={report[f.key as keyof typeof report] as string}
                 onChange={e => setReport({ ...report, [f.key]: e.target.value })}
                 className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-primary)" }} />
+                style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }} />
             </div>
           ))}
         </div>
@@ -272,7 +272,7 @@ export function ScoutReportPage() {
                 onChange={e => setReport({ ...report, [f.key]: e.target.value })}
                 placeholder={f.placeholder} rows={2}
                 className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none resize-none"
-                style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.09)", color: "var(--text-primary)" }} />
+                style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }} />
             </div>
           ))}
         </div>
@@ -318,7 +318,7 @@ export function ScoutReportPage() {
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
             className="rounded-[24px] border overflow-hidden"
             style={{
-              background: "rgba(8,6,24,0.97)",
+              background: "var(--surface-panel-solid)",
               borderColor: `${aiResult.decisionColor}35`,
               boxShadow: `0 0 48px ${aiResult.decisionColor}12`,
             }}>

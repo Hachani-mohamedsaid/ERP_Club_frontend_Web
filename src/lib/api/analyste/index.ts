@@ -94,6 +94,42 @@ export const analysteApi = {
       events: MatchEvent[];
     }>("/analyste/video-analysis"),
 
+  processVideoAnalysis: (body: {
+    playerName: string;
+    focus?: string;
+    sport?: string;
+    durationSec: number;
+    fileName?: string;
+    frames: { timeSec: number; imageBase64: string; motionScore?: number }[];
+    poseSummary?: {
+      detectionRate: number;
+      avgLeftKnee: number;
+      avgRightKnee: number;
+      avgSymmetry: number;
+      avgPowerIndex: number;
+      dominantFoot: string;
+      legInsights?: string[];
+    };
+    poseFrames?: {
+      timeSec: number;
+      leftKnee: number;
+      rightKnee: number;
+      leftHip?: number;
+      rightHip?: number;
+      leftLegPhase: string;
+      rightLegPhase: string;
+      footStrike: string;
+      powerIndex: number;
+      symmetryIndex?: number;
+      trunkTilt?: number;
+      notes?: string[];
+    }[];
+  }) =>
+    fetchAnalyste<import("./videoAnalysisTypes").VideoAnalysisAiResult>("/analyste/video-analysis/process", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
   getVideoCoach: () => fetchAnalyste<{ insights: VideoCoachInsight[] }>("/analyste/video-coach"),
 
   getReplay: () => fetchAnalyste<{ events: MatchEvent[]; videoDuration: number }>("/analyste/replay"),

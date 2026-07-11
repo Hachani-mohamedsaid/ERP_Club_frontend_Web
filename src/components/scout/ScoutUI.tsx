@@ -48,7 +48,7 @@ export function SKpi({ label, value, trend, color = S.accent, icon: Icon, sparkl
   const up = trend && trend.value > 0;
   return (
     <motion.div className="rounded-[20px] border p-4"
-      style={{ background: "rgba(12,9,30,0.85)", borderColor: "rgba(255,255,255,0.07)" }}
+      style={{ background: "rgba(12,9,30,0.85)", borderColor: "var(--surface-panel-border)" }}
       initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       transition={{ delay: delay * 0.06, ease: "easeOut" }}
       whileHover={{ y: -3, boxShadow: `0 12px 30px rgba(0,0,0,0.35)` }}>

@@ -223,7 +223,7 @@ export function SuperAdminClubDetails() {
             </div>
 
             {/* Info rows */}
-            <div className="space-y-3 border-t pt-4" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+            <div className="space-y-3 border-t pt-4" style={{ borderColor: "var(--surface-panel-border)" }}>
               {[
                 { icon: MapPin, label: "Ville", value: club.city },
                 { icon: Building2, label: "Stade", value: club.stade },
@@ -254,7 +254,7 @@ export function SuperAdminClubDetails() {
                 <p className="font-extrabold" style={{ color: PLAN_COLOR[club.plan] }}>{club.plan}</p>
               </div>
             </div>
-            <div className="mt-4 space-y-2 border-t pt-4 text-sm" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+            <div className="mt-4 space-y-2 border-t pt-4 text-sm" style={{ borderColor: "var(--surface-panel-border)" }}>
               <div className="flex justify-between">
                 <span style={{ color: "var(--text-muted)" }}>Expiration</span>
                 <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{club.planExpiry}</span>

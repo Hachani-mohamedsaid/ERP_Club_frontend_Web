@@ -127,7 +127,7 @@ export function ScoutBubbleMap({
       className={`relative w-full overflow-hidden rounded-2xl border ${className}`}
       style={{
         background: "linear-gradient(165deg, rgba(14,16,24,0.98) 0%, rgba(8,10,16,1) 100%)",
-        borderColor: "rgba(255,255,255,0.06)",
+        borderColor: "var(--surface-panel-border)",
         minHeight: 440,
         aspectRatio: "16/9",
       }}
@@ -291,7 +291,7 @@ export function ScoutBubbleMap({
               left: Math.min(tooltip.x + 14, width - 200),
               top: Math.max(tooltip.y - 52, 10),
               background: "rgba(12,14,22,0.97)",
-              borderColor: "rgba(255,255,255,0.1)",
+              borderColor: "var(--surface-panel-border)",
               boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
             }}
             initial={{ opacity: 0, y: 6 }}
@@ -318,7 +318,7 @@ export function ScoutBubbleMap({
       {/* Legend bar */}
       <div
         className="absolute bottom-3 inset-x-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2"
-        style={{ background: "rgba(10,12,18,0.92)", borderColor: "rgba(255,255,255,0.06)" }}
+        style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}
       >
         <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{hint}</span>
         <div className="flex items-center gap-3">
