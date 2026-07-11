@@ -6,6 +6,7 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
 } from "recharts";
 import { ScoutPage, SCard, SGauge, SBadge } from "../../components/scout/ScoutUI";
+import { ScoutPlayerPhoto } from "../../components/scout/ScoutPlayerPhoto";
 import { S } from "../../data/scoutData";
 import { useScoutProspects } from "../../hooks/useScoutData";
 
@@ -118,6 +119,7 @@ export function ScoutSquadFitPage() {
                 whileHover={{ y: -2 }}
                 onClick={() => navigate(`/scout/prospect/${p.id}`)}>
                 <div className="flex flex-wrap items-center gap-3">
+                  <ScoutPlayerPhoto name={p.name} photoUrl={p.photoUrl} size={48} accent={fitColor} />
                   <div className="text-2xl font-black w-10 text-center" style={{ color: fitColor }}>
                     {p.fit.score}%
                   </div>

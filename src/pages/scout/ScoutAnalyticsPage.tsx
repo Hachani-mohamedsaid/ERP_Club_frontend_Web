@@ -7,6 +7,7 @@ import {
   PieChart, Pie, Cell, AreaChart, Area, LineChart, Line,
 } from "recharts";
 import { ScoutPage, SCard, SKpi } from "../../components/scout/ScoutUI";
+import { ScoutPlayerPhoto } from "../../components/scout/ScoutPlayerPhoto";
 import { S } from "../../data/scoutData";
 import { useScoutProspects, useScoutDashboard } from "../../hooks/useScoutData";
 
@@ -84,6 +85,22 @@ export function ScoutAnalyticsPage() {
         <SKpi label="Potentiel moyen" value={data?.kpis.avgPotential ?? "—"} icon={TrendingUp} color={S.accent} delay={2} />
         <SKpi label="Pays couverts" value={byCountry.length || "—"} icon={Globe} color={S.info} delay={3} />
       </div>
+
+      {prospects.length > 0 && (
+        <SCard className="!p-4">
+          <p className="text-xs font-bold mb-3" style={{ color: "var(--text-primary)" }}>Joueurs du pipeline</p>
+          <div className="flex gap-3 overflow-x-auto pb-1">
+            {prospects.slice(0, 12).map((p) => (
+              <div key={p.id} className="flex shrink-0 flex-col items-center gap-1.5" style={{ width: 72 }}>
+                <ScoutPlayerPhoto name={p.name} photoUrl={p.photoUrl} size={52} accent={S.primary} />
+                <p className="text-[9px] font-bold text-center line-clamp-2 w-full" style={{ color: "var(--text-secondary)" }}>
+                  {p.name.split(" ").pop()}
+                </p>
+              </div>
+            ))}
+          </div>
+        </SCard>
+      )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Position distribution */}

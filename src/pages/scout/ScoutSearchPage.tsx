@@ -93,15 +93,7 @@ function ProspectPreviewPanel({
 
       <div className="p-5">
         <div className="flex items-start gap-4 mb-4">
-          <motion.div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl text-xl font-extrabold text-white"
-            style={{
-              background: `linear-gradient(145deg,${PRIORITY_META[selPri].color},${PRIORITY_META[selPri].color}60)`,
-              boxShadow: `0 0 32px ${PRIORITY_META[selPri].color}40`,
-            }}
-            animate={{ boxShadow: [`0 0 16px ${PRIORITY_META[selPri].color}25`, `0 0 32px ${PRIORITY_META[selPri].color}50`, `0 0 16px ${PRIORITY_META[selPri].color}25`] }}
-            transition={{ duration: 2.5, repeat: Infinity }}>
-            {sel.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
-          </motion.div>
+          <ScoutPlayerPhoto name={sel.name} photoUrl={sel.photoUrl} size={64} accent={PRIORITY_META[selPri].color} />
           <div className="flex-1 min-w-0">
             <p className="text-base font-extrabold" style={{ color: "var(--text-primary)" }}>
               {sel.flag} {sel.name}

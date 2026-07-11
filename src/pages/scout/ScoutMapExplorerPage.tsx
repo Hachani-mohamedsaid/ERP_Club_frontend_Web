@@ -6,6 +6,7 @@ import {
   Users, TrendingUp, Zap, RotateCcw, Loader2, RefreshCw,
 } from "lucide-react";
 import { ScoutPage, SCard, SGauge } from "../../components/scout/ScoutUI";
+import { ScoutPlayerPhoto } from "../../components/scout/ScoutPlayerPhoto";
 import { ScoutGeoMap } from "../../components/scout/ScoutGeoMap";
 import type { BubbleNodeInput } from "../../lib/scout/bubbleMapTypes";
 import { S } from "../../data/scoutData";
@@ -583,10 +584,7 @@ export function ScoutMapExplorerPage() {
                             transition={{ delay: i * 0.03 }}
                             whileHover={{ borderColor: `${S.primary}40`, x: 3 }}
                           >
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-black text-white"
-                              style={{ background: p.inDatabase ? S.primary : p.source === "flashscore" ? S.info : S.accent }}>
-                              {p.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-                            </div>
+                            <ScoutPlayerPhoto name={p.name} photoUrl={p.photoUrl} size={32} accent={p.inDatabase ? S.primary : S.info} />
                             <div className="flex-1 min-w-0">
                               <p className="text-[11px] font-bold truncate" style={{ color: "var(--text-primary)" }}>
                                 {p.flag} {p.name}

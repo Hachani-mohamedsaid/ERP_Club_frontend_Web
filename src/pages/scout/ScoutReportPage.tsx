@@ -5,6 +5,7 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
 } from "recharts";
 import { ScoutPage, SCard, SGauge } from "../../components/scout/ScoutUI";
+import { ScoutPlayerPhoto, resolveScoutPhotoUrl } from "../../components/scout/ScoutPlayerPhoto";
 import { S } from "../../data/scoutData";
 import { showToast } from "../../components/scout/ScoutToast";
 import { scoutApi, type ScoutProspectDto } from "../../lib/api/scout";
@@ -81,6 +82,7 @@ export function ScoutReportPage() {
         pos: p.position,
         flag: p.flag,
         base: p.potential,
+        photoUrl: p.photoUrl,
       }));
       setProspectOptions(opts);
       setSelectedProspect(opts[0]);
@@ -150,10 +152,12 @@ export function ScoutReportPage() {
             className="flex w-full items-center gap-3 rounded-xl border p-3"
             style={{ background: "rgba(255,255,255,0.03)", borderColor: `${S.primary}30` }}
             whileHover={{ borderColor: `${S.primary}55` }}>
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold text-white"
-              style={{ background: `linear-gradient(135deg,${S.primary},${S.primary}99)` }}>
-              {selectedProspect.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
-            </div>
+            <ScoutPlayerPhoto
+              name={selectedProspect.name}
+              photoUrl={resolveScoutPhotoUrl(selectedProspect.name, (selectedProspect as { photoUrl?: string }).photoUrl, prospectOptions as { name: string; photoUrl?: string }[])}
+              size={40}
+              accent={S.primary}
+            />
             <div className="flex-1 text-left">
               <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{selectedProspect.flag} {selectedProspect.name}</p>
               <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{selectedProspect.pos}</p>

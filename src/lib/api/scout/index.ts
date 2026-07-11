@@ -119,6 +119,7 @@ export interface ScoutDashboardDto {
     score: number;
     budget: string;
     reasons: string[];
+    photoUrl?: string;
     warn?: string;
   }[];
   recentReports: {
@@ -307,6 +308,7 @@ export const scoutApi = {
         source: "prospect" | "flashscore" | "ai";
         inDatabase?: boolean;
         prospectId?: string;
+        photoUrl?: string;
       }[];
       sources: { database: number; flashscore?: number; ai?: number };
       cached: boolean;
@@ -354,6 +356,7 @@ export const scoutApi = {
         inDatabase: boolean;
         source?: "database" | "flashscore" | "ai";
         season?: string;
+        photoUrl?: string;
       }[];
       durationMs: number;
       model: string;

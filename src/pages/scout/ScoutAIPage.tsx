@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Brain, Send, Loader2, ChevronDown, ChevronUp, Zap, AlertTriangle } from "lucide-react";
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip } from "recharts";
 import { ScoutPage, SCard, SBadge, SGauge, SCOUT_TOOLTIP } from "../../components/scout/ScoutUI";
+import { ScoutPlayerPhoto } from "../../components/scout/ScoutPlayerPhoto";
 import { S, PRIORITY_META } from "../../data/scoutData";
 import { useScoutProspects } from "../../hooks/useScoutData";
 import { showToast } from "../../components/scout/ScoutToast";
@@ -186,10 +187,12 @@ export function ScoutAIPage() {
                   style={{ background: "rgba(12,9,30,0.88)", borderColor: `${rankColor}25` }}>
                   {/* Header */}
                   <div className="flex items-center gap-4 p-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-xl"
-                      style={{ background: `${rankColor}18`, color: rankColor }}>
-                      {["🥇","🥈","🥉","4️⃣","5️⃣"][i]}
-                    </div>
+                    <ScoutPlayerPhoto
+                      name={res.name}
+                      photoUrl={p?.photoUrl ?? res.photoUrl}
+                      size={48}
+                      accent={rankColor}
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-extrabold" style={{ color: "var(--text-primary)" }}>{res.flag} {res.name}</p>

@@ -90,16 +90,27 @@ export function useScoutProspects() {
 export function useScoutDashboard() {
   const [data, setData] = useState<ScoutDashboardDto | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    scoutApi
-      .getDashboard()
-      .then(setData)
-      .catch(() => setData(null))
-      .finally(() => setLoading(false));
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const dashboard = await scoutApi.getDashboard();
+      setData(dashboard);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur chargement");
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  return { data, loading };
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  return { data, loading, error, refresh };
 }
 
 export function useScoutWatchlist() {

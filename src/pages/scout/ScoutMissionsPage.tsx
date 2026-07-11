@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { MapPin, Calendar, Plus, Target, Clock } from "lucide-react";
 import { ScoutPage, SCard } from "../../components/scout/ScoutUI";
+import { ScoutPlayerPhoto, resolveScoutPhotoUrl } from "../../components/scout/ScoutPlayerPhoto";
 import { S } from "../../data/scoutData";
 import { scoutApi, type ScoutMissionDto } from "../../lib/api/scout";
+import { useScoutProspects } from "../../hooks/useScoutData";
 import { showToast } from "../../components/scout/ScoutToast";
 
 function formatMissionDate(iso: string) {
@@ -16,6 +18,7 @@ function formatMissionDate(iso: string) {
 }
 
 export function ScoutMissionsPage() {
+  const { prospects } = useScoutProspects();
   const [missions, setMissions] = useState<ScoutMissionDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -169,7 +172,7 @@ export function ScoutMissionsPage() {
             ) : (
               <div className="space-y-2">
                 {upcoming.map((m) => (
-                  <MissionCard key={m.id} mission={m} />
+                  <MissionCard key={m.id} mission={m} photoCatalog={prospects} />
                 ))}
               </div>
             )}
@@ -180,7 +183,7 @@ export function ScoutMissionsPage() {
               <p className="text-xs font-bold mb-3" style={{ color: "var(--text-muted)" }}>Passées ({past.length})</p>
               <div className="space-y-2 opacity-70">
                 {past.map((m) => (
-                  <MissionCard key={m.id} mission={m} past />
+                  <MissionCard key={m.id} mission={m} past photoCatalog={prospects} />
                 ))}
               </div>
             </section>
@@ -191,8 +194,19 @@ export function ScoutMissionsPage() {
   );
 }
 
-function MissionCard({ mission, past }: { mission: ScoutMissionDto; past?: boolean }) {
+function MissionCard({
+  mission,
+  past,
+  photoCatalog,
+}: {
+  mission: ScoutMissionDto;
+  past?: boolean;
+  photoCatalog?: Array<{ name: string; photoUrl?: string | null }>;
+}) {
   const extra = mission.extra as { opponent?: string; prospectName?: string } | null;
+  const prospectPhoto = extra?.prospectName
+    ? resolveScoutPhotoUrl(extra.prospectName, undefined, photoCatalog)
+    : null;
 
   return (
     <motion.div
@@ -204,12 +218,22 @@ function MissionCard({ mission, past }: { mission: ScoutMissionDto; past?: boole
       whileHover={{ y: past ? 0 : -2 }}
     >
       <div className="flex items-start gap-3">
+        {extra?.prospectName ? (
+          <ScoutPlayerPhoto
+            name={extra.prospectName}
+            photoUrl={prospectPhoto}
+            size={40}
+            accent={S.primary}
+            variant="circle"
+          />
+        ) : (
         <div
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
           style={{ background: `${S.primary}15`, color: S.primary }}
         >
           <Calendar size={18} />
         </div>
+        )}
         <div className="flex-1">
           <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{mission.title}</p>
           <p className="text-[10px] mt-1 flex flex-wrap gap-3" style={{ color: "var(--text-muted)" }}>
