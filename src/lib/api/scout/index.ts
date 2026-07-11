@@ -322,9 +322,10 @@ export const scoutApi = {
       provider: string;
       clubName: string;
       scoutName: string;
-      summary: { prospects: number; continents: number; countries: number; clubs: number; avgPotential: number };
+      summary: { prospects: number; flashscorePlayers?: number; continents: number; countries: number; clubs: number; avgPotential: number };
       suggestedQueries: string[];
       avgResponseTime: string;
+      season?: string;
     }>),
 
   searchAi: (query: string) =>
@@ -349,9 +350,12 @@ export const scoutApi = {
         warnings: string[];
         recommendation: string;
         inDatabase: boolean;
+        source?: "database" | "flashscore" | "ai";
+        season?: string;
       }[];
       durationMs: number;
       model: string;
+      season?: string;
     }>),
 
   searchProspects: async (filters: ScoutSearchFilters) => {
@@ -359,9 +363,10 @@ export const scoutApi = {
       summary: string;
       results: SearchPlayerResult[];
       aiEnabled: boolean;
-      sources: { database: number; ai: number };
+      sources: { database: number; flashscore?: number; ai?: number };
       durationMs?: number;
       model: string;
+      season?: string;
     };
 
     try {

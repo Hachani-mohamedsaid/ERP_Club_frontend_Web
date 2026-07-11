@@ -17,7 +17,8 @@ import type { ScoutProspectDto } from "../../lib/api/scout";
 
 type SearchPlayer = ScoutProspectDto & {
   inDatabase?: boolean;
-  source?: "database" | "ai";
+  source?: "database" | "ai" | "flashscore";
+  season?: string;
 };
 
 // ── Filter chip config ──────────────────────────────────────────────────────
@@ -339,7 +340,7 @@ export function ScoutSearchPage() {
 
   const toggleWatch = async (p: SearchPlayer) => {
     let id = p.id;
-    if (!p.inDatabase && p.source === "ai") {
+    if (!p.inDatabase && (p.source === "ai" || p.source === "flashscore")) {
       const newId = await importToDb(p);
       if (!newId) return;
       id = newId;
@@ -371,7 +372,7 @@ export function ScoutSearchPage() {
         <div>
           <h1 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>Recherche Prospects</h1>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            {loading ? "Recherche OpenAI en cours…" : `${filtered.length} joueur${filtered.length !== 1 ? "s" : ""} trouvé${filtered.length !== 1 ? "s" : ""}`}
+            {loading ? "Recherche Flashscore 2026-27…" : `${filtered.length} joueur${filtered.length !== 1 ? "s" : ""} · saison 2026-2027`}
             {summary ? ` · ${summary}` : ""}
           </p>
         </div>
@@ -381,7 +382,7 @@ export function ScoutSearchPage() {
             className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[11px] font-bold"
             style={{ borderColor: `${S.accent}40`, color: S.accent, background: `${S.accent}10` }}
             whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Brain size={12} /> Actualiser IA
+            <Brain size={12} /> Actualiser
           </motion.button>
         </div>
         {activeFilters.length > 0 && (
@@ -398,7 +399,7 @@ export function ScoutSearchPage() {
         <div className="flex items-start gap-2 rounded-xl border p-3 text-xs text-amber-300"
           style={{ borderColor: "rgba(245,158,11,0.3)", background: "rgba(245,158,11,0.08)" }}>
           <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-          Clé OpenAI manquante — résultats limités à la base club. Configurez OPENAI_API_KEY sur Render.
+          Synthèse IA optionnelle — la recherche utilise les effectifs Flashscore 2026-27 ({filtered.length} résultats locaux).
         </div>
       )}
 
@@ -456,6 +457,7 @@ export function ScoutSearchPage() {
               const pc = potColor(p.potential);
               const inj = injuryMeta(p.injuryRisk);
               const isAi = p.source === "ai" && !p.inDatabase;
+              const isFlashscore = p.source === "flashscore" && !p.inDatabase;
               const pri = priorityKey(p.priority);
 
               return (
@@ -487,6 +489,12 @@ export function ScoutSearchPage() {
                       <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>
                         {p.flag} {p.name}
                       </p>
+                      {isFlashscore && (
+                        <span className="flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-black shrink-0"
+                          style={{ background: `${S.info}20`, color: S.info }}>
+                          Flashscore
+                        </span>
+                      )}
                       {isAi && (
                         <span className="flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-black shrink-0"
                           style={{ background: `${S.accent}20`, color: S.accent }}>
