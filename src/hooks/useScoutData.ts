@@ -7,6 +7,32 @@ export type ScoutProspect = ScoutProspectDto & {
   status: WorkflowStatus;
 };
 
+function normName(name: string) {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function dedupeProspects(list: ScoutProspect[]): ScoutProspect[] {
+  const map = new Map<string, ScoutProspect>();
+  for (const p of list) {
+    const key = normName(p.name);
+    const prev = map.get(key);
+    if (!prev) {
+      map.set(key, p);
+      continue;
+    }
+    const prefer =
+      (p.photoUrl && !prev.photoUrl) ||
+      p.potential > prev.potential ||
+      (p.potential === prev.potential && p.id.localeCompare(prev.id) < 0);
+    if (prefer) map.set(key, p);
+  }
+  return Array.from(map.values());
+}
+
 function toProspect(dto: ScoutProspectDto): ScoutProspect {
   const mock = PROSPECTS.find(
     (p) => p.id === dto.legacyId || p.name === dto.name,
@@ -36,7 +62,7 @@ export function useScoutProspects() {
         scoutApi.getProspects(),
         scoutApi.getWatchlist(),
       ]);
-      setProspects(all.map(toProspect));
+      setProspects(dedupeProspects(all.map(toProspect)));
       setWatchlistIds(new Set(watchlist.map((p) => p.id)));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur chargement");

@@ -225,7 +225,7 @@ function ProspectPreviewPanel({
 
 export function ScoutSearchPage() {
   const navigate = useNavigate();
-  const { watchlistIds, toggleWatchlist, refresh } = useScoutProspects();
+  const { prospects, watchlistIds, toggleWatchlist, refresh } = useScoutProspects();
 
   const [search, setSearch] = useState("");
   const [pos, setPos] = useState("Tous");
@@ -288,6 +288,9 @@ export function ScoutSearchPage() {
 
   const importToDb = async (p: SearchPlayer) => {
     setImportingId(p.id);
+    const norm = (n: string) =>
+      n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    const alreadyInDb = prospects.some((pr) => norm(pr.name) === norm(p.name));
     try {
       const created = await scoutApi.createProspect({
         name: p.name,
@@ -321,7 +324,10 @@ export function ScoutSearchPage() {
       await refresh();
       setResults(prev => prev.map(r => r.id === p.id ? { ...created, inDatabase: true, source: "database" } : r));
       setSelected(created.id);
-      showToast(`${p.name} ajouté à la base ✓`, "success");
+      showToast(
+        alreadyInDb ? `${p.name} déjà dans l'annuaire — fiche ouverte` : `${p.name} ajouté à la base ✓`,
+        alreadyInDb ? "info" : "success",
+      );
       return created.id;
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Import échoué", "error");
