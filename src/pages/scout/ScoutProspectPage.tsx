@@ -11,6 +11,7 @@ import {
   BarChart, Bar, Cell,
 } from "recharts";
 import { SGauge, SCOUT_TOOLTIP } from "../../components/scout/ScoutUI";
+import { ScoutPlayerPhoto } from "../../components/scout/ScoutPlayerPhoto";
 import { PROSPECTS, S, PRIORITY_META, type Prospect } from "../../data/scoutData";
 import { scoutApi } from "../../lib/api/scout";
 import { showToast } from "../../components/scout/ScoutToast";
@@ -47,6 +48,7 @@ export function ScoutProspectPage() {
   const [notes, setNotes] = useState<{ date: string; text: string }[]>([]);
   const [liked, setLiked] = useState(false);
   const [p, setP] = useState<Prospect | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -96,6 +98,7 @@ export function ScoutProspectPage() {
         });
         setNotes(dto.notes?.length ? dto.notes : mock?.notes ?? []);
         setLiked(Boolean(dto.inWatchlist));
+        setPhotoUrl(dto.photoUrl ?? null);
       })
       .catch(() => {
         const fallback = PROSPECTS.find((pr) => pr.id === id);
@@ -216,31 +219,10 @@ export function ScoutProspectPage() {
           <div className="flex flex-wrap items-start gap-6">
             {/* Avatar */}
             <div className="relative shrink-0">
-              <motion.div className="relative flex h-24 w-24 items-center justify-center rounded-3xl text-3xl font-black text-white"
-                style={{
-                  background: `linear-gradient(145deg, ${priority.color}, ${priority.color}66, rgba(0,0,0,0.4))`,
-                  boxShadow: `0 0 40px ${priority.color}40, 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15)`,
-                }}
-                animate={{ boxShadow: [`0 0 20px ${priority.color}30`, `0 0 40px ${priority.color}55`, `0 0 20px ${priority.color}30`] }}
-                transition={{ duration: 3, repeat: Infinity }}>
-                {p.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
-                {/* Jersey number badge */}
-                <div className="absolute -bottom-2 -right-2 flex h-7 w-7 items-center justify-center rounded-xl border-2 border-[var(--surface-panel-solid)] text-[10px] font-black"
-                  style={{ background: priority.color, color: "white" }}>
-                  #{p.id.replace("pr", "")}
-                </div>
-              </motion.div>
-              {/* Potential ring */}
-              <div className="absolute -top-2 -right-2">
-                <svg width="28" height="28" viewBox="0 0 28 28">
-                  <circle cx="14" cy="14" r="11" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="2" />
-                  <motion.circle cx="14" cy="14" r="11" fill="none" stroke={pc} strokeWidth="2"
-                    strokeDasharray={`${2 * Math.PI * 11}`}
-                    initial={{ strokeDashoffset: 2 * Math.PI * 11 }}
-                    animate={{ strokeDashoffset: 2 * Math.PI * 11 * (1 - p.potential / 100) }}
-                    transition={{ duration: 1.2, ease: "easeOut" }}
-                    strokeLinecap="round" transform="rotate(-90 14 14)" />
-                </svg>
+              <ScoutPlayerPhoto name={p.name} photoUrl={photoUrl} size={96} accent={priority.color} />
+              <div className="absolute -bottom-2 -right-2 flex h-7 w-7 items-center justify-center rounded-xl border-2 border-[var(--surface-panel-solid)] text-[10px] font-black text-white"
+                style={{ background: priority.color }}>
+                P.{p.priority}
               </div>
             </div>
 

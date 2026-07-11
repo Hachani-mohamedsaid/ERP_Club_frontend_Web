@@ -75,6 +75,8 @@ export interface ScoutProspectDto {
   notes: { date: string; text: string }[];
   inWatchlist?: boolean;
   note?: string;
+  photoUrl?: string;
+  season?: string;
 }
 
 export interface ScoutDashboardDto {

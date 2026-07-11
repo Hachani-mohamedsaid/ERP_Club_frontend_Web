@@ -9,6 +9,7 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip,
 } from "recharts";
 import { ScoutPage, SGauge, SCOUT_TOOLTIP } from "../../components/scout/ScoutUI";
+import { ScoutPlayerPhoto } from "../../components/scout/ScoutPlayerPhoto";
 import { S, PRIORITY_META } from "../../data/scoutData";
 import { showToast } from "../../components/scout/ScoutToast";
 import { useScoutProspects } from "../../hooks/useScoutData";
@@ -478,10 +479,7 @@ export function ScoutSearchPage() {
                   </span>
 
                   {/* Avatar */}
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-extrabold text-white"
-                    style={{ background: `linear-gradient(135deg,${PRIORITY_META[pri].color},${PRIORITY_META[pri].color}80)` }}>
-                    {p.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
-                  </div>
+                  <ScoutPlayerPhoto name={p.name} photoUrl={p.photoUrl} size={44} accent={pc} />
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
