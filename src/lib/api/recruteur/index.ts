@@ -58,6 +58,12 @@ export const recruteurApi = {
     return apiFetch(`/club/recruteur/audit-logs${qs ? `?${qs}` : ""}`).then(parse);
   },
 
+  getCalendarEvents: () => apiFetch("/club/recruteur/calendar").then(parse),
+  createCalendarEvent: (body: { title: string; date: string; time?: string; type?: string; location?: string; note?: string }) =>
+    apiFetch("/club/recruteur/calendar", { method: "POST", body: JSON.stringify(body) }).then(parse),
+  deleteCalendarEvent: (id: string) =>
+    apiFetch(`/club/recruteur/calendar/${id}`, { method: "DELETE" }).then(parse),
+
   getAi: () =>
     apiFetch("/recruteur/ai").then(parse<{
       status: string;

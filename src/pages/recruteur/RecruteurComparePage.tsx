@@ -4,8 +4,9 @@ import { Swords } from "lucide-react";
 import { RecruteurPageTransition } from "../../components/recruteur/RecruteurPageTransition";
 import { RecruteurKpiCard } from "../../components/recruteur/RecruteurKpiCard";
 import { PlayerAvatar } from "../../components/player/PlayerAvatar";
-import { SCOUT_PLAYERS } from "../../data/recruteurData";
 import { useRecruteurStore, setCompare } from "../../data/recruteurStore";
+import { useRecruteurTalents } from "../../hooks/useRecruteurTalents";
+import type { ScoutPlayer } from "../../data/recruteurData";
 
 const METRICS: { key: "speed" | "technique" | "physical" | "vision" | "mental" | "finishing"; label: string }[] = [
   { key: "speed", label: "Vitesse" },
@@ -18,8 +19,41 @@ const METRICS: { key: "speed" | "technique" | "physical" | "vision" | "mental" |
 
 export function RecruteurComparePage() {
   const store = useRecruteurStore();
-  const a = SCOUT_PLAYERS.find((p) => p.id === store.compare[0]) ?? SCOUT_PLAYERS[0];
-  const b = SCOUT_PLAYERS.find((p) => p.id === store.compare[1]) ?? SCOUT_PLAYERS[3];
+  const { talents, loading, error, getById } = useRecruteurTalents();
+
+  if (loading) {
+    return (
+      <RecruteurPageTransition>
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed py-16" style={{ borderColor: "var(--surface-panel-border)" }}>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement…</p>
+        </div>
+      </RecruteurPageTransition>
+    );
+  }
+
+  if (error) {
+    return (
+      <RecruteurPageTransition>
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed py-16" style={{ borderColor: "rgba(239,68,68,0.3)" }}>
+          <p className="text-sm text-red-400">{error}</p>
+        </div>
+      </RecruteurPageTransition>
+    );
+  }
+
+  if (talents.length < 2) {
+    return (
+      <RecruteurPageTransition>
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed py-16" style={{ borderColor: "var(--surface-panel-border)" }}>
+          <Swords size={28} style={{ color: "var(--text-muted)" }} />
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>Pas assez de talents pour comparer</p>
+        </div>
+      </RecruteurPageTransition>
+    );
+  }
+
+  const a: ScoutPlayer = getById(store.compare[0]) ?? talents[0];
+  const b: ScoutPlayer = getById(store.compare[1]) ?? talents[1];
 
   const radarData = METRICS.map((m) => ({ axis: m.label, A: a[m.key], B: b[m.key] }));
 
@@ -27,7 +61,7 @@ export function RecruteurComparePage() {
     { label: "Score IA", a: `${a.aiScore}%`, b: `${b.aiScore}%`, av: a.aiScore, bv: b.aiScore },
     { label: "Vitesse", a: a.speed, b: b.speed, av: a.speed, bv: b.speed },
     { label: "Passes (vision)", a: a.vision, b: b.vision, av: a.vision, bv: b.vision },
-    { label: "xG", a: a.xg.toFixed(2), b: b.xg.toFixed(2), av: a.xg, bv: b.xg },
+    { label: "Buts", a: a.goals, b: b.goals, av: a.goals, bv: b.goals },
     { label: "Tirs (finition)", a: a.finishing, b: b.finishing, av: a.finishing, bv: b.finishing },
     { label: "Valeur", a: a.value, b: b.value, av: a.valueNum, bv: b.valueNum },
   ];
@@ -43,11 +77,11 @@ export function RecruteurComparePage() {
       className="rounded-lg border px-3 py-1.5 text-sm"
       style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
     >
-      {SCOUT_PLAYERS.map((p) => <option key={p.id} value={p.id} style={{ background: "#0F1D3A" }}>{p.name}</option>)}
+      {talents.map((p) => <option key={p.id} value={p.id} style={{ background: "#0F1D3A" }}>{p.name}</option>)}
     </select>
   );
 
-  const PlayerHeader = ({ p, color, side }: { p: typeof a; color: string; side: 0 | 1 }) => (
+  const PlayerHeader = ({ p, color, side }: { p: ScoutPlayer; color: string; side: 0 | 1 }) => (
     <motion.div
       className="relative overflow-hidden rounded-2xl border p-5 text-center"
       style={{ background: `linear-gradient(160deg, ${color}22, rgba(15,29,58,0.9))`, borderColor: `${color}40` }}
@@ -107,10 +141,10 @@ export function RecruteurComparePage() {
                   </div>
                   <div className="flex h-2 gap-1">
                     <div className="flex flex-1 justify-end overflow-hidden rounded-l-full" style={{ background: "rgba(255,255,255,0.06)" }}>
-                      <motion.div className="h-full" style={{ background: "#8B5CF6" }} initial={{ width: 0 }} animate={{ width: `${(r.av / (r.av + r.bv)) * 100}%` }} transition={{ duration: 0.8, delay: i * 0.06 }} />
+                      <motion.div className="h-full" style={{ background: "#8B5CF6" }} initial={{ width: 0 }} animate={{ width: `${(r.av / (r.av + r.bv || 1)) * 100}%` }} transition={{ duration: 0.8, delay: i * 0.06 }} />
                     </div>
                     <div className="flex flex-1 overflow-hidden rounded-r-full" style={{ background: "rgba(255,255,255,0.06)" }}>
-                      <motion.div className="h-full" style={{ background: "#3B82F6" }} initial={{ width: 0 }} animate={{ width: `${(r.bv / (r.av + r.bv)) * 100}%` }} transition={{ duration: 0.8, delay: i * 0.06 }} />
+                      <motion.div className="h-full" style={{ background: "#3B82F6" }} initial={{ width: 0 }} animate={{ width: `${(r.bv / (r.av + r.bv || 1)) * 100}%` }} transition={{ duration: 0.8, delay: i * 0.06 }} />
                     </div>
                   </div>
                 </motion.div>

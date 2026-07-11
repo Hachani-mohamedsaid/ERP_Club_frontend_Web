@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, CheckCheck, X, AlertTriangle, DollarSign, Clock, Star, TrendingUp, FileCheck } from "lucide-react";
 import { RecruteurPageTransition } from "../../components/recruteur/RecruteurPageTransition";
+import { recruteurApi } from "../../lib/api/recruteur";
 
 type NType = "offre" | "contrat" | "talent" | "validation" | "budget" | "blessure";
 type Priority = "critical" | "high" | "medium" | "low";
@@ -14,7 +15,7 @@ interface RNotif {
   time: string;
   priority: Priority;
   read: boolean;
-  player?: string;
+  player?: string | null;
 }
 
 const TYPE_META: Record<NType, { icon: React.ElementType; color: string; bg: string; label: string }> = {
@@ -30,32 +31,54 @@ const PRIORITY_COLORS: Record<Priority, string> = {
   critical: "#EF4444", high: "#FF7A00", medium: "#F59E0B", low: "#6B7280",
 };
 
-const INITIAL_NOTIFS: RNotif[] = [
-  { id: "n1", type: "offre",      priority: "critical", title: "Offre acceptée!", body: "Ahmed Ali a accepté l'offre de transfert de FC Carthage. Prochaine étape: signature contrat.", time: "Il y a 5 min",  player: "Ahmed Ali",       read: false },
-  { id: "n2", type: "contrat",    priority: "high",     title: "Contrat expirant", body: "Le contrat de Yassine Khemiri expire dans 3 mois. Action requise immédiatement.", time: "Il y a 1h",    player: "Yassine Khemiri", read: false },
-  { id: "n3", type: "talent",     priority: "high",     title: "Nouveau talent détecté", body: "Scout Ahmed a identifié un défenseur central (24 ans, Alg) — score IA: 87/100.", time: "Il y a 2h",    player: "Nouveau #DZ-24",  read: false },
-  { id: "n4", type: "validation", priority: "high",     title: "Validation en attente", body: "Ibrahim Touré: dossier de recrutement en attente d'approbation du Directeur Sportif.", time: "Il y a 3h",    player: "Ibrahim Touré",   read: false },
-  { id: "n5", type: "budget",     priority: "critical", title: "Budget dépassé", body: "Le budget recrutement mensuel a été dépassé de 15%. Limite: 500k€. Actuel: 575k€.", time: "Il y a 4h",    player: undefined,         read: false },
-  { id: "n6", type: "blessure",   priority: "medium",   title: "Blessure joueur cible", body: "Khalil Maatoug (cible shortlist) blessé: ischio Grade II. Indisponible 4-6 semaines.", time: "Il y a 6h",    player: "Khalil Maatoug",  read: true  },
-  { id: "n7", type: "offre",      priority: "medium",   title: "Contre-offre reçue", body: "L'agent de Ryad Bouassem demande +200k€ sur le transfert. Réponse attendue sous 48h.", time: "Hier 14:30",  player: "Ryad Bouassem",   read: true  },
-  { id: "n8", type: "talent",     priority: "low",      title: "Rapport scout disponible", body: "Scout Ali (Maroc) a soumis son rapport mensuel — 8 nouveaux profils analysés.", time: "Hier 10:00",  player: undefined,         read: true  },
-  { id: "n9", type: "contrat",    priority: "low",      title: "Renouvellement préventif", body: "Sofiane Bellal: contrat à 18 mois. Recommandation IA: anticiper la prolongation.", time: "20/06 09:00", player: "Sofiane Bellal",  read: true  },
-];
-
 const FILTER_TYPES: (NType | "all")[] = ["all", "offre", "contrat", "talent", "validation", "budget", "blessure"];
 
+function timeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "À l'instant";
+  if (m < 60) return `Il y a ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `Il y a ${h}h`;
+  return `Il y a ${Math.floor(h / 24)}j`;
+}
+
 export function RecruteurNotificationsPage() {
-  const [notifs, setNotifs] = useState<RNotif[]>(INITIAL_NOTIFS);
+  const [notifs, setNotifs] = useState<RNotif[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<NType | "all">("all");
   const [priorityFilter, setPriorityFilter] = useState<Priority | "all">("all");
+
+  const fetchNotifs = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    (recruteurApi.getNotifications() as Promise<RNotif[]>)
+      .then(setNotifs)
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : "Erreur de chargement."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { fetchNotifs(); }, [fetchNotifs]);
 
   const unread   = notifs.filter(n => !n.read).length;
   const critical = notifs.filter(n => n.priority === "critical").length;
   const total    = notifs.length;
 
-  const markAll  = () => setNotifs(prev => prev.map(n => ({ ...n, read: true })));
-  const markRead = (id: string) => setNotifs(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  const dismiss  = (id: string) => setNotifs(prev => prev.filter(n => n.id !== id));
+  async function markAll() {
+    setNotifs(prev => prev.map(n => ({ ...n, read: true })));
+    await recruteurApi.markAllNotificationsRead().catch(() => {});
+  }
+
+  async function markRead(id: string) {
+    setNotifs(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    await recruteurApi.markNotificationRead(id).catch(() => {});
+  }
+
+  async function dismiss(id: string) {
+    setNotifs(prev => prev.filter(n => n.id !== id));
+    await recruteurApi.deleteNotification(id).catch(() => {});
+  }
 
   const filtered = notifs.filter(n =>
     (filter === "all" || n.type === filter) &&
@@ -98,7 +121,7 @@ export function RecruteurNotificationsPage() {
                   <Icon size={18} style={{ color: k.color }} />
                 </div>
                 <div>
-                  <p className="text-xl font-extrabold" style={{ color: k.color }}>{k.value}</p>
+                  <p className="text-xl font-extrabold" style={{ color: k.color }}>{loading ? "…" : k.value}</p>
                   <p className="text-xs" style={{ color: "var(--text-muted)" }}>{k.label}</p>
                 </div>
               </div>
@@ -142,69 +165,83 @@ export function RecruteurNotificationsPage() {
 
       {/* Notification list */}
       <div className="space-y-2">
-        <AnimatePresence mode="popLayout">
-          {filtered.map((n, i) => {
-            const meta = TYPE_META[n.type];
-            const Icon = meta.icon;
-            return (
-              <motion.div key={n.id} layout
-                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20, scale: 0.95 }}
-                transition={{ delay: i * 0.04 }}
-                className="flex items-start gap-3 rounded-[16px] border p-4"
-                style={{
-                  background: n.read ? "rgba(14,10,35,0.6)" : meta.bg,
-                  borderColor: n.read ? "rgba(255,255,255,0.06)" : `${meta.color}30`,
-                  opacity: n.read ? 0.75 : 1,
-                }}>
-                {/* Icon */}
-                <motion.div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                  style={{ background: meta.bg, border: `1px solid ${meta.color}30` }}
-                  animate={n.read ? {} : { boxShadow: [`0 0 0px ${meta.color}00`, `0 0 14px ${meta.color}60`, `0 0 0px ${meta.color}00`] }}
-                  transition={{ duration: 2, repeat: n.read ? 0 : Infinity }}>
-                  <Icon size={16} style={{ color: meta.color }} />
-                </motion.div>
+        {loading && (
+          <div className="flex flex-col items-center justify-center rounded-[20px] border py-16" style={{ background: "rgba(14,10,35,0.6)", borderColor: "var(--surface-panel-border)" }}>
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement…</p>
+          </div>
+        )}
 
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                    <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{n.title}</p>
-                    <span className="rounded-full px-2 py-0.5 text-[9px] font-bold"
-                      style={{ background: `${PRIORITY_COLORS[n.priority]}18`, color: PRIORITY_COLORS[n.priority] }}>
-                      {n.priority}
-                    </span>
+        {error && !loading && (
+          <div className="flex flex-col items-center justify-center rounded-[20px] border py-16" style={{ background: "rgba(14,10,35,0.6)", borderColor: "rgba(239,68,68,0.3)" }}>
+            <p className="text-sm text-red-400">{error}</p>
+          </div>
+        )}
+
+        {!loading && !error && (
+          <AnimatePresence mode="popLayout">
+            {filtered.map((n, i) => {
+              const meta = TYPE_META[n.type];
+              const Icon = meta?.icon ?? Bell;
+              return (
+                <motion.div key={n.id} layout
+                  initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20, scale: 0.95 }}
+                  transition={{ delay: i * 0.04 }}
+                  className="flex items-start gap-3 rounded-[16px] border p-4"
+                  style={{
+                    background: n.read ? "rgba(14,10,35,0.6)" : (meta?.bg ?? "rgba(139,92,246,0.1)"),
+                    borderColor: n.read ? "rgba(255,255,255,0.06)" : `${meta?.color ?? "#8B5CF6"}30`,
+                    opacity: n.read ? 0.75 : 1,
+                  }}>
+                  {/* Icon */}
+                  <motion.div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                    style={{ background: meta?.bg ?? "rgba(139,92,246,0.1)", border: `1px solid ${meta?.color ?? "#8B5CF6"}30` }}
+                    animate={n.read ? {} : { boxShadow: [`0 0 0px ${meta?.color ?? "#8B5CF6"}00`, `0 0 14px ${meta?.color ?? "#8B5CF6"}60`, `0 0 0px ${meta?.color ?? "#8B5CF6"}00`] }}
+                    transition={{ duration: 2, repeat: n.read ? 0 : Infinity }}>
+                    <Icon size={16} style={{ color: meta?.color ?? "#8B5CF6" }} />
+                  </motion.div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                      <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{n.title}</p>
+                      <span className="rounded-full px-2 py-0.5 text-[9px] font-bold"
+                        style={{ background: `${PRIORITY_COLORS[n.priority]}18`, color: PRIORITY_COLORS[n.priority] }}>
+                        {n.priority}
+                      </span>
+                      {!n.read && (
+                        <span className="h-2 w-2 rounded-full" style={{ background: meta?.color ?? "#8B5CF6" }} />
+                      )}
+                    </div>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>{n.body}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-3 text-[10px]" style={{ color: "var(--text-muted)" }}>
+                      <span className="flex items-center gap-1"><Clock size={9} /> {timeAgo(n.time)}</span>
+                      {n.player && <span className="flex items-center gap-1"><Star size={9} /> {n.player}</span>}
+                      {meta && <span className="rounded-full px-2 py-0.5" style={{ background: meta.bg, color: meta.color }}>{meta.label}</span>}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex shrink-0 gap-1">
                     {!n.read && (
-                      <span className="h-2 w-2 rounded-full" style={{ background: meta.color }} />
+                      <motion.button type="button" onClick={() => markRead(n.id)}
+                        className="rounded-lg p-1.5" style={{ background: "rgba(34,197,94,0.12)" }}
+                        whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} title="Marquer lu">
+                        <CheckCheck size={12} style={{ color: "#22C55E" }} />
+                      </motion.button>
                     )}
-                  </div>
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>{n.body}</p>
-                  <div className="mt-1 flex flex-wrap items-center gap-3 text-[10px]" style={{ color: "var(--text-muted)" }}>
-                    <span className="flex items-center gap-1"><Clock size={9} /> {n.time}</span>
-                    {n.player && <span className="flex items-center gap-1"><Star size={9} /> {n.player}</span>}
-                    <span className="rounded-full px-2 py-0.5" style={{ background: meta.bg, color: meta.color }}>{meta.label}</span>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex shrink-0 gap-1">
-                  {!n.read && (
-                    <motion.button type="button" onClick={() => markRead(n.id)}
-                      className="rounded-lg p-1.5" style={{ background: "rgba(34,197,94,0.12)" }}
-                      whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} title="Marquer lu">
-                      <CheckCheck size={12} style={{ color: "#22C55E" }} />
+                    <motion.button type="button" onClick={() => dismiss(n.id)}
+                      className="rounded-lg p-1.5" style={{ background: "rgba(239,68,68,0.1)" }}
+                      whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} title="Supprimer">
+                      <X size={12} style={{ color: "#EF4444" }} />
                     </motion.button>
-                  )}
-                  <motion.button type="button" onClick={() => dismiss(n.id)}
-                    className="rounded-lg p-1.5" style={{ background: "rgba(239,68,68,0.1)" }}
-                    whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} title="Supprimer">
-                    <X size={12} style={{ color: "#EF4444" }} />
-                  </motion.button>
-                </div>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        )}
 
-        {filtered.length === 0 && (
+        {!loading && !error && filtered.length === 0 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             className="flex flex-col items-center justify-center rounded-[20px] border py-16"
             style={{ background: "rgba(14,10,35,0.6)", borderColor: "var(--surface-panel-border)" }}>
