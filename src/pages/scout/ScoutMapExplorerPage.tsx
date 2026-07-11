@@ -303,7 +303,7 @@ export function ScoutMapExplorerPage() {
             Exploration Géographique
           </h1>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            Continent → Pays → Équipe · {overview?.stats.clubs ?? 0} clubs · effectifs via OpenAI
+            Continent → Pays → Équipe · {overview?.stats.clubs ?? 0} clubs · effectifs Flashscore 2026-27
           </p>
         </div>
         {step > 0 && (
@@ -535,7 +535,8 @@ export function ScoutMapExplorerPage() {
                     <SGauge value={team.avgPotential} color={S.primary} />
 
                     <p className="mt-3 text-[9px]" style={{ color: "var(--text-muted)" }}>
-                      {squad.sources.database} en base · {squad.sources.ai} via IA
+                      {squad.sources.database} en base · {squad.sources.flashscore ?? squad.sources.ai ?? 0} Flashscore
+                      {squad.season ? ` · ${squad.season}` : ""}
                       {squad.cached ? " · cache" : ""}
                     </p>
 

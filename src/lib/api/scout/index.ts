@@ -78,18 +78,35 @@ export interface ScoutProspectDto {
 }
 
 export interface ScoutDashboardDto {
+  clubName?: string;
+  season?: string;
+  aiPowered?: boolean;
+  recSource?: "openai" | "rules";
   kpis: {
     totalProspects: number;
     watchlistCount: number;
     reportsCount: number;
     validatedCount: number;
+    inProgress?: number;
+    prospectsThisMonth?: number;
+    reportsThisMonth?: number;
+    validationsThisMonth?: number;
     avgPotential: number;
     avgAge: number;
     priorityABudget: number;
+    budgetDeltaMK?: number;
+  };
+  sparklines?: {
+    prospects: number[];
+    reports: number[];
+    validations: number[];
+    inProgress: number[];
   };
   byPosition: { name: string; v: number }[];
   byCountry: { name: string; value: number }[];
   workflowCounts: Record<string, number>;
+  priorityCounts?: { A: number; B: number; C: number };
+  pipelineTrend?: { month: string; prospects: number; validated: number }[];
   aiRecs: {
     id: string;
     name: string;
@@ -285,13 +302,15 @@ export const scoutApi = {
         potential: number;
         currentRating: number;
         marketValue: string;
-        source: "prospect" | "ai";
+        source: "prospect" | "flashscore" | "ai";
         inDatabase?: boolean;
         prospectId?: string;
       }[];
-      sources: { database: number; ai: number };
+      sources: { database: number; flashscore?: number; ai?: number };
       cached: boolean;
       aiEnabled?: boolean;
+      dataSource?: "flashscore" | "ai";
+      season?: string;
     }>),
 
   getAi: () =>
