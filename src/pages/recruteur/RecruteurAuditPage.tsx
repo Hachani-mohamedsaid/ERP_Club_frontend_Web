@@ -2,6 +2,8 @@ import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Search, Download, Filter, Clock, User, FileText, DollarSign, CheckCircle2, AlertTriangle, Send } from "lucide-react";
 import { RecruteurPageTransition } from "../../components/recruteur/RecruteurPageTransition";
+import { recruteurApi } from "../../lib/api/recruteur";
+import { useRecruteurResource } from "../../hooks/useRecruteurResource";
 
 type AuditAction =
   | "validation" | "offre" | "contrat" | "transfert"
@@ -13,7 +15,7 @@ interface AuditLog {
   role: string;
   action: AuditAction;
   description: string;
-  player?: string;
+  player?: string | null;
   datetime: string;
   ip: string;
   severity: "info" | "success" | "warning" | "critical";
@@ -34,33 +36,34 @@ const SEVERITY_COLORS = {
   info: "#6B7280", success: "#22C55E", warning: "#F59E0B", critical: "#EF4444",
 };
 
-const LOGS: AuditLog[] = [
-  { id: "l1",  user: "Karim Belaïd",    role: "Directeur Recrutement", action: "validation",   description: "a validé le dossier de recrutement de Ahmed Ali",           player: "Ahmed Ali",       datetime: "2026-06-20 14:30", ip: "192.168.1.10", severity: "success"  },
-  { id: "l2",  user: "Karim Belaïd",    role: "Directeur Recrutement", action: "offre",        description: "a envoyé une offre de transfert à l'agent de Ibrahim Touré",player: "Ibrahim Touré",   datetime: "2026-06-20 12:05", ip: "192.168.1.10", severity: "info"     },
-  { id: "l3",  user: "Ahmed Trabelsi",  role: "Scout",                  action: "creation",     description: "a ajouté Khalil Maatoug à la shortlist",                    player: "Khalil Maatoug", datetime: "2026-06-20 10:22", ip: "192.168.1.15", severity: "info"     },
-  { id: "l4",  user: "Karim Belaïd",    role: "Directeur Recrutement", action: "contrat",      description: "a signé le contrat de transfert de Sofiane Bellal",          player: "Sofiane Bellal", datetime: "2026-06-19 16:45", ip: "192.168.1.10", severity: "success"  },
-  { id: "l5",  user: "Omar Hadjadj",    role: "Scout",                  action: "creation",     description: "a soumis le rapport de scouting pour la Ligue Pro 1 DZ",     player: undefined,         datetime: "2026-06-19 11:00", ip: "10.0.0.42",    severity: "info"     },
-  { id: "l6",  user: "Mourad Belhaj",   role: "Agent",                  action: "modification", description: "a modifié les conditions de l'offre pour Ryad Bouassem",    player: "Ryad Bouassem",  datetime: "2026-06-18 15:30", ip: "External",     severity: "warning"  },
-  { id: "l7",  user: "Sofiane Mellah",  role: "Scout",                  action: "creation",     description: "a identifié un gardien (23 ans, FR) dans la Ligue 2",        player: "Gardien FR-23",  datetime: "2026-06-18 09:15", ip: "10.0.0.55",    severity: "info"     },
-  { id: "l8",  user: "Karim Belaïd",    role: "Directeur Recrutement", action: "suppression",  description: "a retiré Nizar Ben Amor de la shortlist — incompatibilité",   player: "Nizar Ben Amor", datetime: "2026-06-17 14:00", ip: "192.168.1.10", severity: "warning"  },
-  { id: "l9",  user: "Ali Benali",      role: "Scout",                  action: "offre",        description: "a transmis une proposition informelle à l'agent de Camara",  player: "M. Camara",      datetime: "2026-06-17 10:30", ip: "10.0.0.22",    severity: "info"     },
-  { id: "l10", user: "Karim Belaïd",    role: "Directeur Recrutement", action: "transfert",    description: "a finalisé le transfert de Mohamed Camara — 2.0M€",          player: "M. Camara",      datetime: "2026-06-16 17:00", ip: "192.168.1.10", severity: "success"  },
-  { id: "l11", user: "Karim Belaïd",    role: "Directeur Recrutement", action: "connexion",    description: "s'est connecté au système depuis le bureau",                  player: undefined,         datetime: "2026-06-16 08:00", ip: "192.168.1.10", severity: "info"     },
-  { id: "l12", user: "Inconnu",         role: "—",                      action: "connexion",    description: "Tentative de connexion échouée (3 fois) — compte bloqué",    player: undefined,         datetime: "2026-06-15 22:47", ip: "94.12.33.210", severity: "critical" },
-];
-
 export function RecruteurAuditPage() {
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState<AuditAction | "all">("all");
   const [severityFilter, setSeverityFilter] = useState<"all" | AuditLog["severity"]>("all");
 
-  const filtered = useMemo(() => LOGS.filter(l => {
-    const q = search.toLowerCase();
-    if (q && !l.user.toLowerCase().includes(q) && !l.description.toLowerCase().includes(q) && !(l.player ?? "").toLowerCase().includes(q)) return false;
-    if (actionFilter !== "all" && l.action !== actionFilter) return false;
-    if (severityFilter !== "all" && l.severity !== severityFilter) return false;
-    return true;
-  }), [search, actionFilter, severityFilter]);
+  const { data, loading, error } = useRecruteurResource(
+    () => recruteurApi.getAuditLogs({
+      action: actionFilter !== "all" ? actionFilter : undefined,
+      severity: severityFilter !== "all" ? severityFilter : undefined,
+      search: search || undefined,
+    }) as Promise<AuditLog[]>,
+    [actionFilter, severityFilter, search],
+  );
+
+  const logs = useMemo(() => data ?? [], [data]);
+
+  function exportCSV() {
+    const rows = [
+      ["ID", "Utilisateur", "Rôle", "Action", "Description", "Joueur", "Date & heure", "IP", "Sévérité"],
+      ...logs.map((l) => [l.id, l.user, l.role, l.action, l.description, l.player ?? "", l.datetime, l.ip, l.severity]),
+    ];
+    const csv = rows.map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "audit-logs-recruteur.csv"; a.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <RecruteurPageTransition>
@@ -70,7 +73,7 @@ export function RecruteurAuditPage() {
           <h1 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>Journal d'Audit</h1>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Traçabilité complète des actions recrutement</p>
         </div>
-        <motion.button type="button"
+        <motion.button type="button" onClick={exportCSV}
           className="flex items-center gap-2 rounded-xl border px-4 py-2 text-xs font-semibold"
           style={{ borderColor: "rgba(139,92,246,0.3)", color: "#8B5CF6", background: "rgba(139,92,246,0.08)" }}
           whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
@@ -81,10 +84,10 @@ export function RecruteurAuditPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: "Total actions",   value: LOGS.length,                                     color: "#8B5CF6" },
-          { label: "Validations",     value: LOGS.filter(l => l.action === "validation").length, color: "#22C55E" },
-          { label: "Modifications",   value: LOGS.filter(l => l.action === "modification").length, color: "#F59E0B" },
-          { label: "Incidents",       value: LOGS.filter(l => l.severity === "critical").length,   color: "#EF4444" },
+          { label: "Total actions",   value: logs.length,                                          color: "#8B5CF6" },
+          { label: "Validations",     value: logs.filter(l => l.action === "validation").length,    color: "#22C55E" },
+          { label: "Modifications",   value: logs.filter(l => l.action === "modification").length,  color: "#F59E0B" },
+          { label: "Incidents",       value: logs.filter(l => l.severity === "critical").length,    color: "#EF4444" },
         ].map((k, i) => (
           <motion.div key={k.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
             <div className="rounded-[20px] border p-4" style={{ background: "rgba(14,10,35,0.8)", borderColor: "rgba(255,255,255,0.07)" }}>
@@ -139,10 +142,24 @@ export function RecruteurAuditPage() {
           <span>Date & Heure</span>
           <span>Sévérité</span>
         </div>
+
+        {loading && (
+          <div className="py-14 text-center" style={{ color: "var(--text-muted)" }}>
+            <p className="text-sm">Chargement…</p>
+          </div>
+        )}
+
+        {error && !loading && (
+          <div className="py-14 text-center text-red-400">
+            <p className="text-sm">{error}</p>
+          </div>
+        )}
+
         {/* Rows */}
-        {filtered.map((log, i) => {
+        {!loading && !error && logs.map((log, i) => {
           const meta = ACTION_META[log.action];
-          const Icon = meta.icon;
+          const Icon = meta?.icon ?? FileText;
+          const color = meta?.color ?? "#6B7280";
           return (
             <motion.div key={log.id} layout
               initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
@@ -156,21 +173,21 @@ export function RecruteurAuditPage() {
               {/* Description */}
               <div className="flex items-center gap-2">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
-                  style={{ background: `${meta.color}15` }}>
-                  <Icon size={12} style={{ color: meta.color }} />
+                  style={{ background: `${color}15` }}>
+                  <Icon size={12} style={{ color }} />
                 </div>
                 <div>
                   <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
                     <strong style={{ color: "var(--text-primary)", fontWeight: 600 }}>{log.user}</strong> {log.description}
                   </p>
                   {log.player && (
-                    <p className="text-[10px]" style={{ color: meta.color }}>→ {log.player}</p>
+                    <p className="text-[10px]" style={{ color }}>→ {log.player}</p>
                   )}
                 </div>
               </div>
               {/* Datetime */}
               <div>
-                <p className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>{log.datetime}</p>
+                <p className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>{new Date(log.datetime).toLocaleString("fr-FR")}</p>
                 <p className="text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>IP: {log.ip}</p>
               </div>
               {/* Severity */}
@@ -184,7 +201,7 @@ export function RecruteurAuditPage() {
           );
         })}
 
-        {filtered.length === 0 && (
+        {!loading && !error && logs.length === 0 && (
           <div className="py-14 text-center" style={{ color: "var(--text-muted)" }}>
             <p className="text-sm">Aucun résultat</p>
           </div>
