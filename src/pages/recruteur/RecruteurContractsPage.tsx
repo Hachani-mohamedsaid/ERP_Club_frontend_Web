@@ -1,35 +1,63 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FileText, Sparkles, ShieldCheck, Coins, CalendarClock, Award, Check } from "lucide-react";
 import { RecruteurPageTransition } from "../../components/recruteur/RecruteurPageTransition";
 import { RecruteurKpiCard } from "../../components/recruteur/RecruteurKpiCard";
 import { PlayerAvatar } from "../../components/player/PlayerAvatar";
-import { SCOUT_PLAYERS, getContractAdvice } from "../../data/recruteurData";
+import { getContractAdvice } from "../../data/recruteurData";
+import { useRecruteurTalents } from "../../hooks/useRecruteurTalents";
 
 export function RecruteurContractsPage() {
-  const [selectedId, setSelectedId] = useState(SCOUT_PLAYERS[0].id);
-  const player = SCOUT_PLAYERS.find((p) => p.id === selectedId)!;
-  const advice = getContractAdvice(player);
-
-  const [salary, setSalary] = useState(parseInt(advice.recommendedSalary, 10));
-  const [duration, setDuration] = useState(parseInt(advice.recommendedDuration, 10));
+  const { talents, loading, error } = useRecruteurTalents();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [salary, setSalary] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [bonus, setBonus] = useState(true);
   const [generated, setGenerated] = useState(false);
 
+  const player = talents.find((p) => p.id === selectedId) ?? talents[0] ?? null;
+
+  useEffect(() => {
+    if (!player) return;
+    if (!selectedId) setSelectedId(player.id);
+    const a = getContractAdvice(player);
+    setSalary(parseInt(a.recommendedSalary, 10));
+    setDuration(parseInt(a.recommendedDuration, 10));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [player?.id]);
+
+  if (loading) {
+    return (
+      <RecruteurPageTransition>
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed py-16" style={{ borderColor: "var(--surface-panel-border)" }}>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement…</p>
+        </div>
+      </RecruteurPageTransition>
+    );
+  }
+
+  if (error || !player) {
+    return (
+      <RecruteurPageTransition>
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed py-16" style={{ borderColor: error ? "rgba(239,68,68,0.3)" : "var(--surface-panel-border)" }}>
+          <p className="text-sm" style={{ color: error ? "#EF4444" : "var(--text-muted)" }}>{error ?? "Aucun talent disponible"}</p>
+        </div>
+      </RecruteurPageTransition>
+    );
+  }
+
+  const advice = getContractAdvice(player);
   const riskColor = advice.riskLevel === "Faible" ? "#22C55E" : advice.riskLevel === "Moyen" ? "#F59E0B" : "#EF4444";
 
   const pick = (id: string) => {
     setSelectedId(id);
-    const a = getContractAdvice(SCOUT_PLAYERS.find((p) => p.id === id)!);
-    setSalary(parseInt(a.recommendedSalary, 10));
-    setDuration(parseInt(a.recommendedDuration, 10));
     setGenerated(false);
   };
 
   return (
     <RecruteurPageTransition>
       <div className="flex flex-wrap gap-2">
-        {SCOUT_PLAYERS.slice(0, 6).map((p) => (
+        {talents.slice(0, 6).map((p) => (
           <button
             key={p.id}
             type="button"

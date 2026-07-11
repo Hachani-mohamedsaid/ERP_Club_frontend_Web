@@ -5,12 +5,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { RecruteurPageTransition } from "../../components/recruteur/RecruteurPageTransition";
 import { TalentCard } from "../../components/recruteur/TalentCard";
 import { PlayerProfileDrawer } from "../../components/recruteur/PlayerProfileDrawer";
-import { SCOUT_PLAYERS, POSITIONS, COUNTRIES, type ScoutPlayer } from "../../data/recruteurData";
-import { useRecruteurStore, toggleShortlist, toggleCompare } from "../../data/recruteurStore";
+import { POSITIONS, COUNTRIES, type ScoutPlayer } from "../../data/recruteurData";
+import { useRecruteurStore, toggleCompare } from "../../data/recruteurStore";
+import { useRecruteurTalents } from "../../hooks/useRecruteurTalents";
 
 export function RecruteurDiscoveryPage() {
   const navigate = useNavigate();
   const store = useRecruteurStore();
+  const { talents, loading, error, toggleShortlist, getById } = useRecruteurTalents();
   const [search, setSearch] = useState("");
   const [position, setPosition] = useState("Tous");
   const [country, setCountry] = useState("Tous");
@@ -20,8 +22,8 @@ export function RecruteurDiscoveryPage() {
   const [foot, setFoot] = useState("Tous");
   const [drawerId, setDrawerId] = useState<string | null>(null);
 
-  const filtered = useMemo(() => {
-    return SCOUT_PLAYERS.filter((p) => {
+  const players = useMemo(() => {
+    return talents.filter((p) => {
       if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.club.toLowerCase().includes(search.toLowerCase())) return false;
       if (position !== "Tous" && p.position !== position) return false;
       if (country !== "Tous" && p.country !== country) return false;
@@ -31,10 +33,9 @@ export function RecruteurDiscoveryPage() {
       if (foot !== "Tous" && p.foot !== foot) return false;
       return true;
     });
-  }, [search, position, country, maxAge, minScore, maxValue, foot]);
+  }, [talents, search, position, country, maxAge, minScore, maxValue, foot]);
 
-  const players = filtered.map((p) => ({ ...p, shortlisted: store.shortlist.includes(p.id) }));
-  const drawerPlayer: ScoutPlayer | null = drawerId ? SCOUT_PLAYERS.find((p) => p.id === drawerId) ?? null : null;
+  const drawerPlayer: ScoutPlayer | null = drawerId ? getById(drawerId) : null;
 
   const Slider = ({ label, value, min, max, step = 1, suffix = "", onChange }: { label: string; value: number; min: number; max: number; step?: number; suffix?: string; onChange: (v: number) => void }) => (
     <div>
@@ -107,21 +108,37 @@ export function RecruteurDiscoveryPage() {
               </button>
             )}
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-3">
-            <AnimatePresence>
-              {players.map((p, i) => (
-                <TalentCard
-                  key={p.id}
-                  player={p}
-                  delay={i * 0.04}
-                  onView={() => setDrawerId(p.id)}
-                  onCompare={() => toggleCompare(p.id)}
-                  onShortlist={() => toggleShortlist(p.id)}
-                />
-              ))}
-            </AnimatePresence>
-          </div>
-          {players.length === 0 && (
+
+          {loading && (
+            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed py-16" style={{ borderColor: "var(--surface-panel-border)" }}>
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement des talents…</p>
+            </div>
+          )}
+
+          {error && !loading && (
+            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed py-16" style={{ borderColor: "rgba(239,68,68,0.3)" }}>
+              <p className="text-sm text-red-400">{error}</p>
+            </div>
+          )}
+
+          {!loading && !error && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-3">
+              <AnimatePresence>
+                {players.map((p, i) => (
+                  <TalentCard
+                    key={p.id}
+                    player={p}
+                    delay={i * 0.04}
+                    onView={() => setDrawerId(p.id)}
+                    onCompare={() => toggleCompare(p.id)}
+                    onShortlist={() => toggleShortlist(p.id)}
+                  />
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {!loading && !error && players.length === 0 && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-2 rounded-2xl border border-dashed py-16" style={{ borderColor: "var(--surface-panel-border)" }}>
               <X size={28} style={{ color: "var(--text-muted)" }} />
               <p className="text-sm" style={{ color: "var(--text-muted)" }}>Aucun talent ne correspond à ces critères</p>

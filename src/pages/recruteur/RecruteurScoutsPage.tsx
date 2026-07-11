@@ -1,40 +1,39 @@
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Plus, X, MapPin, Users, Star, TrendingUp, ChevronRight } from "lucide-react";
+import { Search, Plus, X, MapPin, Users, TrendingUp, ChevronRight } from "lucide-react";
 import { RecruteurPageTransition } from "../../components/recruteur/RecruteurPageTransition";
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip } from "recharts";
+import { clubApi } from "../../lib/api/club";
+import { scoutApi, type ScoutProspectDto, type ScoutReportDto } from "../../lib/api/scout";
 
 const TOOLTIP_STYLE = {
   contentStyle: { background: "rgba(5,8,22,0.96)", border: "1px solid rgba(139,92,246,0.3)", color: "white", borderRadius: 12 },
 };
 
-interface Scout {
+interface ClubMemberDto {
   id: string;
   name: string;
-  country: string;
-  flag: string;
-  zone: string;
-  players: number;
+  email: string;
+  role: string;
+  status: "Actif" | "Inactif" | "Suspendu";
+  lastLogin: string;
+  createdAt: string;
+}
+
+interface ScoutSummary {
+  member: ClubMemberDto;
+  players: ScoutProspectDto[];
+  reports: ScoutReportDto[];
   validated: number;
   pending: number;
   rate: number;
-  rating: number;
-  specialty: string;
-  status: "Actif" | "En mission" | "Inactif";
-  phone: string;
-  email: string;
-  joined: string;
 }
 
-const SCOUTS: Scout[] = [
-  { id: "sc1", name: "Ahmed Trabelsi", country: "Tunisie", flag: "🇹🇳", zone: "Ligue 1 & 2 Tunisie", players: 42, validated: 12, pending: 4, rate: 78, rating: 4.6, specialty: "Attaquants", status: "Actif", phone: "+216 22 100 200", email: "a.trabelsi@scout.tn", joined: "2023-06" },
-  { id: "sc2", name: "Ali Benali",     country: "Maroc",  flag: "🇲🇦", zone: "Botola Pro & CAF",    players: 35, validated: 8,  pending: 3, rate: 69, rating: 4.2, specialty: "Milieux",    status: "En mission", phone: "+212 61 234 567", email: "ali.benali@scout.ma", joined: "2024-01" },
-  { id: "sc3", name: "Omar Hadjadj",   country: "Algérie",flag: "🇩🇿", zone: "Ligue Pro 1 DZ",      players: 28, validated: 6,  pending: 2, rate: 82, rating: 4.8, specialty: "Défenseurs", status: "Actif", phone: "+213 55 678 901", email: "o.hadjadj@scout.dz", joined: "2022-09" },
-  { id: "sc4", name: "Sofiane Mellah", country: "France", flag: "🇫🇷", zone: "Ligue 2 & National",   players: 19, validated: 5,  pending: 1, rate: 91, rating: 4.9, specialty: "Gardiens",   status: "Actif", phone: "+33 6 78 90 12", email: "s.mellah@scout.fr", joined: "2024-06" },
-  { id: "sc5", name: "Karim Diallo",   country: "Sénégal",flag: "🇸🇳", zone: "Afrique Ouest",        players: 22, validated: 4,  pending: 5, rate: 62, rating: 3.9, specialty: "Latéraux",   status: "Inactif", phone: "+221 77 123 456", email: "k.diallo@scout.sn", joined: "2023-11" },
-];
+const EMPTY_FORM = { fullName: "", email: "", password: "" };
 
-const EMPTY_FORM = { name: "", country: "", flag: "🌍", zone: "", specialty: "Attaquants", phone: "", email: "" };
+function genTempPassword() {
+  return Math.random().toString(36).slice(-6) + "A1!";
+}
 
 function RCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
@@ -45,9 +44,9 @@ function RCard({ children, className = "" }: { children: React.ReactNode; classN
   );
 }
 
-function StatusBadge({ status }: { status: Scout["status"] }) {
-  const colors: Record<Scout["status"], string> = {
-    "Actif": "#22C55E", "En mission": "#F59E0B", "Inactif": "#6B7280",
+function StatusBadge({ status }: { status: ClubMemberDto["status"] }) {
+  const colors: Record<ClubMemberDto["status"], string> = {
+    "Actif": "#22C55E", "Inactif": "#6B7280", "Suspendu": "#EF4444",
   };
   const c = colors[status];
   return (
@@ -59,25 +58,74 @@ function StatusBadge({ status }: { status: Scout["status"] }) {
 }
 
 export function RecruteurScoutsPage() {
+  const [members, setMembers] = useState<ClubMemberDto[]>([]);
+  const [prospects, setProspects] = useState<ScoutProspectDto[]>([]);
+  const [reports, setReports] = useState<ScoutReportDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<Scout | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
 
-  const filtered = SCOUTS.filter(s =>
-    s.name.toLowerCase().includes(search.toLowerCase()) ||
-    s.zone.toLowerCase().includes(search.toLowerCase()) ||
-    s.country.toLowerCase().includes(search.toLowerCase())
+  const fetchAll = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    Promise.all([clubApi.getMembers() as Promise<ClubMemberDto[]>, scoutApi.getProspects(), scoutApi.getReports()])
+      .then(([m, p, r]) => {
+        setMembers(m.filter(x => x.role === "Scout"));
+        setProspects(p);
+        setReports(r);
+      })
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : "Erreur de chargement."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const scouts: ScoutSummary[] = useMemo(() => members.map(member => {
+    const players = prospects.filter(p => p.scoutName === member.name);
+    const scoutReports = reports.filter(r => r.scoutName === member.name);
+    const validated = players.filter(p => p.status === "done").length;
+    const pending = players.length - validated;
+    const rate = players.length ? Math.round((validated / players.length) * 100) : 0;
+    return { member, players, reports: scoutReports, validated, pending, rate };
+  }), [members, prospects, reports]);
+
+  const filtered = scouts.filter(s =>
+    s.member.name.toLowerCase().includes(search.toLowerCase()) ||
+    s.member.email.toLowerCase().includes(search.toLowerCase())
   );
 
+  const selected = scouts.find(s => s.member.id === selectedId) ?? null;
+
   const radarData = selected ? [
-    { subject: "Joueurs trouvés", A: selected.players },
+    { subject: "Joueurs trouvés", A: Math.min(100, selected.players.length * 5) },
     { subject: "Validés %", A: selected.rate },
-    { subject: "Rating", A: selected.rating * 20 },
-    { subject: "En attente", A: selected.pending * 10 },
-    { subject: "Saison", A: Math.round(selected.players / 2) },
-    { subject: "Contrats", A: selected.validated * 5 },
+    { subject: "Rapports", A: Math.min(100, selected.reports.length * 10) },
+    { subject: "En attente", A: Math.min(100, selected.pending * 10) },
   ] : [];
+
+  async function submitScout() {
+    if (!form.fullName.trim() || !form.email.trim()) return;
+    setSaving(true);
+    try {
+      await clubApi.createMember({
+        fullName: form.fullName,
+        email: form.email,
+        clubRole: "Scout",
+        password: form.password || genTempPassword(),
+      });
+      setForm(EMPTY_FORM);
+      setShowModal(false);
+      fetchAll();
+    } catch {
+      // keep modal open so the user can retry
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <RecruteurPageTransition>
@@ -85,7 +133,7 @@ export function RecruteurScoutsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>Gestion Scouts</h1>
-          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{SCOUTS.length} scouts · {SCOUTS.filter(s => s.status === "Actif").length} actifs</p>
+          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{scouts.length} scouts · {scouts.filter(s => s.member.status === "Actif").length} actifs</p>
         </div>
         <motion.button type="button" onClick={() => { setForm(EMPTY_FORM); setShowModal(true); }}
           className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white"
@@ -98,145 +146,158 @@ export function RecruteurScoutsPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: "Scouts actifs", value: SCOUTS.filter(s => s.status === "Actif").length, color: "#22C55E" },
-          { label: "Joueurs scoués", value: SCOUTS.reduce((a, s) => a + s.players, 0), color: "#8B5CF6" },
-          { label: "Validations",    value: SCOUTS.reduce((a, s) => a + s.validated, 0),   color: "#3B82F6" },
-          { label: "En attente",     value: SCOUTS.reduce((a, s) => a + s.pending, 0),     color: "#FF7A00" },
+          { label: "Scouts actifs", value: scouts.filter(s => s.member.status === "Actif").length, color: "#22C55E" },
+          { label: "Joueurs scoutés", value: scouts.reduce((a, s) => a + s.players.length, 0), color: "#8B5CF6" },
+          { label: "Validations",    value: scouts.reduce((a, s) => a + s.validated, 0),   color: "#3B82F6" },
+          { label: "En attente",     value: scouts.reduce((a, s) => a + s.pending, 0),     color: "#FF7A00" },
         ].map((k, i) => (
           <motion.div key={k.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
             <RCard>
-              <p className="text-2xl font-extrabold" style={{ color: k.color }}>{k.value}</p>
+              <p className="text-2xl font-extrabold" style={{ color: k.color }}>{loading ? "…" : k.value}</p>
               <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{k.label}</p>
             </RCard>
           </motion.div>
         ))}
       </div>
 
+      {error && !loading && (
+        <RCard className="text-center"><p className="text-sm text-red-400">{error}</p></RCard>
+      )}
+
       {/* Content */}
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_380px]">
-        {/* Scout list */}
-        <RCard>
-          <div className="mb-4 flex items-center gap-2 rounded-xl border px-3 py-2"
-            style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--surface-panel-border)" }}>
-            <Search size={14} style={{ color: "var(--text-muted)" }} />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher scout, pays, zone..."
-              className="flex-1 bg-transparent text-sm outline-none" style={{ color: "var(--text-primary)" }} />
-          </div>
-          <div className="space-y-2">
-            {filtered.map((sc, i) => (
-              <motion.div key={sc.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                onClick={() => setSelected(sc === selected ? null : sc)}
-                className="flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition-all"
-                style={{
-                  background: selected?.id === sc.id ? "rgba(139,92,246,0.1)" : "rgba(255,255,255,0.02)",
-                  borderColor: selected?.id === sc.id ? "rgba(139,92,246,0.4)" : "rgba(255,255,255,0.06)",
-                }}
-                whileHover={{ borderColor: "rgba(139,92,246,0.25)" }}>
-                {/* Avatar */}
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-black"
-                  style={{ background: "rgba(139,92,246,0.18)", color: "#8B5CF6" }}>
-                  {sc.flag}
-                </div>
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>{sc.name}</p>
-                    <StatusBadge status={sc.status} />
-                  </div>
-                  <p className="text-[11px] flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
-                    <MapPin size={9} /> {sc.zone}
-                  </p>
-                  <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>Spécialité: {sc.specialty}</p>
-                </div>
-                {/* Metrics */}
-                <div className="flex gap-4 text-center shrink-0">
-                  <div>
-                    <p className="text-sm font-bold" style={{ color: "#8B5CF6" }}>{sc.players}</p>
-                    <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>Trouvés</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold" style={{ color: "#22C55E" }}>{sc.validated}</p>
-                    <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>Validés</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold" style={{ color: "#F59E0B" }}>{sc.rate}%</p>
-                    <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>Taux</p>
-                  </div>
-                  <ChevronRight size={14} style={{ color: "var(--text-muted)" }} className="self-center" />
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </RCard>
+      {!error && (
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_380px]">
+          {/* Scout list */}
+          <RCard>
+            <div className="mb-4 flex items-center gap-2 rounded-xl border px-3 py-2"
+              style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--surface-panel-border)" }}>
+              <Search size={14} style={{ color: "var(--text-muted)" }} />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher scout, email..."
+                className="flex-1 bg-transparent text-sm outline-none" style={{ color: "var(--text-primary)" }} />
+            </div>
 
-        {/* Detail panel */}
-        <AnimatePresence mode="wait">
-          {selected ? (
-            <motion.div key={selected.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-3">
-              <RCard>
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl text-xl"
-                      style={{ background: "rgba(139,92,246,0.18)" }}>{selected.flag}</div>
-                    <div>
-                      <p className="font-bold" style={{ color: "var(--text-primary)" }}>{selected.name}</p>
-                      <StatusBadge status={selected.status} />
+            {loading && <p className="py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>Chargement…</p>}
+
+            {!loading && (
+              <div className="space-y-2">
+                {filtered.map((s, i) => (
+                  <motion.div key={s.member.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                    onClick={() => setSelectedId(s.member.id === selectedId ? null : s.member.id)}
+                    className="flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition-all"
+                    style={{
+                      background: selectedId === s.member.id ? "rgba(139,92,246,0.1)" : "rgba(255,255,255,0.02)",
+                      borderColor: selectedId === s.member.id ? "rgba(139,92,246,0.4)" : "rgba(255,255,255,0.06)",
+                    }}
+                    whileHover={{ borderColor: "rgba(139,92,246,0.25)" }}>
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-black"
+                      style={{ background: "rgba(139,92,246,0.18)", color: "#8B5CF6" }}>
+                      {s.member.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
                     </div>
-                  </div>
-                  <button type="button" onClick={() => setSelected(null)} className="rounded-lg p-1.5"
-                    style={{ background: "rgba(255,255,255,0.06)" }}>
-                    <X size={12} style={{ color: "var(--text-muted)" }} />
-                  </button>
-                </div>
-                <div className="space-y-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
-                  <p className="flex items-center gap-2"><MapPin size={11} /> {selected.zone}</p>
-                  <p className="flex items-center gap-2"><Users size={11} /> Spécialité: {selected.specialty}</p>
-                  <p className="flex items-center gap-2"><Star size={11} /> Rating: <strong style={{ color: "#F59E0B" }}>{selected.rating}/5</strong></p>
-                  <p className="flex items-center gap-2"><TrendingUp size={11} /> Taux validation: <strong style={{ color: "#22C55E" }}>{selected.rate}%</strong></p>
-                  <p>📧 {selected.email}</p>
-                  <p>📞 {selected.phone}</p>
-                  <p>Actif depuis: {selected.joined}</p>
-                </div>
-              </RCard>
-
-              <RCard>
-                <p className="mb-2 text-sm font-bold" style={{ color: "var(--text-primary)" }}>Performance</p>
-                <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart data={radarData}>
-                      <PolarGrid stroke="rgba(255,255,255,0.06)" />
-                      <PolarAngleAxis dataKey="subject" tick={{ fill: "var(--text-muted)", fontSize: 8 }} />
-                      <Radar dataKey="A" stroke="#8B5CF6" fill="#8B5CF6" fillOpacity={0.22} strokeWidth={2} />
-                      <Tooltip {...TOOLTIP_STYLE} />
-                    </RadarChart>
-                  </ResponsiveContainer>
-                </div>
-              </RCard>
-
-              <RCard>
-                <p className="mb-2 text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Joueurs scoués (récents)</p>
-                {["Ahmed Ali", "Yassine Ben Youssef", "Mohamed Karray"].map((pl, i) => (
-                  <div key={pl} className="mb-1.5 flex items-center gap-2 rounded-lg border px-2 py-1.5"
-                    style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold"
-                      style={{ background: "rgba(139,92,246,0.2)", color: "#8B5CF6" }}>{i + 1}</div>
-                    <span className="text-xs" style={{ color: "var(--text-muted)" }}>{pl}</span>
-                    <span className="ml-auto text-[10px] rounded-full px-2 py-0.5"
-                      style={{ background: "rgba(34,197,94,0.1)", color: "#22C55E" }}>Shortlist</span>
-                  </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>{s.member.name}</p>
+                        <StatusBadge status={s.member.status} />
+                      </div>
+                      <p className="text-[11px] flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
+                        <MapPin size={9} /> {s.member.email}
+                      </p>
+                    </div>
+                    <div className="flex gap-4 text-center shrink-0">
+                      <div>
+                        <p className="text-sm font-bold" style={{ color: "#8B5CF6" }}>{s.players.length}</p>
+                        <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>Trouvés</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold" style={{ color: "#22C55E" }}>{s.validated}</p>
+                        <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>Validés</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold" style={{ color: "#F59E0B" }}>{s.rate}%</p>
+                        <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>Taux</p>
+                      </div>
+                      <ChevronRight size={14} style={{ color: "var(--text-muted)" }} className="self-center" />
+                    </div>
+                  </motion.div>
                 ))}
-              </RCard>
-            </motion.div>
-          ) : (
-            <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <RCard className="flex flex-col items-center justify-center py-16">
-                <Users size={32} className="mb-3 opacity-25" style={{ color: "var(--text-muted)" }} />
-                <p className="text-sm" style={{ color: "var(--text-muted)" }}>Sélectionner un scout pour voir le détail</p>
-              </RCard>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+                {filtered.length === 0 && (
+                  <p className="py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>Aucun scout trouvé</p>
+                )}
+              </div>
+            )}
+          </RCard>
+
+          {/* Detail panel */}
+          <AnimatePresence mode="wait">
+            {selected ? (
+              <motion.div key={selected.member.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-3">
+                <RCard>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl text-sm font-black"
+                        style={{ background: "rgba(139,92,246,0.18)", color: "#8B5CF6" }}>
+                        {selected.member.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
+                      </div>
+                      <div>
+                        <p className="font-bold" style={{ color: "var(--text-primary)" }}>{selected.member.name}</p>
+                        <StatusBadge status={selected.member.status} />
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => setSelectedId(null)} className="rounded-lg p-1.5"
+                      style={{ background: "rgba(255,255,255,0.06)" }}>
+                      <X size={12} style={{ color: "var(--text-muted)" }} />
+                    </button>
+                  </div>
+                  <div className="space-y-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
+                    <p className="flex items-center gap-2"><Users size={11} /> Rapports soumis: <strong style={{ color: "#8B5CF6" }}>{selected.reports.length}</strong></p>
+                    <p className="flex items-center gap-2"><TrendingUp size={11} /> Taux validation: <strong style={{ color: "#22C55E" }}>{selected.rate}%</strong></p>
+                    <p>📧 {selected.member.email}</p>
+                    <p>Dernière connexion: {selected.member.lastLogin}</p>
+                    <p>Membre depuis: {selected.member.createdAt}</p>
+                  </div>
+                </RCard>
+
+                <RCard>
+                  <p className="mb-2 text-sm font-bold" style={{ color: "var(--text-primary)" }}>Performance</p>
+                  <div className="h-48">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart data={radarData}>
+                        <PolarGrid stroke="rgba(255,255,255,0.06)" />
+                        <PolarAngleAxis dataKey="subject" tick={{ fill: "var(--text-muted)", fontSize: 8 }} />
+                        <Radar dataKey="A" stroke="#8B5CF6" fill="#8B5CF6" fillOpacity={0.22} strokeWidth={2} />
+                        <Tooltip {...TOOLTIP_STYLE} />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </RCard>
+
+                <RCard>
+                  <p className="mb-2 text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Joueurs scoutés (récents)</p>
+                  {selected.players.slice(0, 5).map((pl, i) => (
+                    <div key={pl.id} className="mb-1.5 flex items-center gap-2 rounded-lg border px-2 py-1.5"
+                      style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold"
+                        style={{ background: "rgba(139,92,246,0.2)", color: "#8B5CF6" }}>{i + 1}</div>
+                      <span className="text-xs flex-1" style={{ color: "var(--text-muted)" }}>{pl.name}</span>
+                      <span className="text-[10px] rounded-full px-2 py-0.5"
+                        style={{ background: "rgba(34,197,94,0.1)", color: "#22C55E" }}>{pl.status}</span>
+                    </div>
+                  ))}
+                  {selected.players.length === 0 && (
+                    <p className="text-xs text-center py-4" style={{ color: "var(--text-muted)" }}>Aucun joueur scouté</p>
+                  )}
+                </RCard>
+              </motion.div>
+            ) : (
+              <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <RCard className="flex flex-col items-center justify-center py-16">
+                  <Users size={32} className="mb-3 opacity-25" style={{ color: "var(--text-muted)" }} />
+                  <p className="text-sm" style={{ color: "var(--text-muted)" }}>Sélectionner un scout pour voir le détail</p>
+                </RCard>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
 
       {/* Modal */}
       <AnimatePresence>
@@ -256,28 +317,26 @@ export function RecruteurScoutsPage() {
                 </button>
               </div>
               <div className="space-y-3">
-                {[
-                  { label: "Nom complet", key: "name", placeholder: "Ex: Ahmed Trabelsi" },
-                  { label: "Pays", key: "country", placeholder: "Ex: Tunisie" },
-                  { label: "Zone géographique", key: "zone", placeholder: "Ex: Ligue 1 Tunisie" },
-                  { label: "Téléphone", key: "phone", placeholder: "+216 ..." },
-                  { label: "Email", key: "email", placeholder: "scout@email.com" },
-                ].map(({ label, key, placeholder }) => (
-                  <div key={key}>
-                    <label className="block text-[11px] font-medium mb-1" style={{ color: "var(--text-muted)" }}>{label}</label>
-                    <input placeholder={placeholder} value={(form as Record<string, string>)[key]}
-                      onChange={e => setForm(prev => ({ ...prev, [key]: e.target.value }))}
-                      className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                      style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }} />
-                  </div>
-                ))}
                 <div>
-                  <label className="block text-[11px] font-medium mb-1" style={{ color: "var(--text-muted)" }}>Spécialité</label>
-                  <select value={form.specialty} onChange={e => setForm(prev => ({ ...prev, specialty: e.target.value }))}
+                  <label className="block text-[11px] font-medium mb-1" style={{ color: "var(--text-muted)" }}>Nom complet</label>
+                  <input placeholder="Ex: Ahmed Trabelsi" value={form.fullName}
+                    onChange={e => setForm(prev => ({ ...prev, fullName: e.target.value }))}
                     className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                    style={{ background: "var(--surface-modal)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}>
-                    {["Attaquants", "Milieux", "Défenseurs", "Gardiens", "Latéraux", "Généraliste"].map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
+                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }} />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium mb-1" style={{ color: "var(--text-muted)" }}>Email</label>
+                  <input placeholder="scout@email.com" value={form.email}
+                    onChange={e => setForm(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
+                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }} />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium mb-1" style={{ color: "var(--text-muted)" }}>Mot de passe temporaire</label>
+                  <input placeholder="Généré automatiquement si vide" value={form.password}
+                    onChange={e => setForm(prev => ({ ...prev, password: e.target.value }))}
+                    className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
+                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }} />
                 </div>
               </div>
               <div className="mt-5 flex justify-end gap-2">
@@ -285,11 +344,11 @@ export function RecruteurScoutsPage() {
                   className="rounded-xl border px-4 py-2 text-xs" style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}>
                   Annuler
                 </button>
-                <motion.button type="button" onClick={() => setShowModal(false)}
-                  className="rounded-xl px-5 py-2 text-xs font-bold text-white"
+                <motion.button type="button" onClick={() => void submitScout()} disabled={saving || !form.fullName.trim() || !form.email.trim()}
+                  className="rounded-xl px-5 py-2 text-xs font-bold text-white disabled:opacity-50"
                   style={{ background: "linear-gradient(135deg,#8B5CF6,#6D28D9)" }}
                   whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
-                  Créer Scout
+                  {saving ? "Création…" : "Créer Scout"}
                 </motion.button>
               </div>
             </motion.div>

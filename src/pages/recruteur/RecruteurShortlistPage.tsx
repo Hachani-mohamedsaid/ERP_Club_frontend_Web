@@ -6,18 +6,20 @@ import { RecruteurKpiCard } from "../../components/recruteur/RecruteurKpiCard";
 import { TalentCard } from "../../components/recruteur/TalentCard";
 import { PlayerProfileDrawer } from "../../components/recruteur/PlayerProfileDrawer";
 import { CountUpStat } from "../../components/player/CountUpStat";
-import { SCOUT_PLAYERS, type ScoutPlayer } from "../../data/recruteurData";
-import { useRecruteurStore, toggleShortlist, toggleCompare } from "../../data/recruteurStore";
+import { type ScoutPlayer } from "../../data/recruteurData";
+import { useRecruteurStore, toggleCompare } from "../../data/recruteurStore";
+import { useRecruteurTalents } from "../../hooks/useRecruteurTalents";
 
 export function RecruteurShortlistPage() {
   const navigate = useNavigate();
   const store = useRecruteurStore();
+  const { talents, loading, error, toggleShortlist, getById } = useRecruteurTalents();
   const [drawerId, setDrawerId] = useState<string | null>(null);
 
-  const players = SCOUT_PLAYERS.filter((p) => store.shortlist.includes(p.id)).map((p) => ({ ...p, shortlisted: true }));
+  const players = talents.filter((p) => p.shortlisted);
   const avgScore = players.length ? Math.round(players.reduce((s, p) => s + p.aiScore, 0) / players.length) : 0;
   const totalValue = players.reduce((s, p) => s + p.valueNum, 0);
-  const drawerPlayer: ScoutPlayer | null = drawerId ? SCOUT_PLAYERS.find((p) => p.id === drawerId) ?? null : null;
+  const drawerPlayer: ScoutPlayer | null = drawerId ? getById(drawerId) : null;
 
   return (
     <RecruteurPageTransition>
@@ -47,7 +49,19 @@ export function RecruteurShortlistPage() {
         </button>
       )}
 
-      {players.length === 0 ? (
+      {loading && (
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed py-16" style={{ borderColor: "var(--surface-panel-border)" }}>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement…</p>
+        </div>
+      )}
+
+      {error && !loading && (
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed py-16" style={{ borderColor: "rgba(239,68,68,0.3)" }}>
+          <p className="text-sm text-red-400">{error}</p>
+        </div>
+      )}
+
+      {!loading && !error && players.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed py-16" style={{ borderColor: "var(--surface-panel-border)" }}>
           <Star size={28} style={{ color: "var(--text-muted)" }} />
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>Aucune cible en shortlist — ajoutez des talents depuis Talent Discovery</p>
@@ -55,7 +69,7 @@ export function RecruteurShortlistPage() {
             Explorer les talents
           </button>
         </div>
-      ) : (
+      ) : !loading && !error && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-3">
           {players.map((p, i) => (
             <TalentCard key={p.id} player={p} delay={i * 0.05} onView={() => setDrawerId(p.id)} onCompare={() => toggleCompare(p.id)} onShortlist={() => toggleShortlist(p.id)} />
