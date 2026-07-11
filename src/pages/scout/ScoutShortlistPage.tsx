@@ -111,10 +111,7 @@ export function ScoutShortlistPage() {
                     }}>
                     #{rank + 1}
                   </div>
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold text-white"
-                    style={{ background: `linear-gradient(135deg,${S.primary},${S.primary}99)` }}>
-                    {p.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-                  </div>
+                  <ScoutPlayerPhoto name={p.name} photoUrl={p.photoUrl} size={48} accent={S.primary} />
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-sm font-extrabold" style={{ color: "var(--text-primary)" }}>
