@@ -309,8 +309,10 @@ export const scoutApi = {
       sources: { database: number; flashscore?: number; ai?: number };
       cached: boolean;
       aiEnabled?: boolean;
-      dataSource?: "flashscore" | "ai";
+      dataSource?: "flashscore" | "live" | "ai";
       season?: string;
+      updatedAt?: string;
+      autoRefresh?: boolean;
     }>),
 
   getAi: () =>

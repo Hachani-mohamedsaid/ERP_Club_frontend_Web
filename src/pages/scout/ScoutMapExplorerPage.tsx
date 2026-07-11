@@ -511,7 +511,7 @@ export function ScoutMapExplorerPage() {
                         disabled={loadingSquad}
                         className="rounded-lg border p-2"
                         style={{ borderColor: "var(--surface-panel-border)" }}
-                        title="Rafraîchir effectif IA"
+                        title="Actualiser effectif Flashscore"
                       >
                         <RefreshCw size={14} className={loadingSquad ? "animate-spin" : ""} style={{ color: S.primary }} />
                       </button>
@@ -535,9 +535,14 @@ export function ScoutMapExplorerPage() {
                     <SGauge value={team.avgPotential} color={S.primary} />
 
                     <p className="mt-3 text-[9px]" style={{ color: "var(--text-muted)" }}>
-                      {squad.sources.database} en base · {squad.sources.flashscore ?? squad.sources.ai ?? 0} Flashscore
+                      {squad.sources.flashscore ?? squad.players.length} Flashscore
+                      {squad.dataSource === "live" ? " · live" : ""}
                       {squad.season ? ` · ${squad.season}` : ""}
+                      {squad.updatedAt
+                        ? ` · MAJ ${new Date(squad.updatedAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`
+                        : ""}
                       {squad.cached ? " · cache" : ""}
+                      {squad.sources.database ? ` · ${squad.sources.database} scout` : ""}
                     </p>
 
                     <div className="space-y-2 mt-4">
@@ -579,7 +584,7 @@ export function ScoutMapExplorerPage() {
                             whileHover={{ borderColor: `${S.primary}40`, x: 3 }}
                           >
                             <div className="flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-black text-white"
-                              style={{ background: p.source === "prospect" ? S.primary : S.info }}>
+                              style={{ background: p.inDatabase ? S.primary : p.source === "flashscore" ? S.info : S.accent }}>
                               {p.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -588,7 +593,7 @@ export function ScoutMapExplorerPage() {
                               </p>
                               <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>
                                 {p.position} · {p.age}a · Pot. {p.potential}
-                                {p.source === "ai" ? " · IA" : " · DB"}
+                                {p.inDatabase ? " · Scout" : p.source === "flashscore" ? " · Flashscore" : p.source === "ai" ? " · IA" : ""}
                               </p>
                             </div>
                             <TrendingUp size={12} style={{ color: S.success }} />
