@@ -277,7 +277,7 @@ export function ScoutProspectPage() {
                   { label: "Comparer", path: `/scout/comparison?ids=${p.id}`, color: S.info },
                   { label: "Vidéos", path: "/scout/videos", color: S.accent },
                   { label: "Compatibilité", path: "/scout/squad-fit", color: S.success },
-                  { label: "Rapport", path: "/scout/report", color: S.primary },
+                  { label: "Rapport", path: `/scout/report?prospectId=${p.id}`, color: S.primary },
                 ].map((action) => (
                   <motion.button key={action.label} type="button" onClick={() => navigate(action.path)}
                     className="rounded-xl border px-3 py-1.5 text-[10px] font-bold"

@@ -155,7 +155,7 @@ export function ScoutShortlistPage() {
                       whileTap={{ scale: 0.95 }}>
                       <Eye size={11} /> Profil
                     </motion.button>
-                    <motion.button type="button" onClick={() => navigate("/scout/report")}
+                    <motion.button type="button" onClick={() => navigate(`/scout/report?prospectId=${p.id}`)}
                       className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-[10px] font-bold"
                       style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-muted)" }}
                       whileTap={{ scale: 0.95 }}>
