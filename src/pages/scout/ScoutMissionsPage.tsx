@@ -8,8 +8,34 @@ import { ScoutPage, SCard, SBadge } from "../../components/scout/ScoutUI";
 import { ScoutPlayerPhoto, resolveScoutPhotoUrl } from "../../components/scout/ScoutPlayerPhoto";
 import { S } from "../../data/scoutData";
 import { scoutApi, type ScoutMissionDto, type ScoutProspectDto } from "../../lib/api/scout";
+import type { SearchPlayerResult } from "../../lib/api/scout/searchFallback";
 import { useScoutProspects } from "../../hooks/useScoutData";
 import { showToast } from "../../components/scout/ScoutToast";
+
+type MissionPlayer = Pick<
+  ScoutProspectDto,
+  "id" | "name" | "position" | "age" | "club" | "flag" | "potential" | "photoUrl" | "league" | "nationality"
+> & {
+  inDatabase?: boolean;
+  source?: string;
+};
+
+function toMissionPlayer(p: ScoutProspectDto | SearchPlayerResult): MissionPlayer {
+  return {
+    id: p.id,
+    name: p.name,
+    position: p.position,
+    age: p.age,
+    club: p.club,
+    flag: p.flag,
+    potential: p.potential,
+    photoUrl: p.photoUrl,
+    league: p.league,
+    nationality: p.nationality,
+    inDatabase: "inDatabase" in p ? Boolean(p.inDatabase) : true,
+    source: "source" in p ? String(p.source ?? "") : "database",
+  };
+}
 
 const MISSION_TYPES = [
   { id: "live", label: "Observation live", hint: "Match en stade" },
@@ -150,11 +176,12 @@ export function ScoutMissionsPage() {
   const [playerOpen, setPlayerOpen] = useState(false);
   const [playerQuery, setPlayerQuery] = useState("");
   const [form, setForm] = useState(emptyForm);
+  const [selectedPlayer, setSelectedPlayer] = useState<MissionPlayer | null>(null);
+  const [worldPlayers, setWorldPlayers] = useState<MissionPlayer[]>([]);
+  const [searchingPlayers, setSearchingPlayers] = useState(false);
+  const [poolStats, setPoolStats] = useState({ flashscore: 0, season: "2026-2027" });
 
-  const selectedProspect = useMemo(
-    () => prospects.find((p) => p.id === form.prospectId) ?? null,
-    [prospects, form.prospectId],
-  );
+  const selectedProspect = selectedPlayer;
 
   const load = useCallback(() => {
     setLoading(true);
@@ -169,9 +196,46 @@ export function ScoutMissionsPage() {
     load();
   }, [load]);
 
-  const applyProspect = useCallback((p: ScoutProspectDto, missionType?: (typeof MISSION_TYPES)[number]["id"]) => {
+  const loadWorldPlayers = useCallback(async (query = "") => {
+    setSearchingPlayers(true);
+    try {
+      const res = await scoutApi.searchProspects({
+        query: query.trim() || undefined,
+      });
+      const mapped = (res.results ?? []).map(toMissionPlayer);
+      setWorldPlayers(mapped);
+      setPoolStats({
+        flashscore: res.sources?.flashscore ?? mapped.length,
+        season: res.season ?? "2026-2027",
+      });
+    } catch {
+      setWorldPlayers([]);
+    } finally {
+      setSearchingPlayers(false);
+    }
+  }, []);
+
+  // Prefetch Flashscore pool when form opens
+  useEffect(() => {
+    if (!showForm) return;
+    void loadWorldPlayers("");
+  }, [showForm, loadWorldPlayers]);
+
+  // Debounced Flashscore search while typing
+  useEffect(() => {
+    if (!showForm || !playerOpen) return;
+    const q = playerQuery.trim();
+    const t = window.setTimeout(() => {
+      void loadWorldPlayers(q.length >= 2 ? q : "");
+    }, 350);
+    return () => window.clearTimeout(t);
+  }, [playerQuery, showForm, playerOpen, loadWorldPlayers]);
+
+  const applyProspect = useCallback((raw: ScoutProspectDto | SearchPlayerResult | MissionPlayer, missionType?: (typeof MISSION_TYPES)[number]["id"]) => {
+    const p = toMissionPlayer(raw as ScoutProspectDto);
     const opponent = suggestOpponent(p.club);
     const location = suggestStadium(p.club);
+    setSelectedPlayer(p);
     setForm((prev) => {
       const resolvedType = missionType ?? prev.missionType;
       return {
@@ -184,12 +248,12 @@ export function ScoutMissionsPage() {
         title: buildTitle(resolvedType, p.name, p.club, opponent),
         notes:
           prev.notes ||
-          `Focus ${p.position} · Potentiel ${p.potential} · Vérifier intensité 90 min.`,
+          `Focus ${p.position} · Potentiel ${p.potential} · Source Flashscore ${poolStats.season}.`,
       };
     });
     setPlayerOpen(false);
     setPlayerQuery("");
-  }, []);
+  }, [poolStats.season]);
 
   const setMissionType = (id: (typeof MISSION_TYPES)[number]["id"]) => {
     setForm((prev) => {
@@ -224,16 +288,25 @@ export function ScoutMissionsPage() {
   }, [searchParams, prospects, applyProspect]);
 
   const filteredProspects = useMemo(() => {
-    const q = playerQuery.trim().toLowerCase();
-    const list = [...prospects].sort((a, b) => b.potential - a.potential);
-    if (!q) return list;
-    return list.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.club.toLowerCase().includes(q) ||
-        p.position.toLowerCase().includes(q),
+    const local = prospects.map((p) => toMissionPlayer({ ...p, inDatabase: true, source: "database" }));
+    const world = worldPlayers.filter(
+      (w) => !local.some((l) => l.name.toLowerCase() === w.name.toLowerCase() && l.club.toLowerCase() === w.club.toLowerCase()),
     );
-  }, [prospects, playerQuery]);
+    // Annuaire d'abord, puis Flashscore mondial
+    const merged = [...local, ...world].sort((a, b) => b.potential - a.potential);
+
+    const q = playerQuery.trim().toLowerCase();
+    if (!q) return merged.slice(0, 80);
+    return merged
+      .filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.club.toLowerCase().includes(q) ||
+          p.position.toLowerCase().includes(q) ||
+          (p.nationality ?? "").toLowerCase().includes(q),
+      )
+      .slice(0, 80);
+  }, [prospects, worldPlayers, playerQuery]);
 
   const toggleFocus = (chip: string) => {
     setForm((prev) => ({
@@ -250,6 +323,7 @@ export function ScoutMissionsPage() {
       return;
     }
     setForm(emptyForm());
+    setSelectedPlayer(null);
     setShowForm(true);
   };
 
@@ -286,6 +360,7 @@ export function ScoutMissionsPage() {
       showToast(`Mission planifiée — ${form.prospectName} ✓`, "success");
       setShowForm(false);
       setForm(emptyForm());
+      setSelectedPlayer(null);
       load();
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Erreur création mission", "error");
@@ -348,11 +423,11 @@ export function ScoutMissionsPage() {
                     Nouvelle mission
                   </p>
                   <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-                    Choisissez le joueur — le reste se remplit automatiquement
+                    Pool Flashscore {poolStats.season} · monde entier + annuaire scout
                   </p>
                 </div>
                 <SBadge color={S.primary} bg={`${S.primary}15`}>
-                  <Sparkles size={10} className="inline mr-1" /> Auto-fill
+                  <Sparkles size={10} className="inline mr-1" /> Flashscore
                 </SBadge>
               </div>
 
@@ -420,10 +495,10 @@ export function ScoutMissionsPage() {
                         </div>
                         <div className="flex-1 text-left">
                           <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-                            Sélectionner un prospect
+                            Sélectionner un joueur
                           </p>
                           <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-                            Depuis l&apos;annuaire scout
+                            Flashscore mondial + annuaire scout
                           </p>
                         </div>
                       </>
@@ -456,20 +531,25 @@ export function ScoutMissionsPage() {
                             autoFocus
                             value={playerQuery}
                             onChange={(e) => setPlayerQuery(e.target.value)}
-                            placeholder="Rechercher nom, club, poste…"
+                            placeholder="Ex: Mbappé, Haaland, Saka, Real Madrid…"
                             className="flex-1 bg-transparent text-xs outline-none"
                             style={{ color: "var(--text-primary)" }}
                           />
+                          {searchingPlayers && (
+                            <span className="text-[9px]" style={{ color: S.primary }}>Flashscore…</span>
+                          )}
                         </div>
                         <div className="max-h-56 overflow-y-auto">
                           {filteredProspects.length === 0 ? (
                             <p className="px-4 py-3 text-xs" style={{ color: "var(--text-muted)" }}>
-                              Aucun prospect — importez depuis Recherche
+                              {searchingPlayers
+                                ? "Recherche Flashscore en cours…"
+                                : "Aucun joueur — tapez un nom (pool mondial 2026-27)"}
                             </p>
                           ) : (
                             filteredProspects.map((p) => (
                               <button
-                                key={p.id}
+                                key={`${p.id}-${p.club}`}
                                 type="button"
                                 onClick={() => applyProspect(p)}
                                 className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-white/5"
@@ -477,7 +557,7 @@ export function ScoutMissionsPage() {
                               >
                                 <ScoutPlayerPhoto
                                   name={p.name}
-                                  photoUrl={resolveScoutPhotoUrl(p.name, p.photoUrl, prospects)}
+                                  photoUrl={resolveScoutPhotoUrl(p.name, p.photoUrl, [...prospects, ...worldPlayers])}
                                   size={32}
                                   accent={S.primary}
                                 />
@@ -487,9 +567,15 @@ export function ScoutMissionsPage() {
                                   </p>
                                   <p className="text-[10px] truncate" style={{ color: "var(--text-muted)" }}>
                                     {p.position} · {p.club}
+                                    {p.league ? ` · ${p.league}` : ""}
                                   </p>
                                 </div>
-                                <span className="text-[10px] font-bold" style={{ color: S.primary }}>{p.potential}</span>
+                                <div className="text-right shrink-0">
+                                  <span className="text-[10px] font-bold block" style={{ color: S.primary }}>{p.potential}</span>
+                                  <span className="text-[8px] font-bold" style={{ color: p.inDatabase ? S.success : S.info }}>
+                                    {p.inDatabase ? "Scout" : "Flashscore"}
+                                  </span>
+                                </div>
                               </button>
                             ))
                           )}
