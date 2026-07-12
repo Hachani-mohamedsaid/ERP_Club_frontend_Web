@@ -275,6 +275,7 @@ export function ScoutProspectPage() {
               <div className="flex flex-wrap gap-2 mt-3">
                 {[
                   { label: "Comparer", path: `/scout/comparison?ids=${p.id}`, color: S.info },
+                  { label: "Mission", path: `/scout/missions?prospectId=${p.id}`, color: "#F59E0B" },
                   { label: "Vidéos", path: "/scout/videos", color: S.accent },
                   { label: "Compatibilité", path: "/scout/squad-fit", color: S.success },
                   { label: "Rapport", path: `/scout/report?prospectId=${p.id}`, color: S.primary },
