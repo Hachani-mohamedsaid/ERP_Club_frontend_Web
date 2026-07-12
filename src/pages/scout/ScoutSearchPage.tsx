@@ -234,6 +234,7 @@ export function ScoutSearchPage() {
   const [potRange, setPotRange] = useState("Tous");
   const [budgetRange, setBudgetRange] = useState("Tous");
   const [selected, setSelected] = useState<string | null>(null);
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
 
   const [results, setResults] = useState<SearchPlayer[]>([]);
   const [summary, setSummary] = useState("");
@@ -243,12 +244,49 @@ export function ScoutSearchPage() {
   const [importingId, setImportingId] = useState<string | null>(null);
   const searchGen = useRef(0);
 
+  // Apply scout profile defaults (postes / âge / budget)
+  useEffect(() => {
+    let cancelled = false;
+    scoutApi
+      .getProfile()
+      .then((p) => {
+        if (cancelled) return;
+        if (p.positions?.length === 1) setPos(p.positions[0]);
+        else if (p.positions?.length && p.positions[0]) setPos(p.positions[0]);
+
+        const min = Number(p.ageMin);
+        const max = Number(p.ageMax);
+        if (Number.isFinite(min) && Number.isFinite(max)) {
+          if (max <= 18) setAgeRange("≤18");
+          else if (min >= 19 && max <= 21) setAgeRange("19-21");
+          else if (min >= 22 && max <= 25) setAgeRange("22-25");
+          else if (min > 25) setAgeRange(">25");
+        }
+
+        const budget = Number(p.budgetMax);
+        if (Number.isFinite(budget)) {
+          if (budget < 0.5) setBudgetRange("<500K €");
+          else if (budget <= 1) setBudgetRange("500K-1M €");
+          else if (budget <= 2) setBudgetRange("1M-2M €");
+          else setBudgetRange(">2M €");
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setPrefsLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const filters = useMemo(
     () => ({ query: search, position: pos, country, ageRange, potRange, budgetRange }),
     [search, pos, country, ageRange, potRange, budgetRange],
   );
 
   const runSearch = useCallback(async () => {
+    if (!prefsLoaded) return;
     const gen = ++searchGen.current;
     setLoading(true);
     setError(null);
@@ -267,12 +305,13 @@ export function ScoutSearchPage() {
     } finally {
       if (gen === searchGen.current) setLoading(false);
     }
-  }, [filters]);
+  }, [filters, prefsLoaded]);
 
   useEffect(() => {
+    if (!prefsLoaded) return;
     const t = setTimeout(() => { void runSearch(); }, 650);
     return () => clearTimeout(t);
-  }, [runSearch]);
+  }, [runSearch, prefsLoaded]);
 
   const activeFilters = [
     pos !== "Tous" ? pos : null,

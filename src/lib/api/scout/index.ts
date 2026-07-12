@@ -172,8 +172,42 @@ export interface ScoutMissionDto {
   extra: unknown;
 }
 
+export interface ScoutProfileDto {
+  fullName: string;
+  email: string;
+  phone: string;
+  clubName: string;
+  country: string;
+  league: string;
+  role: string;
+  specialization: string;
+  regions: string[];
+  positions: string[];
+  budgetMax: string;
+  ageMin: string;
+  ageMax: string;
+  notifyNewProspect: boolean;
+  notifyShortlist: boolean;
+  notifyMissionReminder: boolean;
+  language: string;
+  stats: {
+    missionsThisMonth: number;
+    reportsSubmitted: number;
+    reportsThisMonth: number;
+    prospectsFollowed: number;
+    prospectsTotal: number;
+    conversionRate: number;
+  };
+  season: string;
+}
+
 export const scoutApi = {
   getDashboard: () => apiFetch("/scout/dashboard").then(parse<ScoutDashboardDto>),
+
+  getProfile: () => apiFetch("/scout/profile").then(parse<ScoutProfileDto>),
+
+  updateProfile: (body: Record<string, unknown>) =>
+    apiFetch("/scout/profile", { method: "PATCH", body: JSON.stringify(body) }).then(parse<ScoutProfileDto>),
 
   getProspects: () => apiFetch("/scout/prospects").then(parse<ScoutProspectDto[]>),
 
