@@ -65,7 +65,7 @@ export const financeApi = {
     }, 30000).then(parse<FinanceAiChatResponse>),
 
   getNotifications: () =>
-    apiFetchWithTimeout("/club/finance/notifications", {}, 15000).then(parse<FinanceNotificationsResponse>),
+    apiFetchWithTimeout("/club/finance/notifications", {}, 45000).then(parse<FinanceNotificationsResponse>),
 
   markAllNotificationsRead: () =>
     apiFetch("/club/finance/notifications/read", { method: "PATCH" }).then(parse),
