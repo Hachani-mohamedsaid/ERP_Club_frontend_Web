@@ -259,6 +259,7 @@ export const scoutApi = {
     apiFetch("/scout/map").then(parse<{
       status: string;
       model: string;
+      season?: string;
       continents: {
         id: string;
         name: string;
@@ -268,7 +269,8 @@ export const scoutApi = {
         prospects: number;
         teams: number;
       }[];
-      stats: { continents: number; countries: number; clubs: number; prospectsInDb: number };
+      stats: { continents: number; countries: number; clubs: number; prospectsInDb: number; leagues?: number };
+      notice?: string;
     }>),
 
   getMapCountries: (continentId: string) =>
@@ -312,7 +314,12 @@ export const scoutApi = {
         playerCount: number;
         dbProspects: number;
         logoColor?: string;
+        logoUrl?: string;
+        apiSportsId?: number;
       }[];
+      totalTeams?: number;
+      source?: string;
+      season?: string;
     }>),
 
   getTeamSquad: (teamId: string, refresh = false) =>
@@ -327,6 +334,7 @@ export const scoutApi = {
         avgPotential: number;
         scoutActivity: string;
         logoColor?: string;
+        logoUrl?: string;
         country: { id: string; name: string; flag: string; flagCode: string };
       };
       players: {
@@ -343,7 +351,21 @@ export const scoutApi = {
         inDatabase?: boolean;
         prospectId?: string;
         photoUrl?: string;
+        isNewTransfer?: boolean;
+        isNew?: boolean;
+        number?: number | null;
+        apiSportsId?: number;
       }[];
+      transfers?: {
+        playerId: number;
+        playerName: string;
+        date: string;
+        type: string;
+        from: string;
+        to: string;
+        isIncoming: boolean;
+      }[];
+      newPlayers?: number;
       sources: { database: number; flashscore?: number; ai?: number };
       cached: boolean;
       aiEnabled?: boolean;
