@@ -8,32 +8,9 @@ import {
   getCountry,
   type GeoTeam,
 } from "../../../data/scoutGeoData";
+import { hasCuratedFlashscoreSquad, resolveFlashscoreSquad } from "./flashscoreSquads";
 
 export const SEASON_LABEL = "2026-2027";
-
-const POSITIONS = ["GK", "DEF", "DEF", "DEF", "DEF", "MID", "MID", "MID", "ATT", "ATT", "ATT"] as const;
-const FIRST = [
-  "Amine", "Youssef", "Karim", "Lucas", "Hugo", "Noah", "Adam", "Rayan", "Elias", "Sami",
-  "Marco", "Diego", "Kai", "Omar", "Ibrahim", "Gabriel", "Thiago", "Luka", "Enzo", "Victor",
-];
-const LAST = [
-  "Ben Ali", "Traoré", "Silva", "Martinez", "Nakamura", "Diallo", "Santos", "Kovač", "Dupont",
-  "Rossi", "Müller", "Kim", "Alvarez", "Hassan", "Chen", "Okoye", "Berg", "Costa", "Nguyen", "Moreau",
-];
-
-function hash(s: string) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-  return h;
-}
-
-function seeded(seed: number) {
-  let x = seed || 1;
-  return () => {
-    x = (x * 1664525 + 1013904223) >>> 0;
-    return x / 0xffffffff;
-  };
-}
 
 export function fallbackOverview() {
   const continents = CONTINENTS.map((c) => {
@@ -62,6 +39,7 @@ export function fallbackOverview() {
       prospectsInDb: 0,
       leagues: COUNTRIES.length,
     },
+    notice: "Catalogue Flashscore — API_FOOTBALL_KEY inactive ou quota atteint · grands clubs avec effectifs réels",
   };
 }
 
@@ -130,44 +108,38 @@ export function fallbackTeams(countryId: string) {
 
 function buildSquadPlayers(team: GeoTeam) {
   const country = getCountry(team.countryId);
-  const rnd = seeded(hash(team.id + SEASON_LABEL));
-  const count = 18 + Math.floor(rnd() * 8);
-  const players = [];
+  const countryName = country?.name ?? team.city;
+  const seeds = resolveFlashscoreSquad(
+    team.id,
+    team.name,
+    team.countryId,
+    countryName,
+    team.avgPotential,
+  );
 
-  for (let i = 0; i < count; i++) {
-    const age = 17 + Math.floor(rnd() * 16);
-    const potBase = team.avgPotential + Math.floor((rnd() - 0.4) * 14);
-    const potential = Math.min(95, Math.max(58, potBase));
-    const isNew = rnd() < 0.18;
-    const first = FIRST[Math.floor(rnd() * FIRST.length)]!;
-    const last = LAST[Math.floor(rnd() * LAST.length)]!;
-    const pos = POSITIONS[i % POSITIONS.length]!;
-
-    players.push({
-      id: `${team.id}-p${i}`,
-      name: `${first} ${last}`,
-      position: pos,
-      age,
-      nationality: country?.name ?? team.city,
-      flag: country?.flag ?? "⚽",
-      potential,
-      currentRating: Math.max(50, potential - 6 - Math.floor(rnd() * 6)),
-      marketValue: potential >= 85 ? `${8 + Math.floor(rnd() * 20)}M€` : potential >= 75 ? `${2 + Math.floor(rnd() * 6)}M€` : `${300 + Math.floor(rnd() * 700)}K€`,
-      source: "flashscore" as const,
-      inDatabase: false,
-      isNewTransfer: isNew,
-      isNew,
-      number: i === 0 ? 1 : 2 + i,
-    });
-  }
-
-  return players.sort((a, b) => b.potential - a.potential);
+  return seeds.map((p, i) => ({
+    id: `${team.id}-fs-${i}`,
+    name: p.name,
+    position: p.position,
+    age: p.age,
+    nationality: p.nationality,
+    flag: country?.flag ?? "⚽",
+    potential: p.potential,
+    currentRating: p.currentRating,
+    marketValue: p.marketValue.replace(/\s*€/, "€"),
+    source: "flashscore" as const,
+    inDatabase: false,
+    isNewTransfer: false,
+    isNew: false,
+    number: i === 0 ? 1 : 2 + i,
+  })).sort((a, b) => b.potential - a.potential);
 }
 
 export function fallbackSquad(teamId: string) {
   const team = getTeam(teamId);
   if (!team) return null;
   const country = getCountry(team.countryId);
+  const curated = hasCuratedFlashscoreSquad(team.id, team.name, team.countryId);
   const players = buildSquadPlayers(team);
   const transfers = players
     .filter((p) => p.isNewTransfer)
@@ -206,6 +178,7 @@ export function fallbackSquad(teamId: string) {
     sources: { database: 0, flashscore: players.length },
     cached: false,
     dataSource: "flashscore" as const,
+    curated,
     season: SEASON_LABEL,
     updatedAt: new Date().toISOString(),
     autoRefresh: false,

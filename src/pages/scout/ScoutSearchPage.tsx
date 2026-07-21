@@ -18,7 +18,7 @@ import type { ScoutProspectDto } from "../../lib/api/scout";
 
 type SearchPlayer = ScoutProspectDto & {
   inDatabase?: boolean;
-  source?: "database" | "ai" | "flashscore";
+  source?: "database" | "ai" | "flashscore" | "apisports";
   season?: string;
 };
 
@@ -140,8 +140,8 @@ function ProspectPreviewPanel({
 
         <div className="mb-4">
           <p className="text-[10px] font-bold mb-2" style={{ color: "var(--text-muted)" }}>Profil technique</p>
-          <div className="h-44">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-44 min-h-[176px] w-full">
+            <ResponsiveContainer width="100%" height={176} minWidth={0}>
               <RadarChart cx="50%" cy="50%" outerRadius="65%" data={[
                 { subject: "Vitesse", A: sel.speed },
                 { subject: "Dribble", A: sel.dribble },
@@ -359,6 +359,9 @@ export function ScoutSearchPage() {
         contractEnd: p.contractEnd,
         priority: p.priority,
         league: p.league,
+        photoUrl: p.photoUrl,
+        apiSportsId: p.apiSportsId ?? (p.id.startsWith("apisports-player-") ? Number(p.id.replace("apisports-player-", "")) : undefined),
+        legacyId: p.id.startsWith("apisports-player-") ? p.id : undefined,
       }) as ScoutProspectDto;
       await refresh();
       setResults(prev => prev.map(r => r.id === p.id ? { ...created, inDatabase: true, source: "database" } : r));
@@ -378,7 +381,7 @@ export function ScoutSearchPage() {
 
   const toggleWatch = async (p: SearchPlayer) => {
     let id = p.id;
-    if (!p.inDatabase && (p.source === "ai" || p.source === "flashscore")) {
+    if (!p.inDatabase && (p.source === "ai" || p.source === "flashscore" || p.source === "apisports")) {
       const newId = await importToDb(p);
       if (!newId) return;
       id = newId;
@@ -410,7 +413,7 @@ export function ScoutSearchPage() {
         <div>
           <h1 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>Recherche Prospects</h1>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            {loading ? "Recherche Flashscore 2026-27…" : `${filtered.length} joueur${filtered.length !== 1 ? "s" : ""} · saison 2026-2027`}
+            {loading ? "Recherche API-Sports…" : `${filtered.length} joueur${filtered.length !== 1 ? "s" : ""}${summary ? "" : " · API-Sports"}`}
             {summary ? ` · ${summary}` : ""}
           </p>
         </div>
@@ -437,7 +440,7 @@ export function ScoutSearchPage() {
         <div className="flex items-start gap-2 rounded-xl border p-3 text-xs text-amber-300"
           style={{ borderColor: "rgba(245,158,11,0.3)", background: "rgba(245,158,11,0.08)" }}>
           <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-          Synthèse IA optionnelle — la recherche utilise les effectifs Flashscore 2026-27 ({filtered.length} résultats locaux).
+          Synthèse IA optionnelle — la recherche utilise les effectifs API-Sports ({filtered.length} résultats).
         </div>
       )}
 
@@ -495,6 +498,7 @@ export function ScoutSearchPage() {
               const pc = potColor(p.potential);
               const inj = injuryMeta(p.injuryRisk);
               const isAi = p.source === "ai" && !p.inDatabase;
+              const isApisports = p.source === "apisports" && !p.inDatabase;
               const isFlashscore = p.source === "flashscore" && !p.inDatabase;
               const pri = priorityKey(p.priority);
 
@@ -524,6 +528,12 @@ export function ScoutSearchPage() {
                       <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>
                         {p.flag} {p.name}
                       </p>
+                      {isApisports && (
+                        <span className="flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-black shrink-0"
+                          style={{ background: `${S.success}20`, color: S.success }}>
+                          API-Sports
+                        </span>
+                      )}
                       {isFlashscore && (
                         <span className="flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-black shrink-0"
                           style={{ background: `${S.info}20`, color: S.info }}>

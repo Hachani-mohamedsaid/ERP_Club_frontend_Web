@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Star, GitCompare, FileText, Send, Eye, TrendingUp } from "lucide-react";
@@ -7,10 +7,12 @@ import { ScoutPlayerPhoto } from "../../components/scout/ScoutPlayerPhoto";
 import { S, PRIORITY_META } from "../../data/scoutData";
 import { useScoutProspects } from "../../hooks/useScoutData";
 import { showToast } from "../../components/scout/ScoutToast";
+import { scoutApi } from "../../lib/api/scout";
 
 export function ScoutShortlistPage() {
   const navigate = useNavigate();
   const { prospects, loading } = useScoutProspects();
+  const [sending, setSending] = useState(false);
 
   const shortlist = useMemo(
     () => prospects
@@ -21,8 +23,20 @@ export function ScoutShortlistPage() {
 
   const totalBudget = shortlist.reduce((a, p) => a + p.valueMK, 0);
 
-  const sendToCommittee = () => {
-    showToast(`Shortlist de ${shortlist.length} joueurs envoyée au comité ✓`, "success");
+  const sendToCommittee = async () => {
+    if (!shortlist.length) {
+      showToast("Aucun profil à envoyer", "error");
+      return;
+    }
+    setSending(true);
+    try {
+      const res = await scoutApi.submitCommittee(shortlist.map((p) => p.id));
+      showToast(res.message || `${res.count} profil(s) envoyé(s) au comité ✓`, "success");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Échec envoi comité", "error");
+    } finally {
+      setSending(false);
+    }
   };
 
   if (loading) {
@@ -56,12 +70,13 @@ export function ScoutShortlistPage() {
           </motion.button>
           <motion.button
             type="button"
-            onClick={sendToCommittee}
-            className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white"
+            onClick={() => void sendToCommittee()}
+            disabled={sending || shortlist.length === 0}
+            className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
             style={{ background: S.success }}
             whileTap={{ scale: 0.96 }}
           >
-            <Send size={14} /> Envoyer au comité
+            <Send size={14} /> {sending ? "Envoi…" : "Envoyer au comité"}
           </motion.button>
         </div>
       </div>

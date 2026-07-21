@@ -42,6 +42,7 @@ export type ScoutAgentDto = {
 export interface ScoutProspectDto {
   id: string;
   legacyId?: string;
+  apiSportsId?: number;
   name: string;
   age: number;
   nationality: string;
@@ -213,6 +214,21 @@ export const scoutApi = {
 
   getProspect: (id: string) => apiFetch(`/scout/prospects/${id}`).then(parse<ScoutProspectDto>),
 
+  getProspectLive: async (params: {
+    name: string;
+    club?: string;
+    legacyId?: string;
+    apiSportsId?: number;
+  }) => {
+    const qs = new URLSearchParams({ name: params.name });
+    if (params.club) qs.set("club", params.club);
+    if (params.legacyId) qs.set("legacyId", params.legacyId);
+    if (params.apiSportsId) qs.set("apiSportsId", String(params.apiSportsId));
+    const res = await apiFetch(`/scout/prospects/live?${qs}`);
+    if (!res.ok) return null;
+    return res.json() as Promise<import("./playerLive").ProspectLiveProfile>;
+  },
+
   createProspect: (body: Record<string, unknown>) =>
     apiFetch("/scout/prospects", { method: "POST", body: JSON.stringify(body) }).then(parse),
 
@@ -250,6 +266,13 @@ export const scoutApi = {
   createReport: (body: Record<string, unknown>) =>
     apiFetch("/scout/reports", { method: "POST", body: JSON.stringify(body) }).then(parse),
 
+  /** Envoie la shortlist au comité (Responsable + Recruteur). */
+  submitCommittee: (prospectIds: string[]) =>
+    apiFetch("/scout/shortlist/submit-committee", {
+      method: "POST",
+      body: JSON.stringify({ prospectIds }),
+    }).then(parse<{ ok: boolean; count: number; message: string }>),
+
   getMissions: () => apiFetch("/scout/missions").then(parse<ScoutMissionDto[]>),
 
   createMission: (body: Record<string, unknown>) =>
@@ -285,6 +308,7 @@ export const scoutApi = {
         color: string;
         leagues: string[];
         leagueId: string;
+        leagueLogoUrl?: string;
         teamCount: number;
         prospects: number;
       }[];
@@ -315,6 +339,7 @@ export const scoutApi = {
         dbProspects: number;
         logoColor?: string;
         logoUrl?: string;
+        leagueLogoUrl?: string;
         apiSportsId?: number;
       }[];
       totalTeams?: number;
@@ -424,7 +449,7 @@ export const scoutApi = {
       summary: string;
       results: SearchPlayerResult[];
       aiEnabled: boolean;
-      sources: { database: number; flashscore?: number; ai?: number };
+      sources: { database: number; flashscore?: number; ai?: number; apisports?: number };
       durationMs?: number;
       model: string;
       season?: string;

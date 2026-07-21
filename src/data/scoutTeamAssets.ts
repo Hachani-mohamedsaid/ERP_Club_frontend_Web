@@ -462,6 +462,10 @@ export function getContinentLogoUrl(continentId: string, fallback: string): stri
   return id ? API_SPORTS.league(id) : fallback;
 }
 
+export function getApiSportsTeamId(teamId: string, teamName?: string): number | null {
+  return resolveSportsTeamId(teamId, teamName) ?? null;
+}
+
 export function getRealTeamLogoUrl(teamId: string, fallback: string, teamName?: string): string {
   const badgeUrl = TEAM_BADGE_URLS[teamId];
   if (badgeUrl) return badgeUrl;

@@ -5,10 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
+    "typecheck": "tsc -b",
     "lint": "eslint .",
     "preview": "vite preview",
+    "start": "serve dist -s -l tcp://0.0.0.0:${PORT:-4173}",
     "analyste:api": "cd server && npm install && npm start"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^0.10.35",
@@ -28,6 +33,7 @@
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.18.0",
     "recharts": "^3.8.1",
+    "serve": "^14.2.6",
     "socket.io-client": "^4.8.3",
     "three": "^0.185.0",
     "topojson-client": "^3.1.0"

@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Plus, X, Phone, Mail, Users, DollarSign, TrendingUp, Star } from "lucide-react";
 import { RecruteurPageTransition } from "../../components/recruteur/RecruteurPageTransition";
+import { scoutApi } from "../../lib/api/scout";
 
 interface Agent {
   id: string;
@@ -27,43 +28,11 @@ interface Negotiation {
   amount: string;
 }
 
-const NEGOTIATIONS: Record<string, Negotiation[]> = {
-  ag1: [
-    { player: "Ahmed Ali",     date: "2026-06-10", status: "En cours",   amount: "1.2M€" },
-    { player: "Yassine Krim",  date: "2026-05-20", status: "Conclu",     amount: "800k€" },
-  ],
-  ag2: [
-    { player: "Ibrahim Touré", date: "2026-06-15", status: "En attente", amount: "2.0M€" },
-  ],
-  ag3: [],
+const STATUS_FROM_SCOUT: Record<string, Agent["status"]> = {
+  actif: "Partenaire",
+  négociation: "Négociation",
+  inactif: "Inactif",
 };
-
-const AGENTS: Agent[] = [
-  {
-    id: "ag1", name: "Mourad Belhaj", agency: "Sport Elite TN", country: "Tunisie", flag: "🇹🇳",
-    phone: "+216 22 345 678", email: "m.belhaj@sportelite.tn",
-    players: ["Ahmed Ali", "Yassine Krim", "Sami Bel Hassen"],
-    commission: 8, deals: 14, totalValue: "8.4M€", rating: 4.7, status: "Partenaire", lastContact: "2026-06-18",
-  },
-  {
-    id: "ag2", name: "Carlos Mendez", agency: "Global Soccer Agency", country: "Espagne", flag: "🇪🇸",
-    phone: "+34 600 123 456", email: "c.mendez@globalsoccer.es",
-    players: ["Ibrahim Touré", "Mohamed Camara"],
-    commission: 10, deals: 7, totalValue: "12.2M€", rating: 4.4, status: "Négociation", lastContact: "2026-06-15",
-  },
-  {
-    id: "ag3", name: "Amine Chikhi", agency: "Maghreb Talents", country: "Algérie", flag: "🇩🇿",
-    phone: "+213 55 876 543", email: "a.chikhi@maghrebtalents.dz",
-    players: ["Ryad Bouassem", "Zakaria Messaoudi", "Hichem Zidane"],
-    commission: 7, deals: 22, totalValue: "6.8M€", rating: 4.9, status: "Partenaire", lastContact: "2026-06-20",
-  },
-  {
-    id: "ag4", name: "Jean-Pierre Lavigne", agency: "Foot Connect FR", country: "France", flag: "🇫🇷",
-    phone: "+33 6 54 32 10 99", email: "jp.lavigne@footconnect.fr",
-    players: ["Sofiane Bellal"],
-    commission: 9, deals: 3, totalValue: "3.5M€", rating: 3.8, status: "Inactif", lastContact: "2026-04-02",
-  },
-];
 
 function StatusBadge({ status }: { status: Agent["status"] }) {
   const colors: Record<Agent["status"], string> = {
@@ -102,14 +71,51 @@ export function RecruteurAgentsPage() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Agent | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = AGENTS.filter(a =>
-    a.name.toLowerCase().includes(search.toLowerCase()) ||
-    a.agency.toLowerCase().includes(search.toLowerCase()) ||
-    a.country.toLowerCase().includes(search.toLowerCase())
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await scoutApi.getAgents();
+        const mapped: Agent[] = (res.agents ?? []).map((a) => ({
+          id: a.id,
+          name: a.name,
+          agency: a.agency,
+          country: a.country,
+          flag: a.flag,
+          phone: a.phone,
+          email: a.email,
+          players: (a.players ?? []).map((p) => p.name),
+          commission: 8,
+          deals: a.deals,
+          totalValue: "—",
+          rating: a.rating,
+          status: STATUS_FROM_SCOUT[a.status] ?? "Partenaire",
+          lastContact: a.lastContact,
+        }));
+        if (!cancelled) setAgents(mapped);
+      } catch {
+        if (!cancelled) setAgents([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const filtered = agents.filter(
+    (a) =>
+      a.name.toLowerCase().includes(search.toLowerCase()) ||
+      a.agency.toLowerCase().includes(search.toLowerCase()) ||
+      a.country.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const negotiations = selected ? (NEGOTIATIONS[selected.id] ?? []) : [];
+  const negotiations: Negotiation[] = [];
 
   return (
     <RecruteurPageTransition>
@@ -117,7 +123,9 @@ export function RecruteurAgentsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>Gestion Agents</h1>
-          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{AGENTS.length} agents · {AGENTS.filter(a => a.status === "Partenaire").length} partenaires</p>
+          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+            {loading ? "Chargement…" : `${agents.length} agents · ${agents.filter((a) => a.status === "Partenaire").length} partenaires · données club`}
+          </p>
         </div>
         <motion.button type="button" onClick={() => setShowModal(true)}
           className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white"
@@ -130,10 +138,10 @@ export function RecruteurAgentsPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: "Agents partenaires", value: AGENTS.filter(a => a.status === "Partenaire").length, color: "#22C55E" },
-          { label: "Joueurs représentés", value: AGENTS.reduce((a, ag) => a + ag.players.length, 0), color: "#8B5CF6" },
-          { label: "Deals conclus", value: AGENTS.reduce((a, ag) => a + ag.deals, 0), color: "#3B82F6" },
-          { label: "Valeur totale", value: "30.9M€", color: "#F59E0B" },
+          { label: "Agents partenaires", value: agents.filter(a => a.status === "Partenaire").length, color: "#22C55E" },
+          { label: "Joueurs représentés", value: agents.reduce((a, ag) => a + ag.players.length, 0), color: "#8B5CF6" },
+          { label: "Deals conclus", value: agents.reduce((a, ag) => a + ag.deals, 0), color: "#3B82F6" },
+          { label: "Valeur totale", value: "—", color: "#F59E0B" },
         ].map((k, i) => (
           <motion.div key={k.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
             <RCard>

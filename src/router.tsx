@@ -109,6 +109,7 @@ import { ClubUtilisateursPage } from "./pages/club/ClubUtilisateursPage";
 import { ClubPermissionsPage } from "./pages/club/ClubPermissionsPage";
 import { ClubAuditLogsPage } from "./pages/club/ClubAuditLogsPage";
 import { ClubNotificationsPage } from "./pages/club/ClubNotificationsPage";
+import { NotificationsPage as ResponsableNotificationsPage } from "./pages/responsable/NotificationsPage";
 import { PrepDashboard } from "./pages/preparateur/PrepDashboard";
 import { PrepChargePage } from "./pages/preparateur/PrepChargePage";
 import { PrepConditionPage } from "./pages/preparateur/PrepConditionPage";
@@ -188,7 +189,7 @@ export function AppRouter() {
         <Route path="/responsable/utilisateurs" element={<RequireRole roles={["responsable"]}><ClubUtilisateursPage /></RequireRole>} />
         <Route path="/responsable/parametres" element={<RequireRole roles={["responsable"]}><ClubParametresPage /></RequireRole>} />
         <Route path="/responsable/audit" element={<RequireRole roles={["responsable"]}><ClubAuditLogsPage /></RequireRole>} />
-        <Route path="/responsable/notifications" element={<RequireRole roles={["responsable"]}><ClubNotificationsPage /></RequireRole>} />
+        <Route path="/responsable/notifications" element={<RequireRole roles={["responsable"]}><ResponsableNotificationsPage /></RequireRole>} />
         <Route path="/responsable/documents" element={<RequireRole roles={["responsable"]}><ResponsableDocumentsPage /></RequireRole>} />
         <Route path="/players" element={<RequireRole roles={["responsable"]}><ClubJoueursPage /></RequireRole>} />
         <Route path="/players/:id" element={<RequireRole roles={["responsable","adminclub"]}><ResponsablePlayerProfilePage /></RequireRole>} />

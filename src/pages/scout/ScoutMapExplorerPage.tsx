@@ -102,7 +102,7 @@ function buildCountryNodes(countries: CountryRow[], continentId: string): Bubble
     parentId: continentId,
     color: c.color,
     icon: c.flag,
-    logoUrl: getCountryLeagueLogo(c),
+    logoUrl: c.leagueLogoUrl ?? getCountryLeagueLogo(c),
     subtitle: c.leagues[0],
   }));
 }
@@ -116,7 +116,7 @@ function buildTeamNodes(teams: TeamRow[], countryId: string): BubbleNodeInput[] 
     parentId: countryId,
     color: S.primary,
     logoUrl: t.logoUrl ?? getTeamLogo(t),
-    leagueLogoUrl: getLeagueLogo(t),
+    leagueLogoUrl: t.leagueLogoUrl ?? getLeagueLogo(t),
     subtitle: `${t.league} · ${t.city}`,
   }));
 }
@@ -131,6 +131,7 @@ export function ScoutMapExplorerPage() {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const [overview, setOverview] = useState<Awaited<ReturnType<typeof scoutApi.getMapOverview>> | null>(null);
+  const [mapNotice, setMapNotice] = useState<string | null>(null);
   const [countries, setCountries] = useState<CountryRow[]>([]);
   const [teams, setTeams] = useState<TeamRow[]>([]);
   const [teamsMeta, setTeamsMeta] = useState<{ totalTeams?: number; season?: string; source?: string }>({});
@@ -150,6 +151,7 @@ export function ScoutMapExplorerPage() {
     try {
       const res = await scoutApi.getMapOverview();
       setOverview(res);
+      setMapNotice((res as { notice?: string }).notice ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur chargement carte.");
     } finally {
@@ -306,6 +308,12 @@ export function ScoutMapExplorerPage() {
 
   return (
     <ScoutPage>
+      {mapNotice && (
+        <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-200">
+          {mapNotice}
+        </div>
+      )}
+
       {error && (
         <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
           {error}
@@ -320,7 +328,7 @@ export function ScoutMapExplorerPage() {
           </h1>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
             Continent → Pays → Équipe · {overview?.stats.clubs ?? 0} clubs · saison {overview?.season ?? "2026-2027"}
-            {teamsMeta.source === "api-football" ? " · API live" : " · catalogue ODIN"}
+            {overview?.model === "api-football" ? " · données réelles API-Sports" : " · catalogue local"}
           </p>
         </div>
         {step > 0 && (
@@ -461,7 +469,7 @@ export function ScoutMapExplorerPage() {
                         whileHover={{ x: 4 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        <img src={getCountryLeagueLogo(c)} alt="" className="h-6 w-6 rounded-md object-contain bg-white/95 p-0.5 ring-1 ring-white/10" />
+                        <img src={c.leagueLogoUrl ?? getCountryLeagueLogo(c)} alt="" className="h-6 w-6 rounded-md object-contain bg-white/95 p-0.5 ring-1 ring-white/10" />
                         <div className="flex-1">
                           <p className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>{c.name}</p>
                           <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>{c.leagues.join(" · ")}</p>
@@ -524,7 +532,7 @@ export function ScoutMapExplorerPage() {
                       >
                         <div className="relative h-9 w-9 shrink-0">
                           <img src={t.logoUrl ?? getTeamLogo(t)} alt="" className="h-9 w-9 rounded-full object-cover ring-1 ring-white/10 bg-white/95" />
-                          <img src={getLeagueLogo(t)} alt="" className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full ring-1 ring-black/40" />
+                          <img src={t.leagueLogoUrl ?? getLeagueLogo(t)} alt="" className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-white object-contain p-0.5 ring-1 ring-black/40" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-bold truncate" style={{ color: "var(--text-primary)" }}>{t.name}</p>
@@ -552,7 +560,7 @@ export function ScoutMapExplorerPage() {
                     <div className="flex items-center gap-3 mb-4">
                       <div className="relative">
                         <img src={team.logoUrl ?? getTeamLogo(team)} alt="" className="h-14 w-14 rounded-2xl object-cover ring-2 ring-orange-500/30 bg-white/95" />
-                        <img src={getLeagueLogo(team)} alt="" className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full ring-2 ring-[var(--surface-panel-solid)]" />
+                        <img src={team.leagueLogoUrl ?? getLeagueLogo(team)} alt="" className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-white object-contain p-0.5 ring-2 ring-[var(--surface-panel-solid)]" />
                       </div>
                       <div className="flex-1">
                         <p className="text-base font-extrabold" style={{ color: "var(--text-primary)" }}>{team.name}</p>
