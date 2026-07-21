@@ -9,7 +9,7 @@
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "serve dist -s -n -l ${PORT:-8080}",
+    "start": "node scripts/serve-dist.mjs",
     "analyste:api": "cd server && npm install && npm start"
   },
   "engines": {

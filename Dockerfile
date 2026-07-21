@@ -16,11 +16,9 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
-RUN npm install -g serve@14.2.4
-
 COPY --from=build /app/dist ./dist
+COPY scripts/serve-dist.mjs ./scripts/serve-dist.mjs
 
 ENV NODE_ENV=production
 
-# Railway injecte PORT au runtime — ne pas le fixer ici.
-CMD ["sh", "-c", "serve dist -s -n -l ${PORT:-8080}"]
+CMD ["node", "scripts/serve-dist.mjs"]
