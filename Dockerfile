@@ -16,9 +16,12 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
+COPY package.json ./
 COPY --from=build /app/dist ./dist
 COPY scripts/serve-dist.mjs ./scripts/serve-dist.mjs
 
 ENV NODE_ENV=production
+
+EXPOSE 8080
 
 CMD ["node", "scripts/serve-dist.mjs"]

@@ -7,6 +7,13 @@ import { dirname } from "node:path";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "dist");
 const port = Number(process.env.PORT ?? 8080);
 
+if (!Number.isFinite(port) || port <= 0) {
+  console.error(`Invalid PORT: ${process.env.PORT}`);
+  process.exit(1);
+}
+
+console.log(`Starting static server (PORT=${port}, dist=${root})`);
+
 const MIME = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -26,6 +33,13 @@ const MIME = {
 
 createServer(async (req, res) => {
   const pathname = (req.url ?? "/").split("?")[0] || "/";
+
+  if (pathname === "/health") {
+    res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("ok");
+    return;
+  }
+
   let filePath = join(root, pathname === "/" ? "index.html" : pathname);
 
   try {
@@ -51,4 +65,7 @@ createServer(async (req, res) => {
   }
 }).listen(port, "0.0.0.0", () => {
   console.log(`Serving dist on http://0.0.0.0:${port}`);
+}).on("error", (err) => {
+  console.error("Failed to start server:", err);
+  process.exit(1);
 });
