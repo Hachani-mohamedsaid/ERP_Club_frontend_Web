@@ -613,7 +613,7 @@ export function Sidebar() {
     <aside
       className={`glass-nav relative z-40 flex h-full flex-col overflow-visible py-6 transition-all duration-200 ${compact ? "w-[72px] px-2" : "w-64 px-4"}`}
     >
-      <div className={`mb-8 flex shrink-0 items-center justify-center ${compact ? "px-0" : "px-2"}`}>
+      <div className={`app-logo-wrap mb-8 flex shrink-0 items-center justify-center ${compact ? "px-0" : "px-2"}`}>
         <img
           src={odinLogo}
           alt="ODIN ERP"
@@ -684,7 +684,7 @@ export function Sidebar() {
 
       <div
         className="mt-auto shrink-0 space-y-1 border-t pt-3"
-        style={{ borderColor: "rgba(255,255,255,0.12)" }}
+        style={{ borderColor: "var(--divider)" }}
       >
         <button
           type="button"

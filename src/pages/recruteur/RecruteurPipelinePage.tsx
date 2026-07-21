@@ -1,63 +1,24 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { GripVertical, Plus, X, ChevronRight, Star, TrendingUp } from "lucide-react";
+import { Plus, X, ChevronRight, Star, TrendingUp } from "lucide-react";
 import { RecruteurPageTransition } from "../../components/recruteur/RecruteurPageTransition";
+import { scoutApi, type ScoutProspectDto } from "../../lib/api/scout";
+import { WORKFLOW_COLS, PRIORITY_META, type WorkflowStatus, type Priority } from "../../data/scoutData";
 
-type Stage = "Détecté" | "Analysé" | "Shortlist" | "Scout confirmé" | "Offre" | "Contrat" | "Transfert";
+const STAGES = WORKFLOW_COLS.map(c => c.id);
+const STAGE_META = Object.fromEntries(WORKFLOW_COLS.map(c => [c.id, c])) as Record<WorkflowStatus, typeof WORKFLOW_COLS[number]>;
 
-const STAGES: Stage[] = ["Détecté", "Analysé", "Shortlist", "Scout confirmé", "Offre", "Contrat", "Transfert"];
-
-const STAGE_COLORS: Record<Stage, string> = {
-  "Détecté":        "#6B7280",
-  "Analysé":        "#3B82F6",
-  "Shortlist":      "#8B5CF6",
-  "Scout confirmé": "#F59E0B",
-  "Offre":          "#FF7A00",
-  "Contrat":        "#22C55E",
-  "Transfert":      "#10B981",
-};
-
-interface PipelinePlayer {
-  id: string;
-  name: string;
-  position: string;
-  club: string;
-  country: string;
-  flag: string;
-  age: number;
-  value: string;
-  aiScore: number;
-  stage: Stage;
-  priority: "High" | "Medium" | "Low";
-  note?: string;
-}
-
-const INITIAL_PLAYERS: PipelinePlayer[] = [
-  { id: "pp1", name: "Ahmed Ali",       position: "BU",  club: "Académie Sfax",  country: "Tunisie", flag: "🇹🇳", age: 18, value: "1.2M€", aiScore: 94, stage: "Shortlist",      priority: "High",   note: "Priorité absolue" },
-  { id: "pp2", name: "Yassine Khemiri", position: "MOC", club: "US Monastir",    country: "Tunisie", flag: "🇹🇳", age: 20, value: "2.1M€", aiScore: 89, stage: "Offre",          priority: "High",   note: "Offre envoyée 15 juin" },
-  { id: "pp3", name: "Ibrahim Touré",   position: "DC",  club: "Maroc Pro",      country: "Maroc",   flag: "🇲🇦", age: 22, value: "1.5M€", aiScore: 86, stage: "Analysé",        priority: "Medium", note: "" },
-  { id: "pp4", name: "Ryad Bouassem",   position: "MDF", club: "CRB Alger",      country: "Algérie", flag: "🇩🇿", age: 21, value: "1.1M€", aiScore: 84, stage: "Détecté",        priority: "Medium", note: "Scout Ahmed suit ce profil" },
-  { id: "pp5", name: "Khalil Maatoug",  position: "LB",  club: "CS Sfax",        country: "Tunisie", flag: "🇹🇳", age: 24, value: "0.8M€", aiScore: 80, stage: "Scout confirmé", priority: "Low",    note: "" },
-  { id: "pp6", name: "Sofiane Bellal",  position: "GK",  club: "Foot Connect FR",country: "France",  flag: "🇫🇷", age: 23, value: "1.8M€", aiScore: 85, stage: "Contrat",        priority: "High",   note: "Contrat en cours signature" },
-  { id: "pp7", name: "Mohamed Camara",  position: "MDF", club: "Global Soccer",  country: "Sénégal", flag: "🇸🇳", age: 20, value: "2.0M€", aiScore: 88, stage: "Transfert",      priority: "High",   note: "Transfert finalisé" },
-  { id: "pp8", name: "Nizar Ben Amor",  position: "DC",  club: "EST",            country: "Tunisie", flag: "🇹🇳", age: 25, value: "0.6M€", aiScore: 77, stage: "Détecté",        priority: "Low",    note: "" },
-];
-
-const PRIORITY_COLORS: Record<PipelinePlayer["priority"], string> = {
-  High: "#EF4444", Medium: "#F59E0B", Low: "#6B7280",
-};
-
-function PlayerCard({ player, onMove, onRemove }: {
-  player: PipelinePlayer;
+function PlayerCard({ player, onMove }: {
+  player: ScoutProspectDto & { status: WorkflowStatus; priority: Priority };
   onMove: (id: string, dir: "left" | "right") => void;
-  onRemove: (id: string) => void;
 }) {
-  const stageIdx = STAGES.indexOf(player.stage);
+  const stageIdx = STAGES.indexOf(player.status);
+  const meta = STAGE_META[player.status];
   return (
-    <motion.div layout className="rounded-xl border p-3 cursor-grab active:cursor-grabbing"
+    <motion.div layout className="rounded-xl border p-3"
       style={{ background: "rgba(14,10,35,0.85)", borderColor: "var(--surface-panel-border)" }}
       initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-      whileHover={{ borderColor: `${STAGE_COLORS[player.stage]}40`, y: -1 }}>
+      whileHover={{ borderColor: `${meta.color}40`, y: -1 }}>
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
           <span className="text-base">{player.flag}</span>
@@ -66,31 +27,18 @@ function PlayerCard({ player, onMove, onRemove }: {
             <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>{player.position} · {player.age}a</p>
           </div>
         </div>
-        <div className="flex items-center gap-1">
-          <GripVertical size={10} style={{ color: "var(--text-muted)" }} />
-          <button type="button" onClick={() => onRemove(player.id)} className="rounded-md p-0.5"
-            style={{ background: "rgba(239,68,68,0.12)" }}>
-            <X size={9} style={{ color: "#EF4444" }} />
-          </button>
-        </div>
       </div>
       <p className="text-[10px] mb-1.5" style={{ color: "var(--text-muted)" }}>{player.club}</p>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] font-bold" style={{ color: "#22C55E" }}>{player.value}</span>
+        <span className="text-[10px] font-bold" style={{ color: "#22C55E" }}>{player.marketValue}</span>
         <span className="flex items-center gap-0.5 text-[10px]" style={{ color: "#8B5CF6" }}>
           <Star size={8} /> {player.aiScore}
         </span>
         <span className="text-[9px] rounded-full px-1.5 py-0.5"
-          style={{ background: `${PRIORITY_COLORS[player.priority]}18`, color: PRIORITY_COLORS[player.priority] }}>
+          style={{ background: `${PRIORITY_META[player.priority].color}18`, color: PRIORITY_META[player.priority].color }}>
           {player.priority}
         </span>
       </div>
-      {player.note && (
-        <p className="text-[9px] rounded-lg px-2 py-1 mb-2"
-          style={{ background: "rgba(255,255,255,0.03)", color: "var(--text-muted)" }}>
-          {player.note}
-        </p>
-      )}
       <div className="flex gap-1">
         <button type="button" disabled={stageIdx === 0} onClick={() => onMove(player.id, "left")}
           className="flex-1 rounded-lg py-1 text-[9px] font-medium disabled:opacity-30"
@@ -99,7 +47,7 @@ function PlayerCard({ player, onMove, onRemove }: {
         </button>
         <button type="button" disabled={stageIdx === STAGES.length - 1} onClick={() => onMove(player.id, "right")}
           className="flex-1 rounded-lg py-1 text-[9px] font-medium disabled:opacity-30"
-          style={{ background: `${STAGE_COLORS[player.stage]}20`, color: STAGE_COLORS[player.stage] }}>
+          style={{ background: `${meta.color}20`, color: meta.color }}>
           Avancer →
         </button>
       </div>
@@ -108,34 +56,55 @@ function PlayerCard({ player, onMove, onRemove }: {
 }
 
 export function RecruteurPipelinePage() {
-  const [players, setPlayers] = useState<PipelinePlayer[]>(INITIAL_PLAYERS);
+  const [players, setPlayers] = useState<(ScoutProspectDto & { status: WorkflowStatus; priority: Priority })[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [newName, setNewName] = useState("");
   const [newPos, setNewPos] = useState("BU");
+  const [saving, setSaving] = useState(false);
 
-  const move = (id: string, dir: "left" | "right") => {
-    setPlayers(prev => prev.map(p => {
-      if (p.id !== id) return p;
-      const idx = STAGES.indexOf(p.stage);
-      const next = dir === "right" ? idx + 1 : idx - 1;
-      if (next < 0 || next >= STAGES.length) return p;
-      return { ...p, stage: STAGES[next] };
-    }));
+  const fetchPlayers = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    scoutApi.getProspects()
+      .then((rows) => setPlayers(rows.map(p => ({
+        ...p,
+        status: (p.status as WorkflowStatus) || "new",
+        priority: (p.priority as Priority) || "B",
+      }))))
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : "Erreur de chargement."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { fetchPlayers(); }, [fetchPlayers]);
+
+  const move = async (id: string, dir: "left" | "right") => {
+    const player = players.find(p => p.id === id);
+    if (!player) return;
+    const idx = STAGES.indexOf(player.status);
+    const next = dir === "right" ? idx + 1 : idx - 1;
+    if (next < 0 || next >= STAGES.length) return;
+    const nextStatus = STAGES[next];
+    setPlayers(prev => prev.map(p => p.id === id ? { ...p, status: nextStatus } : p));
+    await scoutApi.updateProspect(id, { status: nextStatus }).catch(() => fetchPlayers());
   };
 
-  const remove = (id: string) => setPlayers(prev => prev.filter(p => p.id !== id));
-
-  const addPlayer = () => {
+  async function addPlayer() {
     if (!newName.trim()) return;
-    const np: PipelinePlayer = {
-      id: `pp${Date.now()}`, name: newName, position: newPos, club: "—", country: "—", flag: "🌍",
-      age: 22, value: "—", aiScore: 75, stage: "Détecté", priority: "Medium", note: "",
-    };
-    setPlayers(prev => [np, ...prev]);
-    setNewName(""); setShowModal(false);
-  };
+    setSaving(true);
+    try {
+      const created = await scoutApi.createProspect({ name: newName, position: newPos }) as ScoutProspectDto;
+      setPlayers(prev => [{ ...created, status: (created.status as WorkflowStatus) || "new", priority: (created.priority as Priority) || "B" }, ...prev]);
+      setNewName(""); setShowModal(false);
+    } catch {
+      // keep modal open so the user can retry
+    } finally {
+      setSaving(false);
+    }
+  }
 
-  const byStage = (stage: Stage) => players.filter(p => p.stage === stage);
+  const byStage = (stage: WorkflowStatus) => players.filter(p => p.status === stage);
 
   return (
     <RecruteurPageTransition>
@@ -155,84 +124,100 @@ export function RecruteurPipelinePage() {
         </motion.button>
       </div>
 
-      {/* Stage summary chips */}
-      <div className="flex flex-wrap gap-2">
-        {STAGES.map(s => {
-          const count = byStage(s).length;
-          return (
-            <motion.div key={s} initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
-              className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-semibold"
-              style={{ background: `${STAGE_COLORS[s]}12`, borderColor: `${STAGE_COLORS[s]}30`, color: STAGE_COLORS[s] }}>
-              <span className="flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-black text-white"
-                style={{ background: STAGE_COLORS[s] }}>{count}</span>
-              {s}
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {/* Kanban Board */}
-      <div className="overflow-x-auto pb-4">
-        <div className="flex gap-3" style={{ minWidth: `${STAGES.length * 200}px` }}>
-          {STAGES.map(stage => (
-            <div key={stage} className="flex w-[188px] shrink-0 flex-col gap-2">
-              {/* Column header */}
-              <div className="flex items-center justify-between rounded-xl border px-3 py-2"
-                style={{ background: `${STAGE_COLORS[stage]}10`, borderColor: `${STAGE_COLORS[stage]}30` }}>
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full" style={{ background: STAGE_COLORS[stage] }} />
-                  <span className="text-[11px] font-bold" style={{ color: STAGE_COLORS[stage] }}>{stage}</span>
-                </div>
-                <span className="text-[10px] rounded-full px-1.5 py-0.5 font-bold"
-                  style={{ background: `${STAGE_COLORS[stage]}20`, color: STAGE_COLORS[stage] }}>
-                  {byStage(stage).length}
-                </span>
-              </div>
-              {/* Cards */}
-              <AnimatePresence mode="popLayout">
-                {byStage(stage).map(p => (
-                  <PlayerCard key={p.id} player={p} onMove={move} onRemove={remove} />
-                ))}
-              </AnimatePresence>
-              {byStage(stage).length === 0 && (
-                <div className="rounded-xl border border-dashed py-6 text-center"
-                  style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}>
-                  <p className="text-[10px]">Vide</p>
-                </div>
-              )}
-            </div>
-          ))}
+      {error && !loading && (
+        <div className="rounded-[20px] border p-5 text-center" style={{ background: "rgba(14,10,35,0.8)", borderColor: "rgba(239,68,68,0.3)" }}>
+          <p className="text-sm text-red-400">{error}</p>
         </div>
-      </div>
+      )}
 
-      {/* Legend */}
-      <div className="flex flex-wrap items-center gap-3 text-[10px]" style={{ color: "var(--text-muted)" }}>
-        <span className="font-semibold">Priorité:</span>
-        {(["High","Medium","Low"] as const).map(p => (
-          <span key={p} className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full inline-block" style={{ background: PRIORITY_COLORS[p] }} />
-            {p}
-          </span>
-        ))}
-        <span className="ml-2 flex items-center gap-1"><TrendingUp size={10} /> Cliquer les boutons pour avancer/reculer un joueur dans le pipeline</span>
-      </div>
+      {loading && (
+        <div className="rounded-[20px] border p-8 text-center" style={{ background: "rgba(14,10,35,0.8)", borderColor: "var(--surface-panel-border)" }}>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement…</p>
+        </div>
+      )}
 
-      {/* Stats row */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          { label: "Offres en cours",   value: byStage("Offre").length,    color: "#FF7A00" },
-          { label: "Contrats signés",   value: byStage("Contrat").length,  color: "#22C55E" },
-          { label: "Transferts faits",  value: byStage("Transfert").length, color: "#10B981" },
-          { label: "Score IA moyen",    value: `${Math.round(players.reduce((a,p) => a + p.aiScore, 0) / players.length)}/100`, color: "#8B5CF6" },
-        ].map((k, i) => (
-          <motion.div key={k.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.05 }}>
-            <div className="rounded-[16px] border p-4" style={{ background: "rgba(14,10,35,0.8)", borderColor: "var(--surface-panel-border)" }}>
-              <p className="text-2xl font-extrabold" style={{ color: k.color }}>{k.value}</p>
-              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{k.label}</p>
+      {!loading && !error && (
+        <>
+          {/* Stage summary chips */}
+          <div className="flex flex-wrap gap-2">
+            {WORKFLOW_COLS.map(s => {
+              const count = byStage(s.id).length;
+              return (
+                <motion.div key={s.id} initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
+                  className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-semibold"
+                  style={{ background: `${s.color}12`, borderColor: `${s.color}30`, color: s.color }}>
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-black text-white"
+                    style={{ background: s.color }}>{count}</span>
+                  {s.label}
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Kanban Board */}
+          <div className="overflow-x-auto pb-4">
+            <div className="flex gap-3" style={{ minWidth: `${STAGES.length * 200}px` }}>
+              {WORKFLOW_COLS.map(stage => (
+                <div key={stage.id} className="flex w-[188px] shrink-0 flex-col gap-2">
+                  {/* Column header */}
+                  <div className="flex items-center justify-between rounded-xl border px-3 py-2"
+                    style={{ background: `${stage.color}10`, borderColor: `${stage.color}30` }}>
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full" style={{ background: stage.color }} />
+                      <span className="text-[11px] font-bold" style={{ color: stage.color }}>{stage.label}</span>
+                    </div>
+                    <span className="text-[10px] rounded-full px-1.5 py-0.5 font-bold"
+                      style={{ background: `${stage.color}20`, color: stage.color }}>
+                      {byStage(stage.id).length}
+                    </span>
+                  </div>
+                  {/* Cards */}
+                  <AnimatePresence mode="popLayout">
+                    {byStage(stage.id).map(p => (
+                      <PlayerCard key={p.id} player={p} onMove={move} />
+                    ))}
+                  </AnimatePresence>
+                  {byStage(stage.id).length === 0 && (
+                    <div className="rounded-xl border border-dashed py-6 text-center"
+                      style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}>
+                      <p className="text-[10px]">Vide</p>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
-          </motion.div>
-        ))}
-      </div>
+          </div>
+
+          {/* Legend */}
+          <div className="flex flex-wrap items-center gap-3 text-[10px]" style={{ color: "var(--text-muted)" }}>
+            <span className="font-semibold">Priorité:</span>
+            {(["A","B","C"] as const).map(p => (
+              <span key={p} className="flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full inline-block" style={{ background: PRIORITY_META[p].color }} />
+                {p}
+              </span>
+            ))}
+            <span className="ml-2 flex items-center gap-1"><TrendingUp size={10} /> Cliquer les boutons pour avancer/reculer un joueur dans le pipeline</span>
+          </div>
+
+          {/* Stats row */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              { label: "Validation",       value: byStage("validation").length, color: "#8B5CF6" },
+              { label: "Signature",        value: byStage("signature").length,  color: "#FF7A00" },
+              { label: "Terminés",         value: byStage("done").length,       color: "#22C55E" },
+              { label: "Score IA moyen",   value: players.length ? `${Math.round(players.reduce((a,p) => a + p.aiScore, 0) / players.length)}/100` : "—", color: "#3B82F6" },
+            ].map((k, i) => (
+              <motion.div key={k.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.05 }}>
+                <div className="rounded-[16px] border p-4" style={{ background: "rgba(14,10,35,0.8)", borderColor: "var(--surface-panel-border)" }}>
+                  <p className="text-2xl font-extrabold" style={{ color: k.color }}>{k.value}</p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{k.label}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* Modal */}
       <AnimatePresence>
@@ -273,11 +258,11 @@ export function RecruteurPipelinePage() {
                   className="rounded-xl border px-4 py-2 text-xs" style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}>
                   Annuler
                 </button>
-                <motion.button type="button" onClick={addPlayer}
-                  className="rounded-xl px-5 py-2 text-xs font-bold text-white"
+                <motion.button type="button" onClick={() => void addPlayer()} disabled={saving || !newName.trim()}
+                  className="rounded-xl px-5 py-2 text-xs font-bold text-white disabled:opacity-50"
                   style={{ background: "linear-gradient(135deg,#8B5CF6,#6D28D9)" }}
                   whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
-                  <Plus size={12} className="inline mr-1" /> Ajouter
+                  <Plus size={12} className="inline mr-1" /> {saving ? "Ajout…" : "Ajouter"}
                 </motion.button>
               </div>
             </motion.div>
@@ -289,10 +274,10 @@ export function RecruteurPipelinePage() {
       <div className="flex flex-wrap items-center gap-1 rounded-[16px] border p-4 text-[11px]"
         style={{ background: "rgba(14,10,35,0.6)", borderColor: "var(--surface-panel-border)" }}>
         <span style={{ color: "var(--text-muted)" }}>Flux:</span>
-        {STAGES.map((s, i) => (
-          <span key={s} className="flex items-center gap-1">
-            <span style={{ color: STAGE_COLORS[s] }}>{s}</span>
-            {i < STAGES.length - 1 && <ChevronRight size={10} style={{ color: "var(--text-muted)" }} />}
+        {WORKFLOW_COLS.map((s, i) => (
+          <span key={s.id} className="flex items-center gap-1">
+            <span style={{ color: s.color }}>{s.label}</span>
+            {i < WORKFLOW_COLS.length - 1 && <ChevronRight size={10} style={{ color: "var(--text-muted)" }} />}
           </span>
         ))}
       </div>

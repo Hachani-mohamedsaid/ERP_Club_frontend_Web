@@ -68,28 +68,28 @@ export function FinanceGlobalSearch() {
   }, []);
 
   return (
-    <div ref={containerRef} className="relative hidden sm:block">
+    <div ref={containerRef} className="relative w-full max-w-xl hidden sm:block">
       <motion.div
-        className="flex cursor-text items-center gap-2 rounded-xl border px-3 py-2"
+        className="glass-input flex cursor-text items-center gap-2.5 rounded-xl px-3 py-2.5"
         style={{
-          background: "rgba(255,255,255,0.04)",
-          borderColor: open ? "rgba(255,122,0,0.45)" : "rgba(255,255,255,0.08)",
-          minWidth: open ? 280 : 220,
-          transition: "min-width 0.2s ease",
+          background: "var(--surface-raised)",
+          borderColor: open ? `${F.primary}55` : "var(--surface-panel-border)",
+          boxShadow: open ? `0 0 0 2px ${F.primary}18` : undefined,
+          minWidth: open ? 320 : 280,
+          transition: "min-width 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease",
         }}
         onClick={() => {
           setOpen(true);
           setTimeout(() => inputRef.current?.focus(), 50);
         }}
-        whileHover={{ borderColor: "rgba(255,122,0,0.3)" }}
       >
-        <Search size={13} style={{ color: open ? F.primary : "rgba(255,255,255,0.35)" }} />
+        <Search size={15} style={{ color: open ? F.primary : "var(--text-muted)", flexShrink: 0 }} />
         <input
           ref={inputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Joueurs, contrats, factures, spor..."
-          className="flex-1 bg-transparent text-xs outline-none"
+          placeholder="Joueurs, contrats, factures, sponsors..."
+          className="flex-1 bg-transparent text-sm outline-none"
           style={{ color: "var(--text-primary)" }}
         />
         {query && (
@@ -135,7 +135,7 @@ export function FinanceGlobalSearch() {
                         type="button"
                         className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[10px]"
                         style={{ color: "var(--text-secondary)" }}
-                        whileHover={{ background: "rgba(255,255,255,0.04)" }}
+                        whileHover={{ background: "var(--surface-hover)" }}
                         onClick={() => {
                           navigate(cat.path);
                           setOpen(false);

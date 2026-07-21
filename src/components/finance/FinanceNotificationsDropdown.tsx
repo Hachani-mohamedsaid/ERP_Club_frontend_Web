@@ -26,18 +26,23 @@ export function FinanceNotificationsDropdown() {
   const [notifs, setNotifs] = useState<FinanceNotificationItem[]>([]);
   const [meta, setMeta] = useState({ clubName: "", season: "" });
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   const unread = notifs.filter((n) => !n.read).length;
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const data = await financeApi.getNotifications();
       setNotifs(data.items);
       setMeta({ clubName: data.clubName, season: data.season });
-    } catch {
+    } catch (e) {
       setNotifs([]);
+      setLoadError(
+        e instanceof Error ? e.message : "Impossible de charger les notifications.",
+      );
     } finally {
       setLoading(false);
     }
@@ -94,15 +99,15 @@ export function FinanceNotificationsDropdown() {
       <motion.button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="relative flex h-9 w-9 items-center justify-center rounded-xl border"
+        className="glass-input relative flex h-10 w-10 items-center justify-center"
         style={{
-          background: open ? `${F.primary}14` : "rgba(255,255,255,0.05)",
-          borderColor: open ? `${F.primary}35` : "rgba(255,255,255,0.1)",
+          borderColor: open ? `${F.primary}50` : undefined,
+          background: open ? `${F.primary}12` : undefined,
         }}
-        whileHover={{ scale: 1.07 }}
-        whileTap={{ scale: 0.92 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
       >
-        <Bell size={15} style={{ color: open ? F.primary : "rgba(255,255,255,0.55)" }} />
+        <Bell size={16} style={{ color: open ? F.primary : "var(--text-secondary)" }} />
         {unread > 0 && (
           <motion.span
             className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full text-[8px] font-extrabold text-white"
@@ -167,6 +172,19 @@ export function FinanceNotificationsDropdown() {
                 <p className="px-4 py-10 text-center text-xs" style={{ color: "var(--text-muted)" }}>
                   Chargement des notifications...
                 </p>
+              ) : loadError && notifs.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
+                  <p className="text-xs font-medium" style={{ color: F.danger }}>{loadError}</p>
+                  <motion.button
+                    type="button"
+                    onClick={() => void load()}
+                    className="text-[10px] font-bold"
+                    style={{ color: F.primary }}
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    Réessayer
+                  </motion.button>
+                </div>
               ) : notifs.length === 0 ? (
                 <div className="flex flex-col items-center py-12 text-center">
                   <Bell size={28} style={{ color: "var(--text-muted)" }} className="mb-2" />
@@ -186,10 +204,10 @@ export function FinanceNotificationsDropdown() {
                       transition={{ delay: i * 0.03 }}
                       className="group flex items-start gap-3 px-4 py-3 cursor-pointer relative"
                       style={{
-                        background: n.read ? "transparent" : `${color}05`,
-                        borderBottom: "1px solid rgba(255,255,255,0.04)",
+                        background: n.read ? "transparent" : `${color}08`,
+                        borderBottom: "1px solid var(--divider)",
                       }}
-                      whileHover={{ background: "rgba(255,255,255,0.03)" }}
+                      whileHover={{ background: "var(--surface-hover)" }}
                       onClick={() => {
                         void markRead(n.id);
                         navigate(n.path);
@@ -213,7 +231,7 @@ export function FinanceNotificationsDropdown() {
                       <div className="flex-1 min-w-0">
                         <p
                           className="text-xs font-semibold leading-snug"
-                          style={{ color: n.read ? "rgba(255,255,255,0.6)" : "white" }}
+                          style={{ color: n.read ? "var(--text-muted)" : "var(--text-primary)" }}
                         >
                           {n.title}
                         </p>
