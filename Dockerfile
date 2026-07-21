@@ -21,8 +21,6 @@ RUN npm install -g serve@14.2.4
 COPY --from=build /app/dist ./dist
 
 ENV NODE_ENV=production
-ENV PORT=4173
 
-EXPOSE 4173
-
-CMD ["sh", "-c", "serve dist -s -l tcp://0.0.0.0:${PORT}"]
+# Railway injecte PORT au runtime — ne pas le fixer ici.
+CMD ["sh", "-c", "serve dist -s -n -l ${PORT:-8080}"]
