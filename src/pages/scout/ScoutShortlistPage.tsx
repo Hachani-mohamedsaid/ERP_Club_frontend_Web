@@ -1,15 +1,18 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Star, GitCompare, FileText, Send, Eye, TrendingUp } from "lucide-react";
 import { ScoutPage, SCard, SBadge, SGauge } from "../../components/scout/ScoutUI";
+import { ScoutPlayerPhoto } from "../../components/scout/ScoutPlayerPhoto";
 import { S, PRIORITY_META } from "../../data/scoutData";
 import { useScoutProspects } from "../../hooks/useScoutData";
 import { showToast } from "../../components/scout/ScoutToast";
+import { scoutApi } from "../../lib/api/scout";
 
 export function ScoutShortlistPage() {
   const navigate = useNavigate();
   const { prospects, loading } = useScoutProspects();
+  const [sending, setSending] = useState(false);
 
   const shortlist = useMemo(
     () => prospects
@@ -20,8 +23,20 @@ export function ScoutShortlistPage() {
 
   const totalBudget = shortlist.reduce((a, p) => a + p.valueMK, 0);
 
-  const sendToCommittee = () => {
-    showToast(`Shortlist de ${shortlist.length} joueurs envoyée au comité ✓`, "success");
+  const sendToCommittee = async () => {
+    if (!shortlist.length) {
+      showToast("Aucun profil à envoyer", "error");
+      return;
+    }
+    setSending(true);
+    try {
+      const res = await scoutApi.submitCommittee(shortlist.map((p) => p.id));
+      showToast(res.message || `${res.count} profil(s) envoyé(s) au comité ✓`, "success");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Échec envoi comité", "error");
+    } finally {
+      setSending(false);
+    }
   };
 
   if (loading) {
@@ -55,12 +70,13 @@ export function ScoutShortlistPage() {
           </motion.button>
           <motion.button
             type="button"
-            onClick={sendToCommittee}
-            className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white"
+            onClick={() => void sendToCommittee()}
+            disabled={sending || shortlist.length === 0}
+            className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
             style={{ background: S.success }}
             whileTap={{ scale: 0.96 }}
           >
-            <Send size={14} /> Envoyer au comité
+            <Send size={14} /> {sending ? "Envoi…" : "Envoyer au comité"}
           </motion.button>
         </div>
       </div>
@@ -110,10 +126,7 @@ export function ScoutShortlistPage() {
                     }}>
                     #{rank + 1}
                   </div>
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold text-white"
-                    style={{ background: `linear-gradient(135deg,${S.primary},${S.primary}99)` }}>
-                    {p.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-                  </div>
+                  <ScoutPlayerPhoto name={p.name} photoUrl={p.photoUrl} size={48} accent={S.primary} />
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-sm font-extrabold" style={{ color: "var(--text-primary)" }}>
@@ -157,7 +170,7 @@ export function ScoutShortlistPage() {
                       whileTap={{ scale: 0.95 }}>
                       <Eye size={11} /> Profil
                     </motion.button>
-                    <motion.button type="button" onClick={() => navigate("/scout/report")}
+                    <motion.button type="button" onClick={() => navigate(`/scout/report?prospectId=${p.id}`)}
                       className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-[10px] font-bold"
                       style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-muted)" }}
                       whileTap={{ scale: 0.95 }}>

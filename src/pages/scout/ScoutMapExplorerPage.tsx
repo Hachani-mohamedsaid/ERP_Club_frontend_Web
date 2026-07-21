@@ -3,9 +3,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
   Globe, MapPin, Building2, ChevronRight, ChevronLeft, Search,
-  Users, TrendingUp, Zap, RotateCcw, Loader2, RefreshCw,
+  Users, TrendingUp, Zap, RotateCcw, Loader2, RefreshCw, ArrowRightLeft, Sparkles,
 } from "lucide-react";
 import { ScoutPage, SCard, SGauge } from "../../components/scout/ScoutUI";
+import { ScoutPlayerPhoto } from "../../components/scout/ScoutPlayerPhoto";
 import { ScoutGeoMap } from "../../components/scout/ScoutGeoMap";
 import type { BubbleNodeInput } from "../../lib/scout/bubbleMapTypes";
 import { S } from "../../data/scoutData";
@@ -101,7 +102,7 @@ function buildCountryNodes(countries: CountryRow[], continentId: string): Bubble
     parentId: continentId,
     color: c.color,
     icon: c.flag,
-    logoUrl: getCountryLeagueLogo(c),
+    logoUrl: c.leagueLogoUrl ?? getCountryLeagueLogo(c),
     subtitle: c.leagues[0],
   }));
 }
@@ -114,8 +115,8 @@ function buildTeamNodes(teams: TeamRow[], countryId: string): BubbleNodeInput[] 
     level: "team",
     parentId: countryId,
     color: S.primary,
-    logoUrl: getTeamLogo(t),
-    leagueLogoUrl: getLeagueLogo(t),
+    logoUrl: t.logoUrl ?? getTeamLogo(t),
+    leagueLogoUrl: t.leagueLogoUrl ?? getLeagueLogo(t),
     subtitle: `${t.league} · ${t.city}`,
   }));
 }
@@ -130,8 +131,11 @@ export function ScoutMapExplorerPage() {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const [overview, setOverview] = useState<Awaited<ReturnType<typeof scoutApi.getMapOverview>> | null>(null);
+  const [mapNotice, setMapNotice] = useState<string | null>(null);
   const [countries, setCountries] = useState<CountryRow[]>([]);
   const [teams, setTeams] = useState<TeamRow[]>([]);
+  const [teamsMeta, setTeamsMeta] = useState<{ totalTeams?: number; season?: string; source?: string }>({});
+  const [leagueFilter, setLeagueFilter] = useState<string>("all");
   const [squad, setSquad] = useState<SquadData | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingSquad, setLoadingSquad] = useState(false);
@@ -147,6 +151,7 @@ export function ScoutMapExplorerPage() {
     try {
       const res = await scoutApi.getMapOverview();
       setOverview(res);
+      setMapNotice((res as { notice?: string }).notice ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur chargement carte.");
     } finally {
@@ -171,6 +176,8 @@ export function ScoutMapExplorerPage() {
     try {
       const res = await scoutApi.getMapTeams(cid);
       setTeams(res.teams);
+      setTeamsMeta({ totalTeams: res.totalTeams, season: res.season, source: res.source });
+      setLeagueFilter("all");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur chargement équipes.");
     }
@@ -192,9 +199,20 @@ export function ScoutMapExplorerPage() {
   const mapNodes: BubbleNodeInput[] = useMemo(() => {
     if (step === 0 && overview) return buildContinentNodes(overview.continents);
     if (step === 1 && continentId) return buildCountryNodes(countries, continentId);
-    if (step === 2 && countryId) return buildTeamNodes(teams, countryId);
+    if (step === 2 && countryId) {
+      const filtered = leagueFilter === "all" ? teams : teams.filter((t) => t.leagueId === leagueFilter);
+      return buildTeamNodes(filtered, countryId);
+    }
     return [];
-  }, [step, continentId, countryId, overview, countries, teams]);
+  }, [step, continentId, countryId, overview, countries, teams, leagueFilter]);
+
+  const leagueOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const t of teams) map.set(t.leagueId, t.league);
+    return [...map.entries()].map(([id, name]) => ({ id, name }));
+  }, [teams]);
+
+  const filteredTeams = leagueFilter === "all" ? teams : teams.filter((t) => t.leagueId === leagueFilter);
 
   const selectedMapId = step === 1 ? countryId : step === 2 ? teamId : step === 0 ? continentId : null;
 
@@ -290,6 +308,12 @@ export function ScoutMapExplorerPage() {
 
   return (
     <ScoutPage>
+      {mapNotice && (
+        <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-200">
+          {mapNotice}
+        </div>
+      )}
+
       {error && (
         <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
           {error}
@@ -303,7 +327,8 @@ export function ScoutMapExplorerPage() {
             Exploration Géographique
           </h1>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            Continent → Pays → Équipe · {overview?.stats.clubs ?? 0} clubs · effectifs via OpenAI
+            Continent → Pays → Équipe · {overview?.stats.clubs ?? 0} clubs · saison {overview?.season ?? "2026-2027"}
+            {overview?.model === "api-football" ? " · données réelles API-Sports" : " · catalogue local"}
           </p>
         </div>
         {step > 0 && (
@@ -444,7 +469,7 @@ export function ScoutMapExplorerPage() {
                         whileHover={{ x: 4 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        <img src={getCountryLeagueLogo(c)} alt="" className="h-6 w-6 rounded-md object-contain bg-white/95 p-0.5 ring-1 ring-white/10" />
+                        <img src={c.leagueLogoUrl ?? getCountryLeagueLogo(c)} alt="" className="h-6 w-6 rounded-md object-contain bg-white/95 p-0.5 ring-1 ring-white/10" />
                         <div className="flex-1">
                           <p className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>{c.name}</p>
                           <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>{c.leagues.join(" · ")}</p>
@@ -453,7 +478,43 @@ export function ScoutMapExplorerPage() {
                       </motion.button>
                     ))}
 
-                    {step === 2 && teams.map((t) => (
+                    {step === 2 && (
+                      <>
+                        {leagueOptions.length > 1 && (
+                          <div className="flex flex-wrap gap-1.5 mb-3">
+                            <button
+                              type="button"
+                              onClick={() => setLeagueFilter("all")}
+                              className="rounded-full px-2.5 py-1 text-[9px] font-bold border transition-colors"
+                              style={{
+                                background: leagueFilter === "all" ? `${S.primary}20` : "transparent",
+                                borderColor: leagueFilter === "all" ? S.primary : "rgba(255,255,255,0.1)",
+                                color: leagueFilter === "all" ? S.primary : "var(--text-muted)",
+                              }}
+                            >
+                              Toutes ({teams.length})
+                            </button>
+                            {leagueOptions.map((lg) => {
+                              const count = teams.filter((t) => t.leagueId === lg.id).length;
+                              return (
+                                <button
+                                  key={lg.id}
+                                  type="button"
+                                  onClick={() => setLeagueFilter(lg.id)}
+                                  className="rounded-full px-2.5 py-1 text-[9px] font-bold border transition-colors truncate max-w-[140px]"
+                                  style={{
+                                    background: leagueFilter === lg.id ? `${S.primary}20` : "transparent",
+                                    borderColor: leagueFilter === lg.id ? S.primary : "rgba(255,255,255,0.1)",
+                                    color: leagueFilter === lg.id ? S.primary : "var(--text-muted)",
+                                  }}
+                                >
+                                  {lg.name} ({count})
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                        {filteredTeams.map((t) => (
                       <motion.button
                         key={t.id}
                         type="button"
@@ -470,13 +531,13 @@ export function ScoutMapExplorerPage() {
                         whileTap={{ scale: 0.98 }}
                       >
                         <div className="relative h-9 w-9 shrink-0">
-                          <img src={getTeamLogo(t)} alt="" className="h-9 w-9 rounded-full object-cover ring-1 ring-white/10" />
-                          <img src={getLeagueLogo(t)} alt="" className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full ring-1 ring-black/40" />
+                          <img src={t.logoUrl ?? getTeamLogo(t)} alt="" className="h-9 w-9 rounded-full object-cover ring-1 ring-white/10 bg-white/95" />
+                          <img src={t.leagueLogoUrl ?? getLeagueLogo(t)} alt="" className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-white object-contain p-0.5 ring-1 ring-black/40" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-bold truncate" style={{ color: "var(--text-primary)" }}>{t.name}</p>
                           <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>
-                            {t.city} · {t.league} · {t.playerCount} joueurs
+                            {t.city} · {t.league}
                           </p>
                         </div>
                         <div className="text-right">
@@ -484,7 +545,9 @@ export function ScoutMapExplorerPage() {
                           <p className="text-[8px]" style={{ color: "var(--text-muted)" }}>pot. moy.</p>
                         </div>
                       </motion.button>
-                    ))}
+                        ))}
+                      </>
+                    )}
                   </motion.div>
                 </SCard>
               ) : team && squad ? (
@@ -496,8 +559,8 @@ export function ScoutMapExplorerPage() {
                   <SCard className="!p-5" glow>
                     <div className="flex items-center gap-3 mb-4">
                       <div className="relative">
-                        <img src={getTeamLogo(team)} alt="" className="h-14 w-14 rounded-2xl object-cover ring-2 ring-orange-500/30" />
-                        <img src={getLeagueLogo(team)} alt="" className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full ring-2 ring-[var(--surface-panel-solid)]" />
+                        <img src={team.logoUrl ?? getTeamLogo(team)} alt="" className="h-14 w-14 rounded-2xl object-cover ring-2 ring-orange-500/30 bg-white/95" />
+                        <img src={team.leagueLogoUrl ?? getLeagueLogo(team)} alt="" className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-white object-contain p-0.5 ring-2 ring-[var(--surface-panel-solid)]" />
                       </div>
                       <div className="flex-1">
                         <p className="text-base font-extrabold" style={{ color: "var(--text-primary)" }}>{team.name}</p>
@@ -511,7 +574,7 @@ export function ScoutMapExplorerPage() {
                         disabled={loadingSquad}
                         className="rounded-lg border p-2"
                         style={{ borderColor: "var(--surface-panel-border)" }}
-                        title="Rafraîchir effectif IA"
+                        title="Actualiser effectif Flashscore"
                       >
                         <RefreshCw size={14} className={loadingSquad ? "animate-spin" : ""} style={{ color: S.primary }} />
                       </button>
@@ -535,9 +598,41 @@ export function ScoutMapExplorerPage() {
                     <SGauge value={team.avgPotential} color={S.primary} />
 
                     <p className="mt-3 text-[9px]" style={{ color: "var(--text-muted)" }}>
-                      {squad.sources.database} en base · {squad.sources.ai} via IA
-                      {squad.cached ? " · cache" : ""}
+                      {squad.sources.flashscore ?? squad.players.length} joueurs
+                      {squad.dataSource === "live" ? " · API-Football live" : squad.dataSource === "flashscore" ? " · Flashscore" : ""}
+                      {squad.newPlayers ? ` · ${squad.newPlayers} transfert(s) récent(s)` : ""}
+                      {squad.season ? ` · ${squad.season}` : ""}
+                      {squad.updatedAt
+                        ? ` · MAJ ${new Date(squad.updatedAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`
+                        : ""}
+                      {squad.sources.database ? ` · ${squad.sources.database} scout` : ""}
                     </p>
+
+                    {(squad.transfers?.length ?? 0) > 0 && (
+                      <div className="mt-4 rounded-xl border p-3" style={{ borderColor: `${S.accent}30`, background: `${S.accent}08` }}>
+                        <p className="text-[10px] font-bold uppercase mb-2 flex items-center gap-1" style={{ color: S.accent }}>
+                          <ArrowRightLeft size={11} /> Transferts récents ({squad.transfers!.length})
+                        </p>
+                        <div className="space-y-1.5 max-h-[120px] overflow-y-auto">
+                          {squad.transfers!.slice(0, 8).map((tr) => (
+                            <div key={`${tr.playerId}-${tr.date}`} className="flex items-center gap-2 text-[9px]">
+                              <span style={{ color: tr.isIncoming ? S.success : S.danger }}>
+                                {tr.isIncoming ? "↓" : "↑"}
+                              </span>
+                              <span className="font-bold truncate flex-1" style={{ color: "var(--text-primary)" }}>
+                                {tr.playerName}
+                              </span>
+                              <span className="truncate" style={{ color: "var(--text-muted)" }}>
+                                {tr.isIncoming ? `depuis ${tr.from}` : `vers ${tr.to}`}
+                              </span>
+                              <span style={{ color: "var(--text-muted)" }}>
+                                {new Date(tr.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="space-y-2 mt-4">
                       <motion.button type="button" onClick={() => navigate("/scout/search")}
@@ -577,17 +672,21 @@ export function ScoutMapExplorerPage() {
                             transition={{ delay: i * 0.03 }}
                             whileHover={{ borderColor: `${S.primary}40`, x: 3 }}
                           >
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-black text-white"
-                              style={{ background: p.source === "prospect" ? S.primary : S.info }}>
-                              {p.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-                            </div>
+                            <ScoutPlayerPhoto name={p.name} photoUrl={p.photoUrl} size={32} accent={p.inDatabase ? S.primary : S.info} />
                             <div className="flex-1 min-w-0">
-                              <p className="text-[11px] font-bold truncate" style={{ color: "var(--text-primary)" }}>
+                              <p className="text-[11px] font-bold truncate flex items-center gap-1" style={{ color: "var(--text-primary)" }}>
                                 {p.flag} {p.name}
+                                {(p.isNewTransfer || p.isNew) && (
+                                  <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[7px] font-bold"
+                                    style={{ background: `${S.success}20`, color: S.success }}>
+                                    <Sparkles size={8} /> Transfert
+                                  </span>
+                                )}
                               </p>
                               <p className="text-[9px]" style={{ color: "var(--text-muted)" }}>
                                 {p.position} · {p.age}a · Pot. {p.potential}
-                                {p.source === "ai" ? " · IA" : " · DB"}
+                                {p.number ? ` · #${p.number}` : ""}
+                                {p.inDatabase ? " · Scout" : squad.dataSource === "live" ? " · Live" : p.source === "flashscore" ? " · Flashscore" : ""}
                               </p>
                             </div>
                             <TrendingUp size={12} style={{ color: S.success }} />

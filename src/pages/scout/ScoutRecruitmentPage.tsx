@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { GripVertical, TrendingUp } from "lucide-react";
 import { ScoutPage, SCard, SBadge, SGauge } from "../../components/scout/ScoutUI";
+import { ScoutPlayerPhoto } from "../../components/scout/ScoutPlayerPhoto";
 import { WORKFLOW_COLS, S, PRIORITY_META, type WorkflowStatus } from "../../data/scoutData";
 import { useScoutProspects } from "../../hooks/useScoutData";
 import { showToast } from "../../components/scout/ScoutToast";
@@ -124,10 +125,7 @@ export function ScoutRecruitmentPage() {
                             {/* Drag handle + priority */}
                             <div className="flex items-center gap-2 mb-2">
                               <GripVertical size={12} style={{ color: "var(--text-muted)" }} />
-                              <div className="flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-extrabold text-white flex-1 max-w-[28px]"
-                                style={{ background: `linear-gradient(135deg,${S.primary},S.primary)` }}>
-                                {p.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
-                              </div>
+                              <ScoutPlayerPhoto name={p.name} photoUrl={p.photoUrl} size={28} accent={S.primary} />
                               <p className="flex-1 text-[11px] font-bold truncate" style={{ color: "var(--text-primary)" }}>{p.name}</p>
                               <span className="rounded-full px-1.5 py-0.5 text-[8px] font-black shrink-0"
                                 style={{ background: priority.color, color: "white" }}>P.{p.priority}</span>

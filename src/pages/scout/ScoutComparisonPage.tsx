@@ -7,6 +7,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell,
 } from "recharts";
 import { ScoutPage, SCard, SGauge, SBadge } from "../../components/scout/ScoutUI";
+import { ScoutPlayerPhoto } from "../../components/scout/ScoutPlayerPhoto";
 import { S } from "../../data/scoutData";
 import { useScoutProspects, type ScoutProspect } from "../../hooks/useScoutData";
 
@@ -164,10 +165,7 @@ export function ScoutComparisonPage() {
                       </SBadge>
                     </div>
                   )}
-                  <div className="flex h-14 w-14 mx-auto mt-4 items-center justify-center rounded-2xl text-lg font-extrabold text-white"
-                    style={{ background: `linear-gradient(135deg,${color},${color}99)` }}>
-                    {p.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-                  </div>
+                  <ScoutPlayerPhoto name={p.name} photoUrl={p.photoUrl} size={56} accent={color} className="mx-auto mt-4" />
                   <p className="text-center text-sm font-bold mt-2" style={{ color: "var(--text-primary)" }}>
                     {p.flag} {p.name}
                   </p>

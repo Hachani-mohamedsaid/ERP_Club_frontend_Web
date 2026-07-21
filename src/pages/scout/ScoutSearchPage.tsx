@@ -9,6 +9,7 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip,
 } from "recharts";
 import { ScoutPage, SGauge, SCOUT_TOOLTIP } from "../../components/scout/ScoutUI";
+import { ScoutPlayerPhoto } from "../../components/scout/ScoutPlayerPhoto";
 import { S, PRIORITY_META } from "../../data/scoutData";
 import { showToast } from "../../components/scout/ScoutToast";
 import { useScoutProspects } from "../../hooks/useScoutData";
@@ -17,7 +18,8 @@ import type { ScoutProspectDto } from "../../lib/api/scout";
 
 type SearchPlayer = ScoutProspectDto & {
   inDatabase?: boolean;
-  source?: "database" | "ai";
+  source?: "database" | "ai" | "flashscore" | "apisports";
+  season?: string;
 };
 
 // ── Filter chip config ──────────────────────────────────────────────────────
@@ -91,15 +93,7 @@ function ProspectPreviewPanel({
 
       <div className="p-5">
         <div className="flex items-start gap-4 mb-4">
-          <motion.div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl text-xl font-extrabold text-white"
-            style={{
-              background: `linear-gradient(145deg,${PRIORITY_META[selPri].color},${PRIORITY_META[selPri].color}60)`,
-              boxShadow: `0 0 32px ${PRIORITY_META[selPri].color}40`,
-            }}
-            animate={{ boxShadow: [`0 0 16px ${PRIORITY_META[selPri].color}25`, `0 0 32px ${PRIORITY_META[selPri].color}50`, `0 0 16px ${PRIORITY_META[selPri].color}25`] }}
-            transition={{ duration: 2.5, repeat: Infinity }}>
-            {sel.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
-          </motion.div>
+          <ScoutPlayerPhoto name={sel.name} photoUrl={sel.photoUrl} size={64} accent={PRIORITY_META[selPri].color} />
           <div className="flex-1 min-w-0">
             <p className="text-base font-extrabold" style={{ color: "var(--text-primary)" }}>
               {sel.flag} {sel.name}
@@ -146,8 +140,8 @@ function ProspectPreviewPanel({
 
         <div className="mb-4">
           <p className="text-[10px] font-bold mb-2" style={{ color: "var(--text-muted)" }}>Profil technique</p>
-          <div className="h-44">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-44 min-h-[176px] w-full">
+            <ResponsiveContainer width="100%" height={176} minWidth={0}>
               <RadarChart cx="50%" cy="50%" outerRadius="65%" data={[
                 { subject: "Vitesse", A: sel.speed },
                 { subject: "Dribble", A: sel.dribble },
@@ -231,7 +225,7 @@ function ProspectPreviewPanel({
 
 export function ScoutSearchPage() {
   const navigate = useNavigate();
-  const { watchlistIds, toggleWatchlist, refresh } = useScoutProspects();
+  const { prospects, watchlistIds, toggleWatchlist, refresh } = useScoutProspects();
 
   const [search, setSearch] = useState("");
   const [pos, setPos] = useState("Tous");
@@ -240,6 +234,7 @@ export function ScoutSearchPage() {
   const [potRange, setPotRange] = useState("Tous");
   const [budgetRange, setBudgetRange] = useState("Tous");
   const [selected, setSelected] = useState<string | null>(null);
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
 
   const [results, setResults] = useState<SearchPlayer[]>([]);
   const [summary, setSummary] = useState("");
@@ -249,12 +244,49 @@ export function ScoutSearchPage() {
   const [importingId, setImportingId] = useState<string | null>(null);
   const searchGen = useRef(0);
 
+  // Apply scout profile defaults (postes / âge / budget)
+  useEffect(() => {
+    let cancelled = false;
+    scoutApi
+      .getProfile()
+      .then((p) => {
+        if (cancelled) return;
+        if (p.positions?.length === 1) setPos(p.positions[0]);
+        else if (p.positions?.length && p.positions[0]) setPos(p.positions[0]);
+
+        const min = Number(p.ageMin);
+        const max = Number(p.ageMax);
+        if (Number.isFinite(min) && Number.isFinite(max)) {
+          if (max <= 18) setAgeRange("≤18");
+          else if (min >= 19 && max <= 21) setAgeRange("19-21");
+          else if (min >= 22 && max <= 25) setAgeRange("22-25");
+          else if (min > 25) setAgeRange(">25");
+        }
+
+        const budget = Number(p.budgetMax);
+        if (Number.isFinite(budget)) {
+          if (budget < 0.5) setBudgetRange("<500K €");
+          else if (budget <= 1) setBudgetRange("500K-1M €");
+          else if (budget <= 2) setBudgetRange("1M-2M €");
+          else setBudgetRange(">2M €");
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setPrefsLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const filters = useMemo(
     () => ({ query: search, position: pos, country, ageRange, potRange, budgetRange }),
     [search, pos, country, ageRange, potRange, budgetRange],
   );
 
   const runSearch = useCallback(async () => {
+    if (!prefsLoaded) return;
     const gen = ++searchGen.current;
     setLoading(true);
     setError(null);
@@ -273,12 +305,13 @@ export function ScoutSearchPage() {
     } finally {
       if (gen === searchGen.current) setLoading(false);
     }
-  }, [filters]);
+  }, [filters, prefsLoaded]);
 
   useEffect(() => {
+    if (!prefsLoaded) return;
     const t = setTimeout(() => { void runSearch(); }, 650);
     return () => clearTimeout(t);
-  }, [runSearch]);
+  }, [runSearch, prefsLoaded]);
 
   const activeFilters = [
     pos !== "Tous" ? pos : null,
@@ -294,6 +327,9 @@ export function ScoutSearchPage() {
 
   const importToDb = async (p: SearchPlayer) => {
     setImportingId(p.id);
+    const norm = (n: string) =>
+      n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    const alreadyInDb = prospects.some((pr) => norm(pr.name) === norm(p.name));
     try {
       const created = await scoutApi.createProspect({
         name: p.name,
@@ -323,11 +359,17 @@ export function ScoutSearchPage() {
         contractEnd: p.contractEnd,
         priority: p.priority,
         league: p.league,
+        photoUrl: p.photoUrl,
+        apiSportsId: p.apiSportsId ?? (p.id.startsWith("apisports-player-") ? Number(p.id.replace("apisports-player-", "")) : undefined),
+        legacyId: p.id.startsWith("apisports-player-") ? p.id : undefined,
       }) as ScoutProspectDto;
       await refresh();
       setResults(prev => prev.map(r => r.id === p.id ? { ...created, inDatabase: true, source: "database" } : r));
       setSelected(created.id);
-      showToast(`${p.name} ajouté à la base ✓`, "success");
+      showToast(
+        alreadyInDb ? `${p.name} déjà dans l'annuaire — fiche ouverte` : `${p.name} ajouté à la base ✓`,
+        alreadyInDb ? "info" : "success",
+      );
       return created.id;
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Import échoué", "error");
@@ -339,7 +381,7 @@ export function ScoutSearchPage() {
 
   const toggleWatch = async (p: SearchPlayer) => {
     let id = p.id;
-    if (!p.inDatabase && p.source === "ai") {
+    if (!p.inDatabase && (p.source === "ai" || p.source === "flashscore" || p.source === "apisports")) {
       const newId = await importToDb(p);
       if (!newId) return;
       id = newId;
@@ -371,7 +413,7 @@ export function ScoutSearchPage() {
         <div>
           <h1 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>Recherche Prospects</h1>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            {loading ? "Recherche OpenAI en cours…" : `${filtered.length} joueur${filtered.length !== 1 ? "s" : ""} trouvé${filtered.length !== 1 ? "s" : ""}`}
+            {loading ? "Recherche API-Sports…" : `${filtered.length} joueur${filtered.length !== 1 ? "s" : ""}${summary ? "" : " · API-Sports"}`}
             {summary ? ` · ${summary}` : ""}
           </p>
         </div>
@@ -381,7 +423,7 @@ export function ScoutSearchPage() {
             className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[11px] font-bold"
             style={{ borderColor: `${S.accent}40`, color: S.accent, background: `${S.accent}10` }}
             whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Brain size={12} /> Actualiser IA
+            <Brain size={12} /> Actualiser
           </motion.button>
         </div>
         {activeFilters.length > 0 && (
@@ -398,7 +440,7 @@ export function ScoutSearchPage() {
         <div className="flex items-start gap-2 rounded-xl border p-3 text-xs text-amber-300"
           style={{ borderColor: "rgba(245,158,11,0.3)", background: "rgba(245,158,11,0.08)" }}>
           <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-          Clé OpenAI manquante — résultats limités à la base club. Configurez OPENAI_API_KEY sur Render.
+          Synthèse IA optionnelle — la recherche utilise les effectifs API-Sports ({filtered.length} résultats).
         </div>
       )}
 
@@ -456,6 +498,8 @@ export function ScoutSearchPage() {
               const pc = potColor(p.potential);
               const inj = injuryMeta(p.injuryRisk);
               const isAi = p.source === "ai" && !p.inDatabase;
+              const isApisports = p.source === "apisports" && !p.inDatabase;
+              const isFlashscore = p.source === "flashscore" && !p.inDatabase;
               const pri = priorityKey(p.priority);
 
               return (
@@ -476,10 +520,7 @@ export function ScoutSearchPage() {
                   </span>
 
                   {/* Avatar */}
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-extrabold text-white"
-                    style={{ background: `linear-gradient(135deg,${PRIORITY_META[pri].color},${PRIORITY_META[pri].color}80)` }}>
-                    {p.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
-                  </div>
+                  <ScoutPlayerPhoto name={p.name} photoUrl={p.photoUrl} size={44} accent={pc} />
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
@@ -487,6 +528,18 @@ export function ScoutSearchPage() {
                       <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>
                         {p.flag} {p.name}
                       </p>
+                      {isApisports && (
+                        <span className="flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-black shrink-0"
+                          style={{ background: `${S.success}20`, color: S.success }}>
+                          API-Sports
+                        </span>
+                      )}
+                      {isFlashscore && (
+                        <span className="flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-black shrink-0"
+                          style={{ background: `${S.info}20`, color: S.info }}>
+                          Flashscore
+                        </span>
+                      )}
                       {isAi && (
                         <span className="flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-black shrink-0"
                           style={{ background: `${S.accent}20`, color: S.accent }}>

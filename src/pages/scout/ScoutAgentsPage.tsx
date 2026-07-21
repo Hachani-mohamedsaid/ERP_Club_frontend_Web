@@ -2,12 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
-  Briefcase, Phone, Mail, MessageSquare, User, Star, ExternalLink, Search,
+  Briefcase, Phone, Mail, MessageSquare, Star, ExternalLink, Search,
   Loader2, RefreshCw, AlertTriangle, X, History, Sparkles, Plus, Trash2,
 } from "lucide-react";
 import { ScoutPage, SCard, SBadge } from "../../components/scout/ScoutUI";
+import { ScoutPlayerPhoto, resolveScoutPhotoUrl } from "../../components/scout/ScoutPlayerPhoto";
 import { S } from "../../data/scoutData";
 import { scoutApi, type ScoutAgentDto } from "../../lib/api/scout";
+import { useScoutProspects } from "../../hooks/useScoutData";
 import { showToast } from "../../components/scout/ScoutToast";
 
 const STATUS_STYLE = {
@@ -24,6 +26,7 @@ function AgentCard({
   onRemove,
   adding,
   mode,
+  photoCatalog,
 }: {
   agent: ScoutAgentDto;
   onContact?: () => void;
@@ -32,6 +35,7 @@ function AgentCard({
   onRemove?: () => void;
   adding?: boolean;
   mode: "crm" | "pick";
+  photoCatalog?: Array<{ name: string; photoUrl?: string | null }>;
 }) {
   const st = STATUS_STYLE[agent.status];
   return (
@@ -88,9 +92,16 @@ function AgentCard({
           <div className="flex flex-wrap gap-2">
             {agent.players.map((player) => (
               <span key={player.id}
-                className="flex items-center gap-1 rounded-xl border px-2 py-1 text-[10px] font-bold"
+                className="flex items-center gap-1.5 rounded-xl border px-2 py-1 text-[10px] font-bold"
                 style={{ borderColor: `${S.primary}30`, color: S.primary, background: `${S.primary}08` }}>
-                <User size={10} /> {player.name}
+                <ScoutPlayerPhoto
+                  name={player.name}
+                  photoUrl={resolveScoutPhotoUrl(player.name, undefined, photoCatalog)}
+                  size={22}
+                  accent={S.primary}
+                  variant="circle"
+                />
+                {player.name}
               </span>
             ))}
           </div>
@@ -142,6 +153,7 @@ function AgentCard({
 
 export function ScoutAgentsPage() {
   const navigate = useNavigate();
+  const { prospects: photoCatalog } = useScoutProspects();
   const [search, setSearch] = useState("");
   const [data, setData] = useState<Awaited<ReturnType<typeof scoutApi.getAgents>> | null>(null);
   const [pickList, setPickList] = useState<ScoutAgentDto[]>([]);
@@ -372,6 +384,7 @@ export function ScoutAgentsPage() {
                 agent={agent}
                 mode="pick"
                 adding={addingId === agent.id}
+                photoCatalog={photoCatalog}
                 onAdd={() => void addToCrm(agent)}
               />
             ))}
@@ -398,6 +411,7 @@ export function ScoutAgentsPage() {
                 key={agent.id}
                 agent={agent}
                 mode="crm"
+                photoCatalog={photoCatalog}
                 onContact={() => void openContact(agent)}
                 onHistory={() => void openHistory(agent)}
                 onRemove={() => void removeFromCrm(agent.id)}

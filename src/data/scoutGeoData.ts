@@ -60,12 +60,12 @@ export interface GeoTeam {
 }
 
 export const CONTINENTS: GeoContinent[] = [
-  { id: "afrique", name: "Afrique", icon: "🌍", color: S.primary, prospects: 42, countries: 7 },
+  { id: "afrique", name: "Afrique", icon: "🌍", color: S.primary, prospects: 57, countries: 7 },
   { id: "europe", name: "Europe", icon: "🇪🇺", color: S.info, prospects: 70, countries: 8 },
-  { id: "asie", name: "Asie", icon: "🌏", color: S.accent, prospects: 18, countries: 6 },
-  { id: "am-nord", name: "Amérique du Nord", icon: "🌎", color: S.success, prospects: 14, countries: 3 },
-  { id: "am-sud", name: "Amérique du Sud", icon: "🌎", color: "#8B5CF6", prospects: 22, countries: 2 },
-  { id: "oceanie", name: "Océanie", icon: "🏝️", color: S.warning, prospects: 6, countries: 2 },
+  { id: "asie", name: "Asie", icon: "🌏", color: S.accent, prospects: 25, countries: 4 },
+  { id: "am-nord", name: "Amérique du Nord", icon: "🌎", color: S.success, prospects: 19, countries: 3 },
+  { id: "am-sud", name: "Amérique du Sud", icon: "🌎", color: "#8B5CF6", prospects: 24, countries: 2 },
+  { id: "oceanie", name: "Océanie", icon: "🏝️", color: S.warning, prospects: 7, countries: 2 },
 ];
 
 export const COUNTRIES: GeoCountry[] = [
@@ -86,6 +86,15 @@ export const COUNTRIES: GeoCountry[] = [
   { id: "be", continentId: "europe", name: "Belgique", flag: "🇧🇪", flagCode: "be", color: "#EAB308", leagues: ["Pro League"], leagueId: "pro-league-be", prospects: 4 },
   { id: "br", continentId: "am-sud", name: "Brésil", flag: "🇧🇷", flagCode: "br", color: S.success, leagues: ["Série A"], leagueId: "serie-a-br", prospects: 15 },
   { id: "ar", continentId: "am-sud", name: "Argentine", flag: "🇦🇷", flagCode: "ar", color: S.info, leagues: ["Primera"], leagueId: "primera", prospects: 9 },
+  { id: "jp", continentId: "asie", name: "Japon", flag: "🇯🇵", flagCode: "jp", color: S.accent, leagues: ["J1 League"], leagueId: "j-league", prospects: 8 },
+  { id: "kr", continentId: "asie", name: "Corée du Sud", flag: "🇰🇷", flagCode: "kr", color: "#EF4444", leagues: ["K League 1"], leagueId: "k-league", prospects: 6 },
+  { id: "sa", continentId: "asie", name: "Arabie Saoudite", flag: "🇸🇦", flagCode: "sa", color: S.success, leagues: ["Saudi Pro League"], leagueId: "spl", prospects: 7 },
+  { id: "ae", continentId: "asie", name: "Émirats", flag: "🇦🇪", flagCode: "ae", color: "#0EA5E9", leagues: ["UAE Pro League"], leagueId: "uae-pl", prospects: 4 },
+  { id: "us", continentId: "am-nord", name: "États-Unis", flag: "🇺🇸", flagCode: "us", color: S.info, leagues: ["MLS"], leagueId: "mls", prospects: 9 },
+  { id: "mx", continentId: "am-nord", name: "Mexique", flag: "🇲🇽", flagCode: "mx", color: S.success, leagues: ["Liga MX"], leagueId: "liga-mx", prospects: 7 },
+  { id: "ca-can", continentId: "am-nord", name: "Canada", flag: "🇨🇦", flagCode: "ca", color: S.danger, leagues: ["MLS / CPL"], leagueId: "mls", prospects: 3 },
+  { id: "au", continentId: "oceanie", name: "Australie", flag: "🇦🇺", flagCode: "au", color: S.warning, leagues: ["A-League"], leagueId: "a-league", prospects: 5 },
+  { id: "nz", continentId: "oceanie", name: "Nouvelle-Zélande", flag: "🇳🇿", flagCode: "nz", color: S.info, leagues: ["A-League"], leagueId: "a-league", prospects: 2 },
 ];
 
 export const TEAMS: GeoTeam[] = [
@@ -137,6 +146,24 @@ export const TEAMS: GeoTeam[] = [
   { id: "palmeiras", countryId: "br", name: "Palmeiras", league: "Série A", leagueId: "serie-a-br", city: "São Paulo", tier: "Pro", avgPotential: 86, scoutActivity: "Moyenne", playerCount: 2, logoColor: "059669" },
   { id: "boca", countryId: "ar", name: "Boca Juniors", league: "Primera", leagueId: "primera", city: "Buenos Aires", tier: "Pro", avgPotential: 85, scoutActivity: "Moyenne", playerCount: 2, logoColor: "004170" },
   { id: "river", countryId: "ar", name: "River Plate", league: "Primera", leagueId: "primera", city: "Buenos Aires", tier: "Pro", avgPotential: 86, scoutActivity: "Moyenne", playerCount: 2, logoColor: "DC2626" },
+  { id: "kawasaki", countryId: "jp", name: "Kawasaki Frontale", league: "J1 League", leagueId: "j-league", city: "Kawasaki", tier: "Pro", avgPotential: 80, scoutActivity: "Moyenne", playerCount: 2, logoColor: "007BC1" },
+  { id: "urawa", countryId: "jp", name: "Urawa Red Diamonds", league: "J1 League", leagueId: "j-league", city: "Saitama", tier: "Pro", avgPotential: 79, scoutActivity: "Moyenne", playerCount: 2, logoColor: "DC2626" },
+  { id: "ulsan", countryId: "kr", name: "Ulsan HD", league: "K League 1", leagueId: "k-league", city: "Ulsan", tier: "Pro", avgPotential: 78, scoutActivity: "Faible", playerCount: 2, logoColor: "1D4ED8" },
+  { id: "jeonbuk", countryId: "kr", name: "Jeonbuk Hyundai", league: "K League 1", leagueId: "k-league", city: "Jeonju", tier: "Pro", avgPotential: 77, scoutActivity: "Faible", playerCount: 1, logoColor: "059669" },
+  { id: "alnassr", countryId: "sa", name: "Al Nassr", league: "Saudi Pro League", leagueId: "spl", city: "Riyad", tier: "Pro", avgPotential: 86, scoutActivity: "Moyenne", playerCount: 3, logoColor: "FFD700" },
+  { id: "alhilal", countryId: "sa", name: "Al Hilal", league: "Saudi Pro League", leagueId: "spl", city: "Riyad", tier: "Pro", avgPotential: 87, scoutActivity: "Moyenne", playerCount: 3, logoColor: "1D4ED8" },
+  { id: "alahli-sa", countryId: "sa", name: "Al Ahli", league: "Saudi Pro League", leagueId: "spl", city: "Djeddah", tier: "Pro", avgPotential: 84, scoutActivity: "Faible", playerCount: 2, logoColor: "059669" },
+  { id: "alain", countryId: "ae", name: "Al Ain", league: "UAE Pro League", leagueId: "uae-pl", city: "Al Ain", tier: "Pro", avgPotential: 78, scoutActivity: "Faible", playerCount: 2, logoColor: "7C3AED" },
+  { id: "intermiami", countryId: "us", name: "Inter Miami", league: "MLS", leagueId: "mls", city: "Miami", tier: "Pro", avgPotential: 84, scoutActivity: "Haute", playerCount: 3, logoColor: "F472B6" },
+  { id: "lagalaxy", countryId: "us", name: "LA Galaxy", league: "MLS", leagueId: "mls", city: "Los Angeles", tier: "Pro", avgPotential: 80, scoutActivity: "Moyenne", playerCount: 2, logoColor: "FFD700" },
+  { id: "seattle", countryId: "us", name: "Seattle Sounders", league: "MLS", leagueId: "mls", city: "Seattle", tier: "Pro", avgPotential: 79, scoutActivity: "Faible", playerCount: 2, logoColor: "059669" },
+  { id: "america", countryId: "mx", name: "Club América", league: "Liga MX", leagueId: "liga-mx", city: "Mexico", tier: "Pro", avgPotential: 83, scoutActivity: "Moyenne", playerCount: 2, logoColor: "FFD700" },
+  { id: "chivas", countryId: "mx", name: "Chivas", league: "Liga MX", leagueId: "liga-mx", city: "Guadalajara", tier: "Pro", avgPotential: 81, scoutActivity: "Moyenne", playerCount: 2, logoColor: "DC2626" },
+  { id: "monterrey", countryId: "mx", name: "Monterrey", league: "Liga MX", leagueId: "liga-mx", city: "Monterrey", tier: "Pro", avgPotential: 80, scoutActivity: "Faible", playerCount: 1, logoColor: "1D4ED8" },
+  { id: "toronto", countryId: "ca-can", name: "Toronto FC", league: "MLS", leagueId: "mls", city: "Toronto", tier: "Pro", avgPotential: 76, scoutActivity: "Faible", playerCount: 2, logoColor: "DC2626" },
+  { id: "sydney", countryId: "au", name: "Sydney FC", league: "A-League", leagueId: "a-league", city: "Sydney", tier: "Pro", avgPotential: 77, scoutActivity: "Moyenne", playerCount: 2, logoColor: "1D4ED8" },
+  { id: "melbourne", countryId: "au", name: "Melbourne City", league: "A-League", leagueId: "a-league", city: "Melbourne", tier: "Pro", avgPotential: 76, scoutActivity: "Faible", playerCount: 2, logoColor: "6CABDD" },
+  { id: "wellington", countryId: "nz", name: "Wellington Phoenix", league: "A-League", leagueId: "a-league", city: "Wellington", tier: "Pro", avgPotential: 74, scoutActivity: "Faible", playerCount: 1, logoColor: "FACC15" },
 ];
 
 export const STEPS = [

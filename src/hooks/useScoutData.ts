@@ -7,6 +7,32 @@ export type ScoutProspect = ScoutProspectDto & {
   status: WorkflowStatus;
 };
 
+function normName(name: string) {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function dedupeProspects(list: ScoutProspect[]): ScoutProspect[] {
+  const map = new Map<string, ScoutProspect>();
+  for (const p of list) {
+    const key = normName(p.name);
+    const prev = map.get(key);
+    if (!prev) {
+      map.set(key, p);
+      continue;
+    }
+    const prefer =
+      (p.photoUrl && !prev.photoUrl) ||
+      p.potential > prev.potential ||
+      (p.potential === prev.potential && p.id.localeCompare(prev.id) < 0);
+    if (prefer) map.set(key, p);
+  }
+  return Array.from(map.values());
+}
+
 function toProspect(dto: ScoutProspectDto): ScoutProspect {
   const mock = PROSPECTS.find(
     (p) => p.id === dto.legacyId || p.name === dto.name,
@@ -36,7 +62,7 @@ export function useScoutProspects() {
         scoutApi.getProspects(),
         scoutApi.getWatchlist(),
       ]);
-      setProspects(all.map(toProspect));
+      setProspects(dedupeProspects(all.map(toProspect)));
       setWatchlistIds(new Set(watchlist.map((p) => p.id)));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur chargement");
@@ -90,16 +116,27 @@ export function useScoutProspects() {
 export function useScoutDashboard() {
   const [data, setData] = useState<ScoutDashboardDto | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    scoutApi
-      .getDashboard()
-      .then(setData)
-      .catch(() => setData(null))
-      .finally(() => setLoading(false));
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const dashboard = await scoutApi.getDashboard();
+      setData(dashboard);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur chargement");
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  return { data, loading };
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  return { data, loading, error, refresh };
 }
 
 export function useScoutWatchlist() {

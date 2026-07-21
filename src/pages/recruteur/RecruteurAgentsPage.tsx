@@ -1,21 +1,19 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Plus, X, Phone, Mail, Users, TrendingUp, Star, UserX, RefreshCw } from "lucide-react";
 import { RecruteurPageTransition } from "../../components/recruteur/RecruteurPageTransition";
-import { scoutApi, type ScoutAgentDto } from "../../lib/api/scout";
+import { scoutApi } from "../../lib/api/scout";
 
 type Status = "Partenaire" | "Négociation" | "Inactif";
 
-const STATUS_LABEL: Record<ScoutAgentDto["status"], Status> = {
+const STATUS_FROM_SCOUT: Record<string, Agent["status"]> = {
   actif: "Partenaire",
-  "négociation": "Négociation",
+  négociation: "Négociation",
   inactif: "Inactif",
 };
 
-interface HistoryEntry { date: string; type: string; subject: string; outcome: string; player: string }
-
-function StatusBadge({ status }: { status: Status }) {
-  const colors: Record<Status, string> = {
+function StatusBadge({ status }: { status: Agent["status"] }) {
+  const colors: Record<Agent["status"], string> = {
     "Partenaire": "#22C55E", "Négociation": "#F59E0B", "Inactif": "#6B7280",
   };
   const c = colors[status];
@@ -57,63 +55,51 @@ export function RecruteurAgentsPage() {
   const [history, setHistory] = useState<HistoryEntry[] | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ name: "", agency: "", country: "", phone: "", email: "" });
-  const [saving, setSaving] = useState(false);
-
-  const fetchAgents = useCallback((refresh = false) => {
-    setLoading(true);
-    setError(null);
-    scoutApi.getAgents(refresh)
-      .then((res) => {
-        setAgents(res.agents);
-        setWithoutAgent(res.summary.withoutAgent);
-      })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : "Erreur de chargement."))
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => { fetchAgents(); }, [fetchAgents]);
-
-  const selected = agents.find(a => a.id === selectedId) ?? null;
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!selectedId) { setHistory(null); return; }
-    setHistoryLoading(true);
-    scoutApi.getAgentHistory(selectedId)
-      .then((res) => setHistory(res.entries))
-      .catch(() => setHistory([]))
-      .finally(() => setHistoryLoading(false));
-  }, [selectedId]);
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await scoutApi.getAgents();
+        const mapped: Agent[] = (res.agents ?? []).map((a) => ({
+          id: a.id,
+          name: a.name,
+          agency: a.agency,
+          country: a.country,
+          flag: a.flag,
+          phone: a.phone,
+          email: a.email,
+          players: (a.players ?? []).map((p) => p.name),
+          commission: 8,
+          deals: a.deals,
+          totalValue: "—",
+          rating: a.rating,
+          status: STATUS_FROM_SCOUT[a.status] ?? "Partenaire",
+          lastContact: a.lastContact,
+        }));
+        if (!cancelled) setAgents(mapped);
+      } catch {
+        if (!cancelled) setAgents([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const filtered = agents.filter(a =>
-    a.name.toLowerCase().includes(search.toLowerCase()) ||
-    a.agency.toLowerCase().includes(search.toLowerCase()) ||
-    a.country.toLowerCase().includes(search.toLowerCase())
+  const filtered = agents.filter(
+    (a) =>
+      a.name.toLowerCase().includes(search.toLowerCase()) ||
+      a.agency.toLowerCase().includes(search.toLowerCase()) ||
+      a.country.toLowerCase().includes(search.toLowerCase()),
   );
 
-  async function removeAgent(id: string) {
-    setAgents(prev => prev.filter(a => a.id !== id));
-    if (selectedId === id) setSelectedId(null);
-    await scoutApi.removeAgent(id).catch(() => {});
-  }
-
-  async function submitAgent() {
-    if (!form.name.trim() || !form.agency.trim()) return;
-    setSaving(true);
-    try {
-      const res = await scoutApi.addAgent({
-        name: form.name, agency: form.agency, country: form.country,
-        phone: form.phone, email: form.email,
-      });
-      setAgents(prev => [res.agent, ...prev]);
-      setForm({ name: "", agency: "", country: "", phone: "", email: "" });
-      setShowModal(false);
-    } catch {
-      // keep modal open so the user can retry
-    } finally {
-      setSaving(false);
-    }
-  }
+  const negotiations: Negotiation[] = [];
 
   return (
     <RecruteurPageTransition>
@@ -121,31 +107,19 @@ export function RecruteurAgentsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>Gestion Agents</h1>
-          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{agents.length} agents · {agents.filter(a => a.status === "actif").length} partenaires</p>
-        </div>
-        <div className="flex gap-2">
-          <motion.button type="button" onClick={() => fetchAgents(true)}
-            className="flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold"
-            style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
-            whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} title="Rafraîchir">
-            <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
-          </motion.button>
-          <motion.button type="button" onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white"
-            style={{ background: "linear-gradient(135deg,#8B5CF6,#6D28D9)", boxShadow: "0 0 16px rgba(139,92,246,0.35)" }}
-            whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
-            <Plus size={14} /> Ajouter Agent
-          </motion.button>
+          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+            {loading ? "Chargement…" : `${agents.length} agents · ${agents.filter((a) => a.status === "Partenaire").length} partenaires · données club`}
+          </p>
         </div>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: "Agents partenaires", value: agents.filter(a => a.status === "actif").length, color: "#22C55E" },
+          { label: "Agents partenaires", value: agents.filter(a => a.status === "Partenaire").length, color: "#22C55E" },
           { label: "Joueurs représentés", value: agents.reduce((a, ag) => a + ag.players.length, 0), color: "#8B5CF6" },
           { label: "Deals conclus", value: agents.reduce((a, ag) => a + ag.deals, 0), color: "#3B82F6" },
-          { label: "Joueurs sans agent", value: withoutAgent, color: "#F59E0B" },
+          { label: "Valeur totale", value: "—", color: "#F59E0B" },
         ].map((k, i) => (
           <motion.div key={k.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
             <RCard>
