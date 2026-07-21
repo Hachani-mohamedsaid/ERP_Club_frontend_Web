@@ -16,13 +16,9 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
-RUN npm install -g serve@14.2.4
-
 COPY --from=build /app/dist ./dist
+COPY scripts/serve-dist.mjs ./scripts/serve-dist.mjs
 
 ENV NODE_ENV=production
-ENV PORT=4173
 
-EXPOSE 4173
-
-CMD ["sh", "-c", "serve dist -s -l tcp://0.0.0.0:${PORT}"]
+CMD ["node", "scripts/serve-dist.mjs"]
