@@ -1,9 +1,17 @@
 import { motion } from "framer-motion";
 import { METRIC_COLORS, VIIV_THEME } from "./whoopTheme";
 
+/** ~0.04 kcal/pas ou ~0.05 kcal/m — kcal actives (marche), pas le total métabolisme montre */
+export function estimateActiveCalories(steps: number, distanceM = 0): number {
+  const fromSteps = Math.round(steps * 0.04);
+  const fromDist = distanceM > 0 ? Math.round(distanceM * 0.05) : 0;
+  return Math.max(0, Math.max(fromSteps, fromDist));
+}
+
 interface ViivActivityRingsProps {
   steps: number;
-  calories: number;
+  /** Calories totales montre (métabolisme + activité) */
+  caloriesTotal: number;
   distanceKm: number;
   centerHr: number;
   stepsGoal?: number;
@@ -44,13 +52,17 @@ function Ring({
 
 export function ViivActivityRings({
   steps,
-  calories,
+  caloriesTotal,
   distanceKm,
   centerHr,
   stepsGoal = 8000,
   calGoal = 500,
   distGoal = 5,
 }: ViivActivityRingsProps) {
+  const distM = distanceKm > 0 ? Math.round(distanceKm * 1000) : Math.round(steps * 0.75);
+  const displayKm = distanceKm > 0 ? distanceKm : distM / 1000;
+  const activeKcal = estimateActiveCalories(steps, distM);
+
   return (
     <div className="flex flex-col items-center">
       <div className="relative h-[220px] w-[220px]">
@@ -64,8 +76,8 @@ export function ViivActivityRings({
               <circle key={t.r} cx={110} cy={110} r={t.r} fill="none" stroke={t.color} strokeWidth={t.s} />
             ))}
             <Ring progress={steps / stepsGoal} color={METRIC_COLORS.steps} radius={92} stroke={12} />
-            <Ring progress={calories / calGoal} color={METRIC_COLORS.calories} radius={72} stroke={12} />
-            <Ring progress={distanceKm / distGoal} color={METRIC_COLORS.distance} radius={52} stroke={12} />
+            <Ring progress={activeKcal / calGoal} color={METRIC_COLORS.calories} radius={72} stroke={12} />
+            <Ring progress={displayKm / distGoal} color={METRIC_COLORS.distance} radius={52} stroke={12} />
           </g>
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -86,11 +98,11 @@ export function ViivActivityRings({
       <div className="mt-4 grid w-full grid-cols-3 gap-2">
         {[
           { color: METRIC_COLORS.steps, label: "Pas", value: String(steps) },
-          { color: METRIC_COLORS.calories, label: "kcal", value: String(calories) },
+          { color: METRIC_COLORS.calories, label: "kcal act.", value: String(activeKcal) },
           {
             color: METRIC_COLORS.distance,
             label: "km",
-            value: distanceKm > 0 ? distanceKm.toFixed(2) : "—",
+            value: displayKm > 0 ? displayKm.toFixed(2) : "—",
           },
         ].map((item) => (
           <div key={item.label} className="text-center">
@@ -104,6 +116,11 @@ export function ViivActivityRings({
           </div>
         ))}
       </div>
+      {caloriesTotal > 0 && (
+        <p className="mt-3 text-center text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>
+          kcal totales montre {caloriesTotal} · métabolisme + activité
+        </p>
+      )}
     </div>
   );
 }

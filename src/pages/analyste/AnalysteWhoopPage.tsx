@@ -119,7 +119,7 @@ function AccueilTab({
           <div className="mt-4 flex justify-center">
             <ViivActivityRings
               steps={player.steps}
-              calories={player.calories}
+              caloriesTotal={player.calories}
               distanceKm={distKm}
               centerHr={hr}
             />
