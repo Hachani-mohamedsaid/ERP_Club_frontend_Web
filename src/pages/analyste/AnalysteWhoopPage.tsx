@@ -32,15 +32,17 @@ import {
   WhoopPlayerProfile,
   ViivActivityRings,
   ViivMetricTile,
+  ViivAiPredictionsCard,
 } from "../../components/analyste/whoop";
 import { METRIC_COLORS, VIIV_THEME, recoveryColor } from "../../components/analyste/whoop/whoopTheme";
 import type { WhoopPlayerMetrics } from "../../data/whoopData";
 import { useAnalysteWhoop } from "../../hooks/useAnalysteResource";
 
-type ViivTab = "accueil" | "sommeil" | "coeur" | "appareil" | "flux";
+type ViivTab = "accueil" | "ia" | "sommeil" | "coeur" | "appareil" | "flux";
 
 const TABS: { id: ViivTab; label: string }[] = [
   { id: "accueil", label: "Accueil" },
+  { id: "ia", label: "Prédictions IA (3 Modèles)" },
   { id: "sommeil", label: "Sommeil" },
   { id: "coeur", label: "Cœur" },
   { id: "appareil", label: "Appareil" },
@@ -179,6 +181,9 @@ function AccueilTab({
           </div>
         </div>
       )}
+
+      {/* Live Viiv AI Predictions */}
+      <ViivAiPredictionsCard player={player} />
 
       <button
         type="button"
@@ -619,6 +624,7 @@ export function AnalysteWhoopPage() {
                     onOpenProfile={() => setProfileOpen(true)}
                   />
                 )}
+                {tab === "ia" && <ViivAiPredictionsCard player={player} />}
                 {tab === "sommeil" && <SommeilTab player={player} />}
                 {tab === "coeur" && <CoeurTab player={player} hr={hr} />}
                 {tab === "appareil" && (
