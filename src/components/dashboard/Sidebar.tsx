@@ -82,6 +82,7 @@ import {
 const JOUEUR_NAV_KEYS: Record<string, keyof import("../../i18n/joueurTranslations").JoueurTranslations["nav"]> = {
   "/joueurs": "dashboard",
   "/joueurs/performances": "performances",
+  "/joueurs/viiv": "viiv",
   "/joueurs/medical": "medical",
   "/joueurs/planning": "planning",
   "/joueurs/ia": "aiCoach",
@@ -442,6 +443,7 @@ const NAV_ITEMS: NavItem[] = [
     submenu: [
       { label: "Dashboard", icon: LayoutDashboard, path: "/joueurs" },
       { label: "Mes Performances", icon: BarChart3, path: "/joueurs/performances" },
+      { label: "Viiv Smartwatch", icon: Watch, path: "/joueurs/viiv" },
       { label: "Mon Suivi Médical", icon: Stethoscope, path: "/joueurs/medical" },
       { label: "Mon Planning", icon: Calendar, path: "/joueurs/planning" },
       { label: "AI Coach", icon: Zap, path: "/joueurs/ia" },

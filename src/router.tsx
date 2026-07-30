@@ -90,6 +90,7 @@ import { JoueurMatchAnalysisPage } from "./pages/joueur/JoueurMatchAnalysisPage"
 import { JoueurAwardsPage } from "./pages/joueur/JoueurAwardsPage";
 import { JoueurChemistryPage } from "./pages/joueur/JoueurChemistryPage";
 import { JoueurPerformancesPage } from "./pages/joueur/JoueurPerformancesPage";
+import { JoueurViivPage } from "./pages/joueur/JoueurViivPage";
 import { JoueurMedicalPage } from "./pages/joueur/JoueurMedicalPage";
 import { JoueurPlanningPage } from "./pages/joueur/JoueurPlanningPage";
 import { JoueurMonProfilPage } from "./pages/joueur/JoueurMonProfilPage";
@@ -248,6 +249,7 @@ export function AppRouter() {
         <Route path="/medical/ia" element={<RequireRole roles={["medical"]}><MedicalAIPage /></RequireRole>} />
         <Route path="/joueurs" element={<RequireRole roles={["joueur"]}><JoueurDashboard /></RequireRole>} />
         <Route path="/joueurs/performances" element={<RequireRole roles={["joueur"]}><JoueurPerformancesPage /></RequireRole>} />
+        <Route path="/joueurs/viiv" element={<RequireRole roles={["joueur"]}><JoueurViivPage /></RequireRole>} />
         <Route path="/joueurs/medical" element={<RequireRole roles={["joueur"]}><JoueurMedicalPage /></RequireRole>} />
         <Route path="/joueurs/planning" element={<RequireRole roles={["joueur"]}><JoueurPlanningPage /></RequireRole>} />
         <Route path="/joueurs/ia" element={<RequireRole roles={["joueur"]}><JoueurAIPage /></RequireRole>} />
