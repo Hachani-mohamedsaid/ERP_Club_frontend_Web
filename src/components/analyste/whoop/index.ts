@@ -9,3 +9,6 @@ export { WhoopPlayerProfile } from "./WhoopPlayerProfile";
 export { WhoopTeamOverview } from "./WhoopTeamOverview";
 export { WhoopR3FBand } from "./WhoopR3FBand";
 export { ViivR3FWatch } from "./ViivR3FWatch";
+export { ViivActivityRings } from "./ViivActivityRings";
+export { ViivMetricTile } from "./ViivMetricTile";
+export { VIIV_THEME, METRIC_COLORS } from "./whoopTheme";

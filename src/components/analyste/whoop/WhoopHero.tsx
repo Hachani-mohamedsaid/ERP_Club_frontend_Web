@@ -15,10 +15,13 @@ export function WhoopHero({ player }: WhoopHeroProps) {
 
   return (
     <motion.section
-      className="relative overflow-hidden rounded-3xl border border-cyan-500/15 p-4 lg:p-6"
+      className="relative overflow-hidden p-4 lg:p-6"
       style={{
-        background: "linear-gradient(135deg, rgba(8,15,30,0.85) 0%, rgba(3,7,18,0.95) 100%)",
+        borderRadius: 22,
+        border: "1px solid rgba(34,211,238,0.18)",
+        background: "linear-gradient(145deg, rgba(28,28,46,0.85) 0%, rgba(11,11,20,0.95) 100%)",
         boxShadow: "0 24px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(34,211,238,0.08)",
+        backdropFilter: "blur(18px)",
       }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -60,17 +63,17 @@ export function WhoopHero({ player }: WhoopHeroProps) {
             )}
           </div>
 
-          <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-3 backdrop-blur-md">
+          <div className="rounded-2xl border border-orange-500/25 bg-orange-500/5 p-3 backdrop-blur-md">
             <div className="flex items-center justify-between">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-400/80">Énergie Viiv</p>
-              <Activity size={12} className="text-cyan-400/60" />
+              <p className="text-[10px] font-bold uppercase tracking-widest text-orange-400/80">Énergie Viiv</p>
+              <Activity size={12} className="text-orange-400/60" />
             </div>
-            <p className="text-3xl font-light tabular-nums" style={{ color: ec }}>
+            <p className="text-3xl font-black tabular-nums" style={{ color: ec }}>
               <CountUpStat end={player.viivEnergy} suffix="%" />
             </p>
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/8">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-300"
+                className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-300"
                 initial={{ width: 0 }}
                 animate={{ width: `${player.viivEnergy}%` }}
                 transition={{ duration: 1.1, ease: "easeOut" }}

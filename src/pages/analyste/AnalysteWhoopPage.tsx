@@ -1,19 +1,24 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, type CSSProperties } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, RefreshCw, Bell, Activity, Radio } from "lucide-react";
+import {
+  RefreshCw,
+  Heart,
+  Moon,
+  Wind,
+  Activity,
+  Brain,
+  Zap,
+  Watch,
+} from "lucide-react";
 import { AnalystePageTransition } from "../../components/analyste/AnalystePageTransition";
 import { AnalystePageLoader } from "../../components/analyste/AnalystePageLoader";
 import {
   WhoopPremiumBg,
-  WhoopHero,
-  WhoopSquadList,
-  WhoopRightRail,
-  WhoopAICoach,
-  WhoopTimeline,
-  WhoopGlassMetric,
   WhoopPlayerProfile,
-  WhoopTeamOverview,
+  ViivActivityRings,
+  ViivMetricTile,
 } from "../../components/analyste/whoop";
+import { METRIC_COLORS, VIIV_THEME, recoveryColor } from "../../components/analyste/whoop/whoopTheme";
 import { useAnalysteWhoop } from "../../hooks/useAnalysteResource";
 
 function formatAgo(iso: string | null | undefined) {
@@ -25,13 +30,18 @@ function formatAgo(iso: string | null | undefined) {
   return new Date(iso).toLocaleString("fr-FR");
 }
 
+function parseDistanceKm(gps?: string) {
+  if (!gps) return 0;
+  const m = gps.match(/([\d.]+)\s*km/i);
+  return m ? Number(m[1]) : 0;
+}
+
 export function AnalysteWhoopPage() {
   const { data, loading, reload } = useAnalysteWhoop(8000);
   const [selectedId, setSelectedId] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [search, setSearch] = useState("");
-  const [notifOpen, setNotifOpen] = useState(false);
+  const [tab, setTab] = useState<"accueil" | "flux">("accueil");
 
   useEffect(() => {
     if (!data?.squad?.length) return;
@@ -45,28 +55,15 @@ export function AnalysteWhoopPage() {
   const summary = data?.mobileSummary;
   const player = squad.find((p) => p.id === selectedId) ?? squad[0];
 
-  const filtered = useMemo(
-    () => squad.filter((p) => p.name.toLowerCase().includes(search.toLowerCase())),
-    [squad, search],
-  );
-
-  const allAlerts = useMemo(
-    () => squad.flatMap((p) => p.alerts.map((a) => ({ ...a, player: p.name }))),
-    [squad],
-  );
+  const recentForPlayer = useMemo(() => {
+    const all = summary?.recent ?? [];
+    if (!player) return all;
+    const mine = all.filter((r) => r.playerName === player.name);
+    return mine.length ? mine : all;
+  }, [summary, player]);
 
   if (loading && !data) return <AnalystePageLoader />;
   if (!player) return <AnalystePageLoader />;
-
-  const handleSelect = (id: string) => {
-    setSelectedId(id);
-    setProfileOpen(false);
-  };
-
-  const openProfile = (id: string) => {
-    setSelectedId(id);
-    setProfileOpen(true);
-  };
 
   const handleSync = async () => {
     setSyncing(true);
@@ -74,132 +71,119 @@ export function AnalysteWhoopPage() {
     setSyncing(false);
   };
 
-  const mobileCount = summary?.playersWithViiv ?? squad.filter((p) => p.fromMobile).length;
-  const totalReadings = summary?.totalReadings ?? 0;
+  const hr = player.restingHr;
+  const distKm = parseDistanceKm(player.gpsActivity);
+  const rc = recoveryColor(player.recovery);
+
+  const glassCard: CSSProperties = {
+    borderRadius: VIIV_THEME.radiusCard,
+    background: `linear-gradient(145deg, ${VIIV_THEME.glass}, rgba(22,22,42,0.92))`,
+    border: `1px solid ${VIIV_THEME.glassBorder}`,
+    boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+    backdropFilter: `blur(${VIIV_THEME.blur}px)`,
+  };
 
   return (
     <>
       <WhoopPremiumBg />
       <AnalystePageTransition>
-        <div className="relative mx-auto max-w-[1600px] space-y-5 pb-8">
+        <div className="relative mx-auto max-w-[720px] space-y-4 px-1 pb-10">
+          {/* Header — mobile _QWatchHeader */}
           <motion.div
-            className="flex flex-wrap items-center justify-between gap-4"
-            initial={{ opacity: 0, y: -12 }}
+            className="flex items-start justify-between gap-3 pt-1"
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
           >
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-cyan-400">VIIV</span>
-                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[9px] font-bold text-emerald-400">
+                <h1
+                  className="text-[22px] font-black leading-none text-white"
+                  style={{ letterSpacing: "-0.5px" }}
+                >
+                  Viiv
+                </h1>
+                <span
+                  className="rounded-full px-2 py-0.5 text-[10px] font-black"
+                  style={{ background: "rgba(34,197,94,0.2)", color: VIIV_THEME.green }}
+                >
                   LIVE
                 </span>
               </div>
-              <h1 className="mt-1 bg-gradient-to-r from-white via-cyan-100 to-slate-400 bg-clip-text text-2xl font-bold text-transparent lg:text-3xl">
-                Smartwatch Hub
-              </h1>
-              <p className="text-xs text-slate-500">
-                Données Viiv mobile · Nom joueur · SpO₂ · FC · Sommeil · Refresh auto 8s
+              <p className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>
+                {player.deviceId || "Viiv GX17"} · {player.battery}% · {hr > 0 ? `${hr} bpm` : "— bpm"}
+              </p>
+              <p className="mt-0.5 text-[11px] font-semibold" style={{ color: VIIV_THEME.cyan }}>
+                {player.name}
+                {player.fromMobile ? " · Mobile" : ""}
               </p>
             </div>
+            <button
+              type="button"
+              onClick={() => void handleSync()}
+              disabled={syncing}
+              className="flex h-11 w-11 items-center justify-center rounded-2xl border transition"
+              style={{
+                borderColor: "rgba(34,211,238,0.35)",
+                background: "rgba(34,211,238,0.08)",
+                color: VIIV_THEME.cyan,
+              }}
+              aria-label="Synchroniser"
+            >
+              <RefreshCw size={18} className={syncing ? "animate-spin" : ""} />
+            </button>
+          </motion.div>
 
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                <input
-                  type="text"
-                  placeholder="Rechercher joueur..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-44 rounded-xl border border-white/8 bg-slate-900/60 py-2 pl-9 pr-3 text-xs text-white placeholder:text-slate-600 backdrop-blur-md focus:border-cyan-500/40 focus:outline-none"
-                />
-              </div>
-
-              <div className="relative">
-                <motion.button
+          {/* Player chips — multi-joueur web */}
+          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+            {squad.map((p) => {
+              const sel = p.id === player.id;
+              return (
+                <button
+                  key={p.id}
                   type="button"
-                  onClick={() => setNotifOpen((o) => !o)}
-                  className="relative rounded-xl border border-white/8 bg-slate-900/60 p-2.5 text-slate-300 backdrop-blur-md"
-                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setSelectedId(p.id);
+                    setProfileOpen(false);
+                  }}
+                  className="flex shrink-0 items-center gap-2 rounded-full border px-2.5 py-1.5 text-left transition"
+                  style={{
+                    borderColor: sel ? "rgba(34,211,238,0.55)" : VIIV_THEME.glassBorder,
+                    background: sel ? "rgba(34,211,238,0.12)" : "rgba(22,22,42,0.55)",
+                  }}
                 >
-                  <Bell size={16} />
-                  {allAlerts.filter((a) => a.type !== "ok").length > 0 && (
-                    <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
-                      {allAlerts.filter((a) => a.type !== "ok").length}
-                    </span>
-                  )}
-                </motion.button>
-                <AnimatePresence>
-                  {notifOpen && (
-                    <motion.div
-                      className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-white/10 bg-slate-900/95 p-3 shadow-2xl backdrop-blur-xl"
-                      initial={{ opacity: 0, y: -8, scale: 0.96 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                    >
-                      {allAlerts.slice(0, 5).map((a, i) => (
-                        <motion.div
-                          key={a.id}
-                          className="border-b border-white/5 py-2 last:border-0"
-                          initial={{ opacity: 0, x: 16 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: i * 0.05 }}
-                        >
-                          <p className="text-[11px] text-white">{a.message}</p>
-                          <p className="text-[9px] text-slate-500">
-                            {a.player} · {a.time}
-                          </p>
-                        </motion.div>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                  <img src={p.photo} alt="" className="h-7 w-7 rounded-full object-cover" />
+                  <span className="max-w-[110px] truncate text-xs font-semibold text-white">{p.name}</span>
+                </button>
+              );
+            })}
+          </div>
 
-              <motion.button
+          {/* Tabs Accueil / Flux — like mobile tabs, slim */}
+          <div className="flex gap-1 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+            {(
+              [
+                ["accueil", "Accueil"],
+                ["flux", "Flux mobile"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
                 type="button"
-                onClick={() => void handleSync()}
-                disabled={syncing}
-                className="flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-xs font-semibold text-cyan-300"
-                whileTap={{ scale: 0.97 }}
+                onClick={() => setTab(id)}
+                className="relative px-4 py-2.5 text-sm font-semibold transition"
+                style={{ color: tab === id ? VIIV_THEME.cyan : "rgba(255,255,255,0.45)" }}
               >
-                <RefreshCw size={13} className={syncing ? "animate-spin" : ""} />
-                {syncing ? "Sync..." : "Sync équipe"}
-              </motion.button>
-            </div>
-          </motion.div>
-
-          {/* Résumé données mobile */}
-          <motion.div
-            className="grid gap-3 rounded-2xl border border-cyan-500/20 bg-gradient-to-r from-cyan-500/10 via-slate-900/60 to-emerald-500/10 p-4 sm:grid-cols-4"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Joueurs Viiv</p>
-              <p className="mt-1 text-2xl font-bold text-white">{mobileCount}</p>
-              <p className="text-[10px] text-slate-500">avec snapshot mobile</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Enregistrements</p>
-              <p className="mt-1 text-2xl font-bold text-cyan-300">{totalReadings}</p>
-              <p className="text-[10px] text-slate-500">lectures sauvées depuis mobile</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Dernier joueur</p>
-              <p className="mt-1 truncate text-lg font-semibold text-emerald-300">
-                {summary?.lastPlayerName ?? player.name}
-              </p>
-              <p className="text-[10px] text-slate-500">{formatAgo(summary?.lastSyncAt)}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Radio size={16} className="text-emerald-400" />
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Temps réel</p>
-                <p className="text-sm font-medium text-white">Polling 8s actif</p>
-                <p className="text-[10px] text-slate-500">nom + métriques live</p>
-              </div>
-            </div>
-          </motion.div>
+                {label}
+                {tab === id && (
+                  <motion.span
+                    layoutId="viiv-tab"
+                    className="absolute inset-x-2 -bottom-px h-0.5 rounded-full"
+                    style={{ background: VIIV_THEME.cyan }}
+                  />
+                )}
+              </button>
+            ))}
+          </div>
 
           <AnimatePresence mode="wait">
             {profileOpen ? (
@@ -208,131 +192,204 @@ export function AnalysteWhoopPage() {
                 player={player}
                 onBack={() => setProfileOpen(false)}
               />
+            ) : tab === "flux" ? (
+              <motion.div
+                key="flux"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="space-y-3"
+              >
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div style={glassCard} className="p-3.5">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: VIIV_THEME.muted }}>
+                      Joueurs Viiv
+                    </p>
+                    <p className="mt-1 text-2xl font-black text-white">
+                      {summary?.playersWithViiv ?? squad.filter((p) => p.fromMobile).length}
+                    </p>
+                  </div>
+                  <div style={glassCard} className="p-3.5">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: VIIV_THEME.muted }}>
+                      Enregistrements
+                    </p>
+                    <p className="mt-1 text-2xl font-black" style={{ color: VIIV_THEME.cyan }}>
+                      {summary?.totalReadings ?? 0}
+                    </p>
+                  </div>
+                </div>
+                <div style={glassCard} className="p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: VIIV_THEME.muted }}>
+                    Lectures realtime
+                  </p>
+                  <div className="mt-3 max-h-[420px] space-y-2 overflow-y-auto">
+                    {(summary?.recent ?? []).map((r) => (
+                      <div
+                        key={r.id}
+                        className="flex items-center justify-between gap-3 rounded-2xl border px-3 py-2.5"
+                        style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.22)" }}
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-white">{r.playerName}</p>
+                          <p className="text-[10px]" style={{ color: VIIV_THEME.muted }}>
+                            {r.source} · {formatAgo(r.recordedAt)}
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-right text-[10px] tabular-nums" style={{ color: VIIV_THEME.textSecondary }}>
+                          <p>
+                            FC {r.restingHr ?? "—"} · SpO₂ {r.spo2 ?? "—"}%
+                          </p>
+                          <p>
+                            Stress {r.stress ?? "—"} · Énergie {r.viivEnergy ?? "—"}%
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                    {!summary?.recent?.length && (
+                      <p className="text-xs" style={{ color: VIIV_THEME.muted }}>
+                        Aucune lecture mobile. Sync Viiv depuis l&apos;app joueur.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
             ) : (
               <motion.div
-                key="hub"
-                className="space-y-5"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                key="accueil"
+                className="space-y-4"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
               >
-                <WhoopHero player={player} />
+                {/* Activité du jour — rings hero */}
+                <motion.div
+                  style={glassCard}
+                  className="p-5"
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                >
+                  <p className="text-center text-base font-extrabold text-white">Activité du jour</p>
+                  <p className="mt-1 text-center text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>
+                    Sync {player.lastSync || formatAgo(player.lastSyncAt)}
+                  </p>
+                  <div className="mt-4">
+                    <ViivActivityRings
+                      steps={player.steps}
+                      calories={player.calories}
+                      distanceKm={distKm}
+                      centerHr={hr}
+                    />
+                  </div>
+                </motion.div>
 
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                  <WhoopGlassMetric
-                    label="Recovery"
-                    value={player.recovery}
-                    suffix="%"
-                    delta={`${player.recoveryDelta >= 0 ? "+" : ""}${player.recoveryDelta}%`}
-                    progress={player.recovery}
+                {/* Metric grid 2×3 — mobile Accueil */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <ViivMetricTile
+                    icon={Heart}
+                    color={METRIC_COLORS.fc}
+                    label="FC"
+                    value={hr > 0 ? hr : "—"}
+                    unit="bpm"
+                    live={player.connected}
+                    delay={0.02}
                   />
-                  <WhoopGlassMetric
-                    label="Énergie Viiv"
-                    value={player.viivEnergy}
-                    suffix="%"
-                    progress={player.viivEnergy}
-                    color="#22d3ee"
-                  />
-                  <WhoopGlassMetric label="SpO₂" value={player.spo2} suffix="%" color="#34d399" />
-                  <WhoopGlassMetric label="FC repos" value={player.restingHr} suffix=" bpm" color="#f97316" />
-                  <WhoopGlassMetric
-                    label="Sleep"
-                    value={player.sleepHours}
-                    suffix="h"
-                    progress={player.sleepPerformance}
-                    color="#818cf8"
+                  <ViivMetricTile
+                    icon={Moon}
+                    color={METRIC_COLORS.sleep}
+                    label="Sommeil"
+                    value={player.sleepHours > 0 ? player.sleepHours.toFixed(1) : "—"}
+                    unit="h"
                     delay={0.05}
                   />
-                  <WhoopGlassMetric label="Stress" value={player.stress} suffix="" color="#fb7185" delay={0.08} />
+                  <ViivMetricTile
+                    icon={Wind}
+                    color={METRIC_COLORS.spo2}
+                    label="SpO₂"
+                    value={player.spo2 > 0 ? player.spo2 : "—"}
+                    unit="%"
+                    delay={0.08}
+                  />
+                  <ViivMetricTile
+                    icon={Activity}
+                    color={METRIC_COLORS.hrv}
+                    label="HRV"
+                    value={player.hrv > 0 ? player.hrv : "—"}
+                    unit="ms"
+                    delay={0.11}
+                  />
+                  <ViivMetricTile
+                    icon={Brain}
+                    color={METRIC_COLORS.stress}
+                    label="Stress"
+                    value={player.stress > 0 ? player.stress : "—"}
+                    delay={0.14}
+                  />
+                  <ViivMetricTile
+                    icon={Zap}
+                    color={METRIC_COLORS.energy}
+                    label="Énergie"
+                    value={player.viivEnergy > 0 ? player.viivEnergy : "—"}
+                    unit="%"
+                    delay={0.17}
+                  />
                 </div>
 
-                <div className="grid gap-5 lg:grid-cols-12">
-                  <motion.div
-                    className="lg:col-span-3"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                  >
-                    <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                      Effectif · Viiv
-                    </p>
-                    <WhoopSquadList
-                      players={filtered}
-                      selectedId={selectedId}
-                      onSelect={handleSelect}
-                      onOpenProfile={openProfile}
-                    />
-                    <motion.button
-                      type="button"
-                      onClick={() => openProfile(selectedId)}
-                      className="mt-3 w-full rounded-xl border border-emerald-500/30 bg-emerald-500/10 py-2 text-xs font-semibold text-emerald-300"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      Voir profil complet →
-                    </motion.button>
-                  </motion.div>
-
-                  <div className="space-y-4 lg:col-span-6">
-                    <WhoopAICoach player={player} />
-                    <div className="rounded-2xl border border-white/8 bg-slate-900/50 p-4 backdrop-blur-xl">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                        Timeline · Aujourd&apos;hui
+                {/* Recovery + strain */}
+                {player.recovery > 0 && (
+                  <div style={glassCard} className="flex items-center gap-3 p-4">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-extrabold text-white">Recovery</p>
+                      <p className="text-xs" style={{ color: VIIV_THEME.muted }}>
+                        <span style={{ color: rc }}>{player.recovery}%</span> · {player.readiness}
                       </p>
-                      <div className="mt-3">
-                        <WhoopTimeline events={player.timeline} />
-                      </div>
                     </div>
-
-                    {/* Flux realtime mobile */}
-                    <div className="rounded-2xl border border-cyan-500/15 bg-slate-900/50 p-4 backdrop-blur-xl">
-                      <div className="flex items-center gap-2">
-                        <Activity size={14} className="text-cyan-400" />
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                          Flux mobile realtime
-                        </p>
-                      </div>
-                      <div className="mt-3 max-h-56 space-y-2 overflow-y-auto">
-                        {(summary?.recent?.length ? summary.recent : []).map((r) => (
-                          <div
-                            key={r.id}
-                            className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-black/20 px-3 py-2"
-                          >
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold text-white">{r.playerName}</p>
-                              <p className="text-[10px] text-slate-500">
-                                {r.source} · {formatAgo(r.recordedAt)}
-                              </p>
-                            </div>
-                            <div className="shrink-0 text-right text-[10px] tabular-nums text-slate-300">
-                              <p>
-                                FC {r.restingHr ?? "—"} · SpO₂ {r.spo2 ?? "—"}%
-                              </p>
-                              <p>
-                                Stress {r.stress ?? "—"} · Énergie {r.viivEnergy ?? "—"}%
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                        {!summary?.recent?.length && (
-                          <p className="text-xs text-slate-500">
-                            Aucune lecture mobile pour l&apos;instant. Sync Viiv depuis l&apos;app joueur pour
-                            alimenter ce flux.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <WhoopTeamOverview squad={squad} compareIds={squad.slice(0, 3).map((p) => p.id)} />
+                    <p className="text-[28px] font-black tabular-nums" style={{ color: VIIV_THEME.orange }}>
+                      {player.strain.toFixed(1)}
+                    </p>
+                    <span className="text-[11px]" style={{ color: VIIV_THEME.muted }}>
+                      strain
+                    </span>
                   </div>
+                )}
 
-                  <motion.div
-                    className="lg:col-span-3"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                  >
-                    <WhoopRightRail player={player} />
-                  </motion.div>
-                </div>
+                {/* Mini flux for selected player */}
+                {recentForPlayer.length > 0 && (
+                  <div style={glassCard} className="p-4">
+                    <div className="flex items-center gap-2">
+                      <Watch size={14} style={{ color: VIIV_THEME.cyan }} />
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: VIIV_THEME.muted }}>
+                        Dernières lectures · {player.name}
+                      </p>
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      {recentForPlayer.slice(0, 4).map((r) => (
+                        <div
+                          key={r.id}
+                          className="flex justify-between gap-2 text-[11px]"
+                          style={{ color: VIIV_THEME.textSecondary }}
+                        >
+                          <span style={{ color: VIIV_THEME.muted }}>{formatAgo(r.recordedAt)}</span>
+                          <span className="tabular-nums">
+                            FC {r.restingHr ?? "—"} · SpO₂ {r.spo2 ?? "—"}% · Énergie {r.viivEnergy ?? "—"}%
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setProfileOpen(true)}
+                  className="w-full py-3 text-sm font-bold transition"
+                  style={{
+                    borderRadius: VIIV_THEME.radiusBtn,
+                    background: VIIV_THEME.cyan,
+                    color: VIIV_THEME.bg,
+                  }}
+                >
+                  Voir profil complet
+                </button>
               </motion.div>
             )}
           </AnimatePresence>
