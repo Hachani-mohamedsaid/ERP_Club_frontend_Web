@@ -18,7 +18,7 @@ import type {
   TrainingPlanDay,
   VideoCoachInsight,
 } from "../../../data/analysteData";
-import type { WhoopPlayerMetrics } from "../../../data/whoopData";
+import type { WhoopApiPayload } from "../../../data/whoopData";
 
 async function parse<T>(response: Response): Promise<T> {
   if (!response.ok) throw new Error(await parseApiError(response));
@@ -150,7 +150,7 @@ export const analysteApi = {
       };
     }>("/analyste/fatigue"),
 
-  getWhoop: () => fetchAnalyste<{ squad: WhoopPlayerMetrics[]; defaultPlayerId: string }>("/analyste/whoop"),
+  getWhoop: () => fetchAnalyste<WhoopApiPayload>("/analyste/whoop"),
 
   getInjuries: () => fetchAnalyste<{ predictions: InjuryPrediction[] }>("/analyste/injuries"),
 

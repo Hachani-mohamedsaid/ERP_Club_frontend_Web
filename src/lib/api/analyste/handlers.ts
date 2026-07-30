@@ -257,7 +257,17 @@ export function handleAnalysteRoute(
   }
 
   if (method === "GET" && path === "/analyste/whoop") {
-    return ok({ squad: WHOOP_SQUAD, defaultPlayerId: "2" });
+    return ok({
+      squad: WHOOP_SQUAD,
+      defaultPlayerId: "2",
+      mobileSummary: {
+        playersWithViiv: 0,
+        totalReadings: 0,
+        lastPlayerName: null,
+        lastSyncAt: null,
+        recent: [],
+      },
+    });
   }
 
   if (method === "GET" && path === "/analyste/injuries") {

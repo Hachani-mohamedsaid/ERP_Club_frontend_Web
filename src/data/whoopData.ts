@@ -84,6 +84,39 @@ export interface WhoopPlayerMetrics {
   vo2Max: number;
   /** Dernière activité GPS enregistrée */
   gpsActivity: string;
+  /** Données issues du mobile (POST /joueur/me/viiv) */
+  fromMobile?: boolean;
+  /** Nombre d'enregistrements Viiv en base pour ce joueur */
+  readingsCount?: number;
+}
+
+export interface ViivMobileReading {
+  id: string;
+  playerName: string;
+  source: string;
+  restingHr: number | null;
+  spo2: number | null;
+  hrv: number | null;
+  stress: number | null;
+  viivEnergy: number | null;
+  sleepHours: number | null;
+  steps: number | null;
+  calories: number | null;
+  recordedAt: string;
+}
+
+export interface ViivMobileSummary {
+  playersWithViiv: number;
+  totalReadings: number;
+  lastPlayerName: string | null;
+  lastSyncAt: string | null;
+  recent: ViivMobileReading[];
+}
+
+export interface WhoopApiPayload {
+  squad: WhoopPlayerMetrics[];
+  defaultPlayerId: string;
+  mobileSummary?: ViivMobileSummary;
 }
 
 const BASE_TIMELINE: WhoopTimelineEvent[] = [
