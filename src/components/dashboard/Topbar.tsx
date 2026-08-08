@@ -9,6 +9,8 @@ import { JoueurNotificationsDropdown } from "../player/JoueurNotificationsDropdo
 import { FinanceNotificationsDropdown } from "../finance/FinanceNotificationsDropdown";
 import { ClubNotificationsDropdown } from "../club/ClubNotificationsDropdown";
 import { SuperAdminNotificationsDropdown } from "../superadmin/SuperAdminNotificationsDropdown";
+import { ScoutNotificationsDropdown } from "../scout/ScoutNotificationsDropdown";
+import { RecruteurNotificationsDropdown } from "../recruteur/RecruteurNotificationsDropdown";
 import { FinanceGlobalSearch } from "../finance/FinanceGlobalSearch";
 import { useClubProfile } from "../../hooks/useClubProfile";
 import { ClubLogo } from "../club/ClubLogo";
@@ -408,6 +410,8 @@ export function Topbar() {
   const isResponsable = user?.role === "responsable";
   const isFinance = user?.role === "finance" || location.pathname.startsWith("/finance");
   const isClubAdmin = user?.role === "adminclub";
+  const isScout = user?.role === "scout" || location.pathname.startsWith("/scout");
+  const isRecruteur = user?.role === "recruteur" || location.pathname.startsWith("/recruteur");
 
   return (
     <header className="flex items-center gap-4 px-8 py-5">
@@ -450,24 +454,23 @@ export function Topbar() {
           <FinanceNotificationsDropdown />
         ) : isClubAdmin ? (
           <ClubNotificationsDropdown />
+        ) : isResponsable ? (
+          <ClubNotificationsDropdown allPagePath="/responsable/notifications" />
+        ) : isScout ? (
+          <ScoutNotificationsDropdown />
+        ) : isRecruteur ? (
+          <RecruteurNotificationsDropdown />
         ) : (
           <button
             type="button"
             className="glass-input relative flex h-10 w-10 items-center justify-center"
-            onClick={() => {
-              const path =
-                user?.role === "responsable" ? "/responsable/notifications"
-                : user?.role === "recruteur" ? "/recruteur/notifications"
-                : null;
-              if (path) navigate(path);
-            }}
+            onClick={() => navigate("/dashboard")}
           >
             <Bell size={16} style={{ color: "var(--text-secondary)" }} />
-            <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full" style={{ background: "var(--accent)" }} />
           </button>
         )}
 
-        {(isMedical || isJoueur) && (
+        {(isMedical || isJoueur || isScout) && (
           <button
             type="button"
             onClick={() => navigate("/messages")}

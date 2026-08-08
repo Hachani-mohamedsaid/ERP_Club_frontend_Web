@@ -3,8 +3,10 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { FileText, Eye, Download, Calendar, User } from "lucide-react";
 import { ScoutPage, SCard, SBadge } from "../../components/scout/ScoutUI";
+import { ScoutPlayerPhoto, resolveScoutPhotoUrl } from "../../components/scout/ScoutPlayerPhoto";
 import { S } from "../../data/scoutData";
 import { scoutApi, type ScoutReportDto } from "../../lib/api/scout";
+import { useScoutProspects } from "../../hooks/useScoutData";
 import { showToast } from "../../components/scout/ScoutToast";
 
 const DECISION_LABEL: Record<string, { label: string; color: string }> = {
@@ -26,6 +28,7 @@ function formatDate(iso: string) {
 
 export function ScoutReportsHistoryPage() {
   const navigate = useNavigate();
+  const { prospects } = useScoutProspects();
   const [reports, setReports] = useState<ScoutReportDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<ScoutReportDto | null>(null);
@@ -115,12 +118,12 @@ export function ScoutReportsHistoryPage() {
                   }}
                   whileHover={{ y: -1 }}
                 >
-                  <div
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white"
-                    style={{ background: `linear-gradient(135deg,${S.accent},${S.primary})` }}
-                  >
-                    <FileText size={18} />
-                  </div>
+                  <ScoutPlayerPhoto
+                    name={r.prospectName}
+                    photoUrl={resolveScoutPhotoUrl(r.prospectName, undefined, prospects)}
+                    size={40}
+                    accent={S.primary}
+                  />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>
                       {r.prospectName}
@@ -141,6 +144,13 @@ export function ScoutReportsHistoryPage() {
           {selected && (
             <SCard className="!p-5 sticky top-4 h-fit">
               <p className="text-xs font-bold mb-3" style={{ color: "var(--text-primary)" }}>Détail du rapport</p>
+              <ScoutPlayerPhoto
+                name={selected.prospectName}
+                photoUrl={resolveScoutPhotoUrl(selected.prospectName, undefined, prospects)}
+                size={56}
+                accent={S.accent}
+                className="mb-3"
+              />
               <p className="text-base font-extrabold mb-1" style={{ color: "var(--text-primary)" }}>{selected.prospectName}</p>
               <p className="text-[10px] mb-4 flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
                 <User size={10} /> {selected.scoutName} · <Calendar size={10} /> {formatDate(selected.createdAt)}

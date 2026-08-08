@@ -158,6 +158,7 @@ export const PHYSICAL_PROFILES: PhysicalProfile[] = [
 
 export interface InjuryRiskEntry {
   id: string;
+  playerId?: string;
   name: string;
   zone: string;
   risk: number;

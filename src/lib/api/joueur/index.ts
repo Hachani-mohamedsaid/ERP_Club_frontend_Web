@@ -1,5 +1,6 @@
 import { parseApiError } from "../config";
 import { apiFetch, apiFetchWithTimeout } from "../authHeaders";
+import type { JoueurViivHistoryResponse, JoueurViivSnapshot } from "../viiv/mapJoueurViivToWhoop";
 
 async function parse<T>(response: Response): Promise<T> {
   if (!response.ok) throw new Error(await parseApiError(response));
@@ -94,4 +95,9 @@ export const joueurApi = {
       model: string;
       playerName: string;
     }>),
+
+  getViiv: () => apiFetch("/joueur/me/viiv").then(parse<JoueurViivSnapshot>),
+
+  getViivHistory: (limit = 40) =>
+    apiFetch(`/joueur/me/viiv/history?limit=${limit}`).then(parse<JoueurViivHistoryResponse>),
 };

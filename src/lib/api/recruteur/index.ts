@@ -41,6 +41,29 @@ export type RecruteurAiPlayerResult = {
 };
 
 export const recruteurApi = {
+  getNotifications: () => apiFetch("/club/recruteur/notifications").then(parse),
+  markNotificationRead: (id: string) =>
+    apiFetch(`/club/recruteur/notifications/${id}/read`, { method: "PATCH" }).then(parse),
+  markAllNotificationsRead: () =>
+    apiFetch("/club/recruteur/notifications/read-all", { method: "PATCH" }).then(parse),
+  deleteNotification: (id: string) =>
+    apiFetch(`/club/recruteur/notifications/${id}`, { method: "DELETE" }).then(parse),
+
+  getAuditLogs: (params?: { action?: string; severity?: string; search?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.action) q.set("action", params.action);
+    if (params?.severity) q.set("severity", params.severity);
+    if (params?.search) q.set("search", params.search);
+    const qs = q.toString();
+    return apiFetch(`/club/recruteur/audit-logs${qs ? `?${qs}` : ""}`).then(parse);
+  },
+
+  getCalendarEvents: () => apiFetch("/club/recruteur/calendar").then(parse),
+  createCalendarEvent: (body: { title: string; date: string; time?: string; type?: string; location?: string; note?: string }) =>
+    apiFetch("/club/recruteur/calendar", { method: "POST", body: JSON.stringify(body) }).then(parse),
+  deleteCalendarEvent: (id: string) =>
+    apiFetch(`/club/recruteur/calendar/${id}`, { method: "DELETE" }).then(parse),
+
   getAi: () =>
     apiFetch("/recruteur/ai").then(parse<{
       status: string;
@@ -81,4 +104,69 @@ export const recruteurApi = {
       model: string;
       generatedAt: string;
     }>),
+
+  getNotifications: () =>
+    apiFetch("/club/recruteur/notifications").then(
+      parse<
+        {
+          id: string;
+          type: string;
+          title: string;
+          body: string;
+          time: string;
+          priority: string;
+          read: boolean;
+          player?: string | null;
+        }[]
+      >(),
+    ),
+
+  markNotificationRead: (id: string) =>
+    apiFetch(`/club/recruteur/notifications/${id}/read`, { method: "PATCH" }).then(parse),
+
+  markAllNotificationsRead: () =>
+    apiFetch("/club/recruteur/notifications/read-all", { method: "PATCH" }).then(parse),
+
+  deleteNotification: (id: string) =>
+    apiFetch(`/club/recruteur/notifications/${id}`, { method: "DELETE" }).then(parse),
+
+  getShortlist: () =>
+    apiFetch("/recruteur/shortlist").then(
+      parse<
+        {
+          id: string;
+          name: string;
+          age: number;
+          position: string;
+          club: string;
+          nationality: string;
+          potential: number;
+          score: number;
+          status: string;
+          scoutName?: string | null;
+          pendingValidation: boolean;
+          notes?: string | null;
+        }[]
+      >(),
+    ),
+
+  getValidationRequests: () =>
+    apiFetch("/recruteur/validation").then(
+      parse<
+        {
+          id: string;
+          title: string;
+          detail: string;
+          status: string;
+          statusLabel: string;
+          priority: string;
+          requestedBy: string;
+          sourceKind: string | null;
+          sourceId: string | null;
+          comment: string | null;
+          createdAt: string;
+          decidedAt: string | null;
+        }[]
+      >(),
+    ),
 };

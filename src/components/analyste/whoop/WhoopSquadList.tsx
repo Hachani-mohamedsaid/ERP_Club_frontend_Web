@@ -57,10 +57,20 @@ export function WhoopSquadList({ players, selectedId, onSelect, onOpenProfile }:
               <div className="flex items-center gap-1.5">
                 <p className="truncate text-sm font-semibold text-white">{p.name}</p>
                 {p.connected ? <Wifi size={10} className="text-emerald-400" /> : <WifiOff size={10} className="text-red-400" />}
+                {p.fromMobile && (
+                  <span className="rounded bg-cyan-500/20 px-1 py-0.5 text-[8px] font-bold uppercase text-cyan-300">
+                    Mobile
+                  </span>
+                )}
               </div>
               <p className="text-[10px] text-slate-500">{p.position} · {p.lastSync}</p>
-              <div className="mt-1 flex items-center gap-2 text-[9px] text-slate-500">
-                <Battery size={9} /> {p.battery}%
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-[9px] text-slate-500">
+                <span className="inline-flex items-center gap-1"><Battery size={9} /> {p.battery}%</span>
+                <span>SpO₂ {p.spo2}%</span>
+                <span>FC {p.restingHr}</span>
+                {typeof p.readingsCount === "number" && p.readingsCount > 0 && (
+                  <span>{p.readingsCount} sync</span>
+                )}
               </div>
             </div>
             <Sparkline data={spark} color={rc} />

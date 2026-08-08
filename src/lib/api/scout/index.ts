@@ -1,5 +1,12 @@
 import { parseApiError } from "../config";
-import { apiFetch } from "../authHeaders";
+import { apiFetch, apiFetchWithTimeout } from "../authHeaders";
+import {
+  applyLocalProspectFilters,
+  buildAiSearchQuery,
+  mapAiHitToProspect,
+  type ScoutSearchFilters,
+  type SearchPlayerResult,
+} from "./searchFallback";
 
 async function parse<T>(response: Response): Promise<T> {
   if (!response.ok) throw new Error(await parseApiError(response));
@@ -35,6 +42,7 @@ export type ScoutAgentDto = {
 export interface ScoutProspectDto {
   id: string;
   legacyId?: string;
+  apiSportsId?: number;
   name: string;
   age: number;
   nationality: string;
@@ -68,21 +76,40 @@ export interface ScoutProspectDto {
   notes: { date: string; text: string }[];
   inWatchlist?: boolean;
   note?: string;
+  photoUrl?: string;
+  season?: string;
 }
 
 export interface ScoutDashboardDto {
+  clubName?: string;
+  season?: string;
+  aiPowered?: boolean;
+  recSource?: "openai" | "rules";
   kpis: {
     totalProspects: number;
     watchlistCount: number;
     reportsCount: number;
     validatedCount: number;
+    inProgress?: number;
+    prospectsThisMonth?: number;
+    reportsThisMonth?: number;
+    validationsThisMonth?: number;
     avgPotential: number;
     avgAge: number;
     priorityABudget: number;
+    budgetDeltaMK?: number;
+  };
+  sparklines?: {
+    prospects: number[];
+    reports: number[];
+    validations: number[];
+    inProgress: number[];
   };
   byPosition: { name: string; v: number }[];
   byCountry: { name: string; value: number }[];
   workflowCounts: Record<string, number>;
+  priorityCounts?: { A: number; B: number; C: number };
+  pipelineTrend?: { month: string; prospects: number; validated: number }[];
   aiRecs: {
     id: string;
     name: string;
@@ -93,6 +120,7 @@ export interface ScoutDashboardDto {
     score: number;
     budget: string;
     reasons: string[];
+    photoUrl?: string;
     warn?: string;
   }[];
   recentReports: {
@@ -145,12 +173,61 @@ export interface ScoutMissionDto {
   extra: unknown;
 }
 
+export interface ScoutProfileDto {
+  fullName: string;
+  email: string;
+  phone: string;
+  clubName: string;
+  country: string;
+  league: string;
+  role: string;
+  specialization: string;
+  regions: string[];
+  positions: string[];
+  budgetMax: string;
+  ageMin: string;
+  ageMax: string;
+  notifyNewProspect: boolean;
+  notifyShortlist: boolean;
+  notifyMissionReminder: boolean;
+  language: string;
+  stats: {
+    missionsThisMonth: number;
+    reportsSubmitted: number;
+    reportsThisMonth: number;
+    prospectsFollowed: number;
+    prospectsTotal: number;
+    conversionRate: number;
+  };
+  season: string;
+}
+
 export const scoutApi = {
   getDashboard: () => apiFetch("/scout/dashboard").then(parse<ScoutDashboardDto>),
+
+  getProfile: () => apiFetch("/scout/profile").then(parse<ScoutProfileDto>),
+
+  updateProfile: (body: Record<string, unknown>) =>
+    apiFetch("/scout/profile", { method: "PATCH", body: JSON.stringify(body) }).then(parse<ScoutProfileDto>),
 
   getProspects: () => apiFetch("/scout/prospects").then(parse<ScoutProspectDto[]>),
 
   getProspect: (id: string) => apiFetch(`/scout/prospects/${id}`).then(parse<ScoutProspectDto>),
+
+  getProspectLive: async (params: {
+    name: string;
+    club?: string;
+    legacyId?: string;
+    apiSportsId?: number;
+  }) => {
+    const qs = new URLSearchParams({ name: params.name });
+    if (params.club) qs.set("club", params.club);
+    if (params.legacyId) qs.set("legacyId", params.legacyId);
+    if (params.apiSportsId) qs.set("apiSportsId", String(params.apiSportsId));
+    const res = await apiFetch(`/scout/prospects/live?${qs}`);
+    if (!res.ok) return null;
+    return res.json() as Promise<import("./playerLive").ProspectLiveProfile>;
+  },
 
   createProspect: (body: Record<string, unknown>) =>
     apiFetch("/scout/prospects", { method: "POST", body: JSON.stringify(body) }).then(parse),
@@ -189,6 +266,13 @@ export const scoutApi = {
   createReport: (body: Record<string, unknown>) =>
     apiFetch("/scout/reports", { method: "POST", body: JSON.stringify(body) }).then(parse),
 
+  /** Envoie la shortlist au comité (Responsable + Recruteur). */
+  submitCommittee: (prospectIds: string[]) =>
+    apiFetch("/scout/shortlist/submit-committee", {
+      method: "POST",
+      body: JSON.stringify({ prospectIds }),
+    }).then(parse<{ ok: boolean; count: number; message: string }>),
+
   getMissions: () => apiFetch("/scout/missions").then(parse<ScoutMissionDto[]>),
 
   createMission: (body: Record<string, unknown>) =>
@@ -198,6 +282,7 @@ export const scoutApi = {
     apiFetch("/scout/map").then(parse<{
       status: string;
       model: string;
+      season?: string;
       continents: {
         id: string;
         name: string;
@@ -207,7 +292,8 @@ export const scoutApi = {
         prospects: number;
         teams: number;
       }[];
-      stats: { continents: number; countries: number; clubs: number; prospectsInDb: number };
+      stats: { continents: number; countries: number; clubs: number; prospectsInDb: number; leagues?: number };
+      notice?: string;
     }>),
 
   getMapCountries: (continentId: string) =>
@@ -222,6 +308,7 @@ export const scoutApi = {
         color: string;
         leagues: string[];
         leagueId: string;
+        leagueLogoUrl?: string;
         teamCount: number;
         prospects: number;
       }[];
@@ -251,7 +338,13 @@ export const scoutApi = {
         playerCount: number;
         dbProspects: number;
         logoColor?: string;
+        logoUrl?: string;
+        leagueLogoUrl?: string;
+        apiSportsId?: number;
       }[];
+      totalTeams?: number;
+      source?: string;
+      season?: string;
     }>),
 
   getTeamSquad: (teamId: string, refresh = false) =>
@@ -266,6 +359,7 @@ export const scoutApi = {
         avgPotential: number;
         scoutActivity: string;
         logoColor?: string;
+        logoUrl?: string;
         country: { id: string; name: string; flag: string; flagCode: string };
       };
       players: {
@@ -278,13 +372,32 @@ export const scoutApi = {
         potential: number;
         currentRating: number;
         marketValue: string;
-        source: "prospect" | "ai";
+        source: "prospect" | "flashscore" | "ai";
         inDatabase?: boolean;
         prospectId?: string;
+        photoUrl?: string;
+        isNewTransfer?: boolean;
+        isNew?: boolean;
+        number?: number | null;
+        apiSportsId?: number;
       }[];
-      sources: { database: number; ai: number };
+      transfers?: {
+        playerId: number;
+        playerName: string;
+        date: string;
+        type: string;
+        from: string;
+        to: string;
+        isIncoming: boolean;
+      }[];
+      newPlayers?: number;
+      sources: { database: number; flashscore?: number; ai?: number };
       cached: boolean;
       aiEnabled?: boolean;
+      dataSource?: "flashscore" | "live" | "ai";
+      season?: string;
+      updatedAt?: string;
+      autoRefresh?: boolean;
     }>),
 
   getAi: () =>
@@ -294,9 +407,10 @@ export const scoutApi = {
       provider: string;
       clubName: string;
       scoutName: string;
-      summary: { prospects: number; continents: number; countries: number; clubs: number; avgPotential: number };
+      summary: { prospects: number; flashscorePlayers?: number; continents: number; countries: number; clubs: number; avgPotential: number };
       suggestedQueries: string[];
       avgResponseTime: string;
+      season?: string;
     }>),
 
   searchAi: (query: string) =>
@@ -321,10 +435,104 @@ export const scoutApi = {
         warnings: string[];
         recommendation: string;
         inDatabase: boolean;
+        source?: "database" | "flashscore" | "ai";
+        season?: string;
+        photoUrl?: string;
       }[];
       durationMs: number;
       model: string;
+      season?: string;
     }>),
+
+  searchProspects: async (filters: ScoutSearchFilters) => {
+    type SearchResponse = {
+      summary: string;
+      results: SearchPlayerResult[];
+      aiEnabled: boolean;
+      sources: { database: number; flashscore?: number; ai?: number; apisports?: number };
+      durationMs?: number;
+      model: string;
+      season?: string;
+    };
+
+    try {
+      const response = await apiFetchWithTimeout(
+        "/scout/search",
+        { method: "POST", body: JSON.stringify(filters) },
+        60_000,
+      );
+      if (response.ok) return parse<SearchResponse>(response);
+      if (response.status !== 404 && response.status !== 405) {
+        throw new Error(await parseApiError(response));
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      const isMissingRoute = /404|405|not found/i.test(msg);
+      if (!isMissingRoute && !(err instanceof DOMException && err.name === "AbortError")) {
+        throw err;
+      }
+    }
+
+    const [prospectsRes, aiRes] = await Promise.allSettled([
+      apiFetch("/scout/prospects"),
+      apiFetchWithTimeout(
+        "/scout/ai/search",
+        { method: "POST", body: JSON.stringify({ query: buildAiSearchQuery(filters) }) },
+        60_000,
+      ),
+    ]);
+
+    let dbResults: SearchPlayerResult[] = [];
+    if (prospectsRes.status === "fulfilled" && prospectsRes.value.ok) {
+      const all = (await prospectsRes.value.json()) as ScoutProspectDto[];
+      dbResults = applyLocalProspectFilters(all, filters).map((p) => ({
+        ...p,
+        inDatabase: true,
+        source: "database" as const,
+      }));
+    }
+
+    let aiResults: SearchPlayerResult[] = [];
+    let aiEnabled = false;
+    let model = "fallback-local";
+
+    if (aiRes.status === "fulfilled" && aiRes.value.ok) {
+      const data = (await aiRes.value.json()) as {
+        results?: {
+          id: string;
+          name: string;
+          club: string;
+          position: string;
+          age: number;
+          potential: number;
+          flag: string;
+          aiScore: number;
+          inDatabase?: boolean;
+        }[];
+        model?: string;
+      };
+      aiEnabled = true;
+      model = data.model ?? "openai";
+      const dbNames = new Set(dbResults.map((p) => p.name.toLowerCase()));
+      aiResults = (data.results ?? [])
+        .filter((r) => !dbNames.has(r.name.toLowerCase()))
+        .map((r, i) => mapAiHitToProspect(r, i, filters.country));
+    }
+
+    const merged = [...dbResults, ...aiResults].sort((a, b) => b.potential - a.potential);
+    return {
+      summary:
+        aiResults.length > 0
+          ? `${merged.length} joueurs — ${dbResults.length} en base, ${aiResults.length} via IA (mode compat)`
+          : dbResults.length > 0
+            ? `${dbResults.length} joueur(s) en base (endpoint /scout/search indisponible)`
+            : "Aucun résultat — déployez le backend ou vérifiez OPENAI_API_KEY",
+      results: merged,
+      aiEnabled,
+      sources: { database: dbResults.length, ai: aiResults.length },
+      model,
+    } satisfies SearchResponse;
+  },
 
   getAgents: (refresh = false) =>
     apiFetch(`/scout/agents${refresh ? "?refresh=1" : ""}`).then(parse<{

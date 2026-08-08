@@ -1,123 +1,179 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Check, X, Clock, MessageSquare, ChevronRight } from "lucide-react";
+import { Check, X, Clock, ChevronRight } from "lucide-react";
 import { RecruteurPageTransition } from "../../components/recruteur/RecruteurPageTransition";
 import { RecruteurKpiCard } from "../../components/recruteur/RecruteurKpiCard";
-import { VALIDATION_REQUESTS, type StepStatus, type ValidationRequest } from "../../data/recruteurData";
+import { recruteurApi } from "../../lib/api/recruteur";
 
-const STATUS_META: Record<StepStatus, { color: string; icon: typeof Check; label: string }> = {
-  approved: { color: "#22C55E", icon: Check, label: "Approuvé" },
-  rejected: { color: "#EF4444", icon: X, label: "Refusé" },
-  pending: { color: "#F59E0B", icon: Clock, label: "En attente" },
-  waiting: { color: "#64748B", icon: Clock, label: "À venir" },
+type ValRow = {
+  id: string;
+  title: string;
+  detail: string;
+  status: string;
+  statusLabel: string;
+  priority: string;
+  requestedBy: string;
+  comment: string | null;
+  createdAt: string;
+  decidedAt: string | null;
+};
+
+const STATUS_META: Record<string, { color: string; icon: typeof Check; label: string }> = {
+  EN_ATTENTE: { color: "#F59E0B", icon: Clock, label: "En attente" },
+  VALIDE: { color: "#22C55E", icon: Check, label: "Validé" },
+  REFUSE: { color: "#EF4444", icon: X, label: "Refusé" },
+  RETOUR: { color: "#3B82F6", icon: Clock, label: "Retour" },
 };
 
 export function RecruteurRequestsPage() {
-  const [requests, setRequests] = useState<ValidationRequest[]>(VALIDATION_REQUESTS);
-  const [active, setActive] = useState(VALIDATION_REQUESTS[0].id);
+  const [requests, setRequests] = useState<ValRow[]>([]);
+  const [active, setActive] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const req = requests.find((r) => r.id === active)!;
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const rows = await recruteurApi.getValidationRequests();
+        if (!cancelled) {
+          setRequests(rows ?? []);
+          setActive(rows?.[0]?.id ?? null);
+        }
+      } catch {
+        if (!cancelled) setRequests([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const act = (status: "approved" | "rejected") => {
-    setRequests((prev) =>
-      prev.map((r) => {
-        if (r.id !== active) return r;
-        const idx = r.steps.findIndex((s) => s.status === "pending");
-        if (idx === -1) return r;
-        const steps = r.steps.map((s, i) => {
-          if (i === idx) return { ...s, status, by: "K. Belaïd" };
-          if (i === idx + 1 && status === "approved" && s.status === "waiting") return { ...s, status: "pending" as StepStatus };
-          return s;
-        });
-        return { ...r, steps };
-      }),
-    );
-  };
+  const req = requests.find((r) => r.id === active) ?? null;
+  const pending = requests.filter((r) => r.status === "EN_ATTENTE").length;
 
   return (
     <RecruteurPageTransition>
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[320px_1fr]">
-        <div className="space-y-2.5">
-          {requests.map((r) => {
-            const done = r.steps.filter((s) => s.status === "approved").length;
-            const rejected = r.steps.some((s) => s.status === "rejected");
-            return (
-              <button
-                key={r.id}
-                type="button"
-                onClick={() => setActive(r.id)}
-                className="flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition-colors"
-                style={{
-                  background: active === r.id ? "rgba(139,92,246,0.12)" : "rgba(15,29,58,0.7)",
-                  borderColor: active === r.id ? "rgba(139,92,246,0.4)" : "rgba(255,255,255,0.05)",
-                }}
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl text-xs font-bold" style={{ background: rejected ? "rgba(239,68,68,0.15)" : "rgba(139,92,246,0.15)", color: rejected ? "#EF4444" : "#A855F7" }}>
-                  {r.position}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-bold" style={{ color: "var(--text-primary)" }}>{r.player}</div>
-                  <div className="truncate text-[11px]" style={{ color: "var(--text-muted)" }}>{r.value} • {r.requestedBy} • {r.date}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs font-bold" style={{ color: rejected ? "#EF4444" : "#22C55E" }}>{done}/{r.steps.length}</div>
-                  <ChevronRight size={14} style={{ color: "var(--text-muted)" }} />
-                </div>
-              </button>
-            );
-          })}
+      <div className="mb-2">
+        <h1 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>
+          Demandes validation recrutement
+        </h1>
+        <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+          Flux club: Scout → comité → Responsable · {pending} en attente
+        </p>
+      </div>
+
+      {loading ? (
+        <p className="py-10 text-center text-sm" style={{ color: "var(--text-muted)" }}>
+          Chargement…
+        </p>
+      ) : requests.length === 0 ? (
+        <div className="rounded-2xl border border-dashed py-16 text-center" style={{ borderColor: "var(--surface-panel-border)" }}>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+            Aucune demande. Quand le scout envoie la shortlist au comité, elle apparaît ici.
+          </p>
         </div>
-
-        <RecruteurKpiCard hover={false}>
-          <div className="mb-4 flex items-center justify-between border-b pb-3" style={{ borderColor: "var(--surface-panel-border)" }}>
-            <div>
-              <h3 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Workflow — {req.player}</h3>
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>{req.position} • {req.value} • Demandé par {req.requestedBy}</p>
-            </div>
-          </div>
-
-          <div className="relative ml-3 border-l-2 pl-6" style={{ borderColor: "var(--surface-panel-border)" }}>
-            {req.steps.map((step, i) => {
-              const meta = STATUS_META[step.status];
-              const Icon = meta.icon;
+      ) : (
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[320px_1fr]">
+          <div className="space-y-2.5">
+            {requests.map((r) => {
+              const meta = STATUS_META[r.status] ?? STATUS_META.EN_ATTENTE;
               return (
-                <motion.div key={step.step} className="relative mb-5 last:mb-0" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.08 }}>
-                  <span
-                    className="absolute -left-[35px] flex h-7 w-7 items-center justify-center rounded-full ring-4"
-                    style={{ background: meta.color, boxShadow: step.status === "pending" ? `0 0 12px ${meta.color}` : undefined, "--tw-ring-color": "rgba(15,29,58,1)" } as React.CSSProperties}
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => setActive(r.id)}
+                  className="flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition-colors"
+                  style={{
+                    background: active === r.id ? "rgba(139,92,246,0.12)" : "rgba(15,29,58,0.7)",
+                    borderColor: active === r.id ? "rgba(139,92,246,0.4)" : "rgba(255,255,255,0.05)",
+                  }}
+                >
+                  <div
+                    className="flex h-10 w-10 items-center justify-center rounded-xl"
+                    style={{ background: `${meta.color}22`, color: meta.color }}
                   >
-                    <Icon size={14} className="text-white" />
-                  </span>
-                  <div className="rounded-xl border p-3" style={{ background: "rgba(255,255,255,0.03)", borderColor: `${meta.color}30` }}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{step.label}</span>
-                      <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: `${meta.color}1f`, color: meta.color }}>{meta.label}</span>
-                    </div>
-                    {step.by && <div className="mt-0.5 text-[11px]" style={{ color: "var(--text-muted)" }}>par {step.by}</div>}
-                    {step.comment && (
-                      <div className="mt-2 flex items-start gap-1.5 rounded-lg p-2 text-[11px]" style={{ background: "rgba(255,255,255,0.04)", color: "var(--text-secondary)" }}>
-                        <MessageSquare size={12} className="mt-0.5 shrink-0" style={{ color: meta.color }} />
-                        {step.comment}
-                      </div>
-                    )}
+                    <meta.icon size={14} />
                   </div>
-                </motion.div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+                      {r.title}
+                    </div>
+                    <div className="truncate text-[11px]" style={{ color: "var(--text-muted)" }}>
+                      {r.requestedBy} · {new Date(r.createdAt).toLocaleDateString("fr-FR")}
+                    </div>
+                  </div>
+                  <ChevronRight size={14} style={{ color: "var(--text-muted)" }} />
+                </button>
               );
             })}
           </div>
 
-          {req.steps.some((s) => s.status === "pending") && (
-            <div className="mt-4 flex gap-2 border-t pt-4" style={{ borderColor: "var(--surface-panel-border)" }}>
-              <button type="button" onClick={() => act("approved")} className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold text-white" style={{ background: "linear-gradient(135deg,#22C55E,#16A34A)" }}>
-                <Check size={15} /> Approuver mon étape
-              </button>
-              <button type="button" onClick={() => act("rejected")} className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold text-white" style={{ background: "linear-gradient(135deg,#EF4444,#DC2626)" }}>
-                <X size={15} /> Refuser
-              </button>
-            </div>
+          {req && (
+            <RecruteurKpiCard hover={false}>
+              <div className="mb-4 flex items-center justify-between border-b pb-3" style={{ borderColor: "var(--surface-panel-border)" }}>
+                <div>
+                  <h3 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>
+                    {req.title}
+                  </h3>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                    {req.detail}
+                  </p>
+                </div>
+                <span
+                  className="rounded-full px-2.5 py-1 text-[10px] font-bold"
+                  style={{
+                    background: `${(STATUS_META[req.status] ?? STATUS_META.EN_ATTENTE).color}22`,
+                    color: (STATUS_META[req.status] ?? STATUS_META.EN_ATTENTE).color,
+                  }}
+                >
+                  {req.statusLabel}
+                </span>
+              </div>
+
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span style={{ color: "var(--text-muted)" }}>Demandé par</span>
+                  <span style={{ color: "var(--text-primary)" }}>{req.requestedBy}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{ color: "var(--text-muted)" }}>Priorité</span>
+                  <span style={{ color: "var(--text-primary)" }}>{req.priority}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{ color: "var(--text-muted)" }}>Créé</span>
+                  <span style={{ color: "var(--text-primary)" }}>
+                    {new Date(req.createdAt).toLocaleString("fr-FR")}
+                  </span>
+                </div>
+                {req.decidedAt && (
+                  <div className="flex justify-between">
+                    <span style={{ color: "var(--text-muted)" }}>Décidé</span>
+                    <span style={{ color: "var(--text-primary)" }}>
+                      {new Date(req.decidedAt).toLocaleString("fr-FR")}
+                    </span>
+                  </div>
+                )}
+                {req.comment && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="rounded-xl border p-3 text-xs"
+                    style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-secondary)" }}
+                  >
+                    {req.comment}
+                  </motion.p>
+                )}
+                <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+                  La décision finale est prise par le Responsable (Centre de Validation).
+                </p>
+              </div>
+            </RecruteurKpiCard>
           )}
-        </RecruteurKpiCard>
-      </div>
+        </div>
+      )}
     </RecruteurPageTransition>
   );
 }

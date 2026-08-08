@@ -6,7 +6,9 @@ import {
 } from "lucide-react";
 import { RPage, RCard, RHeader, RSection, RRow, RPills, RBtn, RKpiCard, RSearch, pageVariants, cardVariants } from "../../components/responsable";
 import { responsableApi } from "../../lib/api/responsable";
+import { scoutApi, type ScoutAgentDto } from "../../lib/api/scout";
 import { useClubResource } from "../../hooks/useClubResource";
+import { useNavigate } from "react-router-dom";
 
 interface Prospect {
   id: string;
@@ -301,14 +303,45 @@ function ProspectReportModal({
 }
 
 export function RecrutementPage() {
+  const navigate = useNavigate();
   const { data: PROSPECTS, loading, reload } = useClubResource(
     () => responsableApi.getProspects() as Promise<Prospect[]>,
   );
+  const { data: REPORTS_DATA } = useClubResource(
+    () =>
+      responsableApi.getRecruitmentReports() as Promise<
+        {
+          id: string;
+          prospect: string;
+          scout: string;
+          date: string;
+          rating: number;
+          decision?: string;
+          recommendation?: string | null;
+        }[]
+      >,
+  );
+  const { data: SHORTLIST_DATA, reload: reloadShortlist } = useClubResource(
+    () =>
+      responsableApi.getRecruitmentShortlist() as Promise<
+        (Prospect & {
+          pendingValidation?: boolean;
+          validationId?: string | null;
+          scoutName?: string | null;
+        })[]
+      >,
+  );
+  const { data: AGENTS_DATA } = useClubResource(async () => {
+    const res = await scoutApi.getAgents();
+    return res.agents ?? [];
+  });
 
   const prospects = PROSPECTS ?? [];
-  const SHORTLIST = prospects.filter((p) => p.status === "Shortlisté" || p.status === "Contacté");
-  const AGENTS: { id: string; name: string; agency: string; speciality: string; deals: number; rating: number; phone: string }[] = [];
-  const REPORTS: { id: string; prospect: string; scout: string; date: string; rating: number; file: string }[] = [];
+  const SHORTLIST = SHORTLIST_DATA?.length
+    ? SHORTLIST_DATA
+    : prospects.filter((p) => p.status === "Shortlisté" || p.status === "Contacté");
+  const AGENTS: ScoutAgentDto[] = AGENTS_DATA ?? [];
+  const REPORTS = REPORTS_DATA ?? [];
 
   const [activeTab, setActiveTab] = useState<Tab>("Prospects");
   const [search, setSearch] = useState("");
@@ -347,12 +380,20 @@ export function RecrutementPage() {
     showToast("Rapport scouting enregistré.");
   }
 
-  async function validateFromShortlist(p: Prospect) {
+  async function validateFromShortlist(
+    p: Prospect & { pendingValidation?: boolean; validationId?: string | null },
+  ) {
     setBusyId(p.id);
     try {
-      await responsableApi.updateProspect(p.id, { status: "Contacté" });
+      if (p.pendingValidation && p.validationId) {
+        await responsableApi.decideValidation(p.validationId, "approve");
+        showToast(`${p.name} validé par le comité.`);
+      } else {
+        await responsableApi.updateProspect(p.id, { status: "Contacté" });
+        showToast(`${p.name} marqué comme contacté.`);
+      }
       await reload();
-      showToast(`${p.name} marqué comme contacté.`);
+      await reloadShortlist();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Erreur");
     } finally {
@@ -501,7 +542,10 @@ export function RecrutementPage() {
                           </div>
                           <div>
                             <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{p.name}</p>
-                            <p className="text-xs" style={{ color: "var(--text-muted)" }}>{p.pos} · {p.club}</p>
+                            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                              {p.pos} · {p.club}
+                              {"pendingValidation" in p && p.pendingValidation ? " · En attente validation" : ""}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
@@ -528,46 +572,78 @@ export function RecrutementPage() {
 
           {/* ── Agents ── */}
           {activeTab === "Agents" && (
-            <RSection title="Réseau d'agents" subtitle="Partenaires et contacts de recrutement.">
+            <RSection title="Réseau d'agents" subtitle="Agents du club (partagés avec le module Scout).">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                {AGENTS.map(a => (
-                  <RCard key={a.id}>
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-xl text-lg font-black"
-                        style={{ background: "rgba(255,122,0,0.15)", color: "var(--accent)" }}>
-                        {a.name[0]}
-                      </div>
-                      <div>
-                        <p className="font-bold" style={{ color: "var(--text-primary)" }}>{a.name}</p>
-                        <p className="text-xs" style={{ color: "var(--text-muted)" }}>{a.agency}</p>
-                      </div>
+                {AGENTS.length === 0 ? (
+                  <RCard className="md:col-span-3">
+                    <p className="text-center text-sm" style={{ color: "var(--text-muted)" }}>
+                      Aucun agent. Ajoutez-en depuis le module Scout → Agents.
+                    </p>
+                    <div className="mt-3 flex justify-center">
+                      <RBtn variant="ghost" onClick={() => navigate("/responsable/validation")}>
+                        Voir validations comité
+                      </RBtn>
                     </div>
-                    <div className="mt-4 space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span style={{ color: "var(--text-muted)" }}>Spécialité</span>
-                        <span style={{ color: "var(--text-primary)" }}>{a.speciality}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span style={{ color: "var(--text-muted)" }}>Deals</span>
-                        <span className="font-semibold" style={{ color: "var(--accent)" }}>{a.deals}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span style={{ color: "var(--text-muted)" }}>Rating</span>
-                        <StarRating value={a.rating} />
-                      </div>
-                    </div>
-                    <RBtn variant="ghost" className="mt-4 w-full justify-center text-xs">{a.phone}</RBtn>
                   </RCard>
-                ))}
+                ) : (
+                  AGENTS.map((a) => (
+                    <RCard key={a.id}>
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="flex h-11 w-11 items-center justify-center rounded-xl text-lg font-black"
+                          style={{ background: "rgba(255,122,0,0.15)", color: "var(--accent)" }}
+                        >
+                          {a.name[0]}
+                        </div>
+                        <div>
+                          <p className="font-bold" style={{ color: "var(--text-primary)" }}>
+                            {a.name}
+                          </p>
+                          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                            {a.agency}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-4 space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span style={{ color: "var(--text-muted)" }}>Pays</span>
+                          <span style={{ color: "var(--text-primary)" }}>
+                            {a.flag} {a.country}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span style={{ color: "var(--text-muted)" }}>Deals</span>
+                          <span className="font-semibold" style={{ color: "var(--accent)" }}>
+                            {a.deals}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span style={{ color: "var(--text-muted)" }}>Rating</span>
+                          <StarRating value={a.rating} />
+                        </div>
+                      </div>
+                      <RBtn variant="ghost" className="mt-4 w-full justify-center text-xs">
+                        {a.phone || a.email}
+                      </RBtn>
+                    </RCard>
+                  ))
+                )}
               </div>
             </RSection>
           )}
 
           {/* ── Rapports Scouting ── */}
           {activeTab === "Rapports Scouting" && (
-            <RSection title="Rapports Scouting" subtitle="Analyses détaillées par nos scouts." action={<RBtn><Plus size={13} /> Nouveau rapport</RBtn>}>
+            <RSection title="Rapports Scouting" subtitle="Analyses détaillées par nos scouts (données club partagées).">
               <div className="space-y-3">
-                {REPORTS.map((r, i) => (
+                {REPORTS.length === 0 ? (
+                  <RCard>
+                    <p className="text-center text-sm" style={{ color: "var(--text-muted)" }}>
+                      Aucun rapport scout pour le moment. Les rapports créés par le rôle Scout apparaissent ici.
+                    </p>
+                  </RCard>
+                ) : (
+                REPORTS.map((r, i) => (
                   <motion.div key={r.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}>
                     <RRow>
                       <div className="flex items-center justify-between gap-3">
@@ -577,7 +653,10 @@ export function RecrutementPage() {
                           </div>
                           <div>
                             <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{r.prospect}</p>
-                            <p className="text-xs" style={{ color: "var(--text-muted)" }}>Scout: {r.scout} · {r.date}</p>
+                            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                              Scout: {r.scout} · {r.date}
+                              {r.decision ? ` · ${r.decision}` : ""}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
@@ -585,12 +664,12 @@ export function RecrutementPage() {
                             <p className="text-lg font-extrabold" style={{ color: "#F59E0B" }}>{r.rating}/10</p>
                             <StarRating value={r.rating / 2} />
                           </div>
-                          <RBtn variant="ghost"><Eye size={12} /> Voir</RBtn>
                         </div>
                       </div>
                     </RRow>
                   </motion.div>
-                ))}
+                ))
+                )}
               </div>
             </RSection>
           )}

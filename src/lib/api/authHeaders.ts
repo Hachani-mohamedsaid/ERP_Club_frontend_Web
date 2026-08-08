@@ -31,11 +31,7 @@ export async function apiFetch(path: string, init?: RequestInit): Promise<Respon
   });
 }
 
-export async function apiFetchWithTimeout(
-  path: string,
-  init?: RequestInit,
-  timeoutMs = 25000,
-): Promise<Response> {
+export async function apiFetchWithTimeout(path: string, init?: RequestInit, timeoutMs = 10000): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {

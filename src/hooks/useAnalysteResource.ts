@@ -9,15 +9,21 @@ export function useAnalysteResource<T>(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const reload = useCallback(() => {
-    setLoading(true);
-    setError(null);
+  const reload = useCallback((opts?: { silent?: boolean }) => {
+    if (!opts?.silent) {
+      setLoading(true);
+      setError(null);
+    }
     return fetcher()
       .then(setData)
       .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : "Erreur de chargement.");
+        if (!opts?.silent) {
+          setError(err instanceof Error ? err.message : "Erreur de chargement.");
+        }
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!opts?.silent) setLoading(false);
+      });
   }, deps);
 
   useEffect(() => {
@@ -40,7 +46,19 @@ export const useAnalysteVideoCoach = () => useAnalysteResource(() => analysteApi
 export const useAnalysteReplay = () => useAnalysteResource(() => analysteApi.getReplay());
 export const useAnalysteOpponent = () => useAnalysteResource(() => analysteApi.getOpponent());
 export const useAnalysteFatigue = () => useAnalysteResource(() => analysteApi.getFatigue());
-export const useAnalysteWhoop = () => useAnalysteResource(() => analysteApi.getWhoop());
+export function useAnalysteWhoop(pollMs = 8000) {
+  const resource = useAnalysteResource(() => analysteApi.getWhoop());
+
+  useEffect(() => {
+    if (!pollMs || pollMs < 2000) return;
+    const timer = window.setInterval(() => {
+      void resource.reload({ silent: true });
+    }, pollMs);
+    return () => window.clearInterval(timer);
+  }, [pollMs, resource.reload]);
+
+  return resource;
+}
 export const useAnalysteInjuries = () => useAnalysteResource(() => analysteApi.getInjuries());
 export const useAnalysteInjuryForecast = () => useAnalysteResource(() => analysteApi.getInjuryForecast());
 export const useAnalysteTransfer = () => useAnalysteResource(() => analysteApi.getTransfer());

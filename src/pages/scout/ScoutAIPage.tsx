@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Brain, Send, Loader2, ChevronDown, ChevronUp, Zap, AlertTriangle } from "lucide-react";
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip } from "recharts";
 import { ScoutPage, SCard, SBadge, SGauge, SCOUT_TOOLTIP } from "../../components/scout/ScoutUI";
+import { ScoutPlayerPhoto } from "../../components/scout/ScoutPlayerPhoto";
 import { S, PRIORITY_META } from "../../data/scoutData";
 import { useScoutProspects } from "../../hooks/useScoutData";
 import { showToast } from "../../components/scout/ScoutToast";
@@ -78,7 +79,7 @@ export function ScoutAIPage() {
         <div>
           <h1 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>ODIN AI Scout</h1>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-            Moteur OpenAI · {aiMeta?.summary.clubs ?? 60}+ clubs · {aiMeta?.summary.prospects ?? 0} prospects en base
+            Flashscore {aiMeta?.season ?? "2026-2027"} · {aiMeta?.summary.flashscorePlayers ?? 800}+ joueurs · {aiMeta?.summary.prospects ?? 0} prospects scout
           </p>
         </div>
       </div>
@@ -138,7 +139,7 @@ export function ScoutAIPage() {
                 animate={{ scale: [1,1.2,1], rotate: [0,180,360] }} transition={{ duration: 1.5, repeat: Infinity }}>
                 <Brain size={24} className="text-white" />
               </motion.div>
-              <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>ODIN analyse la base de données...</p>
+              <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>ODIN analyse Flashscore 2026-27...</p>
               <div className="flex gap-1.5">
                 {["Recherche", "Scoring", "Classement", "Analyse contextuelle"].map((step, i) => (
                   <motion.span key={step} className="rounded-full px-2.5 py-1 text-[10px] font-bold"
@@ -186,15 +187,18 @@ export function ScoutAIPage() {
                   style={{ background: "rgba(12,9,30,0.88)", borderColor: `${rankColor}25` }}>
                   {/* Header */}
                   <div className="flex items-center gap-4 p-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-xl"
-                      style={{ background: `${rankColor}18`, color: rankColor }}>
-                      {["🥇","🥈","🥉","4️⃣","5️⃣"][i]}
-                    </div>
+                    <ScoutPlayerPhoto
+                      name={res.name}
+                      photoUrl={p?.photoUrl ?? res.photoUrl}
+                      size={48}
+                      accent={rankColor}
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-extrabold" style={{ color: "var(--text-primary)" }}>{res.flag} {res.name}</p>
                         {p && <SBadge color={PRIORITY_META[p.priority].color} bg={PRIORITY_META[p.priority].bg}>P.{p.priority}</SBadge>}
-                        {!res.inDatabase && <SBadge color={S.info} bg={`${S.info}20`}>IA</SBadge>}
+                        {res.source === "flashscore" && <SBadge color={S.info} bg={`${S.info}20`}>Flashscore</SBadge>}
+                        {!res.inDatabase && res.source !== "flashscore" && <SBadge color={S.accent} bg={`${S.accent}20`}>IA</SBadge>}
                       </div>
                       <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                         {res.position} · {res.age} ans · {res.club}

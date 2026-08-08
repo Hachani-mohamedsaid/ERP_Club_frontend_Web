@@ -3,6 +3,9 @@ import { useState } from "react";
 import { GlassCard } from "../components/ui/GlassCard";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
+import { ScoutPlayerPhoto, resolveScoutPhotoUrl } from "../components/scout/ScoutPlayerPhoto";
+import { useScoutProspects } from "../hooks/useScoutData";
+import { S } from "../data/scoutData";
 
 interface FavoritePlayer {
   id: string;
@@ -21,6 +24,7 @@ const FAVORITES: FavoritePlayer[] = [
 ];
 
 export function ScoutFavoritesPage() {
+  const { prospects } = useScoutProspects();
   const [favorites, setFavorites] = useState<FavoritePlayer[]>(FAVORITES);
   const [compareMode, setCompareMode] = useState(false);
   const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
@@ -85,7 +89,15 @@ export function ScoutFavoritesPage() {
                   </td>
                 )}
                 <td className="py-3 font-medium" style={{ color: "var(--text-primary)" }}>
-                  {player.name}
+                  <div className="flex items-center gap-3">
+                    <ScoutPlayerPhoto
+                      name={player.name}
+                      photoUrl={resolveScoutPhotoUrl(player.name, undefined, prospects)}
+                      size={40}
+                      accent={S.primary}
+                    />
+                    {player.name}
+                  </div>
                 </td>
                 <td className="py-3">
                   <span className="text-lg font-bold" style={{ color: "var(--accent)" }}>

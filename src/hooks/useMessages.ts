@@ -16,8 +16,7 @@ import { dispatchNotification, playNotificationSound } from "../lib/preferences/
 import { joueurTranslations, type Locale } from "../i18n/joueurTranslations";
 
 function socketBaseUrl() {
-  if (import.meta.env.DEV) return window.location.origin;
-  return (import.meta.env.VITE_API_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  return window.location.origin;
 }
 
 export function useMessages() {

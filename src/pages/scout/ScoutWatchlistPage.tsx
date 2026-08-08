@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Pencil, CheckCircle2, Plus, Trash2, Eye } from "lucide-react";
 import { ScoutPage, SCard, SBadge, SGauge } from "../../components/scout/ScoutUI";
+import { ScoutPlayerPhoto } from "../../components/scout/ScoutPlayerPhoto";
 import { S, PRIORITY_META, type Priority } from "../../data/scoutData";
 import { useScoutWatchlist } from "../../hooks/useScoutData";
 import { scoutApi } from "../../lib/api/scout";
@@ -128,10 +129,7 @@ export function ScoutWatchlistPage() {
             return (
               <SCard key={p.id} className="!p-4">
                 <div className="flex flex-wrap items-start gap-3">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold text-white"
-                    style={{ background: `linear-gradient(135deg,${S.primary},${S.primary}99)` }}>
-                    {p.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
-                  </div>
+                  <ScoutPlayerPhoto name={p.name} photoUrl={p.photoUrl} size={48} accent={S.primary} />
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>

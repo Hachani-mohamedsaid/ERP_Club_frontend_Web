@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Plus, X, Calendar, Clock, MapPin } from "lucide-react";
 import { RecruteurPageTransition } from "../../components/recruteur/RecruteurPageTransition";
+import { recruteurApi } from "../../lib/api/recruteur";
 
 type EventType = "match" | "agent" | "validation" | "contrat" | "deplacement";
 
@@ -11,8 +12,8 @@ interface REvent {
   title: string;
   type: EventType;
   time: string;
-  location?: string;
-  note?: string;
+  location?: string | null;
+  note?: string | null;
 }
 
 const TYPE_META: Record<EventType, { label: string; color: string; bg: string }> = {
@@ -22,17 +23,6 @@ const TYPE_META: Record<EventType, { label: string; color: string; bg: string }>
   contrat:    { label: "Signature contrat",   color: "#22C55E", bg: "rgba(34,197,94,0.14)"  },
   deplacement:{ label: "Déplacement scout",   color: "#3B82F6", bg: "rgba(59,130,246,0.14)" },
 };
-
-const SEED_EVENTS: REvent[] = [
-  { id: "e1", date: "2026-06-22", title: "CSS vs EST — Observer Khemiri",   type: "match",      time: "20:00", location: "Stade Taïeb Mhiri, Sfax" },
-  { id: "e2", date: "2026-06-24", title: "RDV Agent Mourad Belhaj",          type: "agent",      time: "14:00", location: "Tunis, siège FC Carthage", note: "Discuter contrat Ahmed Ali" },
-  { id: "e3", date: "2026-06-25", title: "Validation Ibrahim Touré",         type: "validation", time: "10:30", location: "Visioconférence", note: "Présenter rapport scout" },
-  { id: "e4", date: "2026-06-28", title: "Signature contrat Sofiane Bellal", type: "contrat",    time: "16:00", location: "Bureau juridique" },
-  { id: "e5", date: "2026-07-02", title: "Mission scout — Algérie",          type: "deplacement",time: "Journée", location: "Alger, Ligue Pro 1" },
-  { id: "e6", date: "2026-07-05", title: "CAF U23 — Observation",           type: "match",      time: "18:30", location: "Stade de Radès" },
-  { id: "e7", date: "2026-07-10", title: "Réunion DS + Coach Principal",     type: "validation", time: "09:00", location: "Salle de conférence" },
-  { id: "e8", date: "2026-06-30", title: "RDV Agent Carlos Mendez",          type: "agent",      time: "11:00", location: "Visioconférence", note: "Ibrahim Touré négociation" },
-];
 
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate();
@@ -48,9 +38,23 @@ export function RecruteurCalendarPage() {
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
   const [selected, setSelected] = useState<string | null>(null);
-  const [events, setEvents] = useState<REvent[]>(SEED_EVENTS);
+  const [events, setEvents] = useState<REvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [newEvent, setNewEvent] = useState<Partial<REvent>>({ type: "match", time: "10:00" });
+
+  const fetchEvents = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    (recruteurApi.getCalendarEvents() as Promise<REvent[]>)
+      .then(setEvents)
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : "Erreur de chargement."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
   const prevMonth = () => { if (month === 0) { setYear(y => y - 1); setMonth(11); } else setMonth(m => m - 1); };
   const nextMonth = () => { if (month === 11) { setYear(y => y + 1); setMonth(0); } else setMonth(m => m + 1); };
@@ -65,21 +69,27 @@ export function RecruteurCalendarPage() {
 
   const selectedEvents = selected ? events.filter(e => e.date === selected) : [];
 
-  const addEvent = () => {
+  async function addEvent() {
     if (!newEvent.title || !newEvent.date) return;
-    const ev: REvent = {
-      id: `ev${Date.now()}`,
-      date: newEvent.date!,
-      title: newEvent.title!,
-      type: newEvent.type as EventType ?? "match",
-      time: newEvent.time ?? "10:00",
-      location: newEvent.location,
-      note: newEvent.note,
-    };
-    setEvents(prev => [...prev, ev]);
-    setNewEvent({ type: "match", time: "10:00" });
-    setShowModal(false);
-  };
+    setSaving(true);
+    try {
+      const created = await recruteurApi.createCalendarEvent({
+        title: newEvent.title,
+        date: newEvent.date,
+        time: newEvent.time,
+        type: newEvent.type,
+        location: newEvent.location ?? undefined,
+        note: newEvent.note ?? undefined,
+      }) as REvent;
+      setEvents(prev => [...prev, created].sort((a, b) => a.date.localeCompare(b.date)));
+      setNewEvent({ type: "match", time: "10:00" });
+      setShowModal(false);
+    } catch {
+      // keep modal open so the user can retry
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <RecruteurPageTransition>
@@ -107,6 +117,12 @@ export function RecruteurCalendarPage() {
           </span>
         ))}
       </div>
+
+      {error && !loading && (
+        <div className="rounded-[20px] border p-5 text-center" style={{ background: "rgba(14,10,35,0.8)", borderColor: "rgba(239,68,68,0.3)" }}>
+          <p className="text-sm text-red-400">{error}</p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_320px]">
         {/* Calendar grid */}
@@ -148,7 +164,7 @@ export function RecruteurCalendarPage() {
                     borderColor: isSelected ? "rgba(139,92,246,0.5)" : isToday ? "rgba(139,92,246,0.25)" : "rgba(255,255,255,0.06)",
                   }}
                   whileHover={{ borderColor: "rgba(139,92,246,0.3)" }}>
-                  <span className={`text-xs font-bold mb-0.5 block ${isToday ? "" : ""}`}
+                  <span className="text-xs font-bold mb-0.5 block"
                     style={{ color: isToday ? "#8B5CF6" : "var(--text-secondary)" }}>{day}</span>
                   <div className="space-y-0.5">
                     {dayEvts.slice(0, 2).map(ev => (
@@ -206,7 +222,7 @@ export function RecruteurCalendarPage() {
                 style={{ background: "rgba(14,10,35,0.8)", borderColor: "var(--surface-panel-border)" }}>
                 <Calendar size={28} className="mb-3 opacity-25" style={{ color: "var(--text-muted)" }} />
                 <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-                  {selected ? "Aucun événement ce jour" : "Cliquez sur un jour pour voir les événements"}
+                  {loading ? "Chargement…" : selected ? "Aucun événement ce jour" : "Cliquez sur un jour pour voir les événements"}
                 </p>
               </div>
             </motion.div>
@@ -236,6 +252,9 @@ export function RecruteurCalendarPage() {
               </span>
             </motion.div>
           ))}
+          {!loading && events.length === 0 && (
+            <p className="py-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>Aucun événement planifié</p>
+          )}
         </div>
       </div>
 
@@ -286,11 +305,11 @@ export function RecruteurCalendarPage() {
                   className="rounded-xl border px-4 py-2 text-xs" style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}>
                   Annuler
                 </button>
-                <motion.button type="button" onClick={addEvent}
-                  className="rounded-xl px-5 py-2 text-xs font-bold text-white"
+                <motion.button type="button" onClick={() => void addEvent()} disabled={saving || !newEvent.title || !newEvent.date}
+                  className="rounded-xl px-5 py-2 text-xs font-bold text-white disabled:opacity-50"
                   style={{ background: "linear-gradient(135deg,#8B5CF6,#6D28D9)" }}
                   whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
-                  Planifier
+                  {saving ? "Enregistrement…" : "Planifier"}
                 </motion.button>
               </div>
             </motion.div>

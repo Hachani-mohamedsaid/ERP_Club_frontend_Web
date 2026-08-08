@@ -25,6 +25,12 @@ export const responsableApi = {
 
   getProspects: () => apiFetch("/responsable/recruitment/prospects").then(parse),
 
+  getRecruitmentReports: () =>
+    apiFetch("/responsable/recruitment/reports").then(parse),
+
+  getRecruitmentShortlist: () =>
+    apiFetch("/responsable/recruitment/shortlist").then(parse),
+
   createProspect: (body: Record<string, unknown>) =>
     apiFetch("/responsable/recruitment/prospects", { method: "POST", body: JSON.stringify(body) }).then(parse),
 

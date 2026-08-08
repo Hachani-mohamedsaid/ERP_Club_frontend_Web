@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Plus, X, Video, Star, Brain, CheckCircle2,
-  Activity, Shield, Zap, Target, Heart,
+  Activity, Shield, Zap, Target, Heart, Sparkles,
 } from "lucide-react";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
@@ -11,18 +11,14 @@ import {
   BarChart, Bar, Cell,
 } from "recharts";
 import { SGauge, SCOUT_TOOLTIP } from "../../components/scout/ScoutUI";
+import { ScoutPlayerPhoto } from "../../components/scout/ScoutPlayerPhoto";
 import { PROSPECTS, S, PRIORITY_META, type Prospect } from "../../data/scoutData";
 import { scoutApi } from "../../lib/api/scout";
+import { buildAiReels, resolveYoutubeForPlayer, youtubeWatchEmbedUrl, type ProspectLiveReel } from "../../lib/api/scout/playerReels";
 import { showToast } from "../../components/scout/ScoutToast";
 
 const TABS = ["Performance", "Heatmap", "Historique", "Notes", "Vidéo"] as const;
 type Tab = typeof TABS[number];
-
-const MOCK_VIDEOS = [
-  { title: "Buts & accélérations — ES Sahel (Jun 18)", duration: "2:34", type: "Highlights",    icon: "⚽" },
-  { title: "Jeu de pied & dribbles — CA (Jun 14)",    duration: "1:52", type: "Technique",     icon: "🎯" },
-  { title: "Rapport complet scout J.B.",              duration: "5:10", type: "Scout Report",  icon: "📋" },
-];
 
 function injuryLevel(risk: number) {
   if (risk <= 15)  return { label: "Faible",  color: S.success, bg: "rgba(34,197,94,0.12)"  };
@@ -47,61 +43,166 @@ export function ScoutProspectPage() {
   const [notes, setNotes] = useState<{ date: string; text: string }[]>([]);
   const [liked, setLiked] = useState(false);
   const [p, setP] = useState<Prospect | null>(null);
+  const [videos, setVideos] = useState<{ title: string; duration: string; type: string; icon: string }[]>([]);
+  const [reels, setReels] = useState<ProspectLiveReel[]>([]);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [liveSource, setLiveSource] = useState<"api-football" | "flashscore" | null>(null);
+  const [playing, setPlaying] = useState<{
+    id: string;
+    title: string;
+    kind: "reel" | "clip" | "upload";
+    embedUrl?: string;
+    localUrl?: string;
+    searchUrl?: string;
+    loading?: boolean;
+    notFound?: boolean;
+  } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const playerRef = useRef<HTMLDivElement>(null);
+
+  const openYoutubeInSite = async (id: string, title: string, query: string, kind: "reel" | "clip") => {
+    setPlaying({ id, title, kind, loading: true });
+    requestAnimationFrame(() => playerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }));
+    const resolved = await resolveYoutubeForPlayer(query);
+    const videoId = resolved.videoId;
+    setPlaying({
+      id,
+      title,
+      kind,
+      loading: false,
+      searchUrl: resolved.searchUrl,
+      embedUrl: videoId
+        ? (resolved.embedUrl ?? youtubeWatchEmbedUrl(videoId))
+        : undefined,
+      notFound: !videoId,
+    });
+  };
+
+  const onImportVideo = (file?: File | null) => {
+    if (!file) return;
+    if (playing?.localUrl) URL.revokeObjectURL(playing.localUrl);
+    const localUrl = URL.createObjectURL(file);
+    setPlaying({
+      id: `upload-${Date.now()}`,
+      title: file.name,
+      kind: "upload",
+      localUrl,
+    });
+    requestAnimationFrame(() => playerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }));
+  };
+
+  useEffect(() => {
+    return () => {
+      if (playing?.localUrl) URL.revokeObjectURL(playing.localUrl);
+    };
+  }, [playing?.localUrl]);
 
   useEffect(() => {
     if (!id) return;
     setLoading(true);
+    setLiveSource(null);
+    setVideos([]);
+    setReels([]);
+    setPlaying(null);
     scoutApi
       .getProspect(id)
-      .then((dto) => {
+      .then(async (dto) => {
         const mock = PROSPECTS.find((pr) => pr.id === dto.legacyId || pr.name === dto.name);
+        let live = null;
+        try {
+          live = await scoutApi.getProspectLive({
+            name: dto.name,
+            club: dto.club,
+            legacyId: dto.legacyId,
+            apiSportsId: dto.apiSportsId,
+          });
+        } catch {
+          live = null;
+        }
+
+        const hasLive = Boolean(live);
+        setLiveSource(hasLive ? live!.source ?? "api-football" : null);
+        const base = mock ?? PROSPECTS[0];
+
         setP({
-          ...(mock ?? PROSPECTS[0]),
+          ...base,
           id: dto.id,
-          name: dto.name,
-          age: dto.age,
+          name: live?.name ?? dto.name,
+          age: live?.age ?? dto.age,
           nationality: dto.nationality,
           flag: dto.flag,
-          club: dto.club,
-          league: dto.league,
-          position: dto.position,
-          potential: dto.potential,
-          currentRating: dto.currentRating,
-          marketValue: dto.marketValue,
-          valueMK: dto.valueMK,
+          club: live?.club ?? dto.club,
+          league: live?.league ?? dto.league,
+          position: live?.position ?? dto.position,
+          potential: live?.potential ?? dto.potential,
+          currentRating: live?.currentRating ?? dto.currentRating,
+          marketValue: live?.marketValue ?? dto.marketValue,
+          valueMK: live?.valueMK ?? dto.valueMK,
           priority: dto.priority as Prospect["priority"],
           status: dto.status as Prospect["status"],
-          aiScore: dto.aiScore,
+          aiScore: live?.aiScore ?? dto.aiScore,
           injuryRisk: dto.injuryRisk,
           foot: dto.foot as Prospect["foot"],
-          height: dto.height,
-          weight: dto.weight,
-          goals: dto.goals,
-          assists: dto.assists,
-          matches: dto.matches,
-          speed: dto.speed,
-          dribble: dto.dribble,
-          passing: dto.passing,
-          defense: dto.defense,
-          physical: dto.physical,
-          mental: dto.mental,
+          height: live?.height ?? dto.height,
+          weight: live?.weight ?? dto.weight,
+          goals: live?.goals ?? dto.goals,
+          assists: live?.assists ?? dto.assists,
+          matches: live?.matches ?? dto.matches,
+          speed: live?.speed ?? dto.speed,
+          dribble: live?.dribble ?? dto.dribble,
+          passing: live?.passing ?? dto.passing,
+          defense: live?.defense ?? dto.defense,
+          physical: live?.physical ?? dto.physical,
+          mental: live?.mental ?? dto.mental,
           contractEnd: dto.contractEnd,
           agent: dto.agent,
           addedDate: dto.addedDate,
-          notes: dto.notes?.length ? dto.notes : mock?.notes ?? [],
-          matchHistory: mock?.matchHistory ?? [],
-          monthlyPotential: mock?.monthlyPotential ?? [70, 71, 72, 73, 74, dto.potential],
-          heatmapZones: mock?.heatmapZones ?? [],
+          notes: dto.notes?.length ? dto.notes : [],
+          matchHistory: live?.matchHistory ?? [],
+          monthlyPotential: live?.monthlyPotential ?? [dto.potential, dto.potential, dto.potential, dto.potential, dto.potential, dto.potential],
+          heatmapZones: live?.heatmapZones ?? [],
         });
-        setNotes(dto.notes?.length ? dto.notes : mock?.notes ?? []);
+        setVideos(
+          hasLive
+            ? live!.videos
+            : [],
+        );
+        setReels(
+          hasLive && live!.reels?.length
+            ? live!.reels.map((r, i) => ({
+                ...r,
+                id: r.id ?? `reel-${i}`,
+                query:
+                  r.query
+                  ?? `${live!.name} ${live!.club} ${r.tag} football highlights shorts`,
+                searchUrl:
+                  r.searchUrl
+                  ?? `https://www.youtube.com/results?search_query=${encodeURIComponent(
+                    `${live!.name} ${live!.club} ${r.tag}`,
+                  )}`,
+              }))
+            : buildAiReels(
+                live?.name ?? dto.name,
+                live?.club ?? dto.club,
+                live?.position ?? dto.position,
+                live?.goals ?? dto.goals,
+                live?.assists ?? dto.assists,
+              ),
+        );
+        setNotes(dto.notes?.length ? dto.notes : []);
         setLiked(Boolean(dto.inWatchlist));
+        setPhotoUrl(live?.photoUrl ?? dto.photoUrl ?? null);
       })
       .catch(() => {
         const fallback = PROSPECTS.find((pr) => pr.id === id);
         if (fallback) {
           setP(fallback);
           setNotes([...fallback.notes]);
+          setLiveSource(null);
+          setVideos([]);
+          setReels([]);
+          setPhotoUrl(null);
         }
       })
       .finally(() => setLoading(false));
@@ -216,31 +317,10 @@ export function ScoutProspectPage() {
           <div className="flex flex-wrap items-start gap-6">
             {/* Avatar */}
             <div className="relative shrink-0">
-              <motion.div className="relative flex h-24 w-24 items-center justify-center rounded-3xl text-3xl font-black text-white"
-                style={{
-                  background: `linear-gradient(145deg, ${priority.color}, ${priority.color}66, rgba(0,0,0,0.4))`,
-                  boxShadow: `0 0 40px ${priority.color}40, 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15)`,
-                }}
-                animate={{ boxShadow: [`0 0 20px ${priority.color}30`, `0 0 40px ${priority.color}55`, `0 0 20px ${priority.color}30`] }}
-                transition={{ duration: 3, repeat: Infinity }}>
-                {p.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
-                {/* Jersey number badge */}
-                <div className="absolute -bottom-2 -right-2 flex h-7 w-7 items-center justify-center rounded-xl border-2 border-[var(--surface-panel-solid)] text-[10px] font-black"
-                  style={{ background: priority.color, color: "white" }}>
-                  #{p.id.replace("pr", "")}
-                </div>
-              </motion.div>
-              {/* Potential ring */}
-              <div className="absolute -top-2 -right-2">
-                <svg width="28" height="28" viewBox="0 0 28 28">
-                  <circle cx="14" cy="14" r="11" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="2" />
-                  <motion.circle cx="14" cy="14" r="11" fill="none" stroke={pc} strokeWidth="2"
-                    strokeDasharray={`${2 * Math.PI * 11}`}
-                    initial={{ strokeDashoffset: 2 * Math.PI * 11 }}
-                    animate={{ strokeDashoffset: 2 * Math.PI * 11 * (1 - p.potential / 100) }}
-                    transition={{ duration: 1.2, ease: "easeOut" }}
-                    strokeLinecap="round" transform="rotate(-90 14 14)" />
-                </svg>
+              <ScoutPlayerPhoto name={p.name} photoUrl={photoUrl} size={96} accent={priority.color} />
+              <div className="absolute -bottom-2 -right-2 flex h-7 w-7 items-center justify-center rounded-xl border-2 border-[var(--surface-panel-solid)] text-[10px] font-black text-white"
+                style={{ background: priority.color }}>
+                P.{p.priority}
               </div>
             </div>
 
@@ -250,6 +330,12 @@ export function ScoutProspectPage() {
                 <h1 className="text-2xl font-extrabold" style={{ color: "var(--text-primary)" }}>
                   {p.name}
                 </h1>
+                {liveSource && (
+                  <span className="rounded-full px-2 py-0.5 text-[9px] font-black"
+                    style={{ background: `${S.success}20`, color: S.success }}>
+                    {liveSource === "api-football" ? "API-Sports live" : "Flashscore backend"}
+                  </span>
+                )}
                 <span className="rounded-full px-2.5 py-0.5 text-[10px] font-black text-white"
                   style={{ background: priority.color }}>P.{p.priority}</span>
               </div>
@@ -293,9 +379,10 @@ export function ScoutProspectPage() {
               <div className="flex flex-wrap gap-2 mt-3">
                 {[
                   { label: "Comparer", path: `/scout/comparison?ids=${p.id}`, color: S.info },
+                  { label: "Mission", path: `/scout/missions?prospectId=${p.id}`, color: "#F59E0B" },
                   { label: "Vidéos", path: "/scout/videos", color: S.accent },
                   { label: "Compatibilité", path: "/scout/squad-fit", color: S.success },
-                  { label: "Rapport", path: "/scout/report", color: S.primary },
+                  { label: "Rapport", path: `/scout/report?prospectId=${p.id}`, color: S.primary },
                 ].map((action) => (
                   <motion.button key={action.label} type="button" onClick={() => navigate(action.path)}
                     className="rounded-xl border px-3 py-1.5 text-[10px] font-bold"
@@ -671,7 +758,11 @@ export function ScoutProspectPage() {
             <div className="rounded-[20px] border p-5" style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
               <p className="mb-4 text-sm font-bold" style={{ color: "var(--text-primary)" }}>Historique matchs</p>
               <div className="space-y-2">
-                {p.matchHistory.map((m, i) => {
+                {p.matchHistory.length === 0 ? (
+                  <p className="text-sm py-8 text-center" style={{ color: "var(--text-muted)" }}>
+                    Aucun match disponible pour cette saison.
+                  </p>
+                ) : p.matchHistory.map((m, i) => {
                   const ratingColor = m.rating >= 8 ? S.success : m.rating >= 7 ? S.primary : S.danger;
                   return (
                     <motion.div key={i} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.07 }}
@@ -710,10 +801,15 @@ export function ScoutProspectPage() {
               </div>
 
               {/* Season summary */}
+              {p.matchHistory.length > 0 && (
               <div className="mt-4 grid grid-cols-3 gap-3 rounded-[16px] border p-4"
                 style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}>
                 {[
-                  { label: "Moy. rating", value: (p.matchHistory.reduce((a, m) => a + m.rating, 0) / p.matchHistory.length).toFixed(1), color: S.success },
+                  {
+                    label: "Moy. rating",
+                    value: (p.matchHistory.reduce((a, m) => a + m.rating, 0) / p.matchHistory.length).toFixed(1),
+                    color: S.success,
+                  },
                   { label: "Total buts",  value: p.matchHistory.reduce((a, m) => a + m.goals, 0),   color: S.primary },
                   { label: "Total min.",  value: p.matchHistory.reduce((a, m) => a + m.minutes, 0), color: S.info    },
                 ].map(s => (
@@ -723,6 +819,7 @@ export function ScoutProspectPage() {
                   </div>
                 ))}
               </div>
+              )}
             </div>
           )}
 
@@ -775,45 +872,320 @@ export function ScoutProspectPage() {
             </div>
           )}
 
-          {/* ── VIDÉO ── */}
+          {/* ── VIDÉO (profil SaaS média) ── */}
           {activeTab === "Vidéo" && (
-            <div className="rounded-[20px] border p-5" style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}>
-              <div className="flex items-center gap-2 mb-4">
-                <Video size={16} style={{ color: S.primary }} />
-                <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Vidéos scout & highlights</p>
-              </div>
-              <div className="space-y-3">
-                {MOCK_VIDEOS.map((v, i) => (
-                  <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
-                    className="flex items-center gap-4 rounded-[16px] border p-4 cursor-pointer"
-                    style={{ background: "rgba(255,255,255,0.02)", borderColor: "var(--surface-panel-border)" }}
-                    whileHover={{ borderColor: `${S.primary}30`, x: 3 }}>
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl"
-                      style={{ background: `${S.primary}12`, border: `1.5px solid ${S.primary}30` }}>
-                      {v.icon}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{v.title}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[9px] font-semibold rounded-full px-2 py-0.5"
-                          style={{ background: `${S.primary}14`, color: S.primary }}>{v.type}</span>
-                        <span className="text-[9px]" style={{ color: "var(--text-muted)" }}>{v.duration}</span>
-                      </div>
-                    </div>
-                    <motion.div className="flex h-9 w-9 items-center justify-center rounded-xl text-white text-sm shrink-0"
-                      style={{ background: `linear-gradient(135deg,${S.primary},${S.primary}bb)` }}
-                      whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}>
-                      ▶
-                    </motion.div>
-                  </motion.div>
-                ))}
-              </div>
-              <motion.div className="mt-4 rounded-[14px] border-2 border-dashed p-8 text-center cursor-pointer"
+            <div
+              className="overflow-hidden rounded-2xl border"
+              style={{ background: "var(--surface-panel-solid)", borderColor: "var(--surface-panel-border)" }}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="video/*"
+                className="hidden"
+                onChange={(e) => {
+                  onImportVideo(e.target.files?.[0] ?? null);
+                  e.target.value = "";
+                }}
+              />
+
+              {/* Header profil média */}
+              <div
+                className="flex flex-wrap items-start justify-between gap-4 border-b px-5 py-4"
                 style={{ borderColor: "var(--surface-panel-border)" }}
-                whileHover={{ borderColor: `${S.primary}40`, background: `${S.primary}04` }}>
-                <Video size={24} className="mx-auto mb-2 opacity-30" style={{ color: S.primary }} />
-                <p className="text-xs" style={{ color: "var(--text-muted)" }}>Glisser une vidéo ou cliquer pour uploader</p>
-              </motion.div>
+              >
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                    Médias · {p.name}
+                  </p>
+                  <h2 className="mt-0.5 text-base font-bold" style={{ color: "var(--text-primary)" }}>
+                    Bibliothèque vidéo
+                  </h2>
+                  <p className="mt-1 text-xs" style={{ color: "var(--text-muted)" }}>
+                    {reels.length} reels IA · {videos.length} clips scout · {p.club}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-semibold"
+                    style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
+                  >
+                    <Sparkles size={11} style={{ color: S.accent }} />
+                    ODIN AI
+                  </span>
+                  <motion.button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold text-white"
+                    style={{ background: S.primary }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Video size={12} /> Importer
+                  </motion.button>
+                </div>
+              </div>
+
+              {/* Lecteur in-site */}
+              <div
+                ref={playerRef}
+                className="border-b px-5 py-5"
+                style={{ borderColor: "var(--surface-panel-border)", background: "rgba(0,0,0,0.18)" }}
+              >
+                {playing ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                          Lecture · {playing.kind === "upload" ? "Import local" : playing.kind === "reel" ? "Reel" : "Clip"}
+                        </p>
+                        <p className="truncate text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                          {playing.title}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (playing.localUrl) URL.revokeObjectURL(playing.localUrl);
+                          setPlaying(null);
+                        }}
+                        className="rounded-lg border px-2.5 py-1 text-[11px] font-semibold"
+                        style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
+                      >
+                        Fermer
+                      </button>
+                    </div>
+
+                    <div
+                      className={`relative mx-auto w-full overflow-hidden rounded-xl border bg-black ${
+                        playing.kind === "reel" ? "max-w-sm aspect-[9/16]" : "aspect-video"
+                      }`}
+                      style={{ borderColor: "var(--surface-panel-border)" }}
+                    >
+                      {playing.loading ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
+                          <motion.div
+                            className="h-6 w-6 rounded-full border-2"
+                            style={{ borderColor: `${S.primary}40`, borderTopColor: S.primary }}
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                          />
+                          Recherche de la vidéo…
+                        </div>
+                      ) : playing.localUrl ? (
+                        <video
+                          key={playing.localUrl}
+                          src={playing.localUrl}
+                          controls
+                          autoPlay
+                          className="h-full w-full object-contain"
+                        />
+                      ) : playing.embedUrl ? (
+                        <iframe
+                          key={playing.embedUrl}
+                          title={playing.title}
+                          src={playing.embedUrl}
+                          className="absolute inset-0 h-full w-full"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                          referrerPolicy="strict-origin-when-cross-origin"
+                        />
+                      ) : playing.notFound ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
+                          <Video size={26} className="opacity-40" style={{ color: "var(--text-muted)" }} />
+                          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                            Aucune vidéo intégrable trouvée automatiquement.
+                          </p>
+                          {playing.searchUrl && (
+                            <a
+                              href={playing.searchUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold text-white"
+                              style={{ background: S.primary }}
+                            >
+                              Ouvrir sur YouTube
+                            </a>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className="flex aspect-video w-full flex-col items-center justify-center rounded-xl border border-dashed"
+                    style={{ borderColor: "var(--surface-panel-border)" }}
+                  >
+                    <Video size={28} className="mb-2 opacity-35" style={{ color: "var(--text-muted)" }} />
+                    <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Sélectionnez une vidéo</p>
+                    <p className="mt-1 text-xs" style={{ color: "var(--text-muted)" }}>
+                      Cliquez un reel ou un clip pour le lire ici
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Reels — grille SaaS */}
+              <div className="border-b px-5 py-5" style={{ borderColor: "var(--surface-panel-border)" }}>
+                <div className="mb-3 flex items-end justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Reels suggérés</p>
+                    <p className="text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }}>
+                      Lecture intégrée sur le profil
+                    </p>
+                  </div>
+                </div>
+
+                {reels.length === 0 ? (
+                  <p className="py-8 text-center text-xs" style={{ color: "var(--text-muted)" }}>
+                    Aucun reel disponible pour ce profil.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                    {reels.map((reel, i) => {
+                      const selected = playing?.id === reel.id;
+                      return (
+                        <motion.button
+                          key={reel.id}
+                          type="button"
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.04 }}
+                          onClick={() => void openYoutubeInSite(reel.id, reel.title, reel.query, "reel")}
+                          className="group text-left"
+                        >
+                          <div
+                            className="relative aspect-[9/14] overflow-hidden rounded-xl border"
+                            style={{
+                              borderColor: selected ? S.primary : "var(--surface-panel-border)",
+                              boxShadow: selected ? `0 0 0 1px ${S.primary}` : undefined,
+                              background: "rgba(255,255,255,0.03)",
+                            }}
+                          >
+                            {photoUrl ? (
+                              <img
+                                src={photoUrl}
+                                alt=""
+                                className="absolute inset-0 h-full w-full object-cover opacity-40 transition-opacity group-hover:opacity-55"
+                              />
+                            ) : null}
+                            <div
+                              className="absolute inset-0"
+                              style={{
+                                background: photoUrl
+                                  ? "linear-gradient(180deg, transparent 35%, rgba(6,8,16,0.92) 100%)"
+                                  : "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(6,8,16,0.9) 100%)",
+                              }}
+                            />
+                            <div className="absolute left-2 top-2 rounded-md px-1.5 py-0.5 text-[9px] font-semibold text-white/90"
+                              style={{ background: "rgba(0,0,0,0.5)" }}>
+                              {reel.duration}
+                            </div>
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
+                              <div
+                                className="flex h-9 w-9 items-center justify-center rounded-full text-xs text-white"
+                                style={{ background: S.primary }}
+                              >
+                                ▶
+                              </div>
+                            </div>
+                            <div className="absolute inset-x-0 bottom-0 p-2.5">
+                              <p className="text-[10px] font-semibold leading-snug text-white line-clamp-2">{reel.title}</p>
+                              <div className="mt-1.5 flex items-center justify-between gap-1">
+                                <span className="text-[9px] font-medium" style={{ color: "rgba(255,255,255,0.55)" }}>
+                                  {reel.tag}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Clips scout — liste profil */}
+              <div className="px-5 py-5">
+                <div className="mb-3 flex items-end justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Clips & highlights</p>
+                    <p className="text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }}>
+                      Lecture intégrée · import local possible
+                    </p>
+                  </div>
+                </div>
+
+                {videos.length === 0 ? (
+                  <div
+                    className="rounded-xl border border-dashed px-4 py-10 text-center"
+                    style={{ borderColor: "var(--surface-panel-border)" }}
+                  >
+                    <Video size={20} className="mx-auto mb-2 opacity-40" style={{ color: "var(--text-muted)" }} />
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>Aucun clip scout pour l’instant</p>
+                  </div>
+                ) : (
+                  <div className="overflow-hidden rounded-xl border" style={{ borderColor: "var(--surface-panel-border)" }}>
+                    {videos.map((v, i) => {
+                      const clipId = `clip-${i}`;
+                      const selected = playing?.id === clipId;
+                      return (
+                        <motion.button
+                          key={clipId}
+                          type="button"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: i * 0.05 }}
+                          onClick={() =>
+                            void openYoutubeInSite(
+                              clipId,
+                              v.title,
+                              `${p.name} ${p.club} ${v.type} football highlights`,
+                              "clip",
+                            )
+                          }
+                          className="flex w-full items-center gap-3 px-3.5 py-3 text-left transition-colors hover:bg-white/[0.03]"
+                          style={{
+                            borderTop: i === 0 ? undefined : "1px solid var(--surface-panel-border)",
+                            background: selected ? `${S.primary}10` : undefined,
+                          }}
+                        >
+                          <div
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-base"
+                            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--surface-panel-border)" }}
+                          >
+                            {v.icon}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[13px] font-semibold" style={{ color: "var(--text-primary)" }}>
+                              {v.title}
+                            </p>
+                            <p className="mt-0.5 text-[11px]" style={{ color: "var(--text-muted)" }}>
+                              {v.type} · {v.duration}
+                            </p>
+                          </div>
+                          <div
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[10px] text-white"
+                            style={{ background: S.primary }}
+                          >
+                            ▶
+                          </div>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-3 text-[11px] font-semibold transition-colors hover:bg-white/[0.02]"
+                  style={{ borderColor: "var(--surface-panel-border)", color: "var(--text-muted)" }}
+                >
+                  <Video size={13} />
+                  Ajouter un clip scout
+                </button>
+              </div>
             </div>
           )}
         </motion.div>

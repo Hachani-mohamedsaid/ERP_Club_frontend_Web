@@ -8,3 +8,9 @@ export { WhoopGlassMetric } from "./WhoopGlassMetric";
 export { WhoopPlayerProfile } from "./WhoopPlayerProfile";
 export { WhoopTeamOverview } from "./WhoopTeamOverview";
 export { WhoopR3FBand } from "./WhoopR3FBand";
+export { ViivR3FWatch } from "./ViivR3FWatch";
+export { ViivActivityRings, estimateActiveCalories } from "./ViivActivityRings";
+export { ViivMetricTile } from "./ViivMetricTile";
+export { ViivAiPredictionsCard } from "./ViivAiPredictionsCard";
+export { VIIV_THEME, METRIC_COLORS } from "./whoopTheme";
+

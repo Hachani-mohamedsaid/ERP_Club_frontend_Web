@@ -18,7 +18,7 @@ import type {
   TrainingPlanDay,
   VideoCoachInsight,
 } from "../../../data/analysteData";
-import type { WhoopPlayerMetrics } from "../../../data/whoopData";
+import type { WhoopApiPayload } from "../../../data/whoopData";
 
 async function parse<T>(response: Response): Promise<T> {
   if (!response.ok) throw new Error(await parseApiError(response));
@@ -94,6 +94,42 @@ export const analysteApi = {
       events: MatchEvent[];
     }>("/analyste/video-analysis"),
 
+  processVideoAnalysis: (body: {
+    playerName: string;
+    focus?: string;
+    sport?: string;
+    durationSec: number;
+    fileName?: string;
+    frames: { timeSec: number; imageBase64: string; motionScore?: number }[];
+    poseSummary?: {
+      detectionRate: number;
+      avgLeftKnee: number;
+      avgRightKnee: number;
+      avgSymmetry: number;
+      avgPowerIndex: number;
+      dominantFoot: string;
+      legInsights?: string[];
+    };
+    poseFrames?: {
+      timeSec: number;
+      leftKnee: number;
+      rightKnee: number;
+      leftHip?: number;
+      rightHip?: number;
+      leftLegPhase: string;
+      rightLegPhase: string;
+      footStrike: string;
+      powerIndex: number;
+      symmetryIndex?: number;
+      trunkTilt?: number;
+      notes?: string[];
+    }[];
+  }) =>
+    fetchAnalyste<import("./videoAnalysisTypes").VideoAnalysisAiResult>("/analyste/video-analysis/process", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
   getVideoCoach: () => fetchAnalyste<{ insights: VideoCoachInsight[] }>("/analyste/video-coach"),
 
   getReplay: () => fetchAnalyste<{ events: MatchEvent[]; videoDuration: number }>("/analyste/replay"),
@@ -114,7 +150,7 @@ export const analysteApi = {
       };
     }>("/analyste/fatigue"),
 
-  getWhoop: () => fetchAnalyste<{ squad: WhoopPlayerMetrics[]; defaultPlayerId: string }>("/analyste/whoop"),
+  getWhoop: () => fetchAnalyste<WhoopApiPayload>("/analyste/whoop"),
 
   getInjuries: () => fetchAnalyste<{ predictions: InjuryPrediction[] }>("/analyste/injuries"),
 

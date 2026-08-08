@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Film, Play, Clock, Search, Upload, Eye } from "lucide-react";
 import { ScoutPage, SCard, SBadge } from "../../components/scout/ScoutUI";
+import { ScoutPlayerPhoto, resolveScoutPhotoUrl } from "../../components/scout/ScoutPlayerPhoto";
 import { S } from "../../data/scoutData";
 import { useScoutProspects } from "../../hooks/useScoutData";
 
@@ -33,7 +34,7 @@ export function ScoutVideoPage() {
   const videos = useMemo(() => {
     return VIDEO_LIBRARY.map((v) => {
       const p = prospects.find((pr) => pr.name === v.player);
-      return { ...v, prospectId: p?.id ?? "" };
+      return { ...v, prospectId: p?.id ?? "", photoUrl: p?.photoUrl ?? null };
     });
   }, [prospects]);
 
@@ -92,10 +93,18 @@ export function ScoutVideoPage() {
               Fermer
             </button>
           </div>
-          <div className="p-4 flex flex-wrap gap-2">
+          <div className="p-4 flex flex-wrap items-center gap-3">
+            <ScoutPlayerPhoto
+              name={active.player}
+              photoUrl={resolveScoutPhotoUrl(active.player, active.photoUrl, prospects)}
+              size={48}
+              accent={S.primary}
+            />
+            <div className="flex flex-wrap gap-2 flex-1">
             {active.tags.map((t) => (
               <SBadge key={t} color={S.info} bg={`${S.info}12`}>{t}</SBadge>
             ))}
+            </div>
             {active.prospectId && (
               <motion.button
                 type="button"
@@ -157,7 +166,14 @@ export function ScoutVideoPage() {
                   {v.type}
                 </span>
               </div>
-              <div className="p-3">
+              <div className="p-3 flex items-start gap-3">
+                <ScoutPlayerPhoto
+                  name={v.player}
+                  photoUrl={resolveScoutPhotoUrl(v.player, v.photoUrl, prospects)}
+                  size={40}
+                  accent={typeColor}
+                />
+                <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold line-clamp-2" style={{ color: "var(--text-primary)" }}>{v.title}</p>
                 <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
                   {v.flag} {v.player} · {v.pos} · {v.date}
@@ -169,6 +185,7 @@ export function ScoutVideoPage() {
                       {t}
                     </span>
                   ))}
+                </div>
                 </div>
               </div>
             </motion.div>

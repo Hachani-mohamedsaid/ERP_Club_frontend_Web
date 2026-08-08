@@ -396,12 +396,12 @@ export function ClubJoueursPage() {
   const comparePlayers = selected.map((id) => squad.find((p) => p.id === id)).filter(Boolean);
   const radarData =
     comparePlayers.length === 2
-      ? Object.keys(comparePlayers[0]!.radar).map((key) => ({
-          stat: key.charAt(0).toUpperCase() + key.slice(1),
-          [comparePlayers[0]!.name.split(" ")[0]]: comparePlayers[0]!.radar[key as keyof typeof comparePlayers[0]["radar"]],
-          [comparePlayers[1]!.name.split(" ")[0]]: comparePlayers[1]!.radar[key as keyof typeof comparePlayers[1]["radar"]],
-        }))
-      : [];
+    ? Object.keys(comparePlayers[0]!.radar).map((key) => ({
+        stat: key.charAt(0).toUpperCase() + key.slice(1),
+        [comparePlayers[0]!.name.split(" ")[0]]: comparePlayers[0]!.radar[key as keyof typeof comparePlayers[0]["radar"]],
+        [comparePlayers[1]!.name.split(" ")[0]]: comparePlayers[1]!.radar[key as keyof typeof comparePlayers[1]["radar"]],
+      }))
+    : [];
 
   function toggleCompare(id: string) {
     setSelected((prev) =>
@@ -453,15 +453,15 @@ export function ClubJoueursPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setCompareOpen(true)}
-              disabled={selected.length < 2}
+        <button
+          type="button"
+          onClick={() => setCompareOpen(true)}
+          disabled={selected.length < 2}
               className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all disabled:opacity-40"
-              style={{ background: "rgba(255,107,87,0.15)", color: "#FF6B57" }}
-            >
+          style={{ background: "rgba(255,107,87,0.15)", color: "#FF6B57" }}
+        >
               <GitCompareArrows size={15} /> Comparer ({selected.length}/2)
-            </button>
+        </button>
             {canEditPlayer && (
               <button
                 type="button"
@@ -470,16 +470,16 @@ export function ClubJoueursPage() {
                 style={{ background: "linear-gradient(135deg,#FF6B57,#E65240)" }}
               >
                 <Plus size={15} /> Ajouter joueur
-              </button>
-            )}
-          </div>
-        </div>
-
-        {loading && <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement…</p>}
-        {error && <p className="text-sm text-red-400">{error}</p>}
-        {!loading && !error && squad.length === 0 && (
-          <ClubEmptyState title="Aucun joueur" description="Ajoutez votre premier joueur via le bouton +." />
+          </button>
         )}
+          </div>
+      </div>
+
+      {loading && <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement…</p>}
+      {error && <p className="text-sm text-red-400">{error}</p>}
+      {!loading && !error && squad.length === 0 && (
+        <ClubEmptyState title="Aucun joueur" description="Ajoutez votre premier joueur via le bouton +." />
+      )}
 
         {!loading && !error && squad.length > 0 && (
           <>
@@ -584,15 +584,15 @@ export function ClubJoueursPage() {
                         </button>
                       )}
                       {canManageContracts && (
-                        <button
-                          type="button"
+                          <button
+                            type="button"
                           className="flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold"
                           style={{ borderColor: "rgba(99,102,241,0.4)", color: "#6366F1" }}
                           onClick={() => openContractModal(focusPlayer)}
                         >
                           <FileSignature size={12} />
                           {focusContract ? "Modifier contrat" : "Ajouter contrat"}
-                        </button>
+                          </button>
                       )}
                     </div>
                   )}
@@ -630,15 +630,15 @@ export function ClubJoueursPage() {
                     </div>
                   </div>
                   {canManageContracts && (
-                    <button
-                      type="button"
+                          <button
+                            type="button"
                       className="mt-4 flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white"
                       style={{ background: "linear-gradient(135deg,#6366F1,#4F46E5)" }}
                       onClick={() => openContractModal(focusPlayer)}
                     >
                       <FileSignature size={14} />
                       {focusContract ? "Modifier le contrat" : "Créer un contrat"}
-                    </button>
+                          </button>
                   )}
                 </div>
               )}
@@ -664,8 +664,8 @@ export function ClubJoueursPage() {
                 <p className="mt-5 text-sm" style={{ color: "var(--text-muted)" }}>
                   Historique disponible dans la fiche joueur.
                   {focusPlayer && (
-                    <button
-                      type="button"
+                          <button
+                            type="button"
                       className="ml-2 underline"
                       style={{ color: "var(--accent)" }}
                       onClick={() => navigate(`${profileBase}/${focusPlayer.id}`)}
@@ -687,7 +687,7 @@ export function ClubJoueursPage() {
                     <Search
                       size={14}
                       className="absolute left-3 top-1/2 -translate-y-1/2"
-                      style={{ color: "var(--text-muted)" }}
+                            style={{ color: "var(--text-muted)" }}
                     />
                     <input
                       type="text"
@@ -793,25 +793,25 @@ export function ClubJoueursPage() {
                                   </button>
                                 )}
                                 {canManageContracts && (
-                                  <button
-                                    type="button"
+                      <button
+                        type="button"
                                     title={findContractForPlayer(player.name, contracts) ? "Modifier contrat" : "Ajouter contrat"}
                                     onClick={() => openContractModal(player)}
-                                    className="rounded-lg p-1.5 transition-colors hover:bg-white/5"
+                        className="rounded-lg p-1.5 transition-colors hover:bg-white/5"
                                     style={{ color: "#6366F1" }}
-                                  >
-                                    <FileSignature size={14} />
-                                  </button>
+                      >
+                        <FileSignature size={14} />
+                      </button>
                                 )}
-                              </div>
-                            </td>
+                    </div>
+                  </td>
                           )}
                         </tr>
                       );
                     })}
-                  </tbody>
-                </table>
-              </div>
+            </tbody>
+          </table>
+        </div>
 
               {canEditPlayer && focusPlayer && (
                 <div className="mt-4 flex justify-end gap-2">

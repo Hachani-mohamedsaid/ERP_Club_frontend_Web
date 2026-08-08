@@ -70,8 +70,12 @@ export function WhoopPlayerProfile({ player, onBack }: Props) {
 
       <div className="grid gap-5 lg:grid-cols-[280px_1fr]">
         <motion.div
-          className="rounded-2xl border border-white/8 p-5 backdrop-blur-xl"
-          style={{ background: "rgba(17,24,39,0.6)" }}
+          className="p-5 backdrop-blur-xl"
+          style={{
+            borderRadius: 22,
+            background: "linear-gradient(145deg, rgba(28,28,46,0.72), rgba(22,22,42,0.92))",
+            border: "1px solid rgba(255,255,255,0.12)",
+          }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
@@ -94,8 +98,9 @@ export function WhoopPlayerProfile({ player, onBack }: Props) {
             ))}
           </div>
           <div className="mt-4 rounded-xl border border-white/6 bg-black/30 p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">WHOOP Device</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Viiv Smartwatch</p>
             <p className="mt-1 text-xs text-white">{player.deviceId}</p>
+            <p className="mt-0.5 text-[9px] text-cyan-400/70">Modèle Viiv Pro · ECG · SpO₂ · GPS</p>
             <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-slate-400">
               <span className="flex items-center gap-1"><Battery size={10} /> {player.battery}%</span>
               <span>FW {player.firmware}</span>
@@ -115,7 +120,7 @@ export function WhoopPlayerProfile({ player, onBack }: Props) {
                 type="button"
                 onClick={() => setTab(t)}
                 className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors ${
-                  tab === t ? "bg-orange-500/20 text-orange-300" : "text-slate-400 hover:text-white"
+                  tab === t ? "bg-cyan-500/20 text-cyan-300" : "text-slate-400 hover:text-white"
                 }`}
               >
                 {t}
@@ -144,7 +149,7 @@ export function WhoopPlayerProfile({ player, onBack }: Props) {
                     <WhoopGlassMetric label="Calories" value={player.calories} delay={0.35} />
                   </div>
                   <div className="grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-2xl border border-white/8 bg-slate-900/50 p-4">
+                    <div className="rounded-2xl border border-white/8 bg-[rgba(28,28,46,0.55)] p-4">
                       <h3 className="text-xs font-semibold text-white">Strain & Recovery · 7j</h3>
                       <ResponsiveContainer width="100%" height={180}>
                         <ComposedChart data={player.weeklyStrain}>
@@ -157,7 +162,7 @@ export function WhoopPlayerProfile({ player, onBack }: Props) {
                         </ComposedChart>
                       </ResponsiveContainer>
                     </div>
-                    <div className="rounded-2xl border border-white/8 bg-slate-900/50 p-4">
+                    <div className="rounded-2xl border border-white/8 bg-[rgba(28,28,46,0.55)] p-4">
                       <h3 className="text-xs font-semibold text-white">Timeline</h3>
                       <div className="mt-3">
                         <WhoopTimeline events={player.timeline} />
@@ -168,7 +173,7 @@ export function WhoopPlayerProfile({ player, onBack }: Props) {
               )}
 
               {tab === "Recovery" && (
-                <div className="rounded-2xl border border-white/8 bg-slate-900/50 p-4">
+                <div className="rounded-2xl border border-white/8 bg-[rgba(28,28,46,0.55)] p-4">
                   <ResponsiveContainer width="100%" height={220}>
                     <AreaChart data={player.weeklyStrain}>
                       <defs>
@@ -207,7 +212,7 @@ export function WhoopPlayerProfile({ player, onBack }: Props) {
               )}
 
               {tab === "Strain" && (
-                <div className="rounded-2xl border border-white/8 bg-slate-900/50 p-4">
+                <div className="rounded-2xl border border-white/8 bg-[rgba(28,28,46,0.55)] p-4">
                   <ResponsiveContainer width="100%" height={220}>
                     <ComposedChart data={player.weeklyStrain}>
                       <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
@@ -222,7 +227,7 @@ export function WhoopPlayerProfile({ player, onBack }: Props) {
               )}
 
               {tab === "Heart" && (
-                <div className="rounded-2xl border border-white/8 bg-slate-900/50 p-4">
+                <div className="rounded-2xl border border-white/8 bg-[rgba(28,28,46,0.55)] p-4">
                   <ResponsiveContainer width="100%" height={220}>
                     <AreaChart data={player.hourlyHr}>
                       <defs>

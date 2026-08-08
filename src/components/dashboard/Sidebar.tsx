@@ -82,6 +82,7 @@ import {
 const JOUEUR_NAV_KEYS: Record<string, keyof import("../../i18n/joueurTranslations").JoueurTranslations["nav"]> = {
   "/joueurs": "dashboard",
   "/joueurs/performances": "performances",
+  "/joueurs/viiv": "viiv",
   "/joueurs/medical": "medical",
   "/joueurs/planning": "planning",
   "/joueurs/ia": "aiCoach",
@@ -351,7 +352,7 @@ const NAV_ITEMS: NavItem[] = [
         label: "TACTIQUE & VIDÉO",
         items: [
           { label: "Tactical Simulator",    icon: Crosshair,        path: "/analyste/tactique" },
-          { label: "Video Analysis Center", icon: Film,             path: "/analyste/video-analysis" },
+          { label: "Video Analysis Pro", icon: Film,             path: "/analyste/video-analysis" },
           { label: "Opponent Intel",        icon: Shield,           path: "/analyste/adversaire" },
           { label: "Fatigue Heatmap",       icon: Activity,         path: "/analyste/fatigue-heatmap" },
         ],
@@ -359,7 +360,7 @@ const NAV_ITEMS: NavItem[] = [
       {
         label: "SANTÉ & MARCHÉ",
         items: [
-          { label: "WHOOP Wearables",       icon: Watch,            path: "/analyste/whoop" },
+          { label: "Viiv Smartwatch",       icon: Watch,            path: "/analyste/viiv" },
           { label: "Injury Lab",            icon: Bandage,          path: "/analyste/blessures" },
           { label: "Injury Forecast",       icon: TrendingUp,       path: "/analyste/injury-forecast" },
           { label: "Transfer Engine",       icon: UserPlus,         path: "/analyste/transfer" },
@@ -442,6 +443,7 @@ const NAV_ITEMS: NavItem[] = [
     submenu: [
       { label: "Dashboard", icon: LayoutDashboard, path: "/joueurs" },
       { label: "Mes Performances", icon: BarChart3, path: "/joueurs/performances" },
+      { label: "Viiv Smartwatch", icon: Watch, path: "/joueurs/viiv" },
       { label: "Mon Suivi Médical", icon: Stethoscope, path: "/joueurs/medical" },
       { label: "Mon Planning", icon: Calendar, path: "/joueurs/planning" },
       { label: "AI Coach", icon: Zap, path: "/joueurs/ia" },

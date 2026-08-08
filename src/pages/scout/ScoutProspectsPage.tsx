@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { LayoutGrid, Eye, GitCompare, Filter } from "lucide-react";
 import { ScoutPage, SCard, SBadge, SGauge } from "../../components/scout/ScoutUI";
+import { ScoutPlayerPhoto } from "../../components/scout/ScoutPlayerPhoto";
 import { S, PRIORITY_META, WORKFLOW_COLS } from "../../data/scoutData";
 import { useScoutProspects } from "../../hooks/useScoutData";
 import type { WorkflowStatus } from "../../data/scoutData";
@@ -44,7 +45,7 @@ export function ScoutProspectsPage() {
             <LayoutGrid size={20} style={{ color: S.primary }} /> Annuaire des profils
           </h1>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            {filtered.length} fiches joueurs · accès rapide aux profils complets
+            {filtered.length} fiches · saison 2026-2027 · photos réelles
           </p>
         </div>
         <div className="flex gap-2">
@@ -110,10 +111,7 @@ export function ScoutProspectsPage() {
                 onClick={() => navigate(`/scout/prospect/${p.id}`)}
               >
                 <div className="flex items-start justify-between">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl text-base font-extrabold text-white"
-                    style={{ background: `linear-gradient(135deg,${S.primary},${S.primary}99)` }}>
-                    {p.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-                  </div>
+                  <ScoutPlayerPhoto name={p.name} photoUrl={p.photoUrl} size={56} accent={S.primary} />
                   {inWatch && (
                     <span className="text-[9px] font-bold rounded-full px-2 py-0.5"
                       style={{ background: `${S.danger}15`, color: S.danger }}>♥ Watchlist</span>
@@ -156,10 +154,7 @@ export function ScoutProspectsPage() {
                 style={{ background: "rgba(12,9,30,0.85)", borderColor: "var(--surface-panel-border)" }}
                 whileHover={{ borderColor: `${S.primary}35` }}
                 onClick={() => navigate(`/scout/prospect/${p.id}`)}>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl text-xs font-extrabold text-white"
-                  style={{ background: S.primary }}>
-                  {p.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-                </div>
+                <ScoutPlayerPhoto name={p.name} photoUrl={p.photoUrl} size={40} accent={S.primary} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{p.flag} {p.name}</p>
                   <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{p.position} · {p.club}</p>

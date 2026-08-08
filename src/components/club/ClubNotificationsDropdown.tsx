@@ -20,6 +20,7 @@ interface ClubNotif {
   level: NotifLevel;
   date: string;
   read: boolean;
+  path?: string | null;
 }
 
 const TYPE_ICON = {
@@ -45,12 +46,13 @@ const LEVEL_COLOR: Record<NotifLevel, string> = {
   success: "#22C55E",
 };
 
-function pathForType(type: NotifType) {
+function pathForType(type: NotifType, rolePath = "/club/notifications") {
   switch (type) {
-    case "Contrats": return "/club/contrats";
-    case "Finance": return "/club/finances";
-    case "Médical": return "/club/sante";
-    default: return "/club/notifications";
+    case "Contrats": return rolePath.startsWith("/responsable") ? "/responsable/documents" : "/club/contrats";
+    case "Finance": return rolePath.startsWith("/responsable") ? "/responsable/budget" : "/club/finances";
+    case "Médical": return rolePath.startsWith("/responsable") ? "/responsable/validation" : "/club/sante";
+    case "Info": return rolePath.startsWith("/responsable") ? "/responsable/validation" : rolePath;
+    default: return rolePath;
   }
 }
 
@@ -63,10 +65,15 @@ function normalizeNotif(raw: Record<string, unknown>): ClubNotif {
     level: (raw.level as NotifLevel) ?? "info",
     date: String(raw.date ?? ""),
     read: Boolean(raw.read ?? raw.isRead),
+    path: raw.path != null ? String(raw.path) : null,
   };
 }
 
-export function ClubNotificationsDropdown() {
+type ClubNotificationsDropdownProps = {
+  allPagePath?: string;
+};
+
+export function ClubNotificationsDropdown({ allPagePath = "/club/notifications" }: ClubNotificationsDropdownProps) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [notifs, setNotifs] = useState<ClubNotif[]>([]);
@@ -212,8 +219,8 @@ export function ClubNotificationsDropdown() {
                         borderBottom: "1px solid rgba(255,255,255,0.04)",
                       }}
                       onClick={() => {
-                        markRead(n.id);
-                        navigate(pathForType(n.type));
+                        void markRead(n.id);
+                        navigate(n.path || pathForType(n.type, allPagePath));
                         setOpen(false);
                       }}
                     >
@@ -259,7 +266,7 @@ export function ClubNotificationsDropdown() {
                 className="text-[9px] font-bold"
                 style={{ color: ACCENT }}
                 onClick={() => {
-                  navigate("/club/notifications");
+                  navigate(allPagePath);
                   setOpen(false);
                 }}
               >
