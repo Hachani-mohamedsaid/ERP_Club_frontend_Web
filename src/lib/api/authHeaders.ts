@@ -36,6 +36,16 @@ export async function apiFetchWithTimeout(path: string, init?: RequestInit, time
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     return await apiFetch(path, { ...init, signal: controller.signal });
+  } catch (e) {
+    const aborted =
+      (e instanceof DOMException && e.name === "AbortError") ||
+      (e instanceof Error && /abort/i.test(e.message));
+    if (aborted) {
+      throw new Error(
+        `Délai dépassé (${Math.round(timeoutMs / 1000)}s). Le backend peut être en réveil — réessayez.`,
+      );
+    }
+    throw e;
   } finally {
     clearTimeout(timer);
   }

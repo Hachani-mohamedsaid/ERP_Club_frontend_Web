@@ -28,10 +28,13 @@ export function FinanceNotificationsDropdown() {
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);
 
   const unread = notifs.filter((n) => !n.read).length;
 
   const load = useCallback(async () => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
     setLoading(true);
     setLoadError(null);
     try {
@@ -44,6 +47,7 @@ export function FinanceNotificationsDropdown() {
         e instanceof Error ? e.message : "Impossible de charger les notifications.",
       );
     } finally {
+      loadingRef.current = false;
       setLoading(false);
     }
   }, []);
