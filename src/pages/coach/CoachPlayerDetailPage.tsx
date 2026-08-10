@@ -3,9 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
-  AlertTriangle,
   CheckCircle2,
-  Brain,
   TrendingUp,
   TrendingDown,
   Minus,
@@ -37,8 +35,30 @@ import {
 import { clubApi } from "../../lib/api/club";
 import { apiFetch } from "../../lib/api/authHeaders";
 
-const TABS = ["Performance", "Médical", "Historique", "IA Coach"] as const;
+const TABS = ["Performance", "Médical", "Historique"] as const;
 type Tab = (typeof TABS)[number];
+
+const STAT_LABELS: Record<string, { label: string; icon: string }> = {
+  pace: { label: "Vitesse", icon: "⚡" },
+  shooting: { label: "Tirs", icon: "🎯" },
+  passing: { label: "Passes", icon: "🔄" },
+  dribbling: { label: "Dribbles", icon: "⚽" },
+  defending: { label: "Défense", icon: "🛡" },
+  physical: { label: "Physique", icon: "💪" },
+  heading: { label: "Jeu de tête", icon: "👆" },
+  vision: { label: "Vision", icon: "👁" },
+  stamina: { label: "Endurance", icon: "🏃" },
+  strength: { label: "Force", icon: "🏋" },
+  vitesse: { label: "Vitesse", icon: "⚡" },
+  endurance: { label: "Endurance", icon: "🏃" },
+  force: { label: "Force", icon: "🏋" },
+  explosivité: { label: "Explosivité", icon: "⚡" },
+  explosivite: { label: "Explosivité", icon: "⚡" },
+  agilité: { label: "Agilité", icon: "🔄" },
+  agilite: { label: "Agilité", icon: "🔄" },
+  récupération: { label: "Récupération", icon: "💪" },
+  recuperation: { label: "Récupération", icon: "💪" },
+};
 
 const translatePosition = (pos: string): string => {
   const map: Record<string, string> = {
@@ -358,18 +378,15 @@ export function CoachPlayerDetailPage() {
 
   const playerName = String(player.fullName ?? player.name ?? "Joueur");
   const st = mapStatus(String(player.status ?? ""));
-  const av = getAvatarColor(player?.fullName ?? player?.name ?? "A");
+  const av = getAvatarColor(
+    String(player?.fullName ?? player?.name ?? "A")
+  );
   const playerStatus = String(player.status ?? "DISPONIBLE");
 
   const fatigueScore = charge?.fatigueScore != null ? Number(charge.fatigueScore) : null;
   const formScore = stats?.form != null ? Number(stats.form) : null;
 
   const readiness = calcReadiness(playerStatus, fatigueScore, formScore, matchTrend);
-
-  const avgRating =
-    matchRatings.length > 0
-      ? (matchRatings.reduce((s, r) => s + r, 0) / matchRatings.length).toFixed(1)
-      : null;
 
   const seasonStats =
     stats?.seasonStats && typeof stats.seasonStats === "object"
@@ -417,71 +434,44 @@ export function CoachPlayerDetailPage() {
   const riskLabel =
     riskScore < 25 ? "Risque faible" : riskScore < 55 ? "Risque modéré" : "Risque élevé";
 
-  const aiRecs: { icon: string; text: string; type: "good" | "warn" | "info" }[] = [];
+  const specificStats = radarData
+    .map((item) => {
+      const key = String(item.subject ?? "").toLowerCase();
+      return {
+        key,
+        label: STAT_LABELS[key]?.label ?? String(item.subject ?? ""),
+        icon: STAT_LABELS[key]?.icon ?? "•",
+        value: Number(item.A ?? 0),
+      };
+    })
+    .filter((s) => s.value > 0)
+    .sort((a, b) => b.value - a.value);
 
-  if (playerInjury) {
-    aiRecs.push({
-      icon: "🩺",
-      text: `Blessure active: ${String(playerInjury.injury ?? "")}. Retour estimé: ${String(playerInjury.returnDate ?? "non défini")}. Ne pas forcer la participation.`,
-      type: "warn",
-    });
-  }
+  const playerPhase = (() => {
+    try {
+      const phases = JSON.parse(
+        localStorage.getItem("odin_reeducation_phases") ?? "{}"
+      ) as Record<string, number>;
+      const playerInjuryId = playerInjury
+        ? String((playerInjury as { id?: unknown }).id ?? "")
+        : null;
+      return playerInjuryId ? (phases[playerInjuryId] ?? null) : null;
+    } catch {
+      return null;
+    }
+  })();
 
-  if (fatigueScore !== null && fatigueScore >= 70) {
-    aiRecs.push({
-      icon: "⚡",
-      text: `Fatigue élevée (${fatigueScore}%). Réduire la charge d'entraînement. Repos recommandé avant le prochain match.`,
-      type: "warn",
-    });
-  } else if (fatigueScore !== null && fatigueScore <= 30) {
-    aiRecs.push({
-      icon: "🔋",
-      text: `Fatigue basse (${fatigueScore}%). Joueur bien récupéré. Peut encaisser une charge d'entraînement élevée.`,
-      type: "good",
-    });
-  }
+  const phaseLabel =
+    playerPhase === 1
+      ? "Phase 1 — Immobilisation"
+      : playerPhase === 2
+        ? "Phase 2 — Renforcement"
+        : playerPhase === 3
+          ? "Retour terrain"
+          : null;
 
-  if (charge?.statut === "Critique") {
-    aiRecs.push({
-      icon: "🚨",
-      text: "Charge critique détectée. Risque de blessure élevé si le joueur joue. Consulter le préparateur physique.",
-      type: "warn",
-    });
-  }
-
-  if (matchTrend === "up" && matchRatings.length >= 3) {
-    aiRecs.push({
-      icon: "📈",
-      text: `Performance en progression sur les ${matchRatings.length} derniers matchs. Joueur en confiance — titulaire recommandé.`,
-      type: "good",
-    });
-  } else if (matchTrend === "down" && matchRatings.length >= 3) {
-    aiRecs.push({
-      icon: "📉",
-      text: "Baisse de performance constatée. Analyser les causes: fatigue, blessure, forme? Considérer une rotation.",
-      type: "warn",
-    });
-  }
-
-  if (
-    playerStatus === "DISPONIBLE" &&
-    !playerInjury &&
-    (fatigueScore ?? 50) < 50
-  ) {
-    aiRecs.push({
-      icon: "✅",
-      text: "Joueur en bonne condition générale. Aucune restriction médicale ou physique. Disponible pour démarrer.",
-      type: "good",
-    });
-  }
-
-  if (aiRecs.length === 0) {
-    aiRecs.push({
-      icon: "ℹ️",
-      text: "Données insuffisantes pour générer des recommandations. Complétez les données de charge (préparateur) et d'historique matchs.",
-      type: "info",
-    });
-  }
+  const phaseColor =
+    playerPhase === 1 ? "#3b82f6" : playerPhase === 2 ? "#8b5cf6" : "#22c55e";
 
   const avail = {
     training: playerStatus !== "BLESSE",
@@ -798,6 +788,120 @@ export function CoachPlayerDetailPage() {
                 )}
               </CCard>
 
+              {specificStats.length > 0 ? (
+                <CCard>
+                  <p
+                    className="mb-3 text-sm font-bold"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    Statistiques spécifiques
+                  </p>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 10,
+                    }}
+                  >
+                    {specificStats.map((s) => {
+                      const color =
+                        s.value >= 80
+                          ? "#22c55e"
+                          : s.value >= 65
+                            ? "#ff7a00"
+                            : "#ef4444";
+                      return (
+                        <div key={s.key}>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              marginBottom: 4,
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 12,
+                                color: "var(--text-secondary)",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
+                              {s.icon} {s.label}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 700,
+                                color,
+                              }}
+                            >
+                              {s.value}
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              height: 5,
+                              borderRadius: 99,
+                              background: "rgba(255,255,255,0.08)",
+                              overflow: "hidden",
+                            }}
+                          >
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${s.value}%` }}
+                              transition={{ duration: 0.6 }}
+                              style={{
+                                height: "100%",
+                                borderRadius: 99,
+                                background: color,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CCard>
+              ) : (
+                <CCard>
+                  <p
+                    className="mb-3 text-sm font-bold"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    Statistiques spécifiques
+                  </p>
+                  <div
+                    style={{
+                      textAlign: "center",
+                      padding: "32px 0",
+                      borderRadius: 12,
+                      border: "1px dashed rgba(255,255,255,0.08)",
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: 13,
+                        color: "var(--text-muted)",
+                      }}
+                    >
+                      Statistiques non disponibles
+                    </p>
+                    <p
+                      style={{
+                        fontSize: 11,
+                        color: "var(--text-muted)",
+                        marginTop: 4,
+                        opacity: 0.7,
+                      }}
+                    >
+                      Données à renseigner par le préparateur
+                    </p>
+                  </div>
+                </CCard>
+              )}
+
               {attrs.length > 0 ? (
                 <CCard>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -1074,16 +1178,241 @@ export function CoachPlayerDetailPage() {
                   </div>
                 )}
               </CCard>
+
+              <div style={{ gridColumn: "1 / -1" }}>
+                <CCard>
+                  <p
+                    className="mb-3 text-sm font-bold"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    Disponibilité médicale
+                  </p>
+
+                  {phaseLabel ? (
+                    <div
+                      style={{
+                        padding: "10px 14px",
+                        borderRadius: 10,
+                        background: `${phaseColor}12`,
+                        border: `1px solid ${phaseColor}30`,
+                        borderLeft: `3px solid ${phaseColor}`,
+                        marginBottom: 12,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          background: phaseColor,
+                          flexShrink: 0,
+                        }}
+                      />
+                      <div>
+                        <p
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 700,
+                            color: phaseColor,
+                          }}
+                        >
+                          En rééducation — {phaseLabel}
+                        </p>
+                        <p
+                          style={{
+                            fontSize: 10,
+                            color: "var(--text-muted)",
+                            marginTop: 2,
+                          }}
+                        >
+                          Suivi médical en cours
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        color: "var(--text-muted)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.07em",
+                        marginBottom: 4,
+                      }}
+                    >
+                      Autorisation médicale
+                    </p>
+                    {[
+                      {
+                        label: "Entraînement",
+                        ok: st.label !== "Blessé",
+                      },
+                      {
+                        label: "Match",
+                        ok: st.label === "Disponible",
+                      },
+                      {
+                        label: "Contact physique",
+                        ok: st.label === "Disponible" && !playerInjury,
+                      },
+                    ].map((item) => (
+                      <div
+                        key={item.label}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "8px 12px",
+                          borderRadius: 9,
+                          background: item.ok
+                            ? "rgba(34,197,94,0.06)"
+                            : "rgba(239,68,68,0.06)",
+                          border: `1px solid ${
+                            item.ok
+                              ? "rgba(34,197,94,0.20)"
+                              : "rgba(239,68,68,0.20)"
+                          }`,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: 12,
+                            color: "var(--text-primary)",
+                          }}
+                        >
+                          {item.label}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: item.ok ? "#22c55e" : "#ef4444",
+                            background: item.ok
+                              ? "rgba(34,197,94,0.12)"
+                              : "rgba(239,68,68,0.12)",
+                            padding: "3px 10px",
+                            borderRadius: 99,
+                          }}
+                        >
+                          {item.ok ? "✓ Autorisé" : "✗ Interdit"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </CCard>
+              </div>
             </div>
           )}
 
           {tab === "Historique" && (
-            <CCard>
-              <p className="mb-3 text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-                Historique des matchs
-              </p>
-              {matchStats.length > 0 ? (
-                <>
+            <div>
+              {seasonStats ? (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(4,1fr)",
+                    gap: 10,
+                    marginBottom: 16,
+                  }}
+                >
+                  {[
+                    {
+                      label: "Matchs joués",
+                      value: seasonStats.matches ?? 0,
+                      color: "#ff7a00",
+                      bg: "rgba(255,122,0,0.10)",
+                      border: "rgba(255,122,0,0.25)",
+                    },
+                    {
+                      label: "Buts",
+                      value: seasonStats.goals ?? 0,
+                      color: "#22c55e",
+                      bg: "rgba(34,197,94,0.10)",
+                      border: "rgba(34,197,94,0.25)",
+                    },
+                    {
+                      label: "Passes décisives",
+                      value: seasonStats.assists ?? 0,
+                      color: "#3b82f6",
+                      bg: "rgba(59,130,246,0.10)",
+                      border: "rgba(59,130,246,0.25)",
+                    },
+                    {
+                      label: "Note moyenne",
+                      value:
+                        matchStats.length > 0
+                          ? (
+                              matchStats
+                                .filter((m) => m.rating != null)
+                                .reduce(
+                                  (s, m) => s + Number(m.rating ?? 0),
+                                  0
+                                ) /
+                              Math.max(
+                                1,
+                                matchStats.filter((m) => m.rating != null).length
+                              )
+                            ).toFixed(1)
+                          : "—",
+                      color: "#8b5cf6",
+                      bg: "rgba(139,92,246,0.10)",
+                      border: "rgba(139,92,246,0.25)",
+                    },
+                  ].map((k, i) => (
+                    <motion.div
+                      key={k.label}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.06 }}
+                      style={{
+                        padding: "12px 14px",
+                        borderRadius: 12,
+                        background: k.bg,
+                        border: `1px solid ${k.border}`,
+                        borderLeft: `3px solid ${k.color}`,
+                        textAlign: "center",
+                      }}
+                    >
+                      <p
+                        style={{
+                          fontSize: 22,
+                          fontWeight: 900,
+                          color: k.color,
+                          lineHeight: 1,
+                        }}
+                      >
+                        {String(k.value)}
+                      </p>
+                      <p
+                        style={{
+                          fontSize: 10,
+                          color: "var(--text-muted)",
+                          marginTop: 5,
+                        }}
+                      >
+                        {k.label}
+                      </p>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : null}
+
+              <CCard>
+                <p className="mb-3 text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+                  Historique des matchs
+                </p>
+                {matchStats.length > 0 ? (
                   <div className="space-y-2">
                     {matchStats.map((m, i) => {
                       const rating = m.rating != null ? Number(m.rating) : null;
@@ -1095,204 +1424,172 @@ export function CoachPlayerDetailPage() {
                           initial={{ opacity: 0, x: -8 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: i * 0.07 }}
-                          className="flex items-center gap-3 rounded-xl border px-4 py-3"
                           style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                            padding: "12px 14px",
+                            borderRadius: 12,
                             background: "rgba(255,255,255,0.02)",
-                            borderColor: "rgba(255,255,255,0.06)",
+                            border: "1px solid rgba(255,255,255,0.06)",
+                            borderLeft: `3px solid ${
+                              rating !== null
+                                ? rating >= 8
+                                  ? "#22c55e"
+                                  : rating >= 7
+                                    ? "#ff7a00"
+                                    : "#ef4444"
+                                : "rgba(255,255,255,0.15)"
+                            }`,
                           }}
                         >
-                          <span className="font-mono text-[10px]" style={{ color: "var(--text-muted)" }}>
-                            {String(m.matchDate ?? m.date ?? "—")}
-                          </span>
-                          <span className="flex-1 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                            vs {String(m.opponent ?? m.vs ?? "—")}
-                          </span>
-                          <div className="flex items-center gap-3">
+                          <div
+                            style={{
+                              flexShrink: 0,
+                              textAlign: "center",
+                              minWidth: 52,
+                            }}
+                          >
+                            <p
+                              style={{
+                                fontSize: 10,
+                                fontWeight: 700,
+                                color: "var(--text-muted)",
+                              }}
+                            >
+                              {String(m.matchDate ?? m.date ?? "—").slice(0, 5)}
+                            </p>
+                          </div>
+
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p
+                              style={{
+                                fontSize: 13,
+                                fontWeight: 700,
+                                color: "var(--text-primary)",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              vs {String(m.opponent ?? m.vs ?? "—")}
+                            </p>
+                          </div>
+
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 12,
+                              alignItems: "center",
+                              flexShrink: 0,
+                            }}
+                          >
                             {goals > 0 ? (
-                              <span className="text-xs" style={{ color: "#22c55e" }}>
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  color: "#22c55e",
+                                  background: "rgba(34,197,94,0.10)",
+                                  padding: "2px 8px",
+                                  borderRadius: 99,
+                                }}
+                              >
                                 ⚽ {goals}
                               </span>
                             ) : null}
                             {assists > 0 ? (
-                              <span className="text-xs" style={{ color: "#3b82f6" }}>
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  color: "#3b82f6",
+                                  background: "rgba(59,130,246,0.10)",
+                                  padding: "2px 8px",
+                                  borderRadius: 99,
+                                }}
+                              >
                                 🎯 {assists}
                               </span>
                             ) : null}
                             {rating !== null ? (
-                              <span
-                                className="text-lg font-extrabold"
+                              <div
                                 style={{
+                                  width: 36,
+                                  height: 36,
+                                  borderRadius: 10,
+                                  background:
+                                    rating >= 8
+                                      ? "rgba(34,197,94,0.12)"
+                                      : rating >= 7
+                                        ? "rgba(255,122,0,0.12)"
+                                        : "rgba(239,68,68,0.12)",
+                                  border: `1px solid ${
+                                    rating >= 8
+                                      ? "rgba(34,197,94,0.25)"
+                                      : rating >= 7
+                                        ? "rgba(255,122,0,0.25)"
+                                        : "rgba(239,68,68,0.25)"
+                                  }`,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: 14,
+                                  fontWeight: 900,
                                   color:
-                                    rating >= 8 ? "#22c55e" : rating >= 7 ? COACH_ACCENT : "#ef4444",
+                                    rating >= 8
+                                      ? "#22c55e"
+                                      : rating >= 7
+                                        ? "#ff7a00"
+                                        : "#ef4444",
                                 }}
                               >
                                 {rating}
-                              </span>
+                              </div>
                             ) : (
-                              <span className="text-sm" style={{ color: "var(--text-muted)" }}>
+                              <div
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  borderRadius: 10,
+                                  background: "rgba(255,255,255,0.04)",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: 12,
+                                  color: "var(--text-muted)",
+                                }}
+                              >
                                 —
-                              </span>
+                              </div>
                             )}
                           </div>
                         </motion.div>
                       );
                     })}
                   </div>
-                  {seasonStats ? (
-                    <div className="mt-3 grid grid-cols-3 gap-2">
-                      {[
-                        { label: "Buts saison", value: seasonStats.goals ?? 0 },
-                        { label: "Passes D.", value: seasonStats.assists ?? 0 },
-                        { label: "Matchs joués", value: seasonStats.matches ?? 0 },
-                      ].map((m) => (
-                        <div
-                          key={m.label}
-                          className="rounded-xl border p-3 text-center"
-                          style={{
-                            background: "rgba(255,255,255,0.03)",
-                            borderColor: "rgba(255,255,255,0.06)",
-                          }}
-                        >
-                          <p className="text-xl font-extrabold" style={{ color: COACH_ACCENT }}>
-                            {String(m.value)}
-                          </p>
-                          <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-                            {m.label}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-                </>
-              ) : (
-                <div className="rounded-xl border border-dashed py-12 text-center">
-                  <ClipboardList
-                    size={40}
-                    style={{ color: "var(--text-muted)", margin: "0 auto 12px", display: "block" }}
-                  />
-                  <p className="font-semibold" style={{ color: "var(--text-primary)" }}>
-                    Aucun match enregistré
-                  </p>
-                  <p
-                    className="mx-auto mt-1 max-w-xs text-xs"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    L&apos;historique des matchs apparaîtra après saisie par le staff technique.
-                  </p>
-                </div>
-              )}
-            </CCard>
-          )}
-
-          {tab === "IA Coach" && (
-            <div className="space-y-3">
-              <CCard glow>
-                <div className="mb-4 flex items-center gap-3">
-                  <motion.div
-                    className="flex h-10 w-10 items-center justify-center rounded-xl"
-                    style={{
-                      background: `linear-gradient(135deg,${COACH_ACCENT},#E66000)`,
-                      boxShadow: `0 0 20px ${COACH_ACCENT}50`,
-                    }}
-                    animate={{ scale: [1, 1.08, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <Brain size={18} className="text-white" />
-                  </motion.div>
-                  <div>
-                    <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-                      Analyse IA — {playerName}
+                ) : (
+                  <div className="rounded-xl border border-dashed py-12 text-center">
+                    <ClipboardList
+                      size={40}
+                      style={{
+                        color: "var(--text-muted)",
+                        margin: "0 auto 12px",
+                        display: "block",
+                      }}
+                    />
+                    <p className="font-semibold" style={{ color: "var(--text-primary)" }}>
+                      Aucun match enregistré
                     </p>
-                    <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-                      Recommandations personnalisées
+                    <p
+                      className="mx-auto mt-1 max-w-xs text-xs"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      L&apos;historique des matchs apparaîtra après saisie par le staff
+                      technique.
                     </p>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  {aiRecs.map((rec, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.1 }}
-                      className="flex items-start gap-3 rounded-xl border p-3"
-                      style={{
-                        background:
-                          rec.type === "good"
-                            ? "rgba(34,197,94,0.08)"
-                            : rec.type === "warn"
-                              ? "rgba(245,158,11,0.08)"
-                              : "rgba(59,130,246,0.08)",
-                        borderColor:
-                          rec.type === "good"
-                            ? "rgba(34,197,94,0.25)"
-                            : rec.type === "warn"
-                              ? "rgba(245,158,11,0.25)"
-                              : "rgba(59,130,246,0.25)",
-                      }}
-                    >
-                      <span className="shrink-0 text-base">{rec.icon}</span>
-                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                        {rec.text}
-                      </p>
-                    </motion.div>
-                  ))}
-                </div>
-              </CCard>
-
-              <CCard>
-                <div className="mb-3 flex items-center gap-2">
-                  <TrendingUp size={14} style={{ color: COACH_ACCENT }} />
-                  <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-                    Indicateurs clés
-                  </p>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    {
-                      label: "Score sélection",
-                      value: `${readiness.score}/100`,
-                      color: readiness.color,
-                    },
-                    {
-                      label: "Fatigue",
-                      value:
-                        fatigueScore != null ? `${fatigueScore}%` : "—",
-                      color:
-                        fatigueScore != null && fatigueScore >= 70
-                          ? "#ef4444"
-                          : fatigueScore != null && fatigueScore >= 40
-                            ? "#f59e0b"
-                            : "#22c55e",
-                    },
-                    {
-                      label: "Forme",
-                      value: formScore != null ? `${formScore}/100` : "—",
-                      color: "#22c55e",
-                    },
-                    {
-                      label: "Rating moyen",
-                      value: avgRating ? `${avgRating}/10` : "—",
-                      color: COACH_ACCENT,
-                    },
-                  ].map((m) => (
-                    <div
-                      key={m.label}
-                      className="rounded-xl border p-3"
-                      style={{
-                        background: `${m.color}08`,
-                        borderColor: `${m.color}20`,
-                      }}
-                    >
-                      <p className="text-lg font-extrabold" style={{ color: m.color }}>
-                        {m.value}
-                      </p>
-                      <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-                        {m.label}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+                )}
               </CCard>
             </div>
           )}

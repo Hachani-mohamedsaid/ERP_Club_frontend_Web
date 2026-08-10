@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   HeartPulse,
@@ -14,7 +14,6 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { GlassCard } from "../components/ui/GlassCard";
-import { Button } from "../components/ui/Button";
 import { ProgressBar } from "../components/coach/ProgressBar";
 import { BodyInjuryViewer } from "../components/medical/BodyInjuryViewer";
 import type { BodyZone } from "../components/medical/BodyInjuryViewer";
@@ -22,6 +21,35 @@ import { AIRiskPrediction } from "../components/medical/AIRiskPrediction";
 import { motion } from "framer-motion";
 import { useMedicalDashboard, type MedicalAlert, type MedicalPlayer } from "../hooks/useMedicalDashboard";
 import { riskToPercent, riskToSeverity, type InjuryRow } from "../lib/injuryNormalize";
+
+/** Clinical Steel — same language as Dossiers médicaux */
+const C = {
+  slate: "#64748b",
+  ice: "#38bdf8",
+  sky: "#7dd3fc",
+  deep: "#0ea5e9",
+  white: "#f8fafc",
+  muted: "#94a3b8",
+  panel: "rgba(100, 116, 139, 0.14)",
+  border: "rgba(100, 116, 139, 0.4)",
+  red: "#f83a3a",
+  green: "#3af899",
+  purple: "#993af8",
+} as const;
+
+const softBg = (hex: string, alpha = 0.12) => {
+  const n = hex.replace("#", "");
+  const r = parseInt(n.slice(0, 2), 16);
+  const g = parseInt(n.slice(2, 4), 16);
+  const b = parseInt(n.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+const ICE_CARD: CSSProperties = {
+  borderColor: C.border,
+  borderTop: `2px solid ${C.ice}`,
+  background: "linear-gradient(180deg, rgba(56,189,248,0.05) 0%, var(--surface-panel-solid) 32%)",
+};
 
 interface MedicalCase {
   id: string;
@@ -34,19 +62,6 @@ interface MedicalCase {
   grade: string;
   daysRemaining: number | null;
 }
-
-const TIMELINE_EVENTS = [
-  { id: "1", date: "Aujourd'hui", title: "Contrôle kiné", description: "Rééducation ciblée pour Ahmed.", type: "warning" as const },
-  { id: "2", date: "Hier", title: "Analyse IRM", description: "Bilan la cheville de Ali.", type: "info" as const },
-  { id: "3", date: "2 jours", title: "Séance reprise", description: "Mobilité et proprioception.", type: "success" as const },
-];
-
-const QUICK_ACTIONS = [
-  { label: "Nouvelle blessure", icon: Plus, path: "/medical/blessures", color: "var(--color-state-danger)" },
-  { label: "Rendez-vous", icon: Calendar, path: "/medical/rendez-vous", color: "var(--color-state-info)" },
-  { label: "Upload document", icon: Upload, path: "/medical/documents", color: "var(--color-state-warning)" },
-  { label: "Rapport", icon: FileText, path: "/medical/rapports", color: "var(--color-state-success)" },
-];
 
 const BODY_ZONE_LABELS: Record<string, string> = {
   head: "Tête",
@@ -211,9 +226,9 @@ function injuryToMedicalCase(row: InjuryRow, players: MedicalPlayer[]): MedicalC
 }
 
 function recoveryAccentColor(recovery: number): string {
-  if (recovery < 50) return "var(--color-state-danger)";
-  if (recovery < 80) return "var(--color-state-warning)";
-  return "var(--color-state-success)";
+  if (recovery < 50) return C.red;
+  if (recovery < 80) return C.ice;
+  return C.green;
 }
 
 function getInitials(name: string): string {
@@ -223,20 +238,6 @@ function getInitials(name: string): string {
     .join("")
     .toUpperCase()
     .slice(0, 2);
-}
-
-function averageDaysRemaining(injuries: InjuryRow[]): number {
-  const values = injuries
-    .map((row) => daysRemaining(row.returnDate))
-    .filter((days): days is number => days !== null);
-  if (values.length === 0) return 0;
-  return Math.round(values.reduce((sum, days) => sum + days, 0) / values.length);
-}
-
-function availabilityPercent(injured: number, available: number): number {
-  const total = injured + available;
-  if (total === 0) return 0;
-  return Math.round((available / total) * 100);
 }
 
 function buildMedicalBodyZones(injuries: InjuryRow[]): BodyZone[] {
@@ -298,21 +299,23 @@ type TimelineEvent = {
   type?: "info" | "success" | "warning" | "danger";
 };
 
+const TIMELINE_EVENTS: TimelineEvent[] = [];
+
 type PageAlert = MedicalAlert | { message: string; type: "info" };
 
 const TIMELINE_TYPE_COLORS = {
-  info: { border: "var(--color-state-info)", dot: "var(--color-state-info)" },
-  success: { border: "var(--color-state-success)", dot: "var(--color-state-success)" },
-  warning: { border: "var(--color-state-warning)", dot: "var(--color-state-warning)" },
-  danger: { border: "var(--color-state-danger)", dot: "var(--color-state-danger)" },
+  info: { border: C.ice, dot: C.ice },
+  success: { border: C.green, dot: C.green },
+  warning: { border: C.sky, dot: C.sky },
+  danger: { border: C.red, dot: C.red },
 };
 
 function MedicalTimelineSection({ title, events }: { title: string; events: TimelineEvent[] }) {
   return (
-    <GlassCard raised className="p-6">
+    <GlassCard raised className="p-6" style={ICE_CARD}>
       <div className="flex items-center gap-2">
-        <Calendar size={16} style={{ color: "var(--color-state-info)" }} />
-        <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{title}</h2>
+        <Calendar size={16} style={{ color: C.ice }} />
+        <h2 className="text-sm font-semibold" style={{ color: C.white }}>{title}</h2>
       </div>
 
       <div className="mt-4 space-y-0">
@@ -347,9 +350,9 @@ function MedicalTimelineSection({ title, events }: { title: string; events: Time
 
               <div className="flex-1 pb-6">
                 <p className="text-xs font-medium" style={{ color: colors.border }}>{event.date}</p>
-                <p className="mt-0.5 text-sm font-medium" style={{ color: "var(--text-primary)" }}>{event.title}</p>
+                <p className="mt-0.5 text-sm font-medium" style={{ color: C.white }}>{event.title}</p>
                 {event.description ? (
-                  <p className="mt-1 text-xs" style={{ color: "var(--text-secondary)" }}>{event.description}</p>
+                  <p className="mt-1 text-xs" style={{ color: C.muted }}>{event.description}</p>
                 ) : null}
               </div>
             </motion.div>
@@ -367,12 +370,46 @@ export function MedicalPage() {
     injured,
     players,
     todayEvents,
-    highRiskCount,
     priorities,
     alerts,
     loading,
     error,
   } = useMedicalDashboard();
+
+  // Read reeducation phases from localStorage
+  const phases = (() => {
+    try {
+      const v = localStorage.getItem("odin_reeducation_phases");
+      return v ? (JSON.parse(v) as Record<string, number>) : {};
+    } catch {
+      return {};
+    }
+  })();
+
+  const resolvedIds: string[] = (() => {
+    try {
+      const v = localStorage.getItem("odin_resolved_injuries");
+      return v ? (JSON.parse(v) as string[]) : [];
+    } catch {
+      return [];
+    }
+  })();
+
+  const QUICK_ACTIONS = [
+    {
+      label: `Nouvelle blessure${
+        kpis.injured > 0
+          ? ` (${kpis.injured})`
+          : ""
+      }`,
+      icon: Plus,
+      path: "/medical/blessures",
+      color: "var(--color-state-danger)",
+    },
+    { label: "Rendez-vous", icon: Calendar, path: "/medical/rendez-vous", color: C.deep },
+    { label: "Upload document", icon: Upload, path: "/medical/documents", color: C.sky },
+    { label: "Rapport", icon: FileText, path: "/medical/rapports", color: C.slate },
+  ];
 
   const recoveryInjuries = useMemo(() => deduplicateInjuriesByPlayer(injured), [injured]);
 
@@ -393,7 +430,32 @@ export function MedicalPage() {
     [injured],
   );
 
-  const averageReturnDays = useMemo(() => averageDaysRemaining(injured), [injured]);
+  // Total injuries (all injuries in DB)
+  const totalInjuries = injured.length;
+
+  // Disponibles = players with DISPONIBLE status
+  const disponiblesCount = useMemo(
+    () =>
+      players.filter(
+        (p) => (p.status ?? "").toUpperCase() === "DISPONIBLE"
+      ).length,
+    [players]
+  );
+
+  // En rééducation = injuries in phase 1 or 2 not yet resolved
+  const enReeducation = useMemo(
+    () =>
+      injured.filter((inj) => {
+        const phase = phases[inj.id];
+        const isResolved = resolvedIds.includes(inj.id);
+        if (isResolved) return false;
+        if (phase === 1 || phase === 2) return true;
+        // If no phase set yet → still in treatment
+        if (!phase) return true;
+        return false;
+      }).length,
+    [injured, phases, resolvedIds]
+  );
 
   const overallRisk = useMemo(() => {
     if (injured.length === 0) return 0;
@@ -412,11 +474,19 @@ export function MedicalPage() {
             description: event.location ?? event.player ?? "",
             type: calendarEventToTimelineType(event.eventType),
           }))
-        : TIMELINE_EVENTS,
+        : TIMELINE_EVENTS.length > 0
+          ? TIMELINE_EVENTS
+          : [
+              {
+                id: "empty",
+                date: "—",
+                title: "Aucun événement médical aujourd'hui",
+                description: "Les rendez-vous apparaîtront ici",
+                type: "info" as const,
+              },
+            ],
     [todayEvents],
   );
-
-  const dispoPercent = availabilityPercent(kpis.injured, kpis.available);
 
   const displayAlerts = useMemo((): PageAlert[] => {
     const calendarAlerts: PageAlert[] = todayEvents.map((event) => ({
@@ -429,7 +499,7 @@ export function MedicalPage() {
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 size={24} className="animate-spin" style={{ color: "var(--accent)" }} />
+        <Loader2 size={24} className="animate-spin" style={{ color: C.ice }} />
       </div>
     );
   }
@@ -437,24 +507,45 @@ export function MedicalPage() {
   if (error) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <p className="text-sm" style={{ color: "var(--color-state-danger)" }}>{error}</p>
+        <p className="text-sm" style={{ color: C.red }}>{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-5">
+      <div>
+        <h1 className="text-xl font-bold tracking-tight" style={{ color: C.white }}>
+          Dashboard médical
+        </h1>
+        <p className="mt-1 text-sm" style={{ color: C.slate }}>
+          Vue clinique de l&apos;effectif · {kpis.injured} blessé{kpis.injured !== 1 ? "s" : ""} actif{kpis.injured !== 1 ? "s" : ""}
+        </p>
+      </div>
+
       <div className="flex flex-wrap gap-3">
         {QUICK_ACTIONS.map(({ label, icon: Icon, path, color }) => (
-          <Button key={label} variant="glass" onClick={() => navigate(path)} className="gap-2">
+          <button
+            key={label}
+            type="button"
+            onClick={() => navigate(path)}
+            className="flex items-center gap-2 rounded-[var(--radius-odin-md)] px-3.5 py-2 text-sm font-medium transition-colors hover:bg-white/5"
+            style={{
+              border: `1px solid ${C.border}`,
+              borderLeftWidth: 3,
+              borderLeftColor: color,
+              background: softBg(color, 0.1),
+              color: C.white,
+            }}
+          >
             <Icon size={15} style={{ color }} />
-            <span style={{ color: "var(--text-primary)" }}>+ {label}</span>
-          </Button>
+            + {label}
+          </button>
         ))}
       </div>
 
       <motion.div
-        className="grid grid-cols-2 gap-4 md:grid-cols-4"
+        className="grid grid-cols-1 gap-4 md:grid-cols-3"
         initial="hidden"
         animate="visible"
         variants={{
@@ -462,95 +553,87 @@ export function MedicalPage() {
           visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.1 } },
         }}
       >
-        <motion.div variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}>
-          <GlassCard raised className="p-5" style={{ borderLeft: "3px solid var(--color-state-danger)" }}>
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>Blessés actifs</p>
-                <p className="mt-1 text-3xl font-bold" style={{ color: "var(--color-state-danger)" }}>{kpis.injured}</p>
-                <p className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>blessures en cours</p>
+        {[
+          {
+            label: "Total blessures",
+            sublabel: "blessures enregistrées",
+            value: totalInjuries,
+            color: "var(--color-state-danger)",
+            bg: "var(--color-state-danger-bg)",
+            borderColor: "var(--color-state-danger)",
+            icon: HeartPulse,
+          },
+          {
+            label: "Disponibles",
+            sublabel: "joueurs aptes",
+            value: disponiblesCount,
+            color: "var(--color-state-success)",
+            bg: "var(--color-state-success-bg)",
+            borderColor: "var(--color-state-success)",
+            icon: CheckCircle,
+          },
+          {
+            label: "En rééducation",
+            sublabel: "joueurs en traitement",
+            value: enReeducation,
+            color: "var(--color-state-warning)",
+            bg: "var(--color-state-warning-bg)",
+            borderColor: "var(--color-state-warning)",
+            icon: TrendingUp,
+          },
+        ].map(({ label, sublabel, value, color, bg, borderColor, icon: Icon }) => (
+          <motion.div
+            key={label}
+            variants={{
+              hidden: { opacity: 0, y: 12 },
+              visible: { opacity: 1, y: 0 },
+            }}
+          >
+            <GlassCard
+              raised
+              className="p-5"
+              style={{ borderLeft: `3px solid ${borderColor}` }}
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  <p
+                    className="text-sm font-medium"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    {label}
+                  </p>
+                  <p className="mt-1 text-3xl font-bold" style={{ color }}>
+                    {value}
+                  </p>
+                  <p
+                    className="mt-2 text-xs"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {sublabel}
+                  </p>
+                </div>
+                <div
+                  className="flex h-10 w-10 items-center justify-center rounded-full"
+                  style={{ background: bg }}
+                >
+                  <Icon size={20} style={{ color }} />
+                </div>
               </div>
-              <div
-                className="flex h-10 w-10 items-center justify-center rounded-full"
-                style={{ background: "var(--color-state-danger-bg)" }}
-              >
-                <HeartPulse size={20} style={{ color: "var(--color-state-danger)" }} />
-              </div>
-            </div>
-          </GlassCard>
-        </motion.div>
-
-        <motion.div variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}>
-          <GlassCard raised className="p-5" style={{ borderLeft: "3px solid var(--color-state-info)" }}>
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>Retour moyen</p>
-                <p className="mt-1 text-3xl font-bold" style={{ color: "var(--color-state-info)" }}>
-                  {averageReturnDays} jours
-                </p>
-                <p className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>temps de récupération</p>
-              </div>
-              <div
-                className="flex h-10 w-10 items-center justify-center rounded-full"
-                style={{ background: "var(--color-state-info-bg)" }}
-              >
-                <Clock size={20} style={{ color: "var(--color-state-info)" }} />
-              </div>
-            </div>
-          </GlassCard>
-        </motion.div>
-
-        <motion.div variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}>
-          <GlassCard raised className="p-5" style={{ borderLeft: "3px solid var(--color-state-success)" }}>
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>Dispo effectif</p>
-                <p className="mt-1 text-3xl font-bold" style={{ color: "var(--color-state-success)" }}>
-                  {dispoPercent}%
-                </p>
-                <p className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>joueurs disponibles</p>
-              </div>
-              <div
-                className="flex h-10 w-10 items-center justify-center rounded-full"
-                style={{ background: "var(--color-state-success-bg)" }}
-              >
-                <TrendingUp size={20} style={{ color: "var(--color-state-success)" }} />
-              </div>
-            </div>
-          </GlassCard>
-        </motion.div>
-
-        <motion.div variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}>
-          <GlassCard raised className="p-5" style={{ borderLeft: "3px solid var(--color-state-warning)" }}>
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>Joueurs à risque</p>
-                <p className="mt-1 text-3xl font-bold" style={{ color: "var(--color-state-warning)" }}>
-                  {highRiskCount}
-                </p>
-                <p className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>joueurs surveillés</p>
-              </div>
-              <div
-                className="flex h-10 w-10 items-center justify-center rounded-full"
-                style={{ background: "var(--color-state-warning-bg)" }}
-              >
-                <ShieldAlert size={20} style={{ color: "var(--color-state-warning)" }} />
-              </div>
-            </div>
-          </GlassCard>
-        </motion.div>
+            </GlassCard>
+          </motion.div>
+        ))}
       </motion.div>
 
       {priorities.length > 0 ? (
-        <GlassCard raised className="p-5">
+        <GlassCard raised className="p-5" style={ICE_CARD}>
           <div className="mb-4 flex items-center gap-2">
-            <ShieldAlert size={16} style={{ color: "var(--color-state-danger)" }} />
-            <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+            <ShieldAlert size={16} style={{ color: C.ice }} />
+            <h2 className="text-sm font-semibold" style={{ color: C.white }}>
               Priorités du jour
             </h2>
             <span
-              className="ml-auto rounded-full px-2 py-0.5 text-xs"
-              style={{ background: "var(--color-state-danger)20", color: "var(--color-state-danger)" }}
+              className="ml-auto rounded-full px-2 py-0.5 text-xs font-semibold"
+              style={{ background: softBg(C.ice), color: C.ice }}
             >
               {priorities.length} action{priorities.length > 1 ? "s" : ""}
             </span>
@@ -558,8 +641,8 @@ export function MedicalPage() {
           <div className="flex flex-col gap-3">
             {priorities.map((priority, index) => {
               const isDanger = priority.type === "danger";
-              const accentColor = isDanger ? "var(--color-state-danger)" : "var(--color-state-info)";
-              const accentBg = isDanger ? "var(--color-state-danger-bg)" : "var(--color-state-info-bg)";
+              const accentColor = isDanger ? C.red : C.ice;
+              const accentBg = softBg(accentColor);
               return (
                 <motion.div
                   key={index}
@@ -568,32 +651,32 @@ export function MedicalPage() {
                   transition={{ delay: index * 0.08 }}
                   className="flex items-center justify-between rounded-[var(--radius-odin-md)] px-5 py-4"
                   style={{
-                    background: isDanger
-                      ? "linear-gradient(90deg, var(--color-state-danger-bg), transparent)"
-                      : "linear-gradient(90deg, var(--color-state-info-bg), transparent)",
-                    borderLeft: `3px solid ${accentColor}`,
+                    background: `linear-gradient(90deg, ${accentBg}, transparent)`,
+                    border: `1px solid ${C.border}`,
+                    borderLeftWidth: 3,
+                    borderLeftColor: accentColor,
                   }}
                 >
                   <div className="flex items-center gap-4">
                     <div
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold"
-                      style={{ background: accentBg, color: accentColor }}
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xs font-bold"
+                      style={{ background: accentBg, color: accentColor, border: `1px solid ${accentColor}40` }}
                     >
                       {getInitials(priority.player)}
                     </div>
                     <div>
-                      <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                      <p className="text-sm font-medium" style={{ color: C.white }}>
                         {priority.player}
-                        <span className="ml-2 text-xs" style={{ color: "var(--text-muted)" }}>
+                        <span className="ml-2 text-xs" style={{ color: C.muted }}>
                           {priority.position}
                         </span>
                       </p>
-                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>{priority.reason}</p>
+                      <p className="text-xs" style={{ color: C.muted }}>{priority.reason}</p>
                     </div>
                   </div>
                   <span
                     className="shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold"
-                    style={{ background: accentColor, color: "var(--text-primary)" }}
+                    style={{ background: softBg(accentColor, 0.2), color: accentColor }}
                   >
                     {priority.action}
                   </span>
@@ -606,8 +689,8 @@ export function MedicalPage() {
 
       <MedicalTimelineSection title="Calendrier médical du jour" events={builtTimeline} />
 
-      <GlassCard raised className="p-6">
-        <h2 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+      <GlassCard raised className="p-6" style={ICE_CARD}>
+        <h2 className="mb-4 text-sm font-semibold" style={{ color: C.white }}>
           Progression de récupération
         </h2>
         <div className="grid gap-4 md:grid-cols-2">
@@ -628,13 +711,17 @@ export function MedicalPage() {
               >
                 <div
                   className="rounded-[var(--radius-odin-md)] border p-4"
-                  style={{ borderColor: "var(--surface-panel-border)", borderTop: `3px solid ${accent}` }}
+                  style={{
+                    borderColor: C.border,
+                    borderTop: `3px solid ${accent}`,
+                    background: softBg(C.slate, 0.08),
+                  }}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="font-medium" style={{ color: "var(--text-primary)" }}>{medicalCase.player}</p>
-                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>{medicalCase.position}</p>
-                      <p className="mt-1 text-xs" style={{ color: "var(--text-secondary)" }}>{medicalCase.injury}</p>
+                      <p className="font-medium" style={{ color: C.white }}>{medicalCase.player}</p>
+                      <p className="text-xs" style={{ color: C.muted }}>{medicalCase.position}</p>
+                      <p className="mt-1 text-xs" style={{ color: C.muted }}>{medicalCase.injury}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold" style={{ color: accent }}>{medicalCase.recovery}%</p>
@@ -655,9 +742,9 @@ export function MedicalPage() {
         </div>
       </GlassCard>
 
-      <GlassCard raised className="p-5">
+      <GlassCard raised className="p-5" style={{ ...ICE_CARD, borderTop: `2px solid ${C.slate}` }}>
         <div className="mb-4 flex items-center gap-2">
-          <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+          <h2 className="text-sm font-semibold" style={{ color: C.white }}>
             Alertes médicales
           </h2>
         </div>
@@ -666,20 +753,8 @@ export function MedicalPage() {
             const isDanger = alert.type === "danger";
             const isWarning = alert.type === "warning";
             const isInfo = alert.type === "info";
-            const accentColor = isDanger
-              ? "var(--color-state-danger)"
-              : isWarning
-              ? "var(--color-state-warning)"
-              : isInfo
-              ? "var(--color-state-info)"
-              : "var(--color-state-success)";
-            const accentBg = isDanger
-              ? "var(--color-state-danger-bg)"
-              : isWarning
-              ? "var(--color-state-warning-bg)"
-              : isInfo
-              ? "var(--color-state-info-bg)"
-              : "var(--color-state-success-bg)";
+            const accentColor = isDanger ? C.red : isWarning ? C.sky : isInfo ? C.ice : C.green;
+            const accentBg = softBg(accentColor);
 
             return (
               <motion.div
@@ -690,7 +765,7 @@ export function MedicalPage() {
                 className="flex min-h-[3.5rem] items-center gap-3 rounded-xl px-4 py-4"
                 style={{
                   background: accentBg,
-                  border: "1px solid var(--surface-panel-border)",
+                  border: `1px solid ${C.border}`,
                   borderLeft: `4px solid ${accentColor}`,
                 }}
               >
@@ -713,9 +788,7 @@ export function MedicalPage() {
                   ) : null}
                   <p
                     className="text-sm"
-                    style={{
-                      color: alert.type === "success" ? accentColor : "var(--text-primary)",
-                    }}
+                    style={{ color: alert.type === "success" ? accentColor : C.white }}
                   >
                     {alert.message}
                   </p>
@@ -726,9 +799,9 @@ export function MedicalPage() {
         </div>
       </GlassCard>
 
-      <GlassCard raised className="p-6">
-        <h2 className="mb-2 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Carte des blessures</h2>
-        <p className="mb-6 text-xs" style={{ color: "var(--text-muted)" }}>
+      <GlassCard raised className="p-6" style={ICE_CARD}>
+        <h2 className="mb-2 text-sm font-semibold" style={{ color: C.white }}>Carte des blessures</h2>
+        <p className="mb-6 text-xs" style={{ color: C.muted }}>
           Survolez une zone pour voir le joueur concerné
         </p>
         <div className="p-6">
@@ -736,8 +809,8 @@ export function MedicalPage() {
         </div>
       </GlassCard>
 
-      <GlassCard raised className="p-6">
-        <h2 className="mb-6 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+      <GlassCard raised className="p-6" style={ICE_CARD}>
+        <h2 className="mb-6 text-sm font-semibold" style={{ color: C.white }}>
           Bilan de santé de l&apos;effectif
         </h2>
         <AIRiskPrediction

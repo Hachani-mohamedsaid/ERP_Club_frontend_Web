@@ -15,23 +15,178 @@ import {
   Check,
   User,
   Loader2,
-  ChevronRight,
+  Save,
 } from "lucide-react";
 import { GlassCard } from "../../components/ui/GlassCard";
 import { AnimatedBadge } from "../../components/ui/AnimatedBadge";
 import { Button } from "../../components/ui/Button";
+import { BodyInjuryViewer } from "../../components/medical/BodyInjuryViewer";
 import { clubApi } from "../../lib/api/club";
 import { apiFetch } from "../../lib/api/authHeaders";
 import { parseApiError } from "../../lib/api/config";
+import {
+  BODY_PART_OPTIONS,
+  INJURY_TYPE_OPTIONS,
+  buildPreviewBodyZones,
+  getBodyPartLabel,
+} from "../../lib/injuryNormalize";
 import { type Injury, type InjuryStatus } from "../../data/medicalMockData";
+
+const RESOLVED_KEY = "odin_resolved_injuries";
+
+const getResolvedIds = (): string[] => {
+  try {
+    const saved = localStorage.getItem(RESOLVED_KEY);
+    return saved ? (JSON.parse(saved) as string[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+const markAsResolved = (injuryId: string) => {
+  const current = getResolvedIds();
+  if (!current.includes(injuryId)) {
+    const updated = [...current, injuryId];
+    try {
+      localStorage.setItem(RESOLVED_KEY, JSON.stringify(updated));
+    } catch {
+      /* ignore */
+    }
+  }
+};
+
+const calcInjuryStatus = (
+  inj: any,
+  players: any[]
+): "Active" | "En rééducation" | "Terminée" => {
+  // 1. Check resolved localStorage
+  const resolvedIds = (() => {
+    try {
+      const v = localStorage.getItem("odin_resolved_injuries");
+      return v ? JSON.parse(v) : [];
+    } catch {
+      return [];
+    }
+  })();
+
+  if (resolvedIds.includes(inj.id)) {
+    return "Terminée";
+  }
+
+  // 2. Check reeducation phases localStorage
+  const phases = (() => {
+    try {
+      const v = localStorage.getItem("odin_reeducation_phases");
+      return v ? JSON.parse(v) : {};
+    } catch {
+      return {};
+    }
+  })();
+
+  const phase = phases[inj.id];
+  if (phase === 3) return "Terminée";
+  if (phase === 2) return "En rééducation";
+  if (phase === 1) return "En rééducation";
+
+  // 3. Check player status in DB
+  const player = players.find(
+    (p: any) =>
+      (p.fullName ?? p.name ?? "").toLowerCase().trim() ===
+      (inj.name ?? "").toLowerCase().trim()
+  );
+
+  if ((player?.status ?? "").toUpperCase() === "DISPONIBLE") {
+    return "Terminée";
+  }
+
+  // 4. Parse returnDate
+  const parseDate = (d: string): Date | null => {
+    if (!d || d === "—") return null;
+    if (d.includes("/")) {
+      const parts = d.split("/").map(Number);
+      if (parts.length === 3) {
+        return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+      }
+    }
+    const parsed = new Date(d);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  };
+
+  const returnDate = parseDate(inj.returnDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // 5. returnDate in the FUTURE → Active
+  if (returnDate && returnDate >= today) {
+    return "Active";
+  }
+
+  // 6. returnDate OVERDUE + player still BLESSE → En rééducation
+  if (returnDate && returnDate < today) {
+    return "En rééducation";
+  }
+
+  // 7. No returnDate → Active by default
+  return "Active";
+};
+
+const STATUS_STYLE: Record<
+  InjuryStatus,
+  { color: string; bg: string; border: string }
+> = {
+  Active: {
+    color: "#ef4444",
+    bg: "rgba(239,68,68,0.12)",
+    border: "rgba(239,68,68,0.30)",
+  },
+  "En rééducation": {
+    color: "#f59e0b",
+    bg: "rgba(245,158,11,0.12)",
+    border: "rgba(245,158,11,0.30)",
+  },
+  Terminée: {
+    color: "#22c55e",
+    bg: "rgba(34,197,94,0.12)",
+    border: "rgba(34,197,94,0.30)",
+  },
+};
+
+const FALLBACK_STATUS_STYLE = {
+  color: "#6b7280",
+  bg: "rgba(107,114,128,0.12)",
+  border: "rgba(107,114,128,0.30)",
+};
+const C = {
+  ice: "#38bdf8",
+  red: "#f83a3a",
+  purple: "#993af8",
+  green: "#3af899",
+  grey: "#8799ab",
+  slate: "#64748b",
+  white: "#f8fafc",
+  muted: "#94a3b8",
+  border: "rgba(100, 116, 139, 0.4)",
+  iceRgb: "56, 189, 248",
+  redRgb: "248, 58, 58",
+  purpleRgb: "153, 58, 248",
+  greenRgb: "58, 248, 153",
+  greyRgb: "135, 153, 171",
+} as const;
 
 type Filter = "Tous" | "Actives" | "En rééducation" | "Terminées";
 
-type DisplayInjury = Injury & { bodyPart?: string; riskIA: number; createdAt?: string };
+type DisplayInjury = Injury & {
+  bodyPart?: string;
+  riskIA: number;
+  createdAt?: string;
+  computedStatus?: InjuryStatus;
+  name?: string;
+};
 
 interface ApiPlayer {
   id: string;
   fullName: string;
+  status?: string;
 }
 
 const FILTERS: Filter[] = ["Tous", "Actives", "En rééducation", "Terminées"];
@@ -63,13 +218,13 @@ const MODAL_OVERLAY_STYLE: CSSProperties = {
 
 const MODAL_CARD_STYLE: CSSProperties = {
   background: "linear-gradient(145deg, rgba(26,26,46,0.98) 0%, rgba(15,15,30,0.99) 100%)",
-  border: "1px solid rgba(255,122,0,0.25)",
+  border: `1px solid rgba(${C.iceRgb},0.35)`,
   borderRadius: "20px",
   padding: "28px",
   width: "100%",
   maxWidth: "480px",
   maxHeight: "90vh",
-  boxShadow: "0 25px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,122,0,0.1)",
+  boxShadow: `0 25px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(${C.iceRgb},0.12)`,
   position: "relative",
   overflow: "hidden",
 };
@@ -95,7 +250,7 @@ function ModalCardDecorations() {
           width: 180,
           height: 180,
           borderRadius: "50%",
-          background: "rgba(255,122,0,0.08)",
+          background: `rgba(${C.iceRgb},0.1)`,
           pointerEvents: "none",
         }}
       />
@@ -107,7 +262,7 @@ function ModalCardDecorations() {
           width: 140,
           height: 140,
           borderRadius: "50%",
-          background: "rgba(79,70,229,0.06)",
+          background: `rgba(${C.purpleRgb},0.08)`,
           pointerEvents: "none",
         }}
       />
@@ -140,48 +295,16 @@ function ModalCloseButton({ onClose }: { onClose: () => void }) {
 }
 
 const AVATAR_COLORS = [
-  { bg: "rgba(124,58,237,0.2)", color: "#7c3aed" },
-  { bg: "rgba(13,148,136,0.2)", color: "#0d9488" },
-  { bg: "rgba(219,39,119,0.2)", color: "#db2777" },
-  { bg: "rgba(245,158,11,0.2)", color: "#d99a1f" },
-  { bg: "rgba(58,123,213,0.2)", color: "#3a7bd5" },
+  { bg: `rgba(${C.iceRgb},0.22)`, color: C.ice },
+  { bg: "rgba(125, 211, 252, 0.2)", color: "#7dd3fc" },
+  { bg: `rgba(${C.iceRgb},0.14)`, color: "#0ea5e9" },
+  { bg: "rgba(100, 116, 139, 0.25)", color: C.slate },
+  { bg: `rgba(${C.greyRgb},0.22)`, color: C.grey },
 ];
 
 function getAvatarColor(name: string) {
   return AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
 }
-
-const CONTEXT_OPTIONS = ["Entraînement", "Match", "Autre"] as const;
-
-const ADD_MECHANISM_OPTIONS = [
-  "Contact",
-  "Non-contact",
-  "Sprint",
-  "Réception de saut",
-  "Surmenage",
-  "Changement de direction",
-  "Inconnu",
-] as const;
-
-const ZONE_SELECT_OPTIONS: { label: string; key: string }[] = [
-  { label: "Tête", key: "tete" },
-  { label: "Épaule gauche", key: "shoulder-left" },
-  { label: "Épaule droite", key: "shoulder-right" },
-  { label: "Bras gauche", key: "arm-left" },
-  { label: "Bras droit", key: "arm-right" },
-  { label: "Poitrine", key: "chest" },
-  { label: "Abdomen", key: "abdomen" },
-  { label: "Aine", key: "groin" },
-  { label: "Genou gauche", key: "knee-left" },
-  { label: "Genou droit", key: "knee-right" },
-  { label: "Cheville gauche", key: "ankle-left" },
-  { label: "Cheville droite", key: "ankle-right" },
-  { label: "Cuisse gauche", key: "thigh-left" },
-  { label: "Cuisse droite", key: "thigh-right" },
-  { label: "Ischio-jambiers", key: "hamstring" },
-  { label: "Dos", key: "back" },
-  { label: "Autre", key: "autre" },
-];
 
 const EDIT_BODY_PART_OPTIONS = [
   "genou-droit",
@@ -237,12 +360,7 @@ function translateBodyPart(bp: string | null | undefined): string {
 
 function SeverityBadge({ riskIA }: { riskIA: number }) {
   const label = riskIA >= 7 ? "Grade III" : riskIA >= 5 ? "Grade II" : "Grade I";
-  const bg =
-    riskIA >= 7
-      ? "var(--color-state-danger)"
-      : riskIA >= 5
-        ? "var(--color-state-warning)"
-        : "var(--color-state-info)";
+  const bg = riskIA >= 7 ? C.red : riskIA >= 5 ? C.ice : C.slate;
   return (
     <span
       style={{
@@ -260,31 +378,35 @@ function SeverityBadge({ riskIA }: { riskIA: number }) {
   );
 }
 
-function ActiveStatusBadge() {
+function ComputedStatusBadge({ status }: { status: InjuryStatus }) {
+  const statusStyle = STATUS_STYLE[status] ?? FALLBACK_STATUS_STYLE;
   return (
     <span
       style={{
         display: "inline-flex",
         alignItems: "center",
         gap: 6,
-        background: "var(--color-state-danger-bg)",
-        color: "var(--color-state-danger)",
-        padding: "3px 10px",
-        borderRadius: 99,
         fontSize: 12,
-        fontWeight: 500,
+        fontWeight: 600,
+        color: statusStyle.color,
+        background: statusStyle.bg,
+        border: `1px solid ${statusStyle.border}`,
+        padding: "4px 12px",
+        borderRadius: 99,
       }}
     >
-      <span
+      <motion.span
+        animate={{ opacity: [1, 0.3, 1] }}
+        transition={{ duration: 1.5, repeat: Infinity }}
         style={{
           width: 6,
           height: 6,
           borderRadius: "50%",
-          background: "var(--color-state-danger)",
-          animation: "medical-pulse 2s infinite",
+          background: statusStyle.color,
+          display: "inline-block",
         }}
       />
-      Active
+      {status}
     </span>
   );
 }
@@ -293,9 +415,9 @@ function RechuteBadge() {
   return (
     <span
       style={{
-        background: "rgba(217,154,31,0.2)",
-        color: "var(--color-state-warning)",
-        border: "1px solid var(--color-state-warning)",
+        background: `rgba(${C.iceRgb},0.14)`,
+        color: C.ice,
+        border: `1px solid rgba(${C.iceRgb},0.4)`,
         fontSize: 10,
         padding: "2px 8px",
         borderRadius: 99,
@@ -321,7 +443,7 @@ function FormField({ label, children }: { label: string; children: ReactNode }) 
             width: 4,
             height: 4,
             borderRadius: "50%",
-            background: "var(--accent)",
+            background: C.ice,
             marginRight: 6,
             verticalAlign: "middle",
           }}
@@ -350,6 +472,7 @@ function normalizePlayers(raw: unknown): ApiPlayer[] {
     return {
       id: String(row.id ?? `player-${i}`),
       fullName: String(row.fullName ?? row.name ?? ""),
+      status: row.status != null ? String(row.status) : undefined,
     };
   });
 }
@@ -428,6 +551,7 @@ function mapApiInjury(row: Record<string, unknown>): DisplayInjury {
     id: String(row.id ?? `inj-${Date.now()}`),
     playerId: String(row.playerId ?? row.id ?? ""),
     player: String(row.name ?? ""),
+    name: String(row.name ?? ""),
     injury: String(row.injury ?? row.injuryType ?? ""),
     severity: riskToSeverity(riskIA),
     status: "Active",
@@ -445,20 +569,6 @@ function normalizeInjuries(raw: unknown): DisplayInjury[] {
   const data = raw as Record<string, unknown>;
   const list = Array.isArray(data.injured) ? data.injured : [];
   return list.map((item) => mapApiInjury(item as Record<string, unknown>));
-}
-
-function statusTone(status: InjuryStatus) {
-  if (status === "Active") return "danger";
-  if (status === "En rééducation") return "warning";
-  return "success";
-}
-
-function todayInputValue(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
 }
 
 function InjuryRow({
@@ -483,15 +593,15 @@ function InjuryRow({
     ? new Date(injury.createdAt).toLocaleDateString("fr-FR")
     : injury.startDate;
   const avatar = getAvatarColor(injury.player);
-  const evenBg = "rgba(255,255,255,0.015)";
+  const evenBg = `rgba(${C.iceRgb},0.03)`;
 
   const baseRowStyle: CSSProperties = {
     cursor: "pointer",
-    borderBottom: "0.5px solid var(--surface-panel-border)",
+    borderBottom: `0.5px solid rgba(${C.iceRgb},0.12)`,
     transition: "background 0.15s, border-left 0.15s",
-    borderLeft: isSelected ? "3px solid var(--accent)" : "3px solid transparent",
+    borderLeft: isSelected ? `3px solid ${C.ice}` : "3px solid transparent",
     background: isSelected
-      ? "rgba(var(--accent-rgb), 0.1)"
+      ? `rgba(${C.iceRgb},0.12)`
       : rowIndex % 2 === 0
         ? evenBg
         : "transparent",
@@ -503,8 +613,8 @@ function InjuryRow({
       style={baseRowStyle}
       onMouseEnter={(e) => {
         if (!isSelected) {
-          e.currentTarget.style.background = "rgba(var(--accent-rgb), 0.06)";
-          e.currentTarget.style.borderLeft = "3px solid var(--accent)";
+          e.currentTarget.style.background = `rgba(${C.iceRgb},0.08)`;
+          e.currentTarget.style.borderLeft = `3px solid ${C.ice}`;
         }
       }}
       onMouseLeave={(e) => {
@@ -550,11 +660,9 @@ function InjuryRow({
         <SeverityBadge riskIA={injury.riskIA} />
       </td>
       <td style={TD_STYLE}>
-        {injury.status === "Active" ? (
-          <ActiveStatusBadge />
-        ) : (
-          <AnimatedBadge tone={statusTone(injury.status)}>{injury.status}</AnimatedBadge>
-        )}
+        <ComputedStatusBadge
+          status={injury.computedStatus ?? injury.status}
+        />
       </td>
       <td style={TD_STYLE}>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>
@@ -575,10 +683,10 @@ function InjuryRow({
               daysRemaining === null
                 ? "var(--text-muted)"
                 : daysRemaining === 0
-                  ? "var(--color-state-warning)"
+                  ? C.ice
                   : daysRemaining < 0
-                    ? "var(--color-state-danger)"
-                    : "var(--accent)",
+                    ? C.red
+                    : C.ice,
           }}
         >
           {daysRemaining === null
@@ -600,7 +708,7 @@ function InjuryRow({
             }}
             className="rounded p-1.5 transition-colors hover:bg-white/5"
           >
-            <Pencil size={14} style={{ color: "var(--text-secondary)" }} />
+            <Pencil size={14} style={{ color: C.ice }} />
           </button>
           <button
             type="button"
@@ -610,7 +718,7 @@ function InjuryRow({
             }}
             className="rounded p-1.5 transition-colors hover:bg-white/5"
           >
-            <CheckCircle size={14} style={{ color: "var(--color-state-success)" }} />
+            <CheckCircle size={14} style={{ color: C.green }} />
           </button>
         </div>
       </td>
@@ -624,12 +732,14 @@ function InjuryDetailPanel({
   onClose,
   onEdit,
   onCloseCase,
+  onMarkResolved,
 }: {
   injury: DisplayInjury;
   showRechute: boolean;
   onClose: () => void;
   onEdit: (injury: DisplayInjury) => void;
   onCloseCase: (injury: DisplayInjury) => void;
+  onMarkResolved: (injury: DisplayInjury) => void;
 }) {
   const navigate = useNavigate();
   const createdFormatted = injury.createdAt
@@ -647,12 +757,12 @@ function InjuryDetailPanel({
   const severityLabel =
     injury.riskIA >= 7 ? "Grade III" : injury.riskIA >= 5 ? "Grade II" : "Grade I";
   const severityToneVal =
-    injury.riskIA >= 7 ? "danger" : injury.riskIA >= 5 ? "warning" : "info";
+    injury.riskIA >= 7 ? "danger" : injury.riskIA >= 5 ? "info" : "neutral";
 
   const infoRows = [
     { label: "Diagnostic", value: injury.injury },
     { label: "Zone", value: translateBodyPart(injury.bodyPart) },
-    { label: "Sévérité", value: severityLabel, badge: severityToneVal as "danger" | "warning" | "info" },
+    { label: "Sévérité", value: severityLabel, badge: severityToneVal as "danger" | "info" | "neutral" },
     { label: "Date", value: createdFormatted },
     { label: "Retour estimé", value: injury.returnDate || "—" },
     { label: "Risque", value: `${injury.riskIA * 10}%` },
@@ -708,16 +818,17 @@ function InjuryDetailPanel({
               <h2 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>
                 {injury.player}
               </h2>
-              <AnimatedBadge tone={statusTone(injury.status)}>
-                {injury.status === "Active" ? "Actif" : injury.status}
-              </AnimatedBadge>
+              <ComputedStatusBadge
+                status={injury.computedStatus ?? injury.status}
+              />
               {showRechute ? (
                 <span
                   className="mt-1 inline-block"
                   style={{
                     fontSize: 10,
-                    color: "var(--color-state-warning)",
-                    background: "var(--color-state-warning-bg)",
+                    color: C.ice,
+                    background: `rgba(${C.iceRgb},0.14)`,
+                    border: `1px solid rgba(${C.iceRgb},0.35)`,
                     padding: "1px 6px",
                     borderRadius: 99,
                     fontWeight: 500,
@@ -847,6 +958,45 @@ function InjuryDetailPanel({
           >
             <CheckCircle size={15} /> Clôturer le cas
           </button>
+
+          {injury.computedStatus !== "Terminée" ? (
+            <motion.button
+              type="button"
+              onClick={() => onMarkResolved(injury)}
+              whileHover={{ scale: 1.02 }}
+              style={{
+                width: "100%",
+                padding: "10px",
+                borderRadius: 10,
+                fontSize: 12,
+                fontWeight: 700,
+                border: "1px solid rgba(34,197,94,0.25)",
+                cursor: "pointer",
+                marginTop: 8,
+                background: "rgba(34,197,94,0.12)",
+                color: "#22c55e",
+              }}
+            >
+              ✓ Marquer comme résolu
+            </motion.button>
+          ) : (
+            <div
+              style={{
+                width: "100%",
+                padding: "10px",
+                borderRadius: 10,
+                fontSize: 12,
+                fontWeight: 700,
+                textAlign: "center",
+                background: "rgba(34,197,94,0.08)",
+                color: "#22c55e",
+                border: "1px solid rgba(34,197,94,0.20)",
+                marginTop: 8,
+              }}
+            >
+              ✓ Cas médical résolu
+            </div>
+          )}
         </div>
       </motion.div>
     </>
@@ -1028,7 +1178,7 @@ function InjuryEditModal({
             className="flex w-full items-center justify-center gap-2"
             style={{
               padding: 13,
-              background: "var(--accent)",
+              background: C.ice,
               color: "white",
               fontSize: 14,
               fontWeight: 700,
@@ -1040,7 +1190,7 @@ function InjuryEditModal({
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = "var(--accent-strong)";
-              e.currentTarget.style.boxShadow = "0 8px 20px rgba(255,122,0,0.3)";
+              e.currentTarget.style.boxShadow = "0 8px 20px rgba(56,189,248,0.3)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "var(--accent)";
@@ -1056,477 +1206,48 @@ function InjuryEditModal({
   );
 }
 
-function InjuryFormModal({
-  players,
-  onClose,
-  onSubmit,
-}: {
-  players: ApiPlayer[];
-  onClose: () => void;
-  onSubmit: (values: {
-    playerName: string;
-    injuryType: string;
-    bodyPart: string;
-    returnDate: string;
-    riskScore: string;
-  }) => Promise<void>;
-}) {
-  const [step, setStep] = useState(1);
-  const [step1, setStep1] = useState({
-    playerName: "",
-    injuryDate: todayInputValue(),
-    context: "" as (typeof CONTEXT_OPTIONS)[number] | "",
-    mechanism: "" as (typeof ADD_MECHANISM_OPTIONS)[number] | "",
-  });
-  const [step2, setStep2] = useState({
-    diagnostic: "",
-    zone: "",
-    riskScore: "5",
-    returnDate: "",
-    notes: "",
-  });
-  const [saving, setSaving] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-
-  function validateStep1(): boolean {
-    if (!step1.playerName.trim()) {
-      setSubmitError("Veuillez sélectionner un joueur.");
-      return false;
-    }
-    if (!step1.injuryDate) {
-      setSubmitError("La date de blessure est requise.");
-      return false;
-    }
-    if (!step1.context) {
-      setSubmitError("Veuillez sélectionner un contexte.");
-      return false;
-    }
-    if (!step1.mechanism) {
-      setSubmitError("Veuillez sélectionner un mécanisme.");
-      return false;
-    }
-    setSubmitError(null);
-    return true;
-  }
-
-  function handleNext() {
-    if (validateStep1()) setStep(2);
-  }
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (!step2.diagnostic.trim()) {
-      setSubmitError("Le diagnostic est requis.");
-      return;
-    }
-    if (!step2.zone) {
-      setSubmitError("Veuillez sélectionner une zone anatomique.");
-      return;
-    }
-    setSaving(true);
-    setSubmitError(null);
-    try {
-      await onSubmit({
-        playerName: step1.playerName.trim(),
-        injuryType: step2.diagnostic.trim(),
-        bodyPart: step2.zone,
-        returnDate: step2.returnDate,
-        riskScore: step2.riskScore,
-      });
-      onClose();
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Erreur lors de l'enregistrement.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  const inputClass = "modal-premium-input w-full";
-
-  return (
-    <motion.div
-      style={MODAL_OVERLAY_STYLE}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      onClick={onClose}
-    >
-      <motion.div
-        style={MODAL_CARD_STYLE}
-        initial={{ scale: 0.92, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <ModalCardDecorations />
-        <div style={{ position: "relative", zIndex: 1, maxHeight: "calc(90vh - 56px)", overflowY: "auto" }}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                background: "rgba(255,122,0,0.15)",
-                border: "1px solid rgba(255,122,0,0.3)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: 10,
-              }}
-            >
-              <Plus size={16} style={{ color: "var(--accent)" }} />
-            </div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>
-              Ajouter un cas médical
-            </h2>
-          </div>
-          <ModalCloseButton onClose={onClose} />
-        </div>
-
-        <div style={{ display: "flex", gap: 8, margin: "20px 0 8px" }}>
-          {[1, 2].map((s) => (
-            <div
-              key={s}
-              style={{
-                flex: 1,
-                height: 3,
-                borderRadius: 99,
-                transition: "all 0.4s ease",
-                ...(step >= s
-                  ? {
-                      background: "linear-gradient(90deg, var(--accent), #ff9a40)",
-                      boxShadow: "0 0 8px rgba(255,122,0,0.4)",
-                    }
-                  : { background: "rgba(255,255,255,0.1)" }),
-              }}
-            />
-          ))}
-        </div>
-        <p
-          style={{
-            fontSize: 11,
-            color: "var(--text-muted)",
-            marginBottom: 20,
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 18,
-              height: 18,
-              borderRadius: "50%",
-              background: "var(--accent)",
-              color: "white",
-              fontSize: 10,
-              fontWeight: 700,
-            }}
-          >
-            {step}
-          </span>
-          sur 2 — {step === 1 ? "Contexte" : "Diagnostic"}
-        </p>
-
-        <motion.div
-          key={step}
-          initial={{ opacity: 0, x: step === 1 ? -20 : 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.25 }}
-        >
-        {step === 1 ? (
-          <div>
-            <FormField label="Joueur">
-              {players.length > 0 ? (
-                <select
-                  value={step1.playerName}
-                  onChange={(e) => setStep1((prev) => ({ ...prev, playerName: e.target.value }))}
-                  className={inputClass}
-                >
-                  <option value="">Sélectionner un joueur…</option>
-                  {players.map((p) => (
-                    <option key={p.id} value={p.fullName}>
-                      {p.fullName}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  type="text"
-                  value={step1.playerName}
-                  onChange={(e) => setStep1((prev) => ({ ...prev, playerName: e.target.value }))}
-                  placeholder="Nom du joueur"
-                  className={inputClass}
-                />
-              )}
-            </FormField>
-
-            <FormField label="Date de blessure">
-              <input
-                type="date"
-                value={step1.injuryDate}
-                onChange={(e) => setStep1((prev) => ({ ...prev, injuryDate: e.target.value }))}
-                className={inputClass}
-              />
-            </FormField>
-
-            <FormField label="Contexte">
-              <select
-                value={step1.context}
-                onChange={(e) =>
-                  setStep1((prev) => ({
-                    ...prev,
-                    context: e.target.value as (typeof CONTEXT_OPTIONS)[number],
-                  }))
-                }
-                className={inputClass}
-              >
-                <option value="">Sélectionner…</option>
-                {CONTEXT_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-
-            <FormField label="Mécanisme">
-              <select
-                value={step1.mechanism}
-                onChange={(e) =>
-                  setStep1((prev) => ({
-                    ...prev,
-                    mechanism: e.target.value as (typeof ADD_MECHANISM_OPTIONS)[number],
-                  }))
-                }
-                className={inputClass}
-              >
-                <option value="">Sélectionner…</option>
-                {ADD_MECHANISM_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-
-            {submitError ? (
-              <p className="mb-4 text-sm" style={{ color: "var(--color-state-danger)" }}>{submitError}</p>
-            ) : null}
-
-            <button
-              type="button"
-              onClick={handleNext}
-              className="modal-premium-btn-next flex w-full items-center justify-center gap-2"
-              style={{
-                width: "100%",
-                padding: 14,
-                background: "var(--accent)",
-                color: "white",
-                fontSize: 15,
-                fontWeight: 700,
-                borderRadius: 12,
-                border: "none",
-                cursor: "pointer",
-                marginTop: 8,
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--accent-strong)";
-                e.currentTarget.style.transform = "translateY(-1px)";
-                e.currentTarget.style.boxShadow = "0 8px 20px rgba(255,122,0,0.3)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "var(--accent)";
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "none";
-              }}
-            >
-              Suivant
-              <ChevronRight size={18} />
-            </button>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit}>
-            <FormField label="Type de blessure / Diagnostic">
-              <input
-                type="text"
-                value={step2.diagnostic}
-                onChange={(e) => setStep2((prev) => ({ ...prev, diagnostic: e.target.value }))}
-                placeholder="Ex: Entorse cheville"
-                className={inputClass}
-              />
-            </FormField>
-
-            <FormField label="Zone anatomique">
-              <select
-                value={step2.zone}
-                onChange={(e) => setStep2((prev) => ({ ...prev, zone: e.target.value }))}
-                className={inputClass}
-              >
-                <option value="">Sélectionner…</option>
-                {ZONE_SELECT_OPTIONS.map((z) => (
-                  <option key={z.key} value={z.key}>
-                    {z.label}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-
-            <FormField label="Score de risque (1-10)">
-              <input
-                type="number"
-                min={1}
-                max={10}
-                value={step2.riskScore}
-                onChange={(e) => setStep2((prev) => ({ ...prev, riskScore: e.target.value }))}
-                className={inputClass}
-              />
-            </FormField>
-
-            <FormField label="Date de retour estimée">
-              <input
-                type="date"
-                value={step2.returnDate}
-                onChange={(e) => setStep2((prev) => ({ ...prev, returnDate: e.target.value }))}
-                className={inputClass}
-              />
-            </FormField>
-
-            <FormField label="Notes cliniques">
-              <textarea
-                rows={3}
-                value={step2.notes}
-                onChange={(e) => setStep2((prev) => ({ ...prev, notes: e.target.value }))}
-                className={`${inputClass} modal-premium-textarea`}
-                placeholder="Observations optionnelles…"
-              />
-            </FormField>
-
-            {submitError ? (
-              <p className="mb-4 text-sm" style={{ color: "var(--color-state-danger)" }}>{submitError}</p>
-            ) : null}
-
-            <div
-              style={{
-                display: "flex",
-                gap: 10,
-                marginTop: 8,
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  setStep(1);
-                  setSubmitError(null);
-                }}
-                className="modal-premium-btn-back flex items-center justify-center"
-                style={{
-                  flex: 1,
-                  padding: 13,
-                  background: "rgba(255,255,255,0.06)",
-                  color: "var(--text-secondary)",
-                  fontSize: 14,
-                  fontWeight: 500,
-                  borderRadius: 12,
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  cursor: "pointer",
-                  transition: "background 0.2s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.1)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-                }}
-              >
-                ← Retour
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="modal-premium-btn-save flex items-center justify-center gap-2"
-                style={{
-                  flex: 2,
-                  padding: 13,
-                  background: "var(--accent)",
-                  color: "white",
-                  fontSize: 14,
-                  fontWeight: 700,
-                  borderRadius: 12,
-                  border: "none",
-                  cursor: saving ? "not-allowed" : "pointer",
-                  transition: "all 0.2s",
-                  opacity: saving ? 0.7 : 1,
-                }}
-                onMouseEnter={(e) => {
-                  if (!saving) {
-                    e.currentTarget.style.background = "var(--accent-strong)";
-                    e.currentTarget.style.boxShadow = "0 8px 20px rgba(255,122,0,0.3)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "var(--accent)";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
-              >
-                {saving ? <Loader2 size={16} className="animate-spin" /> : "Enregistrer"}
-              </button>
-            </div>
-          </form>
-        )}
-        </motion.div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
-
 const KPI_CARDS = [
   {
     label: "Total cas",
     key: "total" as const,
-    borderColor: "var(--color-state-info)",
-    iconColor: "var(--color-state-info)",
-    iconBg: "var(--color-state-info-bg)",
-    cardBg: "var(--color-state-info-bg)",
-    valueColor: "var(--color-state-info)",
+    borderColor: C.ice,
+    iconColor: C.ice,
+    iconBg: `rgba(${C.iceRgb},0.12)`,
+    cardBg: `rgba(${C.iceRgb},0.06)`,
+    valueColor: C.ice,
     Icon: ClipboardList,
     trend: null as "active" | "done" | null,
   },
   {
     label: "Cas actifs",
     key: "active" as const,
-    borderColor: "var(--color-state-danger)",
-    iconColor: "var(--color-state-danger)",
-    iconBg: "var(--color-state-danger-bg)",
-    cardBg: "var(--color-state-danger-bg)",
-    valueColor: "var(--color-state-danger)",
+    borderColor: C.red,
+    iconColor: C.red,
+    iconBg: `rgba(${C.redRgb},0.12)`,
+    cardBg: `rgba(${C.redRgb},0.06)`,
+    valueColor: C.red,
     Icon: AlertCircle,
     trend: "active" as const,
   },
   {
     label: "En rééducation",
     key: "reeducation" as const,
-    borderColor: "var(--color-state-warning)",
-    iconColor: "var(--color-state-warning)",
-    iconBg: "var(--color-state-warning-bg)",
-    cardBg: "var(--color-state-warning-bg)",
-    valueColor: "var(--color-state-warning)",
+    borderColor: C.purple,
+    iconColor: C.purple,
+    iconBg: `rgba(${C.purpleRgb},0.12)`,
+    cardBg: `rgba(${C.purpleRgb},0.06)`,
+    valueColor: C.purple,
     Icon: Activity,
     trend: null as "active" | "done" | null,
   },
   {
     label: "Cas résolus",
     key: "done" as const,
-    borderColor: "var(--color-state-success)",
-    iconColor: "var(--color-state-success)",
-    iconBg: "var(--color-state-success-bg)",
-    cardBg: "var(--color-state-success-bg)",
-    valueColor: "var(--color-state-success)",
+    borderColor: C.green,
+    iconColor: C.green,
+    iconBg: `rgba(${C.greenRgb},0.12)`,
+    cardBg: `rgba(${C.greenRgb},0.06)`,
+    valueColor: C.green,
     Icon: CheckCircle,
     trend: "done" as const,
   },
@@ -1535,7 +1256,7 @@ const KPI_CARDS = [
 function KpiTrend({ trend, count }: { trend: "active" | "done" | null; count: number }) {
   if (trend === "active") {
     return count > 0 ? (
-      <span className="text-xs" style={{ color: "var(--color-state-danger)" }}>
+      <span className="text-xs" style={{ color: C.red }}>
         ↑ Nécessite attention
       </span>
     ) : (
@@ -1546,7 +1267,7 @@ function KpiTrend({ trend, count }: { trend: "active" | "done" | null; count: nu
   }
   if (trend === "done") {
     return count > 0 ? (
-      <span className="text-xs" style={{ color: "var(--color-state-success)" }}>
+      <span className="text-xs" style={{ color: C.green }}>
         ✓ Guéris cette saison
       </span>
     ) : (
@@ -1565,11 +1286,25 @@ export function MedicalBlessuresPage() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("Tous");
   const [search, setSearch] = useState("");
-  const [showAdd, setShowAdd] = useState(false);
+  const [resolvedVersion, setResolvedVersion] = useState(0);
+  const [showModal, setShowModal] = useState(false);
+  const [modalForm, setModalForm] = useState({
+    playerName: "",
+    injuryType: INJURY_TYPE_OPTIONS[0],
+    bodyPart: BODY_PART_OPTIONS[0].id,
+    returnDate: "",
+    riskScore: "5",
+  });
+  const [saving, setSaving] = useState(false);
   const [editingInjury, setEditingInjury] = useState<DisplayInjury | null>(null);
   const [selectedInjury, setSelectedInjury] = useState<DisplayInjury | null>(null);
   const [closeConfirmInjury, setCloseConfirmInjury] = useState<DisplayInjury | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  const previewZones = useMemo(
+    () => buildPreviewBodyZones(modalForm.bodyPart, Number(modalForm.riskScore) || 0),
+    [modalForm.bodyPart, modalForm.riskScore],
+  );
 
   const showToast = useCallback((message: string, type: "success" | "error") => {
     setToast({ message, type });
@@ -1686,44 +1421,83 @@ export function MedicalBlessuresPage() {
     [reloadInjuries, showToast],
   );
 
-  const stats = useMemo(
-    () => ({
-      total: injuries.length,
-      active: injuries.filter((i) => i.status === "Active").length,
-      reeducation: injuries.filter((i) => i.status === "En rééducation").length,
-      done: injuries.filter((i) => i.status === "Terminée").length,
-    }),
-    [injuries],
+  const enrichedInjuries = useMemo(
+    () =>
+      injuries.map((inj) => {
+        const computedStatus = calcInjuryStatus(inj, players);
+        return {
+          ...inj,
+          computedStatus,
+          status: computedStatus,
+        };
+      }),
+    [injuries, players, resolvedVersion],
   );
 
-  const filterCounts: Record<Filter, number> = {
-    Tous: stats.total,
-    Actives: stats.active,
-    "En rééducation": stats.reeducation,
-    Terminées: stats.done,
+  const casActifs = enrichedInjuries.filter(
+    (i) => i.computedStatus === "Active"
+  ).length;
+
+  const enReeducation = enrichedInjuries.filter(
+    (i) => i.computedStatus === "En rééducation"
+  ).length;
+
+  const casResolus = enrichedInjuries.filter(
+    (i) => i.computedStatus === "Terminée"
+  ).length;
+
+  const stats = {
+    total: enrichedInjuries.length,
+    active: casActifs,
+    reeducation: enReeducation,
+    done: casResolus,
   };
 
+  const filterCounts = useMemo(
+    () => ({
+      Tous: enrichedInjuries.length,
+      Actives: enrichedInjuries.filter((i) => i.computedStatus === "Active").length,
+      "En rééducation": enrichedInjuries.filter(
+        (i) => i.computedStatus === "En rééducation"
+      ).length,
+      Terminées: enrichedInjuries.filter((i) => i.computedStatus === "Terminée")
+        .length,
+    }),
+    [enrichedInjuries]
+  );
+
   const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    return injuries
-      .filter((inj) => {
-        if (filter === "Tous") return true;
-        if (filter === "Actives") return inj.status === "Active";
-        if (filter === "En rééducation") return inj.status === "En rééducation";
-        return inj.status === "Terminée";
-      })
-      .filter(
-        (inj) =>
-          !q ||
-          inj.player.toLowerCase().includes(q) ||
-          inj.injury.toLowerCase().includes(q),
+    let result = enrichedInjuries;
+
+    if (filter === "Actives") {
+      result = result.filter((i) => i.computedStatus === "Active");
+    } else if (filter === "En rééducation") {
+      result = result.filter((i) => i.computedStatus === "En rééducation");
+    } else if (filter === "Terminées") {
+      result = result.filter((i) => i.computedStatus === "Terminée");
+    }
+
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (i) =>
+          (i.name ?? i.player ?? "").toLowerCase().includes(q) ||
+          (i.injury ?? "").toLowerCase().includes(q),
       );
-  }, [injuries, filter, search]);
+    }
+
+    return result;
+  }, [enrichedInjuries, filter, search]);
+
+  const selectedEnriched = useMemo(() => {
+    if (!selectedInjury) return null;
+    return enrichedInjuries.find((i) => i.id === selectedInjury.id) ?? selectedInjury;
+  }, [selectedInjury, enrichedInjuries]);
 
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 size={24} className="animate-spin" style={{ color: "var(--accent)" }} />
+        <Loader2 size={24} className="animate-spin" style={{ color: C.ice }} />
       </div>
     );
   }
@@ -1731,13 +1505,29 @@ export function MedicalBlessuresPage() {
   if (error) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <p className="text-sm" style={{ color: "var(--color-state-danger)" }}>{error}</p>
+        <p className="text-sm" style={{ color: C.red }}>{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div
+      className="medical-blessures space-y-6"
+      style={{
+        // Scoped clinical tokens — same degree as ice for semantic hues
+        ["--accent" as string]: C.ice,
+        ["--accent-strong" as string]: "#0ea5e9",
+        ["--accent-rgb" as string]: C.iceRgb,
+        ["--color-state-danger" as string]: C.red,
+        ["--color-state-danger-bg" as string]: `rgba(${C.redRgb},0.12)`,
+        ["--color-state-warning" as string]: C.purple,
+        ["--color-state-warning-bg" as string]: `rgba(${C.purpleRgb},0.12)`,
+        ["--color-state-success" as string]: C.green,
+        ["--color-state-success-bg" as string]: `rgba(${C.greenRgb},0.12)`,
+        ["--color-state-info" as string]: C.ice,
+        ["--color-state-info-bg" as string]: `rgba(${C.iceRgb},0.12)`,
+      }}
+    >
       <style>{`
         @keyframes medical-pulse {
           0%, 100% { opacity: 1; transform: scale(1); }
@@ -1747,7 +1537,7 @@ export function MedicalBlessuresPage() {
           border: 1px solid var(--surface-panel-border);
         }
         .medical-blessures-input:focus {
-          border-color: var(--accent);
+          border-color: ${C.ice};
           outline: none;
         }
         .medical-blessures-input::placeholder {
@@ -1765,8 +1555,8 @@ export function MedicalBlessuresPage() {
           transition: border-color 0.2s, box-shadow 0.2s;
         }
         .modal-premium-input:focus {
-          border-color: var(--accent);
-          box-shadow: 0 0 0 3px rgba(255,122,0,0.12);
+          border-color: ${C.ice};
+          box-shadow: 0 0 0 3px rgba(${C.iceRgb},0.18);
         }
         .modal-premium-input::placeholder {
           color: rgba(255,255,255,0.25);
@@ -1898,7 +1688,7 @@ export function MedicalBlessuresPage() {
             ))}
           </div>
         </div>
-        <Button onClick={() => setShowAdd(true)}>
+        <Button onClick={() => setShowModal(true)}>
           <Plus size={16} /> Ajouter un cas médical
         </Button>
       </div>
@@ -1914,22 +1704,32 @@ export function MedicalBlessuresPage() {
             }}
           />
           <p className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
-            Aucun cas médical
+            {filter === "Terminées"
+              ? "Aucun cas résolu"
+              : filter === "En rééducation"
+                ? "Aucun joueur en rééducation"
+                : "Aucun cas médical actif"}
           </p>
           <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
-            {filter === "Tous"
-              ? "Aucune blessure enregistrée pour ce club."
-              : `Aucun cas avec le statut "${filter}".`}
+            {filter === "Terminées"
+              ? "Les cas clôturés apparaîtront ici"
+              : filter === "En rééducation"
+                ? "Les joueurs dont la date de retour est dépassée apparaîtront ici"
+                : "L'effectif est en bonne santé"}
           </p>
         </div>
       ) : (
-        <GlassCard raised className="overflow-hidden">
+        <GlassCard
+          raised
+          className="overflow-hidden"
+          style={{ borderColor: C.border, borderTop: `2px solid ${C.ice}` }}
+        >
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr
                 style={{
-                  background: "rgba(255,255,255,0.03)",
-                  borderBottom: "2px solid var(--surface-panel-border)",
+                  background: `rgba(${C.iceRgb},0.06)`,
+                  borderBottom: `2px solid rgba(${C.iceRgb},0.25)`,
                 }}
               >
                 <th style={TH_STYLE}>Joueur</th>
@@ -1962,24 +1762,257 @@ export function MedicalBlessuresPage() {
       )}
 
       <AnimatePresence>
-        {selectedInjury ? (
+        {selectedEnriched ? (
           <InjuryDetailPanel
-            key={selectedInjury.id}
-            injury={selectedInjury}
-            showRechute={(playerInjuryCounts[selectedInjury.player] ?? 0) > 1}
+            key={selectedEnriched.id}
+            injury={selectedEnriched}
+            showRechute={(playerInjuryCounts[selectedEnriched.player] ?? 0) > 1}
             onClose={() => setSelectedInjury(null)}
             onEdit={(inj) => {
               setEditingInjury(inj);
             }}
             onCloseCase={setCloseConfirmInjury}
+            onMarkResolved={(inj) => {
+              markAsResolved(inj.id);
+              setInjuries((prev) =>
+                prev.map((i) =>
+                  i.id === inj.id
+                    ? { ...i, computedStatus: "Terminée", status: "Terminée" }
+                    : i,
+                ),
+              );
+              setResolvedVersion((v) => v + 1);
+              setSelectedInjury(null);
+            }}
           />
         ) : null}
-        {showAdd ? (
-          <InjuryFormModal
-            players={players}
-            onClose={() => setShowAdd(false)}
-            onSubmit={handleCreateInjury}
-          />
+        {showModal ? (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{
+              background: "rgba(0,0,0,0.75)",
+              backdropFilter: "blur(8px)",
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowModal(false)}
+          >
+            <motion.div
+              className="w-full max-w-2xl rounded-[24px] border p-6"
+              style={{
+                background: "var(--surface-panel-solid)",
+                borderColor: "rgba(255,107,87,0.25)",
+              }}
+              initial={{ scale: 0.92, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-5 flex items-center justify-between">
+                <h2 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>
+                  Enregistrer une blessure
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="rounded-xl p-2 hover:bg-white/10"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="space-y-4">
+                  <div>
+                    <label
+                      className="mb-1.5 block text-xs font-medium uppercase tracking-wide"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      Joueur
+                    </label>
+                    <select
+                      value={modalForm.playerName}
+                      onChange={(e) => setModalForm((p) => ({ ...p, playerName: e.target.value }))}
+                      className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
+                      style={{
+                        background: "rgba(30,35,50,0.97)",
+                        borderColor: "var(--surface-panel-border)",
+                        color: "var(--text-primary)",
+                        colorScheme: "dark",
+                      }}
+                    >
+                      <option value="">Sélectionner un joueur…</option>
+                      {players.map((p) => (
+                        <option key={p.id} value={p.fullName}>
+                          {p.fullName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      className="mb-1.5 block text-xs font-medium uppercase tracking-wide"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      Type de blessure
+                    </label>
+                    <select
+                      value={modalForm.injuryType}
+                      onChange={(e) => setModalForm((p) => ({ ...p, injuryType: e.target.value }))}
+                      className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
+                      style={{
+                        background: "rgba(30,35,50,0.97)",
+                        borderColor: "var(--surface-panel-border)",
+                        color: "var(--text-primary)",
+                        colorScheme: "dark",
+                      }}
+                    >
+                      {INJURY_TYPE_OPTIONS.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      className="mb-1.5 block text-xs font-medium uppercase tracking-wide"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      Zone
+                    </label>
+                    <select
+                      value={modalForm.bodyPart}
+                      onChange={(e) => setModalForm((p) => ({ ...p, bodyPart: e.target.value }))}
+                      className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
+                      style={{
+                        background: "rgba(30,35,50,0.97)",
+                        borderColor: "var(--surface-panel-border)",
+                        color: "var(--text-primary)",
+                        colorScheme: "dark",
+                      }}
+                    >
+                      {BODY_PART_OPTIONS.map((z) => (
+                        <option key={z.id} value={z.id}>
+                          {z.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      className="mb-1.5 block text-xs font-medium uppercase tracking-wide"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      Retour prévu
+                    </label>
+                    <input
+                      type="date"
+                      value={modalForm.returnDate}
+                      onChange={(e) => setModalForm((p) => ({ ...p, returnDate: e.target.value }))}
+                      className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
+                      style={{
+                        background: "rgba(255,255,255,0.04)",
+                        borderColor: "var(--surface-panel-border)",
+                        color: "var(--text-primary)",
+                        colorScheme: "dark",
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      className="mb-1.5 block text-xs font-medium uppercase tracking-wide"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      Score risque IA (0-10)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={10}
+                      value={modalForm.riskScore}
+                      onChange={(e) => setModalForm((p) => ({ ...p, riskScore: e.target.value }))}
+                      placeholder="5"
+                      className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
+                      style={{
+                        background: "rgba(255,255,255,0.04)",
+                        borderColor: "var(--surface-panel-border)",
+                        color: "var(--text-primary)",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div
+                  className="flex flex-col items-center justify-center rounded-2xl border p-3"
+                  style={{
+                    borderColor: "rgba(255,107,87,0.2)",
+                    background: "rgba(255,255,255,0.02)",
+                  }}
+                >
+                  <p
+                    className="mb-2 text-[10px] font-semibold uppercase tracking-wider"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    Aperçu zone — {getBodyPartLabel(modalForm.bodyPart)}
+                  </p>
+                  <BodyInjuryViewer
+                    zones={previewZones}
+                    selectedZoneId={modalForm.bodyPart}
+                    onZoneClick={(zone) => setModalForm((p) => ({ ...p, bodyPart: zone.id }))}
+                  />
+                  <p className="mt-1 text-center text-[10px]" style={{ color: "var(--text-muted)" }}>
+                    Cliquez sur le corps ou choisissez dans la liste Zone
+                  </p>
+                </div>
+              </div>
+
+              <motion.button
+                type="button"
+                disabled={saving}
+                onClick={async () => {
+                  if (!modalForm.playerName.trim()) {
+                    alert("Sélectionnez un joueur.");
+                    return;
+                  }
+                  setSaving(true);
+                  try {
+                    await handleCreateInjury({
+                      playerName: modalForm.playerName,
+                      injuryType: modalForm.injuryType,
+                      bodyPart: modalForm.bodyPart,
+                      returnDate: modalForm.returnDate,
+                      riskScore: modalForm.riskScore,
+                    });
+                    setShowModal(false);
+                    setModalForm({
+                      playerName: "",
+                      injuryType: INJURY_TYPE_OPTIONS[0],
+                      bodyPart: BODY_PART_OPTIONS[0].id,
+                      returnDate: "",
+                      riskScore: "5",
+                    });
+                  } catch (err) {
+                    alert(err instanceof Error ? err.message : "Erreur");
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white"
+                style={{
+                  background: "linear-gradient(135deg,#FF6B57,#E65240)",
+                  opacity: saving ? 0.7 : 1,
+                }}
+              >
+                <Save size={14} />
+                {saving ? "Enregistrement…" : "Enregistrer"}
+              </motion.button>
+            </motion.div>
+          </motion.div>
         ) : null}
         {editingInjury ? (
           <InjuryEditModal

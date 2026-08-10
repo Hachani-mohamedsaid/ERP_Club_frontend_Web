@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,89 +9,97 @@ import {
   Plus,
   X,
   Save,
-  CheckCircle2,
   Loader2,
   Target,
   Swords,
   Shield,
-  Star,
   MapPin,
   TrendingUp,
   Users,
   AlertTriangle,
+  Activity,
+  FileText,
+  Crosshair,
+  ChevronRight,
+  ChevronLeft,
+  Sparkles,
+  CheckCircle2,
 } from "lucide-react";
 import { GlassCard } from "../components/ui/GlassCard";
 import { apiFetch } from "../lib/api/authHeaders";
 import { clubApi } from "../lib/api/club";
 
-const PALETTE = {
-  accent: { main: "#ff7a00", bg: "rgba(255,122,0,0.12)", border: "rgba(255,122,0,0.30)" },
+const ACCENT = "#ff7a00";
+
+const C = {
+  accent: { main: ACCENT, bg: "rgba(255,122,0,0.12)", border: "rgba(255,122,0,0.30)" },
   blue: { main: "#3b82f6", bg: "rgba(59,130,246,0.12)", border: "rgba(59,130,246,0.25)" },
-  violet: { main: "#8b5cf6", bg: "rgba(139,92,246,0.12)", border: "rgba(139,92,246,0.25)" },
   green: { main: "#22c55e", bg: "rgba(34,197,94,0.12)", border: "rgba(34,197,94,0.25)" },
   red: { main: "#ef4444", bg: "rgba(239,68,68,0.12)", border: "rgba(239,68,68,0.25)" },
   amber: { main: "#f59e0b", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.25)" },
-  teal: { main: "#0d9488", bg: "rgba(13,148,136,0.12)", border: "rgba(13,148,136,0.25)" },
-  indigo: { main: "#6366f1", bg: "rgba(99,102,241,0.12)", border: "rgba(99,102,241,0.25)" },
 };
 
-const CHECKLIST_ICONS: Record<string, LucideIcon> = {
-  "Analyse adversaire complétée": Shield,
-  "Composition définie": Users,
-  "Séance tactique planifiée": Calendar,
-  "Effectif médical validé": CheckCircle2,
-  "Briefing joueurs programmé": Target,
-};
+type MatchResult = "V" | "N" | "D";
+type HomeAway = "D" | "E";
 
-const CHECKLIST_COLORS = [
-  PALETTE.blue,
-  PALETTE.violet,
-  PALETTE.teal,
-  PALETTE.green,
-  PALETTE.accent,
+interface ClubMatch {
+  id: string;
+  opponent: string;
+  competition: string;
+  matchDate: string;
+  matchDateISO?: string;
+  homeAway: HomeAway;
+  homeAwayLabel?: string;
+  result?: MatchResult;
+  score?: string;
+  goalsFor?: number;
+  goalsAgainst?: number;
+  opponentFormation?: string | null;
+  opponentStrengths?: string | null;
+  opponentWeaknesses?: string | null;
+  notes?: string | null;
+}
+
+interface ClubPlayer {
+  fullName?: string;
+  status?: string;
+}
+
+interface InjuryRow {
+  name?: string;
+}
+
+interface MatchObjective {
+  id: string;
+  label: string;
+  done: boolean;
+}
+
+type ObjectivesStore = Record<string, MatchObjective[]>;
+
+const OBJECTIVES_KEY = "odin_match_objectives";
+
+const DEFAULT_OBJECTIVES: MatchObjective[] = [
+  { id: "1", label: "Remporter le match", done: false },
+  { id: "2", label: "Garder la cage inviolée", done: false },
+  { id: "3", label: "60% de possession", done: false },
+  { id: "4", label: "Marquer en premier", done: false },
 ];
-
-const QUICK_ACTIONS = [
-  { label: "Composition", icon: Shield, path: "/coach/lineup", iconColor: PALETTE.blue },
-  { label: "Analyse Match", icon: Target, path: "/coach/match-analysis", iconColor: PALETTE.violet },
-  {
-    label: "Training Builder",
-    icon: Calendar,
-    path: "/coach/training-builder",
-    iconColor: PALETTE.teal,
-  },
-  { label: "Assistant IA", icon: Star, path: "/coach/ai", iconColor: PALETTE.accent },
-];
-
-const getResultPalette = (result: string) =>
-  result === "V" ? PALETTE.green : result === "N" ? PALETTE.amber : PALETTE.red;
-
-const parseMatchDate = (m: { matchDateISO?: string; matchDate?: string }) =>
-  new Date(m.matchDateISO ?? m.matchDate ?? "");
 
 const EMPTY_MATCH = {
   opponent: "",
   competition: "Ligue 1",
   matchDate: "",
-  matchTime: "17:00",
-  homeAway: "D" as "D" | "E",
+  homeAway: "D" as HomeAway,
   goalsFor: "",
   goalsAgainst: "",
-  result: "V" as "V" | "N" | "D",
+  result: "V" as MatchResult,
   opponentFormation: "",
   opponentStrengths: "",
   opponentWeaknesses: "",
   notes: "",
   isPast: false,
 };
-
-const DEFAULT_CHECKLIST = [
-  { id: "1", label: "Analyse adversaire complétée", done: false },
-  { id: "2", label: "Composition définie", done: false },
-  { id: "3", label: "Séance tactique planifiée", done: false },
-  { id: "4", label: "Effectif médical validé", done: false },
-  { id: "5", label: "Briefing joueurs programmé", done: false },
-];
 
 const inputStyle: CSSProperties = {
   width: "100%",
@@ -121,69 +129,95 @@ const labelStyle: CSSProperties = {
   marginBottom: 6,
 };
 
-function normalizeForm(form: unknown): string[] {
-  if (Array.isArray(form)) return form;
-  if (typeof form === "string" && form.trim()) {
-    return form.split(",").map((s) => s.trim()).filter(Boolean);
+const getResultPalette = (result: string) =>
+  result === "V" ? C.green : result === "N" ? C.amber : C.red;
+
+const parseMatchDate = (m: { matchDateISO?: string; matchDate?: string }) =>
+  new Date(m.matchDateISO ?? m.matchDate ?? "");
+
+const COMPETITION_TABS = [
+  "Ligue 1",
+  "Coupe de Tunisie",
+  "Ligue des Champions CAF",
+  "Coupe de la CAF",
+  "Match amical",
+  "Tous",
+] as const;
+
+type CompetitionTab = (typeof COMPETITION_TABS)[number];
+
+function isAmicalCompetition(comp: string): boolean {
+  return (comp ?? "").toLowerCase().includes("amical");
+}
+
+function resultToPoints(result: string | undefined): number {
+  if (result === "V") return 3;
+  if (result === "N") return 1;
+  return 0;
+}
+
+function loadObjectivesStore(): ObjectivesStore {
+  try {
+    const raw = localStorage.getItem(OBJECTIVES_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as ObjectivesStore;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
   }
-  return [];
+}
+
+function saveObjectivesStore(store: ObjectivesStore) {
+  try {
+    localStorage.setItem(OBJECTIVES_KEY, JSON.stringify(store));
+  } catch {
+    /* ignore */
+  }
+}
+
+function playerStatus(p: ClubPlayer): string {
+  return (p.status ?? "").toUpperCase().trim();
+}
+
+function hasMatchingInjury(p: ClubPlayer, injuries: InjuryRow[]): boolean {
+  const name = (p.fullName ?? "").toLowerCase().trim();
+  if (!name) return false;
+  return injuries.some((inj) => (inj.name ?? "").toLowerCase().trim() === name);
 }
 
 export function MatchesPage() {
   const navigate = useNavigate();
 
-  const [past, setPast] = useState<any[]>([]);
-  const [upcoming, setUpcoming] = useState<any[]>([]);
-  const [nextMatch, setNextMatch] = useState<any>(null);
+  const [past, setPast] = useState<ClubMatch[]>([]);
+  const [upcoming, setUpcoming] = useState<ClubMatch[]>([]);
+  const [nextMatch, setNextMatch] = useState<ClubMatch | null>(null);
   const [daysToNext, setDaysToNext] = useState<number | null>(null);
-  const [standing, setStanding] = useState<any>(null);
-  const [injuries, setInjuries] = useState<any[]>([]);
-  const [players, setPlayers] = useState<any[]>([]);
+  const [injuries, setInjuries] = useState<InjuryRow[]>([]);
+  const [players, setPlayers] = useState<ClubPlayer[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [showAddMatch, setShowAddMatch] = useState(false);
-  const [showEditStanding, setShowEditStanding] = useState(false);
+  const [competitionFilter, setCompetitionFilter] =
+    useState<CompetitionTab>("Ligue 1");
   const [submitting, setSubmitting] = useState(false);
+  const classementTouchX = useRef<number | null>(null);
 
   const [matchForm, setMatchForm] = useState(EMPTY_MATCH);
+  const [newObjective, setNewObjective] = useState("");
+  const [hoveredAction, setHoveredAction] = useState<number | null>(null);
 
-  const [standingForm, setStandingForm] = useState({
-    competition: "Ligue 1",
-    position: "",
-    points: "",
-    played: "",
-    won: "",
-    drawn: "",
-    lost: "",
-    goalsFor: "",
-    goalsAgainst: "",
-    form: [] as string[],
-  });
-
-  const [tacticalFocus, setTacticalFocus] = useState(() => {
-    try {
-      return localStorage.getItem("odin_tactical_focus") ?? "";
-    } catch {
-      return "";
-    }
-  });
-
-  const [hoveredQuickAction, setHoveredQuickAction] = useState<number | null>(null);
-
-  const [checklist, setChecklist] = useState<{ id: string; label: string; done: boolean }[]>(() => {
-    try {
-      const stored = localStorage.getItem("odin_match_checklist");
-      return stored ? JSON.parse(stored) : DEFAULT_CHECKLIST;
-    } catch {
-      return DEFAULT_CHECKLIST;
-    }
-  });
+  const [objectivesStore, setObjectivesStore] = useState<ObjectivesStore>(() => loadObjectivesStore());
 
   const reloadMatches = async () => {
     try {
       const r = await apiFetch("/club/matches");
       if (r.ok) {
-        const d = await r.json();
+        const d = (await r.json()) as {
+          past?: ClubMatch[];
+          upcoming?: ClubMatch[];
+          nextMatch?: ClubMatch | null;
+          daysToNext?: number | null;
+        };
         setPast(d.past ?? []);
         setUpcoming(d.upcoming ?? []);
         setNextMatch(d.nextMatch ?? null);
@@ -196,10 +230,14 @@ export function MatchesPage() {
 
   useEffect(() => {
     (async () => {
-      let matchesData: any = null;
-      let standingData: any = null;
-      let injuriesData: any[] = [];
-      let playersData: any[] = [];
+      let matchesData: {
+        past?: ClubMatch[];
+        upcoming?: ClubMatch[];
+        nextMatch?: ClubMatch | null;
+        daysToNext?: number | null;
+      } | null = null;
+      let injuriesData: InjuryRow[] = [];
+      let playersData: ClubPlayer[] = [];
 
       try {
         const r = await apiFetch("/club/matches");
@@ -209,21 +247,14 @@ export function MatchesPage() {
       }
 
       try {
-        const r = await apiFetch("/club/standing");
-        if (r.ok) standingData = await r.json();
-      } catch (e) {
-        console.warn(e);
-      }
-
-      try {
-        const r = (await clubApi.getInjuries()) as any;
+        const r = (await clubApi.getInjuries()) as { injured?: InjuryRow[] };
         injuriesData = r?.injured ?? [];
       } catch (e) {
         console.warn(e);
       }
 
       try {
-        playersData = (await clubApi.getPlayers()) as any[];
+        playersData = (await clubApi.getPlayers()) as ClubPlayer[];
       } catch (e) {
         console.warn(e);
       }
@@ -233,21 +264,6 @@ export function MatchesPage() {
         setUpcoming(matchesData.upcoming ?? []);
         setNextMatch(matchesData.nextMatch ?? null);
         setDaysToNext(matchesData.daysToNext ?? null);
-      }
-      if (standingData?.exists) {
-        setStanding(standingData);
-        setStandingForm({
-          competition: standingData.competition,
-          position: String(standingData.position),
-          points: String(standingData.points),
-          played: String(standingData.played),
-          won: String(standingData.won),
-          drawn: String(standingData.drawn),
-          lost: String(standingData.lost),
-          goalsFor: String(standingData.goalsFor),
-          goalsAgainst: String(standingData.goalsAgainst),
-          form: normalizeForm(standingData.form),
-        });
       }
       setInjuries(injuriesData);
       setPlayers(playersData);
@@ -259,7 +275,7 @@ export function MatchesPage() {
     if (!matchForm.opponent || !matchForm.matchDate) return;
     setSubmitting(true);
     try {
-      const body: any = {
+      const body: Record<string, string | number | null> = {
         opponent: matchForm.opponent,
         competition: matchForm.competition,
         matchDate: matchForm.matchDate,
@@ -290,87 +306,179 @@ export function MatchesPage() {
     }
   };
 
-  const saveStanding = async () => {
-    setSubmitting(true);
-    try {
-      const r = await apiFetch("/club/standing", {
-        method: "PATCH",
-        body: JSON.stringify({
-          competition: standingForm.competition,
-          position: Number(standingForm.position),
-          points: Number(standingForm.points),
-          played: Number(standingForm.played),
-          won: Number(standingForm.won),
-          drawn: Number(standingForm.drawn),
-          lost: Number(standingForm.lost),
-          goalsFor: Number(standingForm.goalsFor),
-          goalsAgainst: Number(standingForm.goalsAgainst),
-          form: standingForm.form.join(","),
-        }),
-      });
-      if (r.ok) {
-        const d = await r.json();
-        setStanding(d);
-        setShowEditStanding(false);
-      }
-    } catch (e) {
-      console.warn(e);
-    } finally {
-      setSubmitting(false);
-    }
+  const openPlanifier = () => {
+    setMatchForm({ ...EMPTY_MATCH, isPast: false });
+    setShowAddMatch(true);
   };
 
-  const saveTacticalFocus = (val: string) => {
-    setTacticalFocus(val);
-    try {
-      localStorage.setItem("odin_tactical_focus", val);
-    } catch {
-      /* ignore */
-    }
+  const openResultat = () => {
+    setMatchForm({ ...EMPTY_MATCH, isPast: true });
+    setShowAddMatch(true);
   };
 
-  const toggleCheck = (id: string) => {
-    const updated = checklist.map((c) => (c.id === id ? { ...c, done: !c.done } : c));
-    setChecklist(updated);
-    try {
-      localStorage.setItem("odin_match_checklist", JSON.stringify(updated));
-    } catch {
-      /* ignore */
-    }
+  const matchObjectives: MatchObjective[] = nextMatch
+    ? objectivesStore[nextMatch.id] ?? DEFAULT_OBJECTIVES
+    : [];
+
+  const persistObjectives = (matchId: string, list: MatchObjective[]) => {
+    const next = { ...objectivesStore, [matchId]: list };
+    setObjectivesStore(next);
+    saveObjectivesStore(next);
   };
 
-  const toggleFormResult = (r: string) => {
-    setStandingForm((prev) => {
-      const form = [...prev.form];
-      if (form.length >= 5) form.shift();
-      form.push(r);
-      return { ...prev, form };
-    });
+  const toggleObjective = (id: string) => {
+    if (!nextMatch) return;
+    const list = matchObjectives.map((o) => (o.id === id ? { ...o, done: !o.done } : o));
+    persistObjectives(nextMatch.id, list);
   };
 
-  const disponibles = players.filter((p: any) => {
-    const s = (p.status ?? "").toUpperCase().trim();
-    const hasInjury = injuries.some(
-      (inj: any) =>
-        (inj.name ?? "").toLowerCase().trim() === (p.fullName ?? "").toLowerCase().trim(),
-    );
-    return s === "DISPONIBLE" && !hasInjury;
+  const addObjective = () => {
+    if (!nextMatch || !newObjective.trim()) return;
+    const list = [
+      ...matchObjectives,
+      { id: `${Date.now()}`, label: newObjective.trim(), done: false },
+    ];
+    persistObjectives(nextMatch.id, list);
+    setNewObjective("");
+  };
+
+  const disponibles = players.filter((p) => {
+    const s = playerStatus(p);
+    return s === "DISPONIBLE" && !hasMatchingInjury(p, injuries);
   }).length;
+
+  const limites = players.filter((p) => {
+    const s = playerStatus(p);
+    return (s === "LIMITE" || s === "LIMITÉ") && !hasMatchingInjury(p, injuries);
+  }).length;
+
   const blessesCount = Math.max(
     injuries.length,
-    players.filter((p: any) => (p.status ?? "").toUpperCase().trim() === "BLESSE").length,
+    players.filter((p) => {
+      const s = playerStatus(p);
+      return s === "BLESSE" || s === "BLESSÉ";
+    }).length,
   );
-  const checklistDone = checklist.filter((c) => c.done).length;
-  const checklistTotal = checklist.length;
-  const prepProgress = Math.round((checklistDone / Math.max(checklistTotal, 1)) * 100);
 
-  const standingFormArray = normalizeForm(standing?.form);
+  const totalPlayers = Math.max(players.length, 1);
+  const availabilityPct = Math.round((disponibles / totalPlayers) * 100);
+  const objectivesDone = matchObjectives.filter((o) => o.done).length;
+  const objectivesTotal = Math.max(matchObjectives.length, 1);
+  const objectivesPct = nextMatch ? Math.round((objectivesDone / objectivesTotal) * 100) : 0;
+
+  const readinessScore = (() => {
+    const availPart = availabilityPct * 0.4;
+    const injuryPart = Math.max(0, 100 - blessesCount * 12) * 0.25;
+    const objPart = (nextMatch ? objectivesPct : 0) * 0.2;
+    const nextPart = nextMatch ? 15 : 0;
+    return Math.round(Math.min(100, availPart + injuryPart + objPart + nextPart));
+  })();
+
+  const readinessColor =
+    readinessScore >= 75 ? C.green.main : readinessScore >= 50 ? C.amber.main : C.red.main;
+
+  const seasonKpis = (() => {
+    const played = past.length;
+    const wins = past.filter((m) => m.result === "V").length;
+    const draws = past.filter((m) => m.result === "N").length;
+    const losses = past.filter((m) => m.result === "D").length;
+    const goalsFor = past.reduce((s, m) => s + (m.goalsFor ?? 0), 0);
+    const goalsAgainst = past.reduce((s, m) => s + (m.goalsAgainst ?? 0), 0);
+    const cleanSheets = past.filter((m) => (m.goalsAgainst ?? 0) === 0).length;
+    return [
+      { label: "Joués", value: played, color: C.blue.main },
+      { label: "Victoires", value: wins, color: C.green.main },
+      { label: "Nuls", value: draws, color: C.amber.main },
+      { label: "Défaites", value: losses, color: C.red.main },
+      { label: "Buts+", value: goalsFor, color: ACCENT },
+      { label: "Buts−", value: goalsAgainst, color: C.red.main },
+      { label: "Cages inviolées", value: cleanSheets, color: C.green.main },
+    ];
+  })();
+
+  const teamForm = past.slice(0, 5).map((m) => m.result ?? "D");
+
+  const competitionFilterIndex = COMPETITION_TABS.indexOf(competitionFilter);
+
+  const competitionStats = useMemo(() => {
+    const filtered = past.filter((m) => {
+      const comp = m.competition ?? "";
+      if (competitionFilter === "Tous") return !isAmicalCompetition(comp);
+      return comp === competitionFilter;
+    });
+
+    const isAmical = competitionFilter === "Match amical";
+    const countable = isAmical
+      ? []
+      : filtered.filter((m) => !isAmicalCompetition(m.competition ?? ""));
+
+    const points = countable.reduce(
+      (sum, m) => sum + resultToPoints(m.result),
+      0
+    );
+
+    return {
+      points: isAmical ? 0 : points,
+      played: filtered.length,
+      wins: filtered.filter((m) => m.result === "V").length,
+      draws: filtered.filter((m) => m.result === "N").length,
+      losses: filtered.filter((m) => m.result === "D").length,
+      isAmical,
+    };
+  }, [past, competitionFilter]);
+
+  const swipeCompetition = (dir: -1 | 1) => {
+    const i = competitionFilterIndex < 0 ? 0 : competitionFilterIndex;
+    const next =
+      (i + dir + COMPETITION_TABS.length) % COMPETITION_TABS.length;
+    setCompetitionFilter(COMPETITION_TABS[next]);
+  };
+
+  const quickActions: {
+    label: string;
+    icon: LucideIcon;
+    onClick: () => void;
+  }[] = [
+    { label: "Créer match", icon: Plus, onClick: openPlanifier },
+    { label: "Composition", icon: Users, onClick: () => navigate("/coach/lineup") },
+    { label: "Tableau tactique", icon: Crosshair, onClick: () => navigate("/coach/tactical") },
+    { label: "Analyse", icon: Target, onClick: () => navigate("/coach/match-analysis") },
+    { label: "Rapport", icon: FileText, onClick: () => navigate("/coach/match-analysis") },
+  ];
+
+  const briefLines: string[] = [];
+  if (nextMatch) {
+    if (nextMatch.opponentFormation) {
+      briefLines.push(`Formation adverse probable : ${nextMatch.opponentFormation}.`);
+    }
+    if (nextMatch.opponentStrengths) {
+      briefLines.push(`Forces : ${nextMatch.opponentStrengths}.`);
+    }
+    if (nextMatch.opponentWeaknesses) {
+      briefLines.push(`Faiblesses à exploiter : ${nextMatch.opponentWeaknesses}.`);
+    }
+    if (nextMatch.notes) {
+      briefLines.push(`Notes : ${nextMatch.notes}.`);
+    }
+    if (blessesCount > 0) {
+      briefLines.push(
+        `Recommandation médicale : ${blessesCount} blessé${blessesCount > 1 ? "s" : ""} — adapter la composition et limiter la charge.`,
+      );
+    } else {
+      briefLines.push("Effectif médical : aucun blessé signalé — pleine disponibilité pour la sélection.");
+    }
+    if (briefLines.length === 1) {
+      briefLines.unshift(
+        `Brief ${nextMatch.opponent} : complétez forces / faiblesses / formation pour affiner le plan.`,
+      );
+    }
+  }
 
   return (
     <>
       <style>{`
   .odin-select option {
-    background: #1a1a2e !important;
+    background: #12141c !important;
     color: #ffffff !important;
   }
   .odin-select {
@@ -378,22 +486,36 @@ export function MatchesPage() {
     color: #ffffff !important;
   }
 `}</style>
+
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        {/* 1. Header */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            justifyContent: "flex-end",
+            justifyContent: "space-between",
             flexWrap: "wrap",
             gap: 12,
           }}
         >
+          <div>
+            <p
+              style={{
+                fontSize: 22,
+                fontWeight: 900,
+                color: "var(--text-primary)",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              Centre Match
+            </p>
+            <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
+              Commande jour de match — préparation, résultats, objectifs
+            </p>
+          </div>
           <motion.button
             type="button"
-            onClick={() => {
-              setMatchForm(EMPTY_MATCH);
-              setShowAddMatch(true);
-            }}
+            onClick={openPlanifier}
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             style={{
@@ -402,8 +524,7 @@ export function MatchesPage() {
               gap: 8,
               padding: "10px 20px",
               borderRadius: 12,
-              background: "linear-gradient(135deg,#ff7a00,#e66000)",
-              boxShadow: "0 0 20px rgba(255,122,0,0.35)",
+              background: `linear-gradient(135deg,${ACCENT},#e66000)`,
               color: "white",
               fontSize: 13,
               fontWeight: 700,
@@ -411,8 +532,8 @@ export function MatchesPage() {
               cursor: "pointer",
             }}
           >
-            <Plus size={15} />
-            Ajouter un match
+            <Calendar size={15} />
+            Planifier
           </motion.button>
         </div>
 
@@ -421,682 +542,453 @@ export function MatchesPage() {
             <Loader2
               size={32}
               className="animate-spin"
-              style={{
-                color: "var(--text-muted)",
-                margin: "0 auto",
-              }}
+              style={{ color: "var(--text-muted)", margin: "0 auto" }}
             />
           </div>
         )}
 
         {!loading && (
           <>
-            {nextMatch ? (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                style={{
-                  padding: "28px 32px",
-                  borderRadius: 20,
-                  background: `linear-gradient(135deg, 
-      rgba(59,130,246,0.15) 0%, 
-      rgba(139,92,246,0.15) 50%,
-      rgba(99,102,241,0.10) 100%)`,
-                  border: "1px solid rgba(139,92,246,0.30)",
-                  boxShadow:
-                    "0 0 40px rgba(99,102,241,0.12), 0 0 80px rgba(59,130,246,0.06)",
-                  position: "relative",
-                  overflow: "hidden",
-                }}
-              >
-                <div
-                  style={{
-                    position: "absolute",
-                    top: -40,
-                    right: -40,
-                    width: 200,
-                    height: 200,
-                    borderRadius: "50%",
-                    background: "rgba(139,92,246,0.08)",
-                    pointerEvents: "none",
-                  }}
-                />
+            {/* 2. Hero: Next Match + Readiness */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "minmax(0,1fr) 220px",
+                gap: 14,
+                alignItems: "stretch",
+              }}
+              className="matches-hero-grid"
+            >
+              <style>{`
+                @media (max-width: 900px) {
+                  .matches-hero-grid { grid-template-columns: 1fr !important; }
+                }
+              `}</style>
 
-                <div
+              {nextMatch ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
                   style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr auto 1fr",
-                    gap: 32,
-                    alignItems: "center",
+                    padding: "24px 28px",
+                    borderRadius: 18,
+                    background:
+                      "linear-gradient(145deg, rgba(18,20,28,0.95) 0%, rgba(255,122,0,0.08) 100%)",
+                    border: "1px solid rgba(255,122,0,0.25)",
                     position: "relative",
-                    zIndex: 1,
+                    overflow: "hidden",
                   }}
                 >
-                  <div>
-                    <p
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 700,
-                        color: "rgba(139,92,246,0.9)",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.10em",
-                        marginBottom: 8,
-                      }}
-                    >
-                      Prochain match
-                    </p>
-                    <p
-                      style={{
-                        fontSize: 26,
-                        fontWeight: 900,
-                        color: "var(--text-primary)",
-                        marginBottom: 10,
-                        lineHeight: 1.1,
-                      }}
-                    >
-                      vs {nextMatch.opponent}
-                    </p>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      <span
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: -50,
+                      right: -30,
+                      width: 180,
+                      height: 180,
+                      borderRadius: "50%",
+                      background: "rgba(255,122,0,0.06)",
+                      pointerEvents: "none",
+                    }}
+                  />
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr auto 1fr auto",
+                      gap: 20,
+                      alignItems: "center",
+                      position: "relative",
+                      zIndex: 1,
+                    }}
+                    className="matches-vs-grid"
+                  >
+                    <style>{`
+                      @media (max-width: 700px) {
+                        .matches-vs-grid { grid-template-columns: 1fr !important; text-align: center; }
+                      }
+                    `}</style>
+
+                    <div>
+                      <p
                         style={{
-                          fontSize: 13,
-                          color: "rgba(255,255,255,0.6)",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        <Trophy size={12} style={{ color: PALETTE.accent.main }} />
-                        {nextMatch.competition}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: 13,
-                          color: "rgba(255,255,255,0.6)",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        <Calendar size={12} style={{ color: PALETTE.blue.main }} />
-                        {nextMatch.matchDate}
-                      </span>
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 6,
-                          marginTop: 4,
-                          fontSize: 12,
+                          fontSize: 10,
                           fontWeight: 700,
-                          color:
-                            nextMatch.homeAway === "D"
-                              ? PALETTE.accent.main
-                              : PALETTE.violet.main,
-                          background:
-                            nextMatch.homeAway === "D" ? PALETTE.accent.bg : PALETTE.violet.bg,
-                          border: `1px solid ${
-                            nextMatch.homeAway === "D"
-                              ? PALETTE.accent.border
-                              : PALETTE.violet.border
-                          }`,
-                          padding: "4px 12px",
-                          borderRadius: 99,
-                          width: "fit-content",
+                          color: ACCENT,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.12em",
+                          marginBottom: 8,
                         }}
                       >
-                        <MapPin size={10} />
-                        {nextMatch.homeAwayLabel}
-                      </span>
+                        Prochain match
+                      </p>
+                      <p
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 700,
+                          color: "rgba(255,255,255,0.55)",
+                          marginBottom: 4,
+                        }}
+                      >
+                        ODIN FC
+                      </p>
+                      <p style={{ fontSize: 11, color: "var(--text-muted)" }}>Équipe</p>
+                    </div>
+
+                    <div
+                      style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 12,
+                        background: C.accent.bg,
+                        border: `1px solid ${C.accent.border}`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 14,
+                        fontWeight: 900,
+                        color: ACCENT,
+                      }}
+                    >
+                      VS
+                    </div>
+
+                    <div>
+                      <p
+                        style={{
+                          fontSize: 22,
+                          fontWeight: 900,
+                          color: "var(--text-primary)",
+                          lineHeight: 1.15,
+                          marginBottom: 8,
+                        }}
+                      >
+                        {nextMatch.opponent}
+                      </p>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                        <span
+                          style={{
+                            fontSize: 12,
+                            color: "rgba(255,255,255,0.6)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          <Trophy size={11} style={{ color: ACCENT }} />
+                          {nextMatch.competition}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: 12,
+                            color: "rgba(255,255,255,0.6)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          <Calendar size={11} style={{ color: C.blue.main }} />
+                          {nextMatch.matchDate}
+                        </span>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 5,
+                            marginTop: 2,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: ACCENT,
+                            background: C.accent.bg,
+                            border: `1px solid ${C.accent.border}`,
+                            padding: "3px 10px",
+                            borderRadius: 8,
+                            width: "fit-content",
+                          }}
+                        >
+                          <MapPin size={10} />
+                          {nextMatch.homeAwayLabel ??
+                            (nextMatch.homeAway === "D" ? "Domicile" : "Extérieur")}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div style={{ textAlign: "center", minWidth: 90 }}>
+                      <p
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          color: "rgba(255,255,255,0.4)",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.1em",
+                          marginBottom: 4,
+                        }}
+                      >
+                        J −
+                      </p>
+                      <p
+                        style={{
+                          fontSize: 42,
+                          fontWeight: 900,
+                          lineHeight: 1,
+                          color: ACCENT,
+                        }}
+                      >
+                        {daysToNext === 0 ? "0" : daysToNext ?? "—"}
+                      </p>
+                      <p style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 4 }}>
+                        {daysToNext === 0
+                          ? "Aujourd'hui"
+                          : daysToNext === 1
+                            ? "jour"
+                            : "jours"}
+                      </p>
                     </div>
                   </div>
 
                   <div
                     style={{
-                      width: 1,
-                      height: 80,
-                      background:
-                        "linear-gradient(to bottom, transparent, rgba(139,92,246,0.40), transparent)",
-                    }}
-                  />
-
-                  <div style={{ textAlign: "center" }}>
-                    <p
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 700,
-                        color: "rgba(139,92,246,0.9)",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.10em",
-                        marginBottom: 8,
-                      }}
-                    >
-                      Compte à rebours
-                    </p>
-                    <p
-                      style={{
-                        fontSize: 56,
-                        fontWeight: 900,
-                        lineHeight: 1,
-                        background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
-                        WebkitBackgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
-                      }}
-                    >
-                      {daysToNext === 0 ? "0" : daysToNext}
-                    </p>
-                    <p
-                      style={{
-                        fontSize: 13,
-                        color: "rgba(255,255,255,0.5)",
-                        marginTop: 4,
-                      }}
-                    >
-                      {daysToNext === 0
-                        ? "Match aujourd'hui !"
-                        : daysToNext === 1
-                          ? "jour restant"
-                          : "jours restants"}
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                style={{
-                  padding: "24px 32px",
-                  borderRadius: 20,
-                  background: "rgba(255,255,255,0.02)",
-                  border: "1px dashed rgba(255,255,255,0.10)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  flexWrap: "wrap",
-                  gap: 16,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                  <div
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 14,
-                      background: "rgba(99,102,241,0.10)",
-                      border: "1px solid rgba(99,102,241,0.20)",
                       display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
+                      flexWrap: "wrap",
+                      gap: 8,
+                      marginTop: 20,
+                      position: "relative",
+                      zIndex: 1,
                     }}
                   >
-                    <Swords size={22} style={{ color: "rgba(99,102,241,0.6)" }} />
+                    {(
+                      [
+                        { label: "Voir adversaire", path: "/coach/opponent", icon: Swords },
+                        { label: "Composition", path: "/coach/lineup", icon: Users },
+                        { label: "Tableau tactique", path: "/coach/tactical", icon: Crosshair },
+                      ] as const
+                    ).map((cta) => {
+                      const Icon = cta.icon;
+                      return (
+                        <motion.button
+                          key={cta.path}
+                          type="button"
+                          onClick={() => navigate(cta.path)}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "8px 14px",
+                            borderRadius: 10,
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            background: "rgba(255,255,255,0.04)",
+                            border: "1px solid rgba(255,255,255,0.12)",
+                            color: "var(--text-primary)",
+                          }}
+                        >
+                          <Icon size={13} style={{ color: ACCENT }} />
+                          {cta.label}
+                        </motion.button>
+                      );
+                    })}
                   </div>
-                  <div>
-                    <p
-                      style={{
-                        fontSize: 15,
-                        fontWeight: 700,
-                        color: "var(--text-muted)",
-                      }}
-                    >
-                      Aucun match programmé
-                    </p>
-                    <p
-                      style={{
-                        fontSize: 12,
-                        color: "var(--text-muted)",
-                        marginTop: 3,
-                        opacity: 0.6,
-                      }}
-                    >
-                      Planifiez un match pour commencer la préparation
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMatchForm({ ...EMPTY_MATCH, isPast: false });
-                    setShowAddMatch(true);
-                  }}
+                </motion.div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                   style={{
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: PALETTE.accent.main,
-                    background: PALETTE.accent.bg,
-                    border: `1px solid ${PALETTE.accent.border}`,
-                    borderRadius: 12,
-                    padding: "10px 20px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  <Plus size={14} />
-                  Planifier un match
-                </button>
-              </motion.div>
-            )}
-
-            {standing ? (
-              <GlassCard raised className="p-5">
-                <div
-                  style={{
+                    padding: "24px 28px",
+                    borderRadius: 18,
+                    background: "rgba(255,255,255,0.02)",
+                    border: "1px dashed rgba(255,255,255,0.12)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    marginBottom: 16,
+                    flexWrap: "wrap",
+                    gap: 16,
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                     <div
                       style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: 8,
-                        background: PALETTE.accent.bg,
+                        width: 48,
+                        height: 48,
+                        borderRadius: 14,
+                        background: C.accent.bg,
+                        border: `1px solid ${C.accent.border}`,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                       }}
                     >
-                      <TrendingUp size={14} style={{ color: PALETTE.accent.main }} />
+                      <Swords size={22} style={{ color: ACCENT }} />
                     </div>
-                    <p
-                      style={{
-                        fontSize: 14,
-                        fontWeight: 700,
-                        color: "var(--text-primary)",
-                      }}
-                    >
-                      {standing.competition}
-                    </p>
+                    <div>
+                      <p style={{ fontSize: 15, fontWeight: 700, color: "var(--text-muted)" }}>
+                        Aucun match programmé
+                      </p>
+                      <p
+                        style={{
+                          fontSize: 12,
+                          color: "var(--text-muted)",
+                          marginTop: 3,
+                          opacity: 0.7,
+                        }}
+                      >
+                        Planifiez un match pour activer le centre de commande
+                      </p>
+                    </div>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setShowEditStanding(true)}
+                    onClick={openPlanifier}
                     style={{
-                      fontSize: 11,
-                      color: "var(--text-muted)",
-                      background: "rgba(255,255,255,0.05)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                      borderRadius: 8,
-                      padding: "4px 12px",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: ACCENT,
+                      background: C.accent.bg,
+                      border: `1px solid ${C.accent.border}`,
+                      borderRadius: 12,
+                      padding: "10px 18px",
                       cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
                     }}
                   >
-                    Modifier
+                    <Plus size={14} />
+                    Planifier
                   </button>
-                </div>
+                </motion.div>
+              )}
 
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 10,
-                    marginBottom: 16,
-                  }}
-                >
-                  {[
-                    {
-                      label: "Position",
-                      value: `#${standing.position}`,
-                      color: PALETTE.accent.main,
-                      bg: PALETTE.accent.bg,
-                    },
-                    {
-                      label: "Points",
-                      value: standing.points,
-                      color: PALETTE.blue.main,
-                      bg: PALETTE.blue.bg,
-                    },
-                    {
-                      label: "Diff. buts",
-                      value:
-                        standing.goalDifference >= 0
-                          ? `+${standing.goalDifference}`
-                          : String(standing.goalDifference),
-                      color:
-                        standing.goalDifference >= 0 ? PALETTE.green.main : PALETTE.red.main,
-                      bg: standing.goalDifference >= 0 ? PALETTE.green.bg : PALETTE.red.bg,
-                    },
-                    {
-                      label: "Matchs joués",
-                      value: standing.played,
-                      color: PALETTE.violet.main,
-                      bg: PALETTE.violet.bg,
-                    },
-                  ].map((k) => (
-                    <div
-                      key={k.label}
-                      style={{
-                        padding: "14px 16px",
-                        borderRadius: 12,
-                        background: k.bg,
-                        border: `1px solid ${k.color}25`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <div>
-                        <p
-                          style={{
-                            fontSize: 24,
-                            fontWeight: 900,
-                            color: k.color,
-                            lineHeight: 1,
-                          }}
-                        >
-                          {k.value}
-                        </p>
-                        <p
-                          style={{
-                            fontSize: 11,
-                            color: "var(--text-muted)",
-                            marginTop: 5,
-                            fontWeight: 500,
-                          }}
-                        >
-                          {k.label}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
-                  <p
-                    style={{
-                      fontSize: 11,
-                      color: "var(--text-muted)",
-                      fontWeight: 600,
-                      marginRight: 4,
-                    }}
-                  >
-                    Forme:
-                  </p>
-                  {standingFormArray.length > 0 ? (
-                    standingFormArray.slice(-5).map((f: string, i: number) => (
-                      <motion.span
-                        key={i}
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: i * 0.05 }}
-                        style={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: 8,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: 12,
-                          fontWeight: 800,
-                          color: "white",
-                          background:
-                            f === "V"
-                              ? PALETTE.green.main
-                              : f === "N"
-                                ? PALETTE.amber.main
-                                : PALETTE.red.main,
-                          boxShadow: `0 0 10px ${
-                            f === "V"
-                              ? PALETTE.green.main
-                              : f === "N"
-                                ? PALETTE.amber.main
-                                : PALETTE.red.main
-                          }40`,
-                        }}
-                      >
-                        {f}
-                      </motion.span>
-                    ))
-                  ) : (
-                    <span
-                      style={{
-                        fontSize: 12,
-                        color: "var(--text-muted)",
-                        fontStyle: "italic",
-                      }}
-                    >
-                      Non renseignée
-                    </span>
-                  )}
-                </div>
-              </GlassCard>
-            ) : (
-              <div
+              {/* Readiness card */}
+              <GlassCard
+                raised
+                className="p-5"
                 style={{
-                  padding: "16px 20px",
-                  borderRadius: 14,
-                  background: "rgba(255,255,255,0.02)",
-                  border: "1px dashed rgba(255,255,255,0.08)",
                   display: "flex",
+                  flexDirection: "column",
                   alignItems: "center",
-                  justifyContent: "space-between",
+                  justifyContent: "center",
+                  textAlign: "center",
+                  gap: 10,
                 }}
               >
                 <p
                   style={{
-                    fontSize: 13,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.1em",
                     color: "var(--text-muted)",
                   }}
                 >
-                  Classement non renseigné
+                  Préparation match
                 </p>
-                <button
-                  type="button"
-                  onClick={() => setShowEditStanding(true)}
+                <motion.div
+                  initial={{ scale: 0.85, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
                   style={{
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: PALETTE.accent.main,
-                    background: PALETTE.accent.bg,
-                    border: `1px solid ${PALETTE.accent.border}`,
-                    borderRadius: 8,
-                    padding: "6px 14px",
-                    cursor: "pointer",
-                  }}
-                >
-                  Renseigner le classement
-                </button>
-              </div>
-            )}
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 16,
-              }}
-            >
-              <GlassCard raised className="p-5">
-                <div
-                  style={{
+                    width: 96,
+                    height: 96,
+                    borderRadius: "50%",
+                    border: `3px solid ${readinessColor}`,
+                    boxShadow: `0 0 24px ${readinessColor}33`,
                     display: "flex",
                     alignItems: "center",
-                    gap: 8,
-                    marginBottom: 14,
+                    justifyContent: "center",
+                    flexDirection: "column",
                   }}
                 >
-                  <Calendar size={15} style={{ color: PALETTE.blue.main }} />
-                  <p
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 700,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    Prochains matchs
-                  </p>
-                  <span
-                    style={{
-                      marginLeft: "auto",
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: PALETTE.blue.main,
-                      background: PALETTE.blue.bg,
-                      border: `1px solid ${PALETTE.blue.border}`,
-                      padding: "2px 8px",
-                      borderRadius: 99,
-                    }}
-                  >
-                    {upcoming.length}
+                  <span style={{ fontSize: 28, fontWeight: 900, color: readinessColor, lineHeight: 1 }}>
+                    {readinessScore}
                   </span>
-                </div>
-
-                {upcoming.length === 0 ? (
-                  <div
-                    style={{
-                      textAlign: "center",
-                      padding: "24px 0",
-                    }}
-                  >
-                    <p
+                  <span style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>/100</span>
+                </motion.div>
+                <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 4 }}>
+                  {[
+                    { label: "Disponibilité", value: `${availabilityPct}%` },
+                    { label: "Blessés", value: String(blessesCount) },
+                    { label: "Objectifs", value: nextMatch ? `${objectivesPct}%` : "—" },
+                    { label: "Match planifié", value: nextMatch ? "✓" : "Non" },
+                  ].map((row) => (
+                    <div
+                      key={row.label}
                       style={{
-                        fontSize: 13,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: 11,
                         color: "var(--text-muted)",
                       }}
                     >
-                      Aucun match à venir
+                      <span>{row.label}</span>
+                      <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </GlassCard>
+            </div>
+
+            {/* 3. Season KPIs */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+                gap: 10,
+              }}
+              className="matches-kpi-grid"
+            >
+              <style>{`
+                @media (max-width: 1000px) {
+                  .matches-kpi-grid { grid-template-columns: repeat(4, 1fr) !important; }
+                }
+                @media (max-width: 600px) {
+                  .matches-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+                }
+              `}</style>
+              {seasonKpis.map((k, i) => (
+                <motion.div
+                  key={k.label}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.04 }}
+                >
+                  <GlassCard raised className="p-3" style={{ textAlign: "center" }}>
+                    <p style={{ fontSize: 22, fontWeight: 900, color: k.color, lineHeight: 1 }}>
+                      {k.value}
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMatchForm({ ...EMPTY_MATCH, isPast: false });
-                        setShowAddMatch(true);
-                      }}
+                    <p
                       style={{
-                        marginTop: 8,
-                        fontSize: 12,
-                        color: "#ff7a00",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
+                        fontSize: 10,
                         fontWeight: 600,
+                        color: "var(--text-muted)",
+                        marginTop: 6,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.04em",
                       }}
                     >
-                      + Ajouter un match
-                    </button>
-                  </div>
-                ) : (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 8,
-                    }}
-                  >
-                    {upcoming.map((m: any, i: number) => {
-                      const matchDate = parseMatchDate(m);
-                      return (
-                      <motion.div
-                        key={m.id}
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                          padding: "10px 14px",
-                          borderRadius: 10,
-                          background:
-                            i === 0
-                              ? "linear-gradient(135deg,rgba(59,130,246,0.10),rgba(139,92,246,0.08))"
-                              : "rgba(255,255,255,0.02)",
-                          border: `1px solid ${
-                            i === 0 ? "rgba(99,102,241,0.25)" : "rgba(255,255,255,0.05)"
-                          }`,
-                          borderLeft: `3px solid ${
-                            i === 0 ? PALETTE.indigo.main : "rgba(255,255,255,0.10)"
-                          }`,
-                        }}
-                      >
-                        <div
-                          style={{
-                            flexShrink: 0,
-                            textAlign: "center",
-                            padding: "4px 10px",
-                            background: "rgba(255,255,255,0.04)",
-                            border: "1px solid rgba(255,255,255,0.08)",
-                            borderRadius: 8,
-                            minWidth: 52,
-                          }}
-                        >
-                          <p
-                            style={{
-                              fontSize: 13,
-                              fontWeight: 800,
-                              color: i === 0 ? PALETTE.indigo.main : "var(--text-muted)",
-                            }}
-                          >
-                            {matchDate.getDate()}
-                          </p>
-                          <p
-                            style={{
-                              fontSize: 9,
-                              color: "var(--text-muted)",
-                              textTransform: "uppercase",
-                            }}
-                          >
-                            {matchDate.toLocaleDateString("fr-FR", { month: "short" })}
-                          </p>
-                        </div>
+                      {k.label}
+                    </p>
+                  </GlassCard>
+                </motion.div>
+              ))}
+            </div>
 
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p
-                            style={{
-                              fontSize: 13,
-                              fontWeight: 700,
-                              color: "var(--text-primary)",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            vs {m.opponent}
-                          </p>
-                          <p
-                            style={{
-                              fontSize: 10,
-                              color: "var(--text-muted)",
-                              marginTop: 2,
-                            }}
-                          >
-                            {m.competition}
-                          </p>
-                        </div>
-
-                        <span
-                          style={{
-                            fontSize: 10,
-                            fontWeight: 700,
-                            color: m.homeAway === "D" ? PALETTE.accent.main : PALETTE.violet.main,
-                            background: m.homeAway === "D" ? PALETTE.accent.bg : PALETTE.violet.bg,
-                            border: `1px solid ${
-                              m.homeAway === "D" ? PALETTE.accent.border : PALETTE.violet.border
-                            }`,
-                            padding: "3px 8px",
-                            borderRadius: 99,
-                            flexShrink: 0,
-                          }}
-                        >
-                          {m.homeAway === "D" ? "Domicile" : "Extérieur"}
-                        </span>
-                      </motion.div>
-                    );})}
-                  </div>
-                )}
-              </GlassCard>
+            {/* 4. Recent + side cards */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "minmax(0,1.6fr) minmax(240px,0.9fr)",
+                gap: 14,
+              }}
+              className="matches-mid-grid"
+            >
+              <style>{`
+                @media (max-width: 900px) {
+                  .matches-mid-grid { grid-template-columns: 1fr !important; }
+                }
+              `}</style>
 
               <GlassCard raised className="p-5">
                 <div
@@ -1107,31 +999,22 @@ export function MatchesPage() {
                     marginBottom: 14,
                   }}
                 >
-                  <Trophy size={15} style={{ color: "#ff7a00" }} />
-                  <p
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 700,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    Résultats récents
+                  <Trophy size={15} style={{ color: ACCENT }} />
+                  <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
+                    Matchs récents
                   </p>
                   <button
                     type="button"
-                    onClick={() => {
-                      setMatchForm({ ...EMPTY_MATCH, isPast: true });
-                      setShowAddMatch(true);
-                    }}
+                    onClick={openResultat}
                     style={{
                       marginLeft: "auto",
                       fontSize: 11,
                       fontWeight: 600,
-                      color: "#ff7a00",
-                      background: "rgba(255,122,0,0.10)",
-                      border: "1px solid rgba(255,122,0,0.25)",
+                      color: ACCENT,
+                      background: C.accent.bg,
+                      border: `1px solid ${C.accent.border}`,
                       borderRadius: 8,
-                      padding: "3px 10px",
+                      padding: "4px 10px",
                       cursor: "pointer",
                     }}
                   >
@@ -1140,483 +1023,796 @@ export function MatchesPage() {
                 </div>
 
                 {past.length === 0 ? (
-                  <div
+                  <p
                     style={{
+                      fontSize: 13,
+                      color: "var(--text-muted)",
                       textAlign: "center",
-                      padding: "24px 0",
+                      padding: "28px 0",
                     }}
                   >
-                    <p
-                      style={{
-                        fontSize: 13,
-                        color: "var(--text-muted)",
-                      }}
-                    >
-                      Aucun résultat enregistré
-                    </p>
-                    <p
-                      style={{
-                        fontSize: 11,
-                        color: "var(--text-muted)",
-                        marginTop: 4,
-                        opacity: 0.7,
-                      }}
-                    >
-                      Ajoutez les résultats après chaque match
-                    </p>
-                  </div>
+                    Aucun résultat enregistré
+                  </p>
                 ) : (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 8,
-                    }}
-                  >
-                    {past.slice(0, 5).map((m: any, i: number) => {
-                      const rc = getResultPalette(m.result);
-                      return (
-                        <motion.div
-                          key={m.id}
-                          initial={{ opacity: 0, x: 8 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: i * 0.05 }}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 10,
-                            padding: "10px 14px",
-                            borderRadius: 10,
-                            background: rc.bg,
-                            border: `1px solid ${rc.border}`,
-                            borderLeft: `3px solid ${rc.main}`,
-                          }}
-                        >
-                          <div
-                            style={{
-                              flexShrink: 0,
-                              textAlign: "center",
-                              padding: "4px 12px",
-                              background: `${rc.main}20`,
-                              border: `1px solid ${rc.border}`,
-                              borderRadius: 8,
-                            }}
-                          >
-                            <p
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                      <thead>
+                        <tr style={{ color: "var(--text-muted)", textAlign: "left" }}>
+                          {["Date", "Adversaire", "Résultat", "Compétition", "Analyse"].map((h) => (
+                            <th
+                              key={h}
                               style={{
-                                fontSize: 16,
-                                fontWeight: 900,
-                                color: rc.main,
-                                lineHeight: 1,
-                              }}
-                            >
-                              {m.score}
-                            </p>
-                            <p
-                              style={{
-                                fontSize: 9,
-                                fontWeight: 700,
-                                color: rc.main,
-                                textTransform: "uppercase",
-                                marginTop: 2,
-                              }}
-                            >
-                              {m.result === "V"
-                                ? "Victoire"
-                                : m.result === "N"
-                                  ? "Nul"
-                                  : "Défaite"}
-                            </p>
-                          </div>
-
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <p
-                              style={{
-                                fontSize: 13,
-                                fontWeight: 700,
-                                color: "var(--text-primary)",
-                              }}
-                            >
-                              vs {m.opponent}
-                            </p>
-                            <p
-                              style={{
+                                padding: "8px 10px",
+                                fontWeight: 600,
                                 fontSize: 10,
-                                color: "var(--text-muted)",
-                                marginTop: 2,
+                                textTransform: "uppercase",
+                                letterSpacing: "0.06em",
+                                borderBottom: "1px solid rgba(255,255,255,0.08)",
                               }}
                             >
-                              {m.matchDate} · {m.competition}
-                            </p>
-                          </div>
-
-                          <span
-                            style={{
-                              fontSize: 10,
-                              fontWeight: 600,
-                              color: "var(--text-muted)",
-                              flexShrink: 0,
-                            }}
-                          >
-                            {m.homeAwayLabel}
-                          </span>
-                        </motion.div>
-                      );
-                    })}
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {past.slice(0, 8).map((m, i) => {
+                          const rc = getResultPalette(m.result ?? "D");
+                          return (
+                            <motion.tr
+                              key={m.id}
+                              initial={{ opacity: 0, x: -6 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: i * 0.03 }}
+                              style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                            >
+                              <td style={{ padding: "10px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                                {m.matchDate}
+                              </td>
+                              <td style={{ padding: "10px", fontWeight: 700, color: "var(--text-primary)" }}>
+                                vs {m.opponent}
+                              </td>
+                              <td style={{ padding: "10px" }}>
+                                <span
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                    padding: "3px 8px",
+                                    borderRadius: 6,
+                                    background: rc.bg,
+                                    border: `1px solid ${rc.border}`,
+                                    color: rc.main,
+                                    fontWeight: 800,
+                                  }}
+                                >
+                                  {m.result}
+                                  <span style={{ fontWeight: 600, opacity: 0.9 }}>{m.score}</span>
+                                </span>
+                              </td>
+                              <td style={{ padding: "10px", color: "var(--text-muted)" }}>{m.competition}</td>
+                              <td style={{ padding: "10px" }}>
+                                <button
+                                  type="button"
+                                  onClick={() => navigate("/coach/match-analysis")}
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 2,
+                                    background: "none",
+                                    border: "none",
+                                    color: ACCENT,
+                                    fontWeight: 700,
+                                    fontSize: 12,
+                                    cursor: "pointer",
+                                    padding: 0,
+                                  }}
+                                >
+                                  Analyse
+                                  <ChevronRight size={13} />
+                                </button>
+                              </td>
+                            </motion.tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </GlassCard>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {/* Team Form */}
+                <GlassCard raised className="p-4">
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                    <Activity size={14} style={{ color: ACCENT }} />
+                    <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
+                      Forme (5 derniers)
+                    </p>
+                  </div>
+                  {teamForm.length === 0 ? (
+                    <p style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic" }}>
+                      Pas encore de résultats
+                    </p>
+                  ) : (
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {teamForm.map((f, i) => {
+                        const rc = getResultPalette(f);
+                        return (
+                          <motion.span
+                            key={`${f}-${i}`}
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ delay: i * 0.05 }}
+                            style={{
+                              width: 30,
+                              height: 30,
+                              borderRadius: 8,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: 12,
+                              fontWeight: 800,
+                              color: "white",
+                              background: rc.main,
+                            }}
+                          >
+                            {f}
+                          </motion.span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </GlassCard>
+
+                {/* Classement — points from results, filter by competition */}
+                <GlassCard raised className="p-4">
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      marginBottom: 10,
+                    }}
+                  >
+                    <TrendingUp size={14} style={{ color: ACCENT }} />
+                    <p
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      Classement
+                    </p>
+                  </div>
+
+                  <p
+                    style={{
+                      fontSize: 10,
+                      color: "var(--text-muted)",
+                      marginBottom: 8,
+                    }}
+                  >
+                    ← → ou glisser pour changer de compétition
+                  </p>
+
+                  {/* Swipe / filter */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      marginBottom: 12,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => swipeCompetition(-1)}
+                      aria-label="Compétition précédente"
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 8,
+                        flexShrink: 0,
+                        background: "rgba(255,122,0,0.12)",
+                        border: `1px solid ${C.accent.border}`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        color: ACCENT,
+                      }}
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <div
+                      style={{
+                        flex: 1,
+                        display: "flex",
+                        gap: 6,
+                        overflowX: "auto",
+                        paddingBottom: 2,
+                        scrollbarWidth: "none",
+                      }}
+                    >
+                      {COMPETITION_TABS.map((tab) => {
+                        const active = competitionFilter === tab;
+                        return (
+                          <button
+                            key={tab}
+                            type="button"
+                            onClick={() => setCompetitionFilter(tab)}
+                            style={{
+                              flexShrink: 0,
+                              padding: "6px 11px",
+                              borderRadius: 99,
+                              fontSize: 10,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              whiteSpace: "nowrap",
+                              border: `1px solid ${
+                                active ? ACCENT : "rgba(255,255,255,0.10)"
+                              }`,
+                              background: active
+                                ? "rgba(255,122,0,0.15)"
+                                : "rgba(255,255,255,0.04)",
+                              color: active ? ACCENT : "var(--text-muted)",
+                            }}
+                          >
+                            {tab === "Ligue des Champions CAF"
+                              ? "CAF CL"
+                              : tab === "Coupe de la CAF"
+                                ? "Coupe CAF"
+                                : tab === "Coupe de Tunisie"
+                                  ? "Coupe TN"
+                                  : tab}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => swipeCompetition(1)}
+                      aria-label="Compétition suivante"
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 8,
+                        flexShrink: 0,
+                        background: "rgba(255,122,0,0.12)",
+                        border: `1px solid ${C.accent.border}`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        color: ACCENT,
+                      }}
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+
+                  <p
+                    style={{
+                      fontSize: 11,
+                      color: "var(--text-muted)",
+                      marginBottom: 8,
+                    }}
+                  >
+                    {competitionFilter}
+                    {competitionStats.isAmical
+                      ? " · pas de points officiels"
+                      : ` · ${competitionStats.played} match(s)`}
+                  </p>
+
+                  <div
+                    onTouchStart={(e) => {
+                      classementTouchX.current = e.touches[0]?.clientX ?? null;
+                    }}
+                    onTouchEnd={(e) => {
+                      const start = classementTouchX.current;
+                      classementTouchX.current = null;
+                      if (start == null) return;
+                      const dx = (e.changedTouches[0]?.clientX ?? start) - start;
+                      if (Math.abs(dx) < 40) return;
+                      swipeCompetition(dx < 0 ? 1 : -1);
+                    }}
+                    style={{
+                      padding: "14px 16px",
+                      borderRadius: 10,
+                      background: competitionStats.isAmical
+                        ? C.amber.bg
+                        : C.blue.bg,
+                      border: `1px solid ${
+                        competitionStats.isAmical
+                          ? C.amber.border
+                          : C.blue.border
+                      }`,
+                      textAlign: "center",
+                      touchAction: "pan-y",
+                      userSelect: "none",
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: 28,
+                        fontWeight: 900,
+                        color: competitionStats.isAmical
+                          ? C.amber.main
+                          : C.blue.main,
+                        lineHeight: 1,
+                      }}
+                    >
+                      {competitionStats.points}
+                    </p>
+                    <p
+                      style={{
+                        fontSize: 10,
+                        color: "var(--text-muted)",
+                        marginTop: 6,
+                      }}
+                    >
+                      {competitionStats.isAmical
+                        ? "Points (amicaux exclus)"
+                        : "Points (V=3 · N=1 · D=0)"}
+                    </p>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(3, 1fr)",
+                      gap: 6,
+                      marginTop: 10,
+                    }}
+                  >
+                    {[
+                      {
+                        label: "V",
+                        value: competitionStats.wins,
+                        c: C.green,
+                      },
+                      {
+                        label: "N",
+                        value: competitionStats.draws,
+                        c: C.amber,
+                      },
+                      {
+                        label: "D",
+                        value: competitionStats.losses,
+                        c: C.red,
+                      },
+                    ].map((row) => (
+                      <div
+                        key={row.label}
+                        style={{
+                          textAlign: "center",
+                          padding: "6px 4px",
+                          borderRadius: 8,
+                          background: row.c.bg,
+                          border: `1px solid ${row.c.border}`,
+                        }}
+                      >
+                        <p
+                          style={{
+                            fontSize: 14,
+                            fontWeight: 800,
+                            color: row.c.main,
+                          }}
+                        >
+                          {row.value}
+                        </p>
+                        <p
+                          style={{
+                            fontSize: 9,
+                            color: "var(--text-muted)",
+                          }}
+                        >
+                          {row.label}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </GlassCard>
+
+                {/* Squad Availability */}
+                <GlassCard raised className="p-4">
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                    <Shield size={14} style={{ color: C.green.main }} />
+                    <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
+                      Disponibilité effectif
+                    </p>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {(
+                      [
+                        { label: "Disponibles", value: disponibles, color: C.green },
+                        { label: "Limités", value: limites, color: C.amber },
+                        { label: "Blessés", value: blessesCount, color: C.red },
+                      ] as const
+                    ).map((row) => (
+                      <div
+                        key={row.label}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "8px 10px",
+                          borderRadius: 8,
+                          background: row.color.bg,
+                          border: `1px solid ${row.color.border}`,
+                        }}
+                      >
+                        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{row.label}</span>
+                        <span style={{ fontSize: 16, fontWeight: 900, color: row.color.main }}>
+                          {row.value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/coach/medical")}
+                    style={{
+                      marginTop: 12,
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      padding: "8px",
+                      borderRadius: 10,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: ACCENT,
+                      background: C.accent.bg,
+                      border: `1px solid ${C.accent.border}`,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <AlertTriangle size={12} />
+                    Voir médical
+                  </button>
+                </GlassCard>
+              </div>
             </div>
 
+            {/* 5. Upcoming matches */}
             <GlassCard raised className="p-5">
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  marginBottom: 16,
-                }}
-              >
-                <Target size={15} style={{ color: "#ff7a00" }} />
-                <p
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 700,
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  Préparation du prochain match
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                <Calendar size={15} style={{ color: C.blue.main }} />
+                <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
+                  Matchs à venir
                 </p>
                 <span
                   style={{
                     marginLeft: "auto",
-                    fontSize: 13,
-                    fontWeight: 800,
-                    color:
-                      prepProgress >= 80 ? "#22c55e" : prepProgress >= 50 ? "#f59e0b" : "#ef4444",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: C.blue.main,
+                    background: C.blue.bg,
+                    border: `1px solid ${C.blue.border}`,
+                    padding: "2px 8px",
+                    borderRadius: 99,
                   }}
                 >
-                  {prepProgress}%
+                  {upcoming.length}
                 </span>
               </div>
 
-              <div
-                style={{
-                  height: 6,
-                  borderRadius: 99,
-                  background: "rgba(255,255,255,0.08)",
-                  overflow: "hidden",
-                  marginBottom: 16,
-                }}
-              >
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${prepProgress}%` }}
-                  transition={{ duration: 0.8 }}
-                  style={{
-                    height: "100%",
-                    borderRadius: 99,
-                    background:
-                      prepProgress >= 80 ? "#22c55e" : prepProgress >= 50 ? "#f59e0b" : "#ef4444",
-                  }}
-                />
-              </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 8,
-                  marginBottom: 16,
-                }}
-              >
-                {checklist.map((item, i) => {
-                  const Icon = CHECKLIST_ICONS[item.label] ?? CheckCircle2;
-                  const c = item.done
-                    ? PALETTE.green
-                    : CHECKLIST_COLORS[i % CHECKLIST_COLORS.length];
-                  return (
-                    <motion.div
-                      key={item.id}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => toggleCheck(item.id)}
-                      style={{
-                        padding: "14px 16px",
-                        borderRadius: 14,
-                        background: item.done ? PALETTE.green.bg : "rgba(255,255,255,0.03)",
-                        border: `1px solid ${
-                          item.done ? PALETTE.green.border : "rgba(255,255,255,0.08)"
-                        }`,
-                        borderTop: `3px solid ${item.done ? PALETTE.green.main : c.main}`,
-                        cursor: "pointer",
-                        transition: "all 0.15s",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "flex-start",
-                          justifyContent: "space-between",
-                          marginBottom: 10,
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 9,
-                            background: item.done ? PALETTE.green.bg : c.bg,
-                            border: `1px solid ${item.done ? PALETTE.green.border : c.border}`,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <Icon
-                            size={14}
+              {upcoming.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "20px 0" }}>
+                  <p style={{ fontSize: 13, color: "var(--text-muted)" }}>Aucun match à venir</p>
+                  <button
+                    type="button"
+                    onClick={openPlanifier}
+                    style={{
+                      marginTop: 8,
+                      fontSize: 12,
+                      color: ACCENT,
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      fontWeight: 600,
+                    }}
+                  >
+                    + Planifier un match
+                  </button>
+                </div>
+              ) : (
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ color: "var(--text-muted)", textAlign: "left" }}>
+                        {["Date", "Adversaire", "Compétition", "Lieu"].map((h) => (
+                          <th
+                            key={h}
                             style={{
-                              color: item.done ? PALETTE.green.main : c.main,
+                              padding: "8px 10px",
+                              fontWeight: 600,
+                              fontSize: 10,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.06em",
+                              borderBottom: "1px solid rgba(255,255,255,0.08)",
                             }}
-                          />
-                        </div>
-                        <div
-                          style={{
-                            width: 18,
-                            height: 18,
-                            borderRadius: 5,
-                            background: item.done ? PALETTE.green.main : "rgba(255,255,255,0.08)",
-                            border: `1px solid ${
-                              item.done ? PALETTE.green.main : "rgba(255,255,255,0.15)"
-                            }`,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          {item.done && <CheckCircle2 size={10} style={{ color: "white" }} />}
-                        </div>
-                      </div>
-                      <p
-                        style={{
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: item.done ? "var(--text-muted)" : "var(--text-primary)",
-                          textDecoration: item.done ? "line-through" : "none",
-                          lineHeight: 1.4,
-                        }}
-                      >
-                        {item.label}
-                      </p>
-                    </motion.div>
-                  );
-                })}
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {upcoming.map((m, i) => {
+                        const d = parseMatchDate(m);
+                        return (
+                          <motion.tr
+                            key={m.id}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: i * 0.04 }}
+                            style={{
+                              borderBottom: "1px solid rgba(255,255,255,0.04)",
+                              background: i === 0 ? "rgba(255,122,0,0.04)" : "transparent",
+                            }}
+                          >
+                            <td style={{ padding: "10px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                              {Number.isNaN(d.getTime())
+                                ? m.matchDate
+                                : d.toLocaleDateString("fr-FR", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  })}
+                            </td>
+                            <td style={{ padding: "10px", fontWeight: 700, color: "var(--text-primary)" }}>
+                              vs {m.opponent}
+                            </td>
+                            <td style={{ padding: "10px", color: "var(--text-muted)" }}>{m.competition}</td>
+                            <td style={{ padding: "10px" }}>
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  color: m.homeAway === "D" ? ACCENT : C.blue.main,
+                                  background: m.homeAway === "D" ? C.accent.bg : C.blue.bg,
+                                  border: `1px solid ${
+                                    m.homeAway === "D" ? C.accent.border : C.blue.border
+                                  }`,
+                                  padding: "3px 8px",
+                                  borderRadius: 8,
+                                }}
+                              >
+                                {m.homeAway === "D" ? "Domicile" : "Extérieur"}
+                              </span>
+                            </td>
+                          </motion.tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </GlassCard>
+
+            {/* 6. Match Objectives */}
+            <GlassCard raised className="p-5">
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                <Target size={15} style={{ color: ACCENT }} />
+                <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
+                  Objectifs du match
+                </p>
+                {nextMatch && (
+                  <span
+                    style={{
+                      marginLeft: "auto",
+                      fontSize: 12,
+                      fontWeight: 800,
+                      color: readinessColor,
+                    }}
+                  >
+                    {objectivesDone}/{matchObjectives.length}
+                  </span>
+                )}
               </div>
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 10,
-                }}
-              >
-                {(
-                  [
-                    {
-                      label: "Joueurs disponibles",
-                      value: disponibles,
-                      c: PALETTE.green,
-                      icon: CheckCircle2,
-                    },
-                    {
-                      label: "Indisponibles",
-                      value: blessesCount,
-                      c: PALETTE.red,
-                      icon: AlertTriangle,
-                    },
-                  ] as {
-                    label: string;
-                    value: number;
-                    c: (typeof PALETTE)[keyof typeof PALETTE];
-                    icon: LucideIcon;
-                  }[]
-                ).map((k) => {
-                  const KIcon = k.icon;
-                  return (
-                    <div
-                      key={k.label}
-                      style={{
-                        padding: "14px 18px",
-                        borderRadius: 12,
-                        background: k.c.bg,
-                        border: `1px solid ${k.c.border}`,
-                        borderLeft: `4px solid ${k.c.main}`,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 14,
-                      }}
-                    >
-                      <div
+              {!nextMatch ? (
+                <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
+                  Planifiez un prochain match pour définir les objectifs.
+                </p>
+              ) : (
+                <>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+                    {matchObjectives.map((obj) => (
+                      <motion.button
+                        key={obj.id}
+                        type="button"
+                        onClick={() => toggleObjective(obj.id)}
+                        whileTap={{ scale: 0.98 }}
                         style={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: 10,
-                          background: `${k.c.main}20`,
                           display: "flex",
                           alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
+                          gap: 12,
+                          padding: "12px 14px",
+                          borderRadius: 12,
+                          textAlign: "left",
+                          cursor: "pointer",
+                          background: obj.done ? C.green.bg : "rgba(255,255,255,0.03)",
+                          border: `1px solid ${obj.done ? C.green.border : "rgba(255,255,255,0.08)"}`,
                         }}
                       >
-                        <KIcon size={16} style={{ color: k.c.main }} />
-                      </div>
-                      <div>
-                        <p
+                        <div
                           style={{
-                            fontSize: 26,
-                            fontWeight: 900,
-                            color: k.c.main,
-                            lineHeight: 1,
-                          }}
-                        >
-                          {k.value}
-                        </p>
-                        <p
-                          style={{
+                            width: 20,
+                            height: 20,
+                            borderRadius: 6,
+                            flexShrink: 0,
+                            background: obj.done ? C.green.main : "rgba(255,255,255,0.08)",
+                            border: `1px solid ${obj.done ? C.green.main : "rgba(255,255,255,0.2)"}`,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
                             fontSize: 11,
-                            color: "var(--text-muted)",
-                            marginTop: 4,
-                            fontWeight: 500,
+                            color: "white",
+                            fontWeight: 800,
                           }}
                         >
-                          {k.label}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                          {obj.done ? "✓" : ""}
+                        </div>
+                        <span
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 600,
+                            color: obj.done ? "var(--text-muted)" : "var(--text-primary)",
+                            textDecoration: obj.done ? "line-through" : "none",
+                          }}
+                        >
+                          {obj.label}
+                        </span>
+                      </motion.button>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <input
+                      value={newObjective}
+                      onChange={(e) => setNewObjective(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") addObjective();
+                      }}
+                      placeholder="Nouvel objectif..."
+                      style={{ ...inputStyle, flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={addObjective}
+                      disabled={!newObjective.trim()}
+                      style={{
+                        padding: "0 16px",
+                        borderRadius: 10,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: newObjective.trim() ? "pointer" : "default",
+                        background: newObjective.trim() ? C.accent.bg : "rgba(255,255,255,0.04)",
+                        border: `1px solid ${
+                          newObjective.trim() ? C.accent.border : "rgba(255,255,255,0.08)"
+                        }`,
+                        color: newObjective.trim() ? ACCENT : "var(--text-muted)",
+                      }}
+                    >
+                      Ajouter
+                    </button>
+                  </div>
+                </>
+              )}
             </GlassCard>
 
+            {/* 7. AI Match Brief */}
             <GlassCard raised className="p-5">
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  marginBottom: 12,
-                }}
-              >
-                <div
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 8,
-                    background: PALETTE.violet.bg,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Shield size={14} style={{ color: PALETTE.violet.main }} />
-                </div>
-                <p
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 700,
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  Focus tactique de la semaine
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                <Sparkles size={15} style={{ color: ACCENT }} />
+                <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
+                  Brief IA Match
                 </p>
               </div>
-              <textarea
-                value={tacticalFocus}
-                onChange={(e) => saveTacticalFocus(e.target.value)}
-                placeholder="Ex: Pressing haut dès la perte, organisation en 4-3-3 défensif..."
-                rows={3}
-                style={{
-                  width: "100%",
-                  padding: "12px 14px",
-                  background: "rgba(255,255,255,0.04)",
-                  border: `1px solid ${PALETTE.violet.border}`,
-                  borderRadius: 10,
-                  fontSize: 13,
-                  color: "var(--text-primary)",
-                  resize: "vertical",
-                  outline: "none",
-                  fontFamily: "inherit",
-                  lineHeight: 1.6,
-                }}
-              />
-              <p
-                style={{
-                  fontSize: 10,
-                  color: "var(--text-muted)",
-                  marginTop: 6,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
-                }}
-              >
-                <CheckCircle2 size={9} />
-                Sauvegardé automatiquement
-              </p>
+              {!nextMatch ? (
+                <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
+                  Le brief s&apos;active dès qu&apos;un prochain match est planifié.
+                </p>
+              ) : (
+                <div
+                  style={{
+                    padding: "14px 16px",
+                    borderRadius: 12,
+                    background: "rgba(255,122,0,0.06)",
+                    border: "1px solid rgba(255,122,0,0.18)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                  }}
+                >
+                  {briefLines.map((line, i) => (
+                    <p
+                      key={i}
+                      style={{
+                        fontSize: 13,
+                        lineHeight: 1.55,
+                        color: "rgba(255,255,255,0.78)",
+                        display: "flex",
+                        gap: 8,
+                      }}
+                    >
+                      <CheckCircle2
+                        size={14}
+                        style={{ color: ACCENT, flexShrink: 0, marginTop: 3 }}
+                      />
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              )}
             </GlassCard>
 
+            {/* 8. Quick actions */}
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(4, 1fr)",
+                gridTemplateColumns: "repeat(5, 1fr)",
                 gap: 10,
               }}
+              className="matches-actions-grid"
             >
-              {QUICK_ACTIONS.map((item, i) => {
-                const ItemIcon = item.icon;
-                const isHovered = hoveredQuickAction === i;
+              <style>{`
+                @media (max-width: 800px) {
+                  .matches-actions-grid { grid-template-columns: repeat(3, 1fr) !important; }
+                }
+                @media (max-width: 480px) {
+                  .matches-actions-grid { grid-template-columns: repeat(2, 1fr) !important; }
+                }
+              `}</style>
+              {quickActions.map((item, i) => {
+                const Icon = item.icon;
+                const hovered = hoveredAction === i;
                 return (
                   <motion.button
                     key={item.label}
                     type="button"
-                    onClick={() => navigate(item.path)}
+                    onClick={item.onClick}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.06 }}
+                    transition={{ delay: i * 0.05 }}
                     whileHover={{ scale: 1.03, y: -2 }}
                     whileTap={{ scale: 0.97 }}
-                    onMouseEnter={() => setHoveredQuickAction(i)}
-                    onMouseLeave={() => setHoveredQuickAction(null)}
+                    onMouseEnter={() => setHoveredAction(i)}
+                    onMouseLeave={() => setHoveredAction(null)}
                     style={{
-                      padding: "18px 12px",
-                      borderRadius: 16,
-                      background: isHovered ? PALETTE.accent.bg : "rgba(255,255,255,0.03)",
-                      border: `1px solid ${
-                        isHovered ? PALETTE.accent.border : "rgba(255,255,255,0.08)"
-                      }`,
+                      padding: "16px 10px",
+                      borderRadius: 14,
+                      background: hovered ? C.accent.bg : "rgba(255,255,255,0.03)",
+                      border: `1px solid ${hovered ? C.accent.border : "rgba(255,255,255,0.08)"}`,
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
-                      gap: 12,
+                      gap: 10,
                       cursor: "pointer",
-                      transition: "all 0.15s",
                     }}
                   >
                     <div
                       style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: 12,
-                        background: item.iconColor.bg,
-                        border: `1px solid ${item.iconColor.border}`,
+                        width: 40,
+                        height: 40,
+                        borderRadius: 11,
+                        background: C.accent.bg,
+                        border: `1px solid ${C.accent.border}`,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                       }}
                     >
-                      <ItemIcon size={20} style={{ color: item.iconColor.main }} />
+                      <Icon size={18} style={{ color: ACCENT }} />
                     </div>
                     <span
                       style={{
-                        fontSize: 12,
+                        fontSize: 11,
                         fontWeight: 700,
                         color: "var(--text-primary)",
                         textAlign: "center",
@@ -1632,6 +1828,7 @@ export function MatchesPage() {
         )}
       </div>
 
+      {/* Add match modal */}
       <AnimatePresence>
         {showAddMatch && (
           <motion.div
@@ -1641,17 +1838,14 @@ export function MatchesPage() {
             onClick={() => setShowAddMatch(false)}
             style={{
               position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
+              inset: 0,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               background: "rgba(0,0,0,0.75)",
               backdropFilter: "blur(8px)",
               zIndex: 40,
-              padding: "16px",
+              padding: 16,
             }}
           >
             <motion.div
@@ -1665,13 +1859,12 @@ export function MatchesPage() {
                 maxWidth: 520,
                 maxHeight: "90vh",
                 overflowY: "auto",
-                background: "rgba(14,10,35,0.98)",
+                background: "rgba(12,14,22,0.98)",
                 border: "1px solid rgba(255,122,0,0.30)",
-                borderTop: "4px solid #ff7a00",
+                borderTop: `4px solid ${ACCENT}`,
                 borderRadius: 20,
                 padding: 24,
                 boxShadow: "0 25px 60px rgba(0,0,0,0.5)",
-                position: "relative",
               }}
             >
               <div
@@ -1682,13 +1875,7 @@ export function MatchesPage() {
                   marginBottom: 20,
                 }}
               >
-                <p
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 800,
-                    color: "var(--text-primary)",
-                  }}
-                >
+                <p style={{ fontSize: 16, fontWeight: 800, color: "var(--text-primary)" }}>
                   {matchForm.isPast ? "Ajouter un résultat" : "Planifier un match"}
                 </p>
                 <button
@@ -1710,46 +1897,7 @@ export function MatchesPage() {
                 </button>
               </div>
 
-              <div
-                style={{
-                  display: "flex",
-                  gap: 8,
-                  marginBottom: 20,
-                }}
-              >
-                {[
-                  { label: "Match à venir", isPast: false },
-                  { label: "Résultat passé", isPast: true },
-                ].map((opt) => (
-                  <button
-                    key={String(opt.isPast)}
-                    type="button"
-                    onClick={() => setMatchForm((p) => ({ ...p, isPast: opt.isPast }))}
-                    style={{
-                      flex: 1,
-                      padding: "8px 12px",
-                      borderRadius: 10,
-                      fontSize: 12,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      border: "none",
-                      background:
-                        matchForm.isPast === opt.isPast ? "#ff7a00" : "rgba(255,255,255,0.06)",
-                      color: matchForm.isPast === opt.isPast ? "white" : "var(--text-muted)",
-                    }}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 14,
-                }}
-              >
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <div>
                   <label style={labelStyle}>Adversaire *</label>
                   <input
@@ -1789,32 +1937,31 @@ export function MatchesPage() {
                 <div>
                   <label style={labelStyle}>Lieu</label>
                   <div style={{ display: "flex", gap: 8 }}>
-                    {[
-                      { val: "D", label: "Domicile" },
-                      { val: "E", label: "Extérieur" },
-                    ].map((opt) => (
+                    {(
+                      [
+                        { val: "D" as const, label: "Domicile" },
+                        { val: "E" as const, label: "Extérieur" },
+                      ] as const
+                    ).map((opt) => (
                       <button
                         key={opt.val}
                         type="button"
-                        onClick={() =>
-                          setMatchForm((p) => ({ ...p, homeAway: opt.val as "D" | "E" }))
-                        }
+                        onClick={() => setMatchForm((p) => ({ ...p, homeAway: opt.val }))}
                         style={{
                           flex: 1,
-                          padding: "8px",
+                          padding: 8,
                           borderRadius: 10,
                           fontSize: 12,
                           fontWeight: 600,
                           cursor: "pointer",
                           border: `1px solid ${
-                            matchForm.homeAway === opt.val ? "#ff7a00" : "rgba(255,255,255,0.10)"
+                            matchForm.homeAway === opt.val ? ACCENT : "rgba(255,255,255,0.10)"
                           }`,
                           background:
                             matchForm.homeAway === opt.val
                               ? "rgba(255,122,0,0.15)"
                               : "rgba(255,255,255,0.04)",
-                          color:
-                            matchForm.homeAway === opt.val ? "#ff7a00" : "var(--text-muted)",
+                          color: matchForm.homeAway === opt.val ? ACCENT : "var(--text-muted)",
                         }}
                       >
                         {opt.label}
@@ -1873,20 +2020,20 @@ export function MatchesPage() {
                     <div>
                       <label style={labelStyle}>Résultat</label>
                       <div style={{ display: "flex", gap: 6 }}>
-                        {[
-                          { val: "V", label: "Victoire", c: "#22c55e" },
-                          { val: "N", label: "Nul", c: "#f59e0b" },
-                          { val: "D", label: "Défaite", c: "#ef4444" },
-                        ].map((opt) => (
+                        {(
+                          [
+                            { val: "V" as const, label: "Victoire", c: "#22c55e" },
+                            { val: "N" as const, label: "Nul", c: "#f59e0b" },
+                            { val: "D" as const, label: "Défaite", c: "#ef4444" },
+                          ] as const
+                        ).map((opt) => (
                           <button
                             key={opt.val}
                             type="button"
-                            onClick={() =>
-                              setMatchForm((p) => ({ ...p, result: opt.val as "V" | "N" | "D" }))
-                            }
+                            onClick={() => setMatchForm((p) => ({ ...p, result: opt.val }))}
                             style={{
                               flex: 1,
-                              padding: "8px",
+                              padding: 8,
                               borderRadius: 10,
                               fontSize: 12,
                               fontWeight: 700,
@@ -1895,11 +2042,8 @@ export function MatchesPage() {
                                 matchForm.result === opt.val ? opt.c : "rgba(255,255,255,0.10)"
                               }`,
                               background:
-                                matchForm.result === opt.val
-                                  ? `${opt.c}20`
-                                  : "rgba(255,255,255,0.04)",
-                              color:
-                                matchForm.result === opt.val ? opt.c : "var(--text-muted)",
+                                matchForm.result === opt.val ? `${opt.c}20` : "rgba(255,255,255,0.04)",
+                              color: matchForm.result === opt.val ? opt.c : "var(--text-muted)",
                             }}
                           >
                             {opt.label}
@@ -1967,11 +2111,11 @@ export function MatchesPage() {
                 style={{
                   width: "100%",
                   marginTop: 20,
-                  padding: "14px",
+                  padding: 14,
                   background:
                     submitting || !matchForm.opponent || !matchForm.matchDate
                       ? "rgba(255,255,255,0.10)"
-                      : "linear-gradient(135deg,#ff7a00,#e66000)",
+                      : `linear-gradient(135deg,${ACCENT},#e66000)`,
                   color: "white",
                   fontSize: 14,
                   fontWeight: 700,
@@ -1991,239 +2135,6 @@ export function MatchesPage() {
                 ) : (
                   <>
                     <Save size={16} /> Enregistrer
-                  </>
-                )}
-              </motion.button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showEditStanding && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowEditStanding(false)}
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "rgba(0,0,0,0.75)",
-              backdropFilter: "blur(8px)",
-              zIndex: 40,
-              padding: "16px",
-            }}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              transition={{ duration: 0.2 }}
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                width: "100%",
-                maxWidth: 440,
-                maxHeight: "90vh",
-                overflowY: "auto",
-                background: "rgba(14,10,35,0.98)",
-                border: "1px solid rgba(59,130,246,0.30)",
-                borderTop: "4px solid #3b82f6",
-                borderRadius: 20,
-                padding: 24,
-                boxShadow: "0 25px 60px rgba(0,0,0,0.5)",
-                position: "relative",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: 20,
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 800,
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  Classement
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setShowEditStanding(false)}
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 8,
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.10)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                  }}
-                >
-                  <X size={14} style={{ color: "var(--text-muted)" }} />
-                </button>
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 12,
-                }}
-              >
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 10,
-                  }}
-                >
-                  {(
-                    [
-                      { label: "Position", key: "position" },
-                      { label: "Points", key: "points" },
-                      { label: "Joués", key: "played" },
-                      { label: "Victoires", key: "won" },
-                      { label: "Nuls", key: "drawn" },
-                      { label: "Défaites", key: "lost" },
-                      { label: "Buts marqués", key: "goalsFor" },
-                      { label: "Buts concédés", key: "goalsAgainst" },
-                    ] as const
-                  ).map((f) => (
-                    <div key={f.key}>
-                      <label style={labelStyle}>{f.label}</label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={standingForm[f.key]}
-                        onChange={(e) =>
-                          setStandingForm((p) => ({ ...p, [f.key]: e.target.value }))
-                        }
-                        style={inputStyle}
-                      />
-                    </div>
-                  ))}
-                </div>
-
-                <div>
-                  <label style={labelStyle}>Forme récente (5 derniers matchs)</label>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 6,
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    {["V", "N", "D"].map((r) => (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => toggleFormResult(r)}
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: 8,
-                          fontSize: 12,
-                          fontWeight: 800,
-                          cursor: "pointer",
-                          border: "none",
-                          background: r === "V" ? "#22c55e" : r === "N" ? "#f59e0b" : "#ef4444",
-                          color: "white",
-                        }}
-                      >
-                        {r}
-                      </button>
-                    ))}
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 4,
-                        marginLeft: 8,
-                      }}
-                    >
-                      {standingForm.form.map((f, i) => (
-                        <span
-                          key={i}
-                          style={{
-                            width: 24,
-                            height: 24,
-                            borderRadius: 6,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 11,
-                            fontWeight: 800,
-                            color: "white",
-                            background: f === "V" ? "#22c55e" : f === "N" ? "#f59e0b" : "#ef4444",
-                          }}
-                        >
-                          {f}
-                        </span>
-                      ))}
-                    </div>
-                    {standingForm.form.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setStandingForm((p) => ({ ...p, form: [] }))}
-                        style={{
-                          fontSize: 10,
-                          color: "var(--text-muted)",
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Reset
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <motion.button
-                type="button"
-                onClick={saveStanding}
-                disabled={submitting}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                style={{
-                  width: "100%",
-                  marginTop: 20,
-                  padding: "14px",
-                  background: "linear-gradient(135deg,#3b82f6,#2563eb)",
-                  color: "white",
-                  fontSize: 14,
-                  fontWeight: 700,
-                  borderRadius: 12,
-                  border: "none",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                }}
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" /> Sauvegarde...
-                  </>
-                ) : (
-                  <>
-                    <Save size={16} /> Sauvegarder
                   </>
                 )}
               </motion.button>

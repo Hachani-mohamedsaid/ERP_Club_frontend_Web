@@ -382,7 +382,7 @@ export function CoachEffectifPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>
-            Effectif / Squad
+            Effectif
           </h1>
           <p className="mt-0.5 text-xs" style={{ color: "var(--text-muted)" }}>
             {squad.length} joueurs · Saison en cours

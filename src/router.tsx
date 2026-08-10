@@ -7,7 +7,6 @@ import { TeamsPage } from "./pages/TeamsPage";
 import { TrainingPage } from "./pages/TrainingPage";
 import { MatchesPage } from "./pages/MatchesPage";
 import { PerformancePage } from "./pages/PerformancePage";
-import { RecruitmentRequestsPage } from "./pages/RecruitmentRequestsPage";
 import { ScoutingPage } from "./pages/ScoutingPage";
 import { ContractsPage } from "./pages/ContractsPage";
 import { MedicalPage } from "./pages/MedicalPage";
@@ -200,7 +199,6 @@ export function AppRouter() {
         <Route path="/training" element={<RequireRole roles={["coach","responsable"]}><TrainingPage /></RequireRole>} />
         <Route path="/matches" element={<RequireRole roles={["coach","responsable"]}><MatchesPage /></RequireRole>} />
         <Route path="/performance" element={<RequireRole roles={["coach"]}><PerformancePage /></RequireRole>} />
-        <Route path="/recruitment" element={<RequireRole roles={["coach"]}><RecruitmentRequestsPage /></RequireRole>} />
         <Route path="/coach" element={<RequireRole roles={["coach"]}><CoachPage /></RequireRole>} />
         <Route path="/coach/effectif" element={<RequireRole roles={["coach"]}><CoachEffectifPage /></RequireRole>} />
         <Route path="/coach/lineup" element={<RequireRole roles={["coach"]}><CoachLineupPage /></RequireRole>} />

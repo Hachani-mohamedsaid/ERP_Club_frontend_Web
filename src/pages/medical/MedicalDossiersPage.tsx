@@ -3,23 +3,48 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Search,
-  Droplets,
-  AlertTriangle,
-  Scale,
-  Ruler,
   FileText,
-  Pill,
   History,
   Loader2,
-  Activity,
   Calendar,
   HeartPulse,
+  SortDesc,
   Download,
-  Stethoscope,
 } from "lucide-react";
 import { GlassCard } from "../../components/ui/GlassCard";
 import { clubApi } from "../../lib/api/club";
-import { PLAYERS, getInitials, type AvailabilityStatus, type PlayerMedicalRecord } from "../../data/medicalMockData";
+
+const getInitials = (name: string): string =>
+  (name ?? "?")
+    .split(" ")
+    .map((n: string) => n[0] ?? "")
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || "?";
+
+/** Clinical Steel blues — same language as Rééducation */
+const C = {
+  slate: "#64748b",
+  ice: "#38bdf8",
+  sky: "#7dd3fc",
+  deep: "#0ea5e9",
+  white: "#f8fafc",
+  muted: "#94a3b8",
+  panel: "rgba(100, 116, 139, 0.14)",
+  border: "rgba(100, 116, 139, 0.4)",
+  /** soft status — same degree as ice */
+  red: "#f83a3a",
+  green: "#3af899",
+  purple: "#993af8",
+} as const;
+
+const softBg = (hex: string, alpha = 0.12) => {
+  const n = hex.replace("#", "");
+  const r = parseInt(n.slice(0, 2), 16);
+  const g = parseInt(n.slice(2, 4), 16);
+  const b = parseInt(n.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
 
 interface ApiPlayer {
   id: string;
@@ -42,36 +67,32 @@ interface ApiPlayerDocument {
   id: string;
   name: string;
   docDate: string;
+  url?: string;
+  path?: string;
+  fileUrl?: string;
 }
 
-type HistoryEntry = {
-  date: string;
-  event: string;
-  type: "consultation" | "injury" | "exam" | "certificat" | "document";
-};
+type Tab = "Statut actuel" | "Informations" | "Antécédents" | "Blessures" | "Documents";
 
-type Tab = "Statut actuel" | "Informations" | "Antécédents" | "Blessures" | "Documents" | "Traitements";
-
-const TABS: Tab[] = ["Statut actuel", "Informations", "Antécédents", "Blessures", "Documents", "Traitements"];
+const TABS: Tab[] = ["Statut actuel", "Informations", "Antécédents", "Blessures", "Documents"];
 
 const TAB_COLORS: Record<Tab, string> = {
-  "Statut actuel": "var(--color-state-danger)",
-  Informations: "var(--color-state-indigo, #4f46e5)",
-  Antécédents: "var(--color-state-purple, #7c3aed)",
-  Blessures: "var(--color-state-rose, #e11d48)",
-  Documents: "var(--color-state-teal, #0d9488)",
-  Traitements: "var(--color-state-pink, #db2777)",
+  "Statut actuel": C.ice,
+  Informations: C.deep,
+  Antécédents: C.slate,
+  Blessures: C.sky,
+  Documents: C.ice,
 };
 
 type DocTypeKey = "IRM" | "Scanner" | "Radio" | "Certificat" | "Analyse" | "default";
 
 const DOC_TYPE_STYLES: Record<DocTypeKey, { color: string; bg: string }> = {
-  IRM: { color: "var(--color-state-indigo)", bg: "var(--color-state-indigo-bg)" },
-  Scanner: { color: "var(--color-state-cyan)", bg: "var(--color-state-cyan-bg)" },
-  Radio: { color: "var(--color-state-violet)", bg: "var(--color-state-violet-bg)" },
-  Certificat: { color: "var(--color-state-emerald)", bg: "var(--color-state-emerald-bg)" },
-  Analyse: { color: "var(--color-state-teal)", bg: "var(--color-state-teal-bg)" },
-  default: { color: "var(--color-state-teal)", bg: "var(--color-state-teal-bg)" },
+  IRM: { color: C.ice, bg: softBg(C.ice) },
+  Scanner: { color: C.deep, bg: softBg(C.deep) },
+  Radio: { color: C.sky, bg: softBg(C.sky) },
+  Certificat: { color: C.slate, bg: softBg(C.slate) },
+  Analyse: { color: C.muted, bg: softBg(C.muted) },
+  default: { color: C.ice, bg: softBg(C.ice) },
 };
 
 function normalizePlayers(raw: unknown): ApiPlayer[] {
@@ -107,12 +128,16 @@ function normalizeInjuries(raw: unknown): ApiInjury[] {
 
 function normalizePlayerDocuments(raw: unknown): ApiPlayerDocument[] {
   if (!Array.isArray(raw)) return [];
+  console.log("Document raw data:", raw);
   return raw.map((item, i) => {
     const row = item as Record<string, unknown>;
     return {
       id: String(row.id ?? `doc-${i}`),
       name: String(row.name ?? ""),
       docDate: String(row.docDate ?? "—"),
+      url: row.url ? String(row.url) : undefined,
+      path: row.path ? String(row.path) : undefined,
+      fileUrl: row.fileUrl ? String(row.fileUrl) : undefined,
     };
   });
 }
@@ -183,147 +208,30 @@ function injuryRecoveryDays(injury: ApiInjury): number {
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 }
 
-function formatHistoryDate(dateStr: string): string {
-  if (!dateStr || dateStr === "—") return "—";
-  if (dateStr.includes("/")) return dateStr;
-  const parsed = new Date(dateStr);
-  if (!Number.isNaN(parsed.getTime())) return parsed.toLocaleDateString("fr-FR");
-  return dateStr;
-}
-
-function parseHistorySortKey(dateStr: string): number {
-  if (dateStr.includes("/")) {
-    const parts = dateStr.split("/").map(Number);
-    if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]).getTime();
-  }
-  const parsed = new Date(dateStr);
-  return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
-}
-
-function buildApiHistory(injuries: ApiInjury[], documents: ApiPlayerDocument[]): HistoryEntry[] {
-  const events: HistoryEntry[] = [];
-
-  for (const injury of injuries) {
-    events.push({
-      date: formatHistoryDate(injury.createdAt ?? injury.returnDate),
-      event: `Blessure enregistrée — ${injury.injuryType}`,
-      type: "injury",
-    });
-  }
-
-  for (const doc of documents) {
-    events.push({
-      date: formatHistoryDate(doc.docDate),
-      event: `Document ajouté — ${doc.name}`,
-      type: "document",
-    });
-  }
-
-  return dedupeHistory(events).sort((a, b) => parseHistorySortKey(b.date) - parseHistorySortKey(a.date));
-}
-
-function dedupeHistory(entries: HistoryEntry[]): HistoryEntry[] {
-  const seen = new Set<string>();
-  return entries.filter((entry) => {
-    const key = `${entry.date}|${entry.event}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
-function mapMockHistoryEntry(
-  entry: PlayerMedicalRecord["history"][number],
-): HistoryEntry {
-  return {
-    date: entry.date,
-    event: entry.event,
-    type: entry.type,
-  };
-}
-
 function normalizeName(value: string): string {
   return value.trim().toLowerCase();
 }
 
-function findMockRecord(fullName: string): PlayerMedicalRecord | undefined {
-  return PLAYERS.find((player) => normalizeName(player.name) === normalizeName(fullName));
-}
-
 function apiStatusTopBarColor(status?: string): string {
   const upper = (status ?? "").trim().toUpperCase();
-  if (upper === "DISPONIBLE") return "var(--color-state-success)";
-  if (upper === "BLESSE") return "var(--color-state-danger)";
-  if (upper === "LIMITE") return "var(--color-state-warning)";
-  return "var(--color-state-info)";
+  if (upper === "DISPONIBLE") return C.green;
+  if (upper === "BLESSE") return C.red;
+  if (upper === "LIMITE") return C.sky;
+  return C.ice;
 }
 
 function clearanceBadgeFromApi(status?: string): { label: string; color: string; bg: string } {
   const upper = (status ?? "").trim().toUpperCase();
   if (upper === "DISPONIBLE") {
-    return {
-      label: "Apte à jouer",
-      color: "var(--color-state-success)",
-      bg: "var(--color-state-success-bg)",
-    };
+    return { label: "Apte à jouer", color: C.green, bg: softBg(C.green) };
   }
   if (upper === "BLESSE") {
-    return {
-      label: "Inapte — En blessure",
-      color: "var(--color-state-danger)",
-      bg: "var(--color-state-danger-bg)",
-    };
+    return { label: "Inapte — En blessure", color: C.red, bg: softBg(C.red) };
   }
   if (upper === "LIMITE") {
-    return {
-      label: "Apte avec restrictions",
-      color: "var(--color-state-warning)",
-      bg: "var(--color-state-warning-bg)",
-    };
+    return { label: "Apte avec restrictions", color: C.sky, bg: softBg(C.sky) };
   }
-  return {
-    label: "Statut en attente",
-    color: "var(--color-state-info)",
-    bg: "var(--color-state-info-bg)",
-  };
-}
-
-function apiStatusLabel(status?: string): string {
-  const upper = (status ?? "").trim().toUpperCase();
-  if (upper === "DISPONIBLE") return "Disponible";
-  if (upper === "BLESSE") return "Blessé";
-  if (upper === "LIMITE") return "Limité";
-  return "—";
-}
-
-function historyTypeMeta(type: HistoryEntry["type"]): { color: string; label: string } {
-  if (type === "injury") return { color: "var(--color-state-danger)", label: "Blessure" };
-  if (type === "exam") return { color: "var(--color-state-info)", label: "Examen médical" };
-  if (type === "certificat") return { color: "var(--color-state-success)", label: "Certificat" };
-  if (type === "document") return { color: "var(--color-state-teal, #0d9488)", label: "Document" };
-  return { color: "var(--color-state-warning)", label: "Consultation" };
-}
-
-function clearanceStyle(availability: AvailabilityStatus): { label: string; color: string; bg: string } {
-  if (availability === "Disponible") {
-    return {
-      label: "Apte à jouer",
-      color: "var(--color-state-emerald)",
-      bg: "var(--color-state-emerald-bg)",
-    };
-  }
-  if (availability === "Partiellement disponible") {
-    return {
-      label: "Apte avec restrictions",
-      color: "var(--color-state-warning)",
-      bg: "var(--color-state-warning-bg)",
-    };
-  }
-  return {
-    label: "Inapte — En blessure",
-    color: "var(--color-state-rose)",
-    bg: "var(--color-state-rose-bg)",
-  };
+  return { label: "Statut en attente", color: C.ice, bg: softBg(C.ice) };
 }
 
 function gradeFromRiskIA(riskIA: number): string {
@@ -333,21 +241,21 @@ function gradeFromRiskIA(riskIA: number): string {
 }
 
 function gradeColor(grade: string): string {
-  if (grade.includes("III")) return "var(--color-state-rose)";
-  if (grade.includes("II")) return "var(--color-state-warning)";
-  return "var(--color-state-info)";
+  if (grade.includes("III")) return C.red;
+  if (grade.includes("II")) return C.ice;
+  return C.slate;
 }
 
 function gradeBg(grade: string): string {
-  if (grade.includes("III")) return "var(--color-state-rose-bg)";
-  if (grade.includes("II")) return "var(--color-state-warning-bg)";
-  return "var(--color-state-info-bg)";
+  if (grade.includes("III")) return softBg(C.red);
+  if (grade.includes("II")) return softBg(C.ice);
+  return softBg(C.slate);
 }
 
 function riskPercentColor(riskPercent: number): string {
-  if (riskPercent >= 70) return "var(--color-state-rose)";
-  if (riskPercent >= 50) return "var(--color-state-warning)";
-  return "var(--color-state-success)";
+  if (riskPercent >= 70) return C.red;
+  if (riskPercent >= 50) return C.ice;
+  return C.green;
 }
 
 function detectDocType(event: string): DocTypeKey {
@@ -360,29 +268,177 @@ function detectDocType(event: string): DocTypeKey {
   return "default";
 }
 
-function ApiInformationsPlaceholder({ apiPlayer }: { apiPlayer: ApiPlayer }) {
+function formatDocDate(dateStr: string): string {
+  if (!dateStr || dateStr === "—") return "—";
+  try {
+    let date: Date;
+    if (dateStr.includes("/")) {
+      const [day, month, year] = dateStr.split("/").map(Number);
+      date = new Date(year, month - 1, day);
+    } else {
+      date = new Date(dateStr);
+    }
+    if (Number.isNaN(date.getTime())) return dateStr;
+    return date.toLocaleDateString("fr-FR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+function isNewDoc(dateStr: string): boolean {
+  try {
+    let date: Date;
+    if (dateStr.includes("/")) {
+      const [day, month, year] = dateStr.split("/").map(Number);
+      date = new Date(year, month - 1, day);
+    } else {
+      date = new Date(dateStr);
+    }
+    const diffDays = Math.ceil((Date.now() - date.getTime()) / 86400000);
+    return diffDays <= 7;
+  } catch {
+    return false;
+  }
+}
+
+function ApiInformationsPlaceholder({
+  apiPlayer,
+  playerInjuries,
+}: {
+  apiPlayer: ApiPlayer;
+  playerInjuries: ApiInjury[];
+}) {
+  const statusLabel = (() => {
+    const s = (apiPlayer.status ?? "").toUpperCase();
+    if (s === "DISPONIBLE") return "Disponible";
+    if (s === "BLESSE") return "Blessé";
+    if (s === "LIMITE") return "Limité";
+    return "—";
+  })();
+
+  const statusColor = (() => {
+    const s = (apiPlayer.status ?? "").toUpperCase();
+    if (s === "DISPONIBLE") return "var(--color-state-success)";
+    if (s === "BLESSE") return "var(--color-state-danger)";
+    return "var(--color-state-warning)";
+  })();
+
+  const totalRisk =
+    playerInjuries.length > 0
+      ? Math.round(
+          (playerInjuries.reduce((sum, i) => sum + i.riskIA, 0) / playerInjuries.length) * 10,
+        )
+      : 0;
+
   return (
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div
           className="rounded-[var(--radius-odin-md)] border p-4"
-          style={{ borderColor: "var(--surface-panel-border)" }}
+          style={{
+            borderColor: "var(--surface-panel-border)",
+            borderLeft: "3px solid var(--color-state-indigo)",
+          }}
         >
-          <p className="text-xs" style={{ color: "var(--text-muted)" }}>Poste</p>
+          <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+            Poste
+          </p>
           <p className="mt-1 font-semibold" style={{ color: "var(--text-primary)" }}>
             {translatePosition(apiPlayer.position)}
           </p>
         </div>
+
         <div
           className="rounded-[var(--radius-odin-md)] border p-4"
-          style={{ borderColor: "var(--surface-panel-border)" }}
+          style={{
+            borderColor: "var(--surface-panel-border)",
+            borderLeft: `3px solid ${statusColor}`,
+          }}
         >
-          <p className="text-xs" style={{ color: "var(--text-muted)" }}>Statut médical</p>
-          <p className="mt-1 font-semibold" style={{ color: "var(--text-primary)" }}>
-            {apiStatusLabel(apiPlayer.status)}
+          <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+            Statut médical
+          </p>
+          <p className="mt-1 font-semibold" style={{ color: statusColor }}>
+            {statusLabel}
+          </p>
+        </div>
+
+        <div
+          className="rounded-[var(--radius-odin-md)] border p-4"
+          style={{
+            borderColor: "var(--surface-panel-border)",
+            borderLeft: "3px solid var(--color-state-rose)",
+          }}
+        >
+          <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+            Blessures actives
+          </p>
+          <p className="mt-1 font-semibold" style={{ color: "var(--color-state-rose)" }}>
+            {playerInjuries.length} blessure(s)
+          </p>
+        </div>
+
+        <div
+          className="rounded-[var(--radius-odin-md)] border p-4"
+          style={{
+            borderColor: "var(--surface-panel-border)",
+            borderLeft: "3px solid var(--color-state-warning)",
+          }}
+        >
+          <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+            Risque moyen
+          </p>
+          <p className="mt-1 font-semibold" style={{ color: "var(--color-state-warning)" }}>
+            {totalRisk > 0 ? `${totalRisk}%` : "—"}
           </p>
         </div>
       </div>
+
+      <div
+        className="rounded-[var(--radius-odin-md)] border p-4"
+        style={{ borderColor: "var(--surface-panel-border)" }}
+      >
+        <p className="mb-3 text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+          Disponibilité médicale
+        </p>
+        <div className="flex flex-col gap-2">
+          {[
+            {
+              label: "Entraînement",
+              ok: (apiPlayer.status ?? "").toUpperCase() !== "BLESSE",
+            },
+            {
+              label: "Match",
+              ok: (apiPlayer.status ?? "").toUpperCase() === "DISPONIBLE",
+            },
+            {
+              label: "Contact physique",
+              ok:
+                (apiPlayer.status ?? "").toUpperCase() === "DISPONIBLE" && playerInjuries.length === 0,
+            },
+          ].map((item) => (
+            <div key={item.label} className="flex items-center justify-between">
+              <span className="text-sm" style={{ color: "var(--text-primary)" }}>
+                {item.label}
+              </span>
+              <span
+                className="rounded-full px-3 py-1 text-xs font-semibold"
+                style={{
+                  background: item.ok ? "var(--color-state-success-bg)" : "var(--color-state-danger-bg)",
+                  color: item.ok ? "var(--color-state-success)" : "var(--color-state-danger)",
+                }}
+              >
+                {item.ok ? "✓ Autorisé" : "✗ Restreint"}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div
         className="rounded-[var(--radius-odin-md)] border p-4"
         style={{
@@ -391,116 +447,11 @@ function ApiInformationsPlaceholder({ apiPlayer }: { apiPlayer: ApiPlayer }) {
         }}
       >
         <p className="text-[13px]" style={{ color: "var(--color-state-warning)" }}>
-          ⚠ Dossier médical complet non disponible pour ce joueur. Les informations détaillées (groupe sanguin, allergies, certificats) sont gérées par l&apos;administrateur du club.
+          ⚠ Les informations complémentaires (groupe sanguin, allergies, poids, taille) sont gérées par
+          l&apos;administrateur du club.
         </p>
       </div>
     </div>
-  );
-}
-
-function HistoryTimeline({
-  entries,
-  showAll,
-  onToggleShowAll,
-}: {
-  entries: HistoryEntry[];
-  showAll: boolean;
-  onToggleShowAll: () => void;
-}) {
-  const visible = showAll ? entries : entries.slice(0, 10);
-
-  if (entries.length === 0) {
-    return <p className="text-sm" style={{ color: "var(--text-muted)" }}>Aucun historique disponible.</p>;
-  }
-
-  return (
-    <>
-      <div>
-        {visible.map((event, index) => {
-          const meta = historyTypeMeta(event.type);
-          const isLast = index === visible.length - 1;
-          return (
-            <div
-              key={`${event.date}|${event.event}|${index}`}
-              style={{
-                display: "flex",
-                gap: "12px",
-                alignItems: "flex-start",
-                paddingBottom: "12px",
-                borderBottom: isLast ? "none" : "0.5px solid var(--surface-panel-border)",
-              }}
-            >
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
-                <div
-                  style={{
-                    width: "10px",
-                    height: "10px",
-                    borderRadius: "50%",
-                    flexShrink: 0,
-                    background: meta.color,
-                  }}
-                />
-                {!isLast ? (
-                  <div
-                    style={{
-                      width: "1px",
-                      flex: 1,
-                      background: "var(--surface-panel-border)",
-                      minHeight: "20px",
-                    }}
-                  />
-                ) : null}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: "13px", color: "var(--text-primary)", fontWeight: 500 }}>
-                    {event.event}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      color: "var(--text-muted)",
-                      flexShrink: 0,
-                      marginLeft: "8px",
-                    }}
-                  >
-                    {event.date}
-                  </span>
-                </div>
-                <span
-                  style={{
-                    fontSize: "11px",
-                    color: meta.color,
-                    marginTop: "2px",
-                    display: "block",
-                  }}
-                >
-                  {meta.label}
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      {entries.length > 10 ? (
-        <button
-          type="button"
-          onClick={onToggleShowAll}
-          className="mt-3 text-xs font-medium"
-          style={{ color: "var(--color-state-info)" }}
-        >
-          {showAll ? "Réduire" : "Voir tout"}
-        </button>
-      ) : null}
-    </>
-  );
-}
-
-function UnavailablePlaceholder() {
-  return (
-    <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-      Données non disponibles
-    </p>
   );
 }
 
@@ -508,16 +459,17 @@ function InjurySummaryPills({ injuries }: { injuries: ApiInjury[] }) {
   if (injuries.length === 0) return null;
 
   const totalDays = injuries.reduce((sum, injury) => sum + injuryRecoveryDays(injury), 0);
-  const mostInjured = injuries.reduce((max, injury) =>
-    injury.riskIA > max.riskIA ? injury : max,
-  injuries[0]);
+  const mostInjured = injuries.reduce(
+    (max, injury) => (injury.riskIA > max.riskIA ? injury : max),
+    injuries[0],
+  );
 
   return (
     <div className="flex flex-row flex-wrap justify-end gap-2">
       <span
         style={{
-          background: "var(--color-state-danger-bg)",
-          color: "var(--color-state-danger)",
+          background: softBg(C.ice),
+          color: C.ice,
           padding: "4px 10px",
           borderRadius: "99px",
           fontSize: "12px",
@@ -527,8 +479,8 @@ function InjurySummaryPills({ injuries }: { injuries: ApiInjury[] }) {
       </span>
       <span
         style={{
-          background: "var(--color-state-warning-bg)",
-          color: "var(--color-state-warning)",
+          background: softBg(C.sky),
+          color: C.sky,
           padding: "4px 10px",
           borderRadius: "99px",
           fontSize: "12px",
@@ -538,8 +490,8 @@ function InjurySummaryPills({ injuries }: { injuries: ApiInjury[] }) {
       </span>
       <span
         style={{
-          background: "var(--color-state-purple-bg, rgba(124, 58, 237, 0.12))",
-          color: "var(--color-state-purple, #7c3aed)",
+          background: softBg(C.slate),
+          color: C.slate,
           padding: "4px 10px",
           borderRadius: "99px",
           fontSize: "12px",
@@ -553,34 +505,39 @@ function InjurySummaryPills({ injuries }: { injuries: ApiInjury[] }) {
 
 function PlayerCard({
   apiPlayer,
-  mockPlayer,
   injuries,
 }: {
   apiPlayer: ApiPlayer;
-  mockPlayer?: PlayerMedicalRecord;
   injuries: ApiInjury[];
 }) {
   const headerColor = apiStatusTopBarColor(apiPlayer.status);
-  const clearance = apiPlayer.status
-    ? clearanceBadgeFromApi(apiPlayer.status)
-    : mockPlayer
-    ? clearanceStyle(mockPlayer.availability)
-    : clearanceBadgeFromApi(undefined);
+  const clearance = clearanceBadgeFromApi(apiPlayer.status);
   const positionLabel = translatePosition(apiPlayer.position);
 
   return (
-    <GlassCard raised className="relative overflow-hidden p-6">
-      <div className="absolute inset-x-0 top-0 h-1" style={{ background: headerColor, height: "4px" }} />
+    <GlassCard
+      raised
+      className="relative overflow-hidden p-6"
+      style={{
+        borderColor: C.border,
+        borderTop: `2px solid ${headerColor}`,
+        background: "linear-gradient(180deg, rgba(56,189,248,0.06) 0%, var(--surface-panel-solid) 40%)",
+      }}
+    >
       <div className="flex flex-row items-center gap-5">
         <div
           className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl text-2xl font-bold"
-          style={{ background: "var(--color-state-indigo-bg)", color: "var(--color-state-indigo)" }}
+          style={{
+            background: softBg(C.ice, 0.18),
+            color: C.ice,
+            border: `1px solid ${C.ice}45`,
+          }}
         >
           {getInitials(apiPlayer.fullName)}
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>{apiPlayer.fullName}</h2>
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+          <h2 className="text-xl font-bold" style={{ color: C.white }}>{apiPlayer.fullName}</h2>
+          <p className="text-sm" style={{ color: C.slate }}>
             {apiPlayer.position} • {positionLabel}
           </p>
           <div className="mt-2">
@@ -593,65 +550,6 @@ function PlayerCard({
           </div>
         </div>
         <InjurySummaryPills injuries={injuries} />
-      </div>
-    </GlassCard>
-  );
-}
-
-function VitalStats({ player }: { player: PlayerMedicalRecord }) {
-  const bmi = (player.weight / ((player.height / 100) ** 2)).toFixed(1);
-  const stats = [
-    { icon: Droplets, label: "Groupe sanguin", value: player.bloodGroup, color: "var(--color-state-rose)", bg: "var(--color-state-rose-bg)" },
-    { icon: AlertTriangle, label: "Allergies", value: player.allergies.join(", "), color: "var(--color-state-warning)", bg: "var(--color-state-warning-bg)" },
-    { icon: Scale, label: "Poids", value: `${player.weight} kg`, color: "var(--color-state-indigo)", bg: "var(--color-state-indigo-bg)" },
-    { icon: Ruler, label: "Taille", value: `${(player.height / 100).toFixed(2).replace(".", "m")}`, color: "var(--color-state-teal)", bg: "var(--color-state-teal-bg)" },
-    { icon: Activity, label: "IMC", value: bmi, color: "var(--color-state-cyan)", bg: "var(--color-state-cyan-bg)" },
-  ];
-
-  return (
-    <div className="space-y-3">
-      {stats.map(({ icon: Icon, label, value, color, bg }) => (
-        <GlassCard key={label} className="p-4">
-          <div className="flex items-center gap-3">
-            <div
-              className="flex h-9 w-9 items-center justify-center rounded-lg"
-              style={{ background: bg, color }}
-            >
-              <Icon size={16} />
-            </div>
-            <div>
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>{label}</p>
-              <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{value}</p>
-            </div>
-          </div>
-        </GlassCard>
-      ))}
-    </div>
-  );
-}
-
-function QuickActionsSidebar() {
-  const actions = [
-    { label: "Planifier RDV", icon: Calendar, color: "var(--color-state-cyan)" },
-    { label: "Voir blessures", icon: AlertTriangle, color: "var(--color-state-rose)" },
-    { label: "Exporter PDF", icon: Download, color: "var(--color-state-emerald)" },
-  ];
-
-  return (
-    <GlassCard className="mt-4 p-4">
-      <h3 className="mb-3 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Actions rapides</h3>
-      <div className="space-y-2">
-        {actions.map(({ label, icon: Icon, color }) => (
-          <button
-            key={label}
-            type="button"
-            className="flex w-full items-center gap-3 rounded-[var(--radius-odin-md)] px-3 py-2.5 text-left text-sm transition-colors"
-            style={{ borderLeft: `3px solid ${color}`, color: "var(--text-primary)" }}
-          >
-            <Icon size={16} style={{ color }} />
-            {label}
-          </button>
-        ))}
       </div>
     </GlassCard>
   );
@@ -721,7 +619,7 @@ function StatutActuelTabContent({ injuries }: { injuries: ApiInjury[] }) {
   return (
     <div className="space-y-3">
       {injuries.map((inj) => (
-        <InjuryCard key={inj.id} inj={inj} borderColor="var(--color-state-rose)" showRecovery />
+        <InjuryCard key={inj.id} inj={inj} borderColor={C.sky} showRecovery />
       ))}
     </div>
   );
@@ -739,22 +637,21 @@ function BlessuresTabContent({ injuries }: { injuries: ApiInjury[] }) {
   return (
     <div className="space-y-3">
       {injuries.map((inj) => (
-        <InjuryCard key={inj.id} inj={inj} borderColor="var(--color-state-danger)" />
+        <InjuryCard key={inj.id} inj={inj} borderColor={C.ice} />
       ))}
     </div>
   );
 }
 
 function TabContent({
-  player,
   apiPlayer,
   tab,
   injuries,
 }: {
-  player?: PlayerMedicalRecord;
   apiPlayer: ApiPlayer;
   tab: Tab;
   injuries: ApiInjury[];
+  documents?: ApiPlayerDocument[];
 }) {
   if (tab === "Statut actuel") {
     return <StatutActuelTabContent injuries={injuries} />;
@@ -764,126 +661,98 @@ function TabContent({
     return <BlessuresTabContent injuries={injuries} />;
   }
 
-  if (tab === "Informations" && !player) {
-    return <ApiInformationsPlaceholder apiPlayer={apiPlayer} />;
-  }
-
-  if (!player) {
-    return <UnavailablePlaceholder />;
-  }
-
   if (tab === "Informations") {
-    const bmi = (player.weight / ((player.height / 100) ** 2)).toFixed(1);
-    return (
-      <div className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div
-            className="rounded-[var(--radius-odin-md)] border p-4"
-            style={{ borderColor: "var(--surface-panel-border)", borderLeft: "3px solid var(--color-state-indigo)" }}
-          >
-            <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Poste</p>
-            <p className="mt-1 font-semibold" style={{ color: "var(--text-primary)" }}>{player.position}</p>
-          </div>
-          <div
-            className="rounded-[var(--radius-odin-md)] border p-4"
-            style={{ borderColor: "var(--surface-panel-border)", borderLeft: "3px solid var(--color-state-cyan)" }}
-          >
-            <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>IMC</p>
-            <p className="mt-1 font-semibold" style={{ color: "var(--text-primary)" }}>{bmi}</p>
-          </div>
-        </div>
-        <div>
-          <h3 className="mb-2 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Certificats médicaux</h3>
-          {player.certificates.map((cert) => (
-            <div
-              key={cert.name}
-              className="mb-2 flex items-center justify-between rounded-[var(--radius-odin-md)] border px-4 py-3"
-              style={{ borderColor: "var(--surface-panel-border)" }}
-            >
-              <div className="flex items-center gap-2">
-                <FileText size={15} style={{ color: "var(--color-state-indigo)" }} />
-                <span className="text-sm" style={{ color: "var(--text-primary)" }}>{cert.name}</span>
-              </div>
-              <span
-                className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                style={{
-                  background: cert.valid ? "var(--color-state-emerald-bg)" : "var(--color-state-rose-bg)",
-                  color: cert.valid ? "var(--color-state-emerald)" : "var(--color-state-rose)",
-                }}
-              >
-                {cert.valid ? "Valide" : "Expiré"}
-              </span>
-            </div>
-          ))}
-        </div>
-        <div
-          className="rounded-[var(--radius-odin-md)] border p-4"
-          style={{ borderColor: "var(--surface-panel-border)", borderLeft: "3px solid var(--color-state-teal)" }}
-        >
-          <h3 className="mb-2 text-sm font-semibold" style={{ color: "var(--color-state-teal)" }}>Contact d&apos;urgence</h3>
-          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-            {player.allergies.length > 0 && player.allergies[0] !== "Aucune"
-              ? `Allergie signalée : ${player.allergies.join(", ")}`
-              : "Aucune allergie signalée — contact club en cas d'urgence"}
-          </p>
-        </div>
-      </div>
-    );
+    return <ApiInformationsPlaceholder apiPlayer={apiPlayer} playerInjuries={injuries} />;
   }
 
   if (tab === "Antécédents") {
+    if (injuries.length === 0) {
+      return (
+        <div
+          className="py-8 text-center"
+          style={{
+            border: "1px dashed var(--surface-panel-border)",
+            borderRadius: "var(--radius-odin-md)",
+          }}
+        >
+          <History
+            size={28}
+            style={{
+              color: "var(--text-muted)",
+              margin: "0 auto 8px",
+            }}
+          />
+          <p className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>
+            Aucun antécédent enregistré
+          </p>
+          <p
+            className="mt-1 text-xs"
+            style={{
+              color: "var(--text-muted)",
+              opacity: 0.7,
+            }}
+          >
+            L&apos;historique médical apparaîtra après enregistrement des blessures
+          </p>
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-3">
-        {player.antecedents.length === 0 ? (
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>Aucun antécédent enregistré.</p>
-        ) : (
-          player.antecedents.map((item) => (
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+          {injuries.length} blessure(s) enregistrée(s)
+        </p>
+        {injuries.map((inj) => {
+          const grade = gradeFromRiskIA(inj.riskIA);
+          const gradeAccent = gradeColor(grade);
+          const riskPercent = Math.min(100, Math.max(0, inj.riskIA * 10));
+          return (
             <div
-              key={item}
-              className="flex items-center gap-3 rounded-[var(--radius-odin-md)] border px-4 py-3 transition-colors"
+              key={inj.id}
+              className="rounded-[var(--radius-odin-md)] border p-4"
               style={{
                 borderColor: "var(--surface-panel-border)",
                 borderLeft: "3px solid var(--color-state-purple)",
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--color-state-purple-bg)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
-              }}
             >
-              <History size={15} style={{ color: "var(--color-state-purple)" }} />
-              <span className="text-sm" style={{ color: "var(--text-primary)" }}>{item}</span>
-            </div>
-          ))
-        )}
-      </div>
-    );
-  }
-
-  if (tab === "Documents") {
-    return (
-      <div className="grid gap-3 sm:grid-cols-2">
-        {player.history.filter((h) => h.type === "exam" || h.type === "certificat").map((doc) => {
-          const docType = detectDocType(doc.event);
-          const style = DOC_TYPE_STYLES[docType];
-          return (
-            <div
-              key={doc.date + doc.event}
-              className="flex items-center gap-3 rounded-[var(--radius-odin-md)] border p-4"
-              style={{ borderColor: "var(--surface-panel-border)", borderLeft: `3px solid ${style.color}` }}
-            >
-              <FileText size={18} style={{ color: style.color }} />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{doc.event}</p>
-                <p className="text-xs" style={{ color: "var(--text-muted)" }}>{doc.date}</p>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <History
+                    size={15}
+                    style={{
+                      color: "var(--color-state-purple)",
+                      marginTop: 2,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                      {inj.injuryType}
+                    </p>
+                    <p className="mt-0.5 text-xs" style={{ color: "var(--text-muted)" }}>
+                      {translateBodyPart(inj.bodyPart)}
+                    </p>
+                    <p className="mt-0.5 text-xs" style={{ color: "var(--text-muted)" }}>
+                      Retour prévu: {inj.returnDate}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <span
+                    className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                    style={{
+                      background: gradeBg(grade),
+                      color: gradeAccent,
+                    }}
+                  >
+                    {grade}
+                  </span>
+                  <span className="text-xs font-bold" style={{ color: riskPercentColor(riskPercent) }}>
+                    {riskPercent}%
+                  </span>
+                </div>
               </div>
-              <span
-                className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                style={{ background: style.bg, color: style.color }}
-              >
-                {docType === "default" ? "Document" : docType}
-              </span>
             </div>
           );
         })}
@@ -891,42 +760,7 @@ function TabContent({
     );
   }
 
-  return (
-    <div className="space-y-3">
-      {player.treatments.length === 0 ? (
-        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Aucun traitement en cours.</p>
-      ) : (
-        player.treatments.map((t) => (
-          <div
-            key={t.name}
-            className="flex items-center gap-3 rounded-[var(--radius-odin-md)] border px-4 py-3"
-            style={{ borderColor: "var(--surface-panel-border)", borderLeft: "3px solid var(--color-state-pink)" }}
-          >
-            <Pill size={15} style={{ color: "var(--color-state-pink)" }} />
-            <div>
-              <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{t.name}</p>
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>{t.dosage} — depuis {t.since}</p>
-            </div>
-          </div>
-        ))
-      )}
-      {player.medications.length > 0 ? (
-        <>
-          <h3 className="mt-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Médicaments</h3>
-          {player.medications.map((med) => (
-            <div
-              key={med}
-              className="flex items-center gap-3 rounded-[var(--radius-odin-md)] border px-4 py-3 text-sm"
-              style={{ borderColor: "var(--surface-panel-border)", borderLeft: "3px solid var(--color-state-violet)" }}
-            >
-              <Pill size={15} style={{ color: "var(--color-state-violet)" }} />
-              <span style={{ color: "var(--text-secondary)" }}>{med}</span>
-            </div>
-          ))}
-        </>
-      ) : null}
-    </div>
-  );
+  return null;
 }
 
 export function MedicalDossiersPage() {
@@ -939,7 +773,6 @@ export function MedicalDossiersPage() {
   const [tab, setTab] = useState<Tab>("Informations");
   const [search, setSearch] = useState("");
   const [playerDocuments, setPlayerDocuments] = useState<ApiPlayerDocument[]>([]);
-  const [showAllHistory, setShowAllHistory] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -994,7 +827,6 @@ export function MedicalDossiersPage() {
   }, [selectedId]);
 
   const selectedPlayer = apiPlayers.find((p) => p.id === selectedId) ?? null;
-  const mockPlayer = selectedPlayer ? findMockRecord(selectedPlayer.fullName) : undefined;
   const filtered = apiPlayers.filter((p) =>
     p.fullName.toLowerCase().includes(search.toLowerCase()),
   );
@@ -1005,21 +837,55 @@ export function MedicalDossiersPage() {
     return injuries.filter((injury) => normalizeName(injury.name) === key);
   }, [injuries, selectedPlayer]);
 
-  useEffect(() => {
-    setShowAllHistory(false);
-  }, [selectedId]);
+  const sortedDocuments = useMemo(() => {
+    return [...playerDocuments].sort((a, b) => {
+      const parseDate = (d: string) => {
+        if (!d || d === "—") return 0;
+        if (d.includes("/")) {
+          const [day, month, year] = d.split("/");
+          return new Date(`${year}-${month}-${day}`).getTime();
+        }
+        return new Date(d).getTime();
+      };
+      return parseDate(b.docDate) - parseDate(a.docDate);
+    });
+  }, [playerDocuments]);
 
-  const historyEntries = useMemo((): HistoryEntry[] => {
-    const raw = mockPlayer
-      ? mockPlayer.history.map(mapMockHistoryEntry)
-      : buildApiHistory(playerInjuries, playerDocuments);
-    return dedupeHistory(raw).sort((a, b) => parseHistorySortKey(b.date) - parseHistorySortKey(a.date));
-  }, [mockPlayer, playerInjuries, playerDocuments]);
+  const handleDownload = async (doc: ApiPlayerDocument) => {
+    try {
+      const token = localStorage.getItem("odin_token");
+      const baseUrl =
+        import.meta.env.VITE_API_URL ?? "https://erp-club-backend.onrender.com";
+
+      const res = await fetch(`${baseUrl}/club/documents/${doc.id}/file`, {
+        headers: {
+          Authorization: `Bearer ${token ?? ""}`,
+        },
+      });
+
+      if (!res.ok) throw new Error(`Erreur ${res.status}`);
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = doc.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.warn("Download failed:", err);
+      alert(
+        "Impossible de télécharger ce document. Veuillez réessayer.",
+      );
+    }
+  };
 
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 size={24} className="animate-spin" style={{ color: "var(--color-state-indigo)" }} />
+        <Loader2 size={24} className="animate-spin" style={{ color: C.ice }} />
       </div>
     );
   }
@@ -1027,24 +893,41 @@ export function MedicalDossiersPage() {
   if (error) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <p className="text-sm" style={{ color: "var(--color-state-danger)" }}>{error}</p>
+        <p className="text-sm" style={{ color: C.red }}>{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-xl font-bold tracking-tight" style={{ color: C.white }}>
+          Dossiers médicaux
+        </h1>
+        <p className="mt-1 text-sm" style={{ color: C.slate }}>
+          Fiches cliniques joueurs · {apiPlayers.length} dossier{apiPlayers.length !== 1 ? "s" : ""}
+        </p>
+      </div>
+
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
         <div className="xl:col-span-3">
-          <GlassCard className="p-4">
+          <GlassCard
+            className="p-4"
+            style={{
+              borderColor: C.border,
+              borderTop: `2px solid ${C.ice}`,
+              background: "linear-gradient(180deg, rgba(56,189,248,0.05) 0%, var(--surface-panel-solid) 28%)",
+            }}
+          >
             <div className="relative mb-4">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-muted)" }} />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.muted }} />
               <input
                 type="text"
                 placeholder="Rechercher un joueur..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="glass-input w-full py-2 pl-9 pr-3 text-sm"
+                style={{ borderColor: C.border }}
               />
             </div>
             <div className="space-y-1">
@@ -1057,19 +940,23 @@ export function MedicalDossiersPage() {
                     onClick={() => setSelectedId(p.id)}
                     className="flex w-full items-center gap-3 rounded-[var(--radius-odin-md)] px-3 py-2.5 text-left transition-colors"
                     style={{
-                      background: active ? "var(--color-state-indigo-bg)" : "transparent",
-                      borderLeft: active ? "3px solid var(--color-state-indigo)" : "3px solid transparent",
+                      background: active ? softBg(C.ice, 0.16) : "transparent",
+                      borderLeft: active ? `3px solid ${C.ice}` : "3px solid transparent",
                     }}
                   >
                     <div
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
-                      style={{ background: "var(--color-state-indigo-bg)", color: "var(--color-state-indigo)" }}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xs font-semibold"
+                      style={{
+                        background: softBg(C.ice, 0.18),
+                        color: C.ice,
+                        border: `1px solid ${C.ice}40`,
+                      }}
                     >
                       {getInitials(p.fullName)}
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium" style={{ color: "var(--text-primary)" }}>{p.fullName}</p>
-                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>{p.position}</p>
+                      <p className="truncate text-sm font-medium" style={{ color: C.white }}>{p.fullName}</p>
+                      <p className="text-xs" style={{ color: C.muted }}>{p.position}</p>
                     </div>
                   </button>
                 );
@@ -1084,13 +971,20 @@ export function MedicalDossiersPage() {
               <motion.div key={selectedPlayer.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                 <PlayerCard
                   apiPlayer={selectedPlayer}
-                  mockPlayer={mockPlayer}
                   injuries={playerInjuries}
                 />
               </motion.div>
 
-              <GlassCard raised className="p-4">
-                <div className="mb-4 flex flex-wrap gap-1 border-b pb-0" style={{ borderColor: "var(--surface-panel-border)" }}>
+              <GlassCard
+                raised
+                className="p-4"
+                style={{
+                  borderColor: C.border,
+                  borderTop: `2px solid ${C.ice}`,
+                  background: "linear-gradient(180deg, rgba(56,189,248,0.05) 0%, var(--surface-panel-solid) 32%)",
+                }}
+              >
+                <div className="mb-4 flex flex-wrap gap-1 border-b pb-0" style={{ borderColor: C.border }}>
                   {TABS.map((t) => {
                     const tabColor = TAB_COLORS[t];
                     const active = tab === t;
@@ -1107,12 +1001,12 @@ export function MedicalDossiersPage() {
                           borderRadius: active
                             ? "var(--radius-odin-md) var(--radius-odin-md) 0 0"
                             : "var(--radius-odin-md)",
-                          background: active ? tabColor : "transparent",
-                          color: active ? "white" : "var(--text-muted)",
+                          background: active ? softBg(tabColor, 0.2) : "transparent",
+                          color: active ? tabColor : C.muted,
                           fontSize: "13px",
                           fontWeight: 500,
                           border: "none",
-                          borderBottom: active ? `3px solid ${tabColor}` : "3px solid transparent",
+                          borderBottom: active ? `2px solid ${tabColor}` : "2px solid transparent",
                           cursor: "pointer",
                           transition: "all 0.2s",
                         }}
@@ -1122,7 +1016,7 @@ export function MedicalDossiersPage() {
                             width: 6,
                             height: 6,
                             borderRadius: "50%",
-                            background: active ? "white" : tabColor,
+                            background: tabColor,
                             flexShrink: 0,
                           }}
                         />
@@ -1131,21 +1025,262 @@ export function MedicalDossiersPage() {
                     );
                   })}
                 </div>
-                <TabContent
-                  player={mockPlayer}
-                  apiPlayer={selectedPlayer}
-                  tab={tab}
-                  injuries={playerInjuries}
-                />
-              </GlassCard>
+                {tab === "Documents" ? (
+                  <div className="space-y-4">
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                      }}
+                    >
+                      <p
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 700,
+                          color: "var(--text-primary)",
+                        }}
+                      >
+                        Documents médicaux
+                      </p>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: "var(--color-state-teal)",
+                          background: "var(--color-state-teal-bg)",
+                          padding: "2px 8px",
+                          borderRadius: 99,
+                        }}
+                      >
+                        {sortedDocuments.length} fichier(s)
+                      </span>
+                    </div>
 
-              <GlassCard className="p-4">
-                <h3 className="mb-3 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Historique complet</h3>
-                <HistoryTimeline
-                  entries={historyEntries}
-                  showAll={showAllHistory}
-                  onToggleShowAll={() => setShowAllHistory((value) => !value)}
-                />
+                    {sortedDocuments.length === 0 ? (
+                      <div
+                        style={{
+                          textAlign: "center",
+                          padding: "48px 0",
+                          border: "1px dashed var(--surface-panel-border)",
+                          borderRadius: "var(--radius-odin-md)",
+                        }}
+                      >
+                        <FileText
+                          size={32}
+                          style={{
+                            color: "var(--text-muted)",
+                            margin: "0 auto 10px",
+                          }}
+                        />
+                        <p
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 600,
+                            color: "var(--text-muted)",
+                          }}
+                        >
+                          Aucun document médical
+                        </p>
+                        <p
+                          style={{
+                            fontSize: 11,
+                            marginTop: 4,
+                            color: "var(--text-muted)",
+                            opacity: 0.7,
+                          }}
+                        >
+                          Les documents apparaissent après upload
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {sortedDocuments.map((doc, i) => {
+                          const docType = detectDocType(doc.name);
+                          const docStyle = DOC_TYPE_STYLES[docType];
+                          const isNew = isNewDoc(doc.docDate);
+                          const isNewest = i === 0;
+
+                          return (
+                            <div
+                              key={doc.id}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 12,
+                                padding: "14px 16px",
+                                borderRadius: "var(--radius-odin-md)",
+                                border: `1px solid ${
+                                  isNewest
+                                    ? `${docStyle.color}40`
+                                    : "var(--surface-panel-border)"
+                                }`,
+                                borderLeft: `3px solid ${docStyle.color}`,
+                                background: isNewest ? `${docStyle.color}06` : "transparent",
+                                position: "relative",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: 38,
+                                  height: 38,
+                                  borderRadius: 10,
+                                  flexShrink: 0,
+                                  background: docStyle.bg,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
+                              >
+                                <FileText size={16} style={{ color: docStyle.color }} />
+                              </div>
+
+                              <div
+                                style={{
+                                  flex: 1,
+                                  minWidth: 0,
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                    marginBottom: 3,
+                                  }}
+                                >
+                                  <p
+                                    style={{
+                                      fontSize: 12,
+                                      fontWeight: 700,
+                                      color: "var(--text-primary)",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    {doc.name}
+                                  </p>
+                                  {isNew ? (
+                                    <span
+                                      style={{
+                                        fontSize: 9,
+                                        fontWeight: 800,
+                                        color: "white",
+                                        background: "var(--color-state-success)",
+                                        padding: "1px 5px",
+                                        borderRadius: 99,
+                                        flexShrink: 0,
+                                      }}
+                                    >
+                                      NOUVEAU
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <p
+                                  style={{
+                                    fontSize: 11,
+                                    color: "var(--text-muted)",
+                                  }}
+                                >
+                                  {formatDocDate(doc.docDate)}
+                                </p>
+                              </div>
+
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  fontWeight: 600,
+                                  flexShrink: 0,
+                                  padding: "3px 8px",
+                                  borderRadius: 99,
+                                  background: docStyle.bg,
+                                  color: docStyle.color,
+                                }}
+                              >
+                                {docType === "default" ? "Document" : docType}
+                              </span>
+
+                              <button
+                                type="button"
+                                onClick={() => handleDownload(doc)}
+                                title={`Télécharger ${doc.name}`}
+                                style={{
+                                  width: 32,
+                                  height: 32,
+                                  borderRadius: 8,
+                                  flexShrink: 0,
+                                  background: "rgba(255,255,255,0.05)",
+                                  border: "1px solid rgba(255,255,255,0.10)",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  cursor: "pointer",
+                                  transition: "all 0.15s",
+                                }}
+                                onMouseEnter={(e) => {
+                                  (e.currentTarget as HTMLElement).style.background =
+                                    "var(--color-state-teal-bg)";
+                                  (e.currentTarget as HTMLElement).style.borderColor =
+                                    "var(--color-state-teal)";
+                                }}
+                                onMouseLeave={(e) => {
+                                  (e.currentTarget as HTMLElement).style.background =
+                                    "rgba(255,255,255,0.05)";
+                                  (e.currentTarget as HTMLElement).style.borderColor =
+                                    "rgba(255,255,255,0.10)";
+                                }}
+                              >
+                                <Download
+                                  size={13}
+                                  style={{ color: "var(--color-state-teal)" }}
+                                />
+                              </button>
+
+                              {isNewest ? (
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    top: 8,
+                                    right: 8,
+                                    width: 6,
+                                    height: 6,
+                                    borderRadius: "50%",
+                                    background: "var(--color-state-success)",
+                                    boxShadow: "0 0 6px var(--color-state-success)",
+                                  }}
+                                />
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {sortedDocuments.length > 1 ? (
+                      <p
+                        style={{
+                          fontSize: 10,
+                          color: "var(--text-muted)",
+                          textAlign: "right",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "flex-end",
+                          gap: 4,
+                        }}
+                      >
+                        <SortDesc size={10} />
+                        Triés du plus récent au plus ancien
+                      </p>
+                    ) : null}
+                  </div>
+                ) : (
+                  <TabContent
+                    apiPlayer={selectedPlayer}
+                    tab={tab}
+                    injuries={playerInjuries}
+                  />
+                )}
               </GlassCard>
             </>
           ) : null}
@@ -1153,71 +1288,71 @@ export function MedicalDossiersPage() {
 
         <div className="xl:col-span-3">
           {selectedPlayer ? (
-            <>
-              {mockPlayer ? (
-                <VitalStats player={mockPlayer} />
-              ) : (
-                <GlassCard className="p-4">
-                  <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-                    Informations médicales non disponibles pour ce joueur.
-                  </p>
-                  <p className="mt-1 text-xs" style={{ color: "var(--text-muted)" }}>
-                    Les données de base sont gérées par l&apos;administrateur du club.
-                  </p>
-                </GlassCard>
-              )}
-              <GlassCard raised className="p-4 mt-4">
-                  <h3 className="text-sm font-semibold mb-3" style={{ color: "var(--text-primary)" }}>
-                    Actions rapides
-                  </h3>
-                  <div className="flex flex-col gap-2">
-                    <button
-                      type="button"
-                      onClick={() => navigate("/medical/rendez-vous")}
-                      className="flex items-center gap-3 w-full px-4 py-3 rounded-[var(--radius-odin-md)] transition-colors text-left"
-                      style={{
-                        borderLeft: "3px solid var(--color-state-cyan, #0891b2)",
-                        background: "var(--color-state-info-bg)",
-                      }}
-                    >
-                      <Calendar size={16} style={{ color: "var(--color-state-info)" }} />
-                      <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                        Planifier un rendez-vous
-                      </span>
-                    </button>
+            <GlassCard
+              raised
+              className="p-4"
+              style={{
+                borderColor: C.border,
+                borderTop: `2px solid ${C.ice}`,
+                background: "linear-gradient(180deg, rgba(56,189,248,0.05) 0%, var(--surface-panel-solid) 40%)",
+              }}
+            >
+              <h3 className="mb-3 text-sm font-semibold" style={{ color: C.white }}>
+                Actions rapides
+              </h3>
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => navigate("/medical/rendez-vous")}
+                  className="flex w-full items-center gap-3 rounded-[var(--radius-odin-md)] px-4 py-3 text-left transition-colors"
+                  style={{
+                    border: `1px solid ${C.border}`,
+                    borderLeftWidth: 3,
+                    borderLeftColor: C.ice,
+                    background: softBg(C.ice, 0.1),
+                  }}
+                >
+                  <Calendar size={16} style={{ color: C.ice }} />
+                  <span className="text-sm font-medium" style={{ color: C.white }}>
+                    Planifier un rendez-vous
+                  </span>
+                </button>
 
-                    <button
-                      type="button"
-                      onClick={() => navigate("/medical/blessures")}
-                      className="flex items-center gap-3 w-full px-4 py-3 rounded-[var(--radius-odin-md)] transition-colors text-left"
-                      style={{
-                        borderLeft: "3px solid var(--color-state-danger)",
-                        background: "var(--color-state-danger-bg)",
-                      }}
-                    >
-                      <HeartPulse size={16} style={{ color: "var(--color-state-danger)" }} />
-                      <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                        Voir les blessures
-                      </span>
-                    </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/medical/blessures")}
+                  className="flex w-full items-center gap-3 rounded-[var(--radius-odin-md)] px-4 py-3 text-left transition-colors"
+                  style={{
+                    border: `1px solid ${C.border}`,
+                    borderLeftWidth: 3,
+                    borderLeftColor: C.sky,
+                    background: softBg(C.sky, 0.1),
+                  }}
+                >
+                  <HeartPulse size={16} style={{ color: C.sky }} />
+                  <span className="text-sm font-medium" style={{ color: C.white }}>
+                    Voir les blessures
+                  </span>
+                </button>
 
-                    <button
-                      type="button"
-                      onClick={() => alert("Export PDF disponible dans la version complète.")}
-                      className="flex items-center gap-3 w-full px-4 py-3 rounded-[var(--radius-odin-md)] transition-colors text-left"
-                      style={{
-                        borderLeft: "3px solid var(--color-state-success)",
-                        background: "var(--color-state-success-bg)",
-                      }}
-                    >
-                      <FileText size={16} style={{ color: "var(--color-state-success)" }} />
-                      <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                        Exporter le dossier (PDF)
-                      </span>
-                    </button>
-                  </div>
-                </GlassCard>
-            </>
+                <button
+                  type="button"
+                  onClick={() => alert("Export PDF disponible dans la version complète.")}
+                  className="flex w-full items-center gap-3 rounded-[var(--radius-odin-md)] px-4 py-3 text-left transition-colors"
+                  style={{
+                    border: `1px solid ${C.border}`,
+                    borderLeftWidth: 3,
+                    borderLeftColor: C.slate,
+                    background: softBg(C.slate, 0.12),
+                  }}
+                >
+                  <FileText size={16} style={{ color: C.slate }} />
+                  <span className="text-sm font-medium" style={{ color: C.white }}>
+                    Exporter le dossier (PDF)
+                  </span>
+                </button>
+              </div>
+            </GlassCard>
           ) : null}
         </div>
       </div>

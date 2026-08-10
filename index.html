@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="color-scheme" content="dark light" />
     <script>
       (function () {
         var t = localStorage.getItem("odin-theme");
@@ -17,8 +17,16 @@
     </script>
     <style>
       html, body, #root {
+        height: 100%;
+        margin: 0;
+      }
+      html[data-theme="dark"], html[data-theme="dark"] body, html[data-theme="dark"] #root {
         background-color: #0d0d18;
         color: #f4f5f7;
+      }
+      html[data-theme="light"], html[data-theme="light"] body, html[data-theme="light"] #root {
+        background-color: #f0f2f5;
+        color: #1a1a2e;
       }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com" />

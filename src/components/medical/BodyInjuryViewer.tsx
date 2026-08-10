@@ -61,10 +61,20 @@ const SEVERITY_COLORS: Record<string, { stroke: string; fill: string; glow: stri
   critical: { stroke: "#EF4444", fill: "rgba(239,68,68,0.45)", glow: "0 0 22px rgba(239,68,68,0.85)" },
 };
 
+const SEVERITY_CSS: Record<string, string> = {
+  low: "var(--color-state-success)",
+  medium: "var(--color-state-warning)",
+  critical: "var(--color-state-danger)",
+};
+
 function ZonePopup({ zone, position }: { zone: BodyZone; position: { cx: number; cy: number } }) {
   const risk = zone.risk ?? (zone.severity === "critical" ? 65 : zone.severity === "medium" ? 35 : zone.severity === "low" ? 15 : 5);
-  const riskColor = risk >= 40 ? "#F59E0B" : risk >= 25 ? "#F59E0B" : "#22C55E";
-  const lastControl = zone.lastControl ?? "—";
+  const riskColor =
+    risk >= 70
+      ? "var(--color-state-danger)"
+      : risk >= 40
+      ? "var(--color-state-warning)"
+      : "var(--color-state-success)";
 
   const left = `${(position.cx / 200) * 100}%`;
   const top = `${(position.cy / 300) * 100}%`;
@@ -75,33 +85,46 @@ function ZonePopup({ zone, position }: { zone: BodyZone; position: { cx: number;
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.85, y: 8 }}
       transition={{ duration: 0.15 }}
-      className="pointer-events-none absolute z-20 w-48 rounded-[16px] border p-3 shadow-xl"
+      className="pointer-events-none absolute z-20 w-52 rounded-[16px] border p-3 shadow-xl"
       style={{
         left,
         top,
         transform: "translate(-50%, -110%)",
-        background: "rgba(20, 27, 45, 0.97)",
-        borderColor: "rgba(255,107,87,0.3)",
+        background: "var(--surface-panel-solid)",
+        borderColor: "var(--surface-panel-border)",
         backdropFilter: "blur(12px)",
       }}
     >
-      <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{zone.name}</p>
-      <div className="my-2 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
-      <div className="space-y-1.5">
-        <div className="flex justify-between text-xs">
-          <span style={{ color: "var(--text-muted)" }}>Risque</span>
-          <span className="font-bold" style={{ color: riskColor }}>{risk}%</span>
-        </div>
-        <div className="flex justify-between text-xs">
-          <span style={{ color: "var(--text-muted)" }}>Dernier contrôle</span>
-          <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{lastControl}</span>
-        </div>
-      </div>
-      {zone.injuryInfo && (
-        <p className="mt-2 text-[10px]" style={{ color: "var(--text-muted)" }}>
-          {zone.injuryInfo.grade} — {zone.injuryInfo.daysRemaining}j restants
-        </p>
+      {zone.injuryInfo ? (
+        <>
+          <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+            {zone.injuryInfo.player}
+          </p>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>{zone.name}</p>
+        </>
+      ) : (
+        <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{zone.name}</p>
       )}
+      <div className="my-2 h-px" style={{ background: "var(--surface-panel-border)" }} />
+      <div className="flex justify-between text-xs">
+        <span style={{ color: "var(--text-muted)" }}>Risque</span>
+        <span className="font-bold" style={{ color: riskColor }}>{risk}%</span>
+      </div>
+      {zone.injuryInfo ? (
+        <>
+          <p className="mt-1.5 text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
+            {zone.injuryInfo.daysRemaining === 0
+              ? "Retour aujourd'hui"
+              : `Retour dans ${zone.injuryInfo.daysRemaining} jours`}
+          </p>
+          <span
+            className="mt-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold"
+            style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+          >
+            {zone.injuryInfo.grade}
+          </span>
+        </>
+      ) : null}
     </motion.div>
   );
 }
@@ -203,6 +226,24 @@ export function BodyInjuryViewer({ zones = DEFAULT_ZONES, selectedZoneId, onZone
           </div>
         ))}
       </div>
+
+      {zones.some((zone) => zone.severity !== "none") ? (
+        <div className="mx-auto flex w-full max-w-md flex-col gap-2 text-xs">
+          {zones
+            .filter((zone) => zone.severity !== "none")
+            .map((zone) => (
+              <div key={zone.id} className="flex items-center gap-2">
+                <div
+                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: SEVERITY_CSS[zone.severity] ?? "var(--text-muted)" }}
+                />
+                <span style={{ color: "var(--text-secondary)" }}>
+                  {zone.name} — {zone.injuryInfo?.player ?? "—"}
+                </span>
+              </div>
+            ))}
+        </div>
+      ) : null}
     </div>
   );
 }
