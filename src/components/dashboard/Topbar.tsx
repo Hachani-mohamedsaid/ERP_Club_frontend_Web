@@ -11,9 +11,11 @@ import { ClubNotificationsDropdown } from "../club/ClubNotificationsDropdown";
 import { SuperAdminNotificationsDropdown } from "../superadmin/SuperAdminNotificationsDropdown";
 import { ScoutNotificationsDropdown } from "../scout/ScoutNotificationsDropdown";
 import { RecruteurNotificationsDropdown } from "../recruteur/RecruteurNotificationsDropdown";
+import { CoachNotificationsDropdown } from "../coach/CoachNotificationsDropdown";
 import { FinanceGlobalSearch } from "../finance/FinanceGlobalSearch";
 import { useClubProfile } from "../../hooks/useClubProfile";
 import { ClubLogo } from "../club/ClubLogo";
+import { clubApi } from "../../lib/api/club";
 
 /* ─── Super Admin Global Search ────────────────────────────────── */
 const SA_SEARCH_DATA = [
@@ -406,12 +408,46 @@ export function Topbar() {
   const isMedical = user?.role === "medical";
   const isJoueur = user?.role === "joueur";
   const isPreparateur = user?.role === "preparateur";
+  const isCoach = user?.role === "coach";
   const isSuperAdmin = location.pathname.startsWith("/superadmin") || user?.role === "superadmin";
   const isResponsable = user?.role === "responsable";
   const isFinance = user?.role === "finance" || location.pathname.startsWith("/finance");
   const isClubAdmin = user?.role === "adminclub";
   const isScout = user?.role === "scout" || location.pathname.startsWith("/scout");
   const isRecruteur = user?.role === "recruteur" || location.pathname.startsWith("/recruteur");
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searching, setSearching] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchResults([]);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const handleSearch = async (q: string) => {
+    setSearchQuery(q);
+    if (q.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    setSearching(true);
+    try {
+      const players = await clubApi.getPlayers() as any[];
+      const filtered = players.filter((p: any) =>
+        (p.fullName ?? p.name ?? "").toLowerCase()
+          .includes(q.toLowerCase())
+      );
+      setSearchResults(filtered.slice(0, 5));
+    } catch {}
+    setSearching(false);
+  };
 
   return (
     <header className="flex items-center gap-4 px-8 py-5">
@@ -423,18 +459,102 @@ export function Topbar() {
         ) : isFinance ? (
           <FinanceGlobalSearch />
         ) : !isJoueur && (
-          <div className="relative hidden w-full max-w-xl sm:block">
+          <div ref={searchRef} className="relative hidden w-full max-w-xl sm:block">
             <Search
               size={15}
-              className="absolute left-3 top-1/2 -translate-y-1/2"
+              className="absolute left-3 top-1/2 -translate-y-1/2 z-10"
               style={{ color: "var(--text-muted)" }}
             />
             <input
               type="text"
-              placeholder="Rechercher un joueur, un contrat, un prospect..."
+              value={isCoach ? searchQuery : undefined}
+              onChange={(e) => {
+                if (isCoach) handleSearch(e.target.value);
+              }}
+              placeholder={
+                isCoach
+                  ? "Rechercher un joueur..."
+                  : "Rechercher un joueur, un contrat, un prospect..."
+              }
               className="glass-input w-full py-2.5 pl-9 pr-3 text-sm"
               style={{ background: "var(--surface-raised)" }}
             />
+            {isCoach && searching && searchQuery.length >= 2 && searchResults.length === 0 && (
+              <div style={{
+                position: "absolute",
+                top: "calc(100% + 8px)",
+                left: 0, right: 0,
+                background: "rgba(14,10,35,0.98)",
+                border: "1px solid rgba(255,255,255,0.10)",
+                borderRadius: 12,
+                padding: "12px 14px",
+                zIndex: 100,
+                fontSize: 12,
+                color: "var(--text-muted)",
+              }}>
+                Recherche...
+              </div>
+            )}
+            {isCoach && searchResults.length > 0 && searchQuery && (
+              <div style={{
+                position: "absolute",
+                top: "calc(100% + 8px)",
+                left: 0, right: 0,
+                background: "rgba(14,10,35,0.98)",
+                border: "1px solid rgba(255,255,255,0.10)",
+                borderRadius: 12,
+                boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
+                zIndex: 100, overflow: "hidden",
+              }}>
+                {searchResults.map((p: any) => (
+                  <div
+                    key={p.id}
+                    onClick={() => {
+                      navigate(`/coach/player/${p.id}`);
+                      setSearchQuery("");
+                      setSearchResults([]);
+                    }}
+                    style={{
+                      display: "flex", alignItems: "center",
+                      gap: 10, padding: "10px 14px",
+                      cursor: "pointer",
+                      borderBottom:
+                        "0.5px solid rgba(255,255,255,0.06)",
+                    }}>
+                    <div style={{
+                      width: 30, height: 30, borderRadius: 8,
+                      background: "rgba(255,122,0,0.15)",
+                      display: "flex", alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 11, fontWeight: 800,
+                      color: "#ff7a00", flexShrink: 0,
+                    }}>
+                      {(p.fullName ?? p.name ?? "?")
+                        .split(" ").map((n: string) => n[0])
+                        .join("").toUpperCase().slice(0, 2)}
+                    </div>
+                    <div>
+                      <p style={{
+                        fontSize: 12, fontWeight: 700,
+                        color: "var(--text-primary)",
+                      }}>
+                        {p.fullName ?? p.name}
+                      </p>
+                      <p style={{
+                        fontSize: 10, color: "var(--text-muted)",
+                      }}>
+                        {p.position ?? "—"} · {
+                          p.status === "DISPONIBLE"
+                            ? "Disponible"
+                            : p.status === "BLESSE"
+                            ? "Blessé" : p.status
+                        }
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -450,6 +570,8 @@ export function Topbar() {
           <JoueurNotificationsDropdown />
         ) : isPreparateur ? (
           <PrepNotificationsDropdown />
+        ) : isCoach ? (
+          <CoachNotificationsDropdown />
         ) : isFinance ? (
           <FinanceNotificationsDropdown />
         ) : isClubAdmin ? (

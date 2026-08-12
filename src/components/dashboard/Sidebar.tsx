@@ -121,7 +121,7 @@ const NAV_ITEMS: NavItem[] = [
       {
         label: "TABLEAU DE BORD",
         items: [
-          { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
+          { label: "Tableau de bord", icon: LayoutDashboard, path: "/dashboard" },
           { label: "Joueurs", icon: Users, path: "/players" },
           { label: "Équipes", icon: Shield, path: "/teams" },
         ],
@@ -166,7 +166,7 @@ const NAV_ITEMS: NavItem[] = [
       {
         label: "TABLEAU DE BORD",
         items: [
-          { label: "Dashboard", icon: LayoutDashboard, path: "/coach" },
+          { label: "Tableau de bord", icon: LayoutDashboard, path: "/coach" },
         ],
       },
       {
@@ -181,7 +181,7 @@ const NAV_ITEMS: NavItem[] = [
         label: "ENTRAÎNEMENTS",
         items: [
           { label: "Planning Séances", icon: CalendarDays, path: "/training" },
-          { label: "Training Builder", icon: Dumbbell, path: "/coach/training-builder" },
+          { label: "Planification séances", icon: Dumbbell, path: "/coach/training-builder" },
           { label: "Présence", icon: CheckCircle, path: "/coach/attendance" },
           { label: "Performances", icon: BarChart3, path: "/performance" },
         ],
@@ -191,7 +191,7 @@ const NAV_ITEMS: NavItem[] = [
         items: [
           { label: "Matchs", icon: Swords, path: "/matches" },
           { label: "Composition", icon: Map, path: "/coach/lineup" },
-          { label: "Analyse Match", icon: Target, path: "/coach/match-analysis" },
+          { label: "Analyse de match", icon: Target, path: "/coach/match-analysis" },
           { label: "Tableau Tactique", icon: PenTool, path: "/coach/tactical" },
         ],
       },
@@ -200,7 +200,6 @@ const NAV_ITEMS: NavItem[] = [
         items: [
           { label: "IA Coach ODIN", icon: Bot, path: "/coach/ai" },
           { label: "Analyse Adversaire", icon: Crosshair, path: "/coach/opponent" },
-          { label: "Recrutement", icon: UserPlus, path: "/recruitment" },
         ],
       },
       {
@@ -263,7 +262,7 @@ const NAV_ITEMS: NavItem[] = [
     path: "/club",
     allowedRoles: ["adminclub"],
     submenu: [
-      { label: "Dashboard", icon: LayoutDashboard, path: "/club" },
+      { label: "Tableau de bord", icon: LayoutDashboard, path: "/club" },
       { label: "Gestion Joueurs", icon: Users, path: "/club/joueurs" },
       { label: "Staff Technique", icon: UserPlus, path: "/club/staff" },
       { label: "Finances", icon: Wallet, path: "/club/finances" },
@@ -290,7 +289,7 @@ const NAV_ITEMS: NavItem[] = [
       {
         label: "TABLEAU DE BORD",
         items: [
-          { label: "Dashboard",          icon: LayoutDashboard, path: "/preparateur" },
+          { label: "Tableau de bord",          icon: LayoutDashboard, path: "/preparateur" },
           { label: "Charge Équipe",      icon: Activity,        path: "/preparateur/charge" },
           { label: "Condition Physique", icon: BarChart3,        path: "/preparateur/condition" },
           { label: "Risque Blessures",   icon: Bandage,         path: "/preparateur/risques" },
@@ -392,7 +391,7 @@ const NAV_ITEMS: NavItem[] = [
       {
         label: "TABLEAU DE BORD",
         items: [
-          { label: "Dashboard", icon: LayoutDashboard, path: "/recruteur" },
+          { label: "Tableau de bord", icon: LayoutDashboard, path: "/recruteur" },
           { label: "Messages", icon: MessageSquare, path: "/messages" },
           { label: "Notifications", icon: BellRing, path: "/recruteur/notifications" },
           { label: "Journal Audit", icon: BookMarked, path: "/recruteur/audit" },
@@ -441,7 +440,7 @@ const NAV_ITEMS: NavItem[] = [
     path: "/joueurs",
     allowedRoles: ["joueur"],
     submenu: [
-      { label: "Dashboard", icon: LayoutDashboard, path: "/joueurs" },
+      { label: "Tableau de bord", icon: LayoutDashboard, path: "/joueurs" },
       { label: "Mes Performances", icon: BarChart3, path: "/joueurs/performances" },
       { label: "Viiv Smartwatch", icon: Watch, path: "/joueurs/viiv" },
       { label: "Mon Suivi Médical", icon: Stethoscope, path: "/joueurs/medical" },
@@ -457,21 +456,21 @@ const NAV_ITEMS: NavItem[] = [
     path: "/medical",
     allowedRoles: ["medical"],
     submenu: [
-      { label: "Dashboard", icon: LayoutDashboard, path: "/medical" },
+      { label: "Tableau de bord", icon: LayoutDashboard, path: "/medical" },
       { label: "Dossiers médicaux", icon: FolderOpen, path: "/medical/dossiers" },
       { label: "Blessures", icon: Bandage, path: "/medical/blessures" },
       { label: "Rééducation", icon: Activity, path: "/medical/reeducation" },
       { label: "Rendez-vous", icon: Calendar, path: "/medical/rendez-vous" },
       { label: "Documents", icon: FileText, path: "/medical/documents" },
       { label: "Rapports", icon: BarChart3, path: "/medical/rapports" },
-      { label: "Joueurs à risque", icon: AlertTriangle, path: "/medical/risque" },
-      { label: "Effectif disponible", icon: Users, path: "/medical/effectif" },
-      { label: "Medical AI", icon: Cpu, path: "/medical/ia" },
+      { label: "Surveillance des risques", icon: AlertTriangle, path: "/medical/risque" },
+      { label: "Gestion des traitements", icon: Users, path: "/medical/effectif" },
+      { label: "IA Médicale", icon: Cpu, path: "/medical/ia" },
       { label: "Messages", icon: MessageSquare, path: "/messages" },
     ],
   },
   {
-    label: "Dashboard",
+    label: "Tableau de bord",
     icon: LayoutDashboard,
     path: "/comptabilite",
     allowedRoles: ["finance"],
@@ -526,7 +525,7 @@ const NAV_ITEMS: NavItem[] = [
       {
         label: "PLATFORM",
         items: [
-          { label: "Dashboard", icon: LayoutDashboard, path: "/superadmin/dashboard" },
+          { label: "Tableau de bord", icon: LayoutDashboard, path: "/superadmin/dashboard" },
           { label: "Clubs", icon: Building2, path: "/superadmin/clubs" },
           { label: "Utilisateurs", icon: UserPlus, path: "/superadmin/users" },
         ],

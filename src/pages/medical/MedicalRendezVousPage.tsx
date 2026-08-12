@@ -1,9 +1,27 @@
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, MapPin, Clock, X, Plus, Save } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Clock, X, Plus, Save, CalendarDays } from "lucide-react";
 import { GlassCard } from "../../components/ui/GlassCard";
 import { clubApi } from "../../lib/api/club";
 import { useClubResource } from "../../hooks/useClubResource";
+
+/** Clinical chrome */
+const C = {
+  slate: "#64748b",
+  ice: "#38bdf8",
+  white: "#f8fafc",
+  muted: "#94a3b8",
+  border: "rgba(100, 116, 139, 0.4)",
+  panel: "rgba(100, 116, 139, 0.12)",
+} as const;
+
+/** Event type colors — keep variety (not only clinical) */
+const EVENT_COLORS: Record<string, string> = {
+  MATCH: "#22c55e",
+  ENTRAINEMENT: "#3b82f6",
+  MEDICAL: "#38bdf8",
+  REUNION: "#f59e0b",
+};
 
 interface CalendarEvent {
   id: string;
@@ -21,13 +39,6 @@ const EVENT_TYPES = [
   { value: "REUNION", label: "Réunion" },
 ] as const;
 
-const EVENT_COLORS: Record<string, string> = {
-  MATCH: "#22C55E",
-  ENTRAINEMENT: "#3B82F6",
-  MEDICAL: "#EF4444",
-  REUNION: "#F59E0B",
-};
-
 const EVENT_LABELS: Record<string, string> = {
   MATCH: "Match",
   ENTRAINEMENT: "Entraînement",
@@ -40,6 +51,10 @@ const MONTHS = [
   "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
   "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
 ];
+
+function eventColor(type: string): string {
+  return EVENT_COLORS[type] ?? C.ice;
+}
 
 function normalizeEvent(raw: Record<string, unknown>): CalendarEvent {
   const dateRaw = raw.eventDate;
@@ -54,7 +69,7 @@ function normalizeEvent(raw: Record<string, unknown>): CalendarEvent {
     title: String(raw.title ?? ""),
     eventDate: iso,
     eventTime: raw.eventTime ? String(raw.eventTime) : null,
-    eventType: String(raw.eventType ?? "ENTRAINEMENT").toUpperCase(),
+    eventType: String(raw.eventType ?? "MEDICAL").toUpperCase(),
     location: raw.location ? String(raw.location) : null,
   };
 }
@@ -78,7 +93,7 @@ function EventFormModal({
     title: "",
     eventDate: defaultDate ?? "",
     eventTime: "14:00",
-    eventType: "ENTRAINEMENT",
+    eventType: "MEDICAL",
     location: "",
   });
   const [saving, setSaving] = useState(false);
@@ -87,28 +102,47 @@ function EventFormModal({
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       onClick={onClose}
     >
       <motion.div
-        className="w-full max-w-md rounded-[24px] border p-6"
-        style={{ background: "var(--surface-panel-solid)", borderColor: "rgba(255,107,87,0.25)" }}
-        initial={{ scale: 0.92, y: 20 }} animate={{ scale: 1, y: 0 }}
+        className="w-full max-w-md rounded-2xl border p-6"
+        style={{
+          background: "var(--surface-panel-solid)",
+          borderColor: `${C.ice}40`,
+          borderTop: `2px solid ${C.ice}`,
+        }}
+        initial={{ scale: 0.92, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>Nouvel événement</h2>
-          <button type="button" onClick={onClose} className="rounded-xl p-2 hover:bg-white/10"><X size={18} /></button>
+          <h2 className="text-lg font-extrabold" style={{ color: C.white }}>
+            Nouveau rendez-vous
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl p-2 hover:bg-white/10"
+            style={{ color: C.muted }}
+          >
+            <X size={18} />
+          </button>
         </div>
         <div className="space-y-4">
           {[
-            { key: "title", label: "Titre", type: "text", placeholder: "FC Carthage vs ES Tunis" },
+            { key: "title", label: "Titre", type: "text", placeholder: "Bilan médical — joueur" },
             { key: "eventDate", label: "Date", type: "date" },
             { key: "eventTime", label: "Heure", type: "text", placeholder: "14:00" },
-            { key: "location", label: "Lieu", type: "text", placeholder: "Stade Olympique" },
+            { key: "location", label: "Lieu", type: "text", placeholder: "Cabinet médical" },
           ].map((f) => (
             <div key={f.key}>
-              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+              <label
+                className="mb-1.5 block text-xs font-medium uppercase tracking-wide"
+                style={{ color: C.slate }}
+              >
                 {f.label}
               </label>
               <input
@@ -117,24 +151,52 @@ function EventFormModal({
                 onChange={(e) => setForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
                 placeholder={f.placeholder}
                 className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.04)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
+                style={{
+                  background: C.panel,
+                  borderColor: C.border,
+                  color: C.white,
+                }}
               />
             </div>
           ))}
           <div>
-            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+            <label
+              className="mb-1.5 block text-xs font-medium uppercase tracking-wide"
+              style={{ color: C.slate }}
+            >
               Type
             </label>
             <select
               value={form.eventType}
               onChange={(e) => setForm((prev) => ({ ...prev, eventType: e.target.value }))}
               className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-              style={{ background: "rgba(30,35,50,0.97)", borderColor: "var(--surface-panel-border)", color: "var(--text-primary)" }}
+              style={{
+                background: "var(--surface-panel-solid)",
+                borderColor: C.border,
+                color: C.white,
+              }}
             >
               {EVENT_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
             </select>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {EVENT_TYPES.map((t) => (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => setForm((prev) => ({ ...prev, eventType: t.value }))}
+                  className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                  style={{
+                    background: form.eventType === t.value ? `${EVENT_COLORS[t.value]}28` : C.panel,
+                    color: EVENT_COLORS[t.value],
+                    border: `1px solid ${form.eventType === t.value ? `${EVENT_COLORS[t.value]}55` : C.border}`,
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
         <motion.button
@@ -151,8 +213,8 @@ function EventFormModal({
               setSaving(false);
             }
           }}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white"
-          style={{ background: "linear-gradient(135deg,#FF6B57,#E65240)" }}
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold"
+          style={{ background: C.ice, color: "#0f172a" }}
         >
           <Save size={14} /> {saving ? "Enregistrement…" : "Enregistrer"}
         </motion.button>
@@ -202,36 +264,74 @@ export function MedicalRendezVousPage() {
     day === now.getDate() && month === now.getMonth() && year === now.getFullYear();
 
   return (
-    <div className="space-y-6">
-      {loading && <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement…</p>}
-      {error && <p className="text-sm text-red-400">{error}</p>}
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight" style={{ color: C.white }}>
+            Rendez-vous
+          </h1>
+          <p className="mt-1 flex items-center gap-1.5 text-sm" style={{ color: C.slate }}>
+            <CalendarDays size={13} />
+            Calendrier clinique · {events.length} événement{events.length !== 1 ? "s" : ""}
+          </p>
+        </div>
+      </div>
 
-      <GlassCard raised className="p-4 sm:p-6">
+      {loading && <p className="text-sm" style={{ color: C.muted }}>Chargement…</p>}
+      {error && <p className="text-sm" style={{ color: "#f87171" }}>{error}</p>}
+
+      <GlassCard
+        raised
+        className="p-4 sm:p-6"
+        style={{
+          borderColor: C.border,
+          borderTop: `2px solid ${C.ice}`,
+          background:
+            "linear-gradient(180deg, rgba(56,189,248,0.05) 0%, var(--surface-panel-solid) 28%)",
+        }}
+      >
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <button type="button" onClick={prevMonth} className="rounded-lg p-2 transition-colors hover:bg-white/5">
-            <ChevronLeft size={20} style={{ color: "var(--text-muted)" }} />
+          <button
+            type="button"
+            onClick={prevMonth}
+            className="rounded-lg border p-2 transition-colors hover:bg-white/5"
+            style={{ borderColor: C.border, color: C.slate }}
+          >
+            <ChevronLeft size={20} />
           </button>
-          <h3 className="text-lg font-bold capitalize" style={{ color: "var(--text-primary)" }}>
+          <h3 className="text-lg font-bold capitalize" style={{ color: C.white }}>
             {MONTHS[month]} {year}
           </h3>
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => { setAddDate(undefined); setShowAdd(true); }}
-              className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-white sm:text-sm"
-              style={{ background: "linear-gradient(135deg,#FF6B57,#E65240)" }}
+              onClick={() => {
+                setAddDate(undefined);
+                setShowAdd(true);
+              }}
+              className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold sm:text-sm"
+              style={{ background: C.ice, color: "#0f172a" }}
             >
               <Plus size={14} /> Nouveau rendez-vous
             </button>
-            <button type="button" onClick={nextMonth} className="rounded-lg p-2 transition-colors hover:bg-white/5">
-              <ChevronRight size={20} style={{ color: "var(--text-muted)" }} />
+            <button
+              type="button"
+              onClick={nextMonth}
+              className="rounded-lg border p-2 transition-colors hover:bg-white/5"
+              style={{ borderColor: C.border, color: C.slate }}
+            >
+              <ChevronRight size={20} />
             </button>
           </div>
         </div>
 
         <div className="mb-2 grid grid-cols-7 gap-1.5">
           {DAYS.map((d) => (
-            <div key={d} className="py-2 text-center text-[10px] font-bold tracking-wider" style={{ color: "var(--text-muted)" }}>
+            <div
+              key={d}
+              className="py-2 text-center text-[10px] font-bold tracking-wider"
+              style={{ color: C.slate }}
+            >
               {d}
             </div>
           ))}
@@ -246,8 +346,12 @@ export function MedicalRendezVousPage() {
                 key={i}
                 className="min-h-[110px] rounded-xl border p-2 transition-colors"
                 style={{
-                  borderColor: today ? "rgba(255,107,87,0.4)" : "rgba(255,255,255,0.06)",
-                  background: day ? (today ? "rgba(255,107,87,0.06)" : "rgba(255,255,255,0.02)") : "transparent",
+                  borderColor: today ? `${C.ice}55` : "rgba(100,116,139,0.25)",
+                  background: day
+                    ? today
+                      ? `${C.ice}12`
+                      : "rgba(100,116,139,0.06)"
+                    : "transparent",
                 }}
                 onDoubleClick={() => {
                   if (!day) return;
@@ -260,8 +364,8 @@ export function MedicalRendezVousPage() {
                   <span
                     className="inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold"
                     style={{
-                      color: today ? "#FF6B57" : "var(--text-muted)",
-                      background: today ? "rgba(255,107,87,0.15)" : "transparent",
+                      color: today ? C.ice : C.muted,
+                      background: today ? `${C.ice}22` : "transparent",
                     }}
                   >
                     {day}
@@ -269,16 +373,20 @@ export function MedicalRendezVousPage() {
                 )}
                 <div className="mt-1 space-y-1">
                   {dayEvents.map((ev) => {
-                    const color = EVENT_COLORS[ev.eventType] ?? "#FF6B57";
+                    const color = eventColor(ev.eventType);
                     return (
                       <motion.button
                         key={ev.id}
                         type="button"
                         className="block w-full truncate rounded-lg px-2 py-1 text-left text-[10px] font-semibold leading-tight"
-                        style={{ background: `${color}22`, color, borderLeft: `3px solid ${color}` }}
+                        style={{
+                          background: `${color}22`,
+                          color,
+                          borderLeft: `3px solid ${color}`,
+                        }}
                         whileHover={{ scale: 1.02 }}
                         onClick={() => setSelectedEvent(ev)}
-                        title={ev.title}
+                        title={`${ev.title} (${EVENT_LABELS[ev.eventType] ?? ev.eventType})`}
                       >
                         {ev.title}
                       </motion.button>
@@ -290,10 +398,20 @@ export function MedicalRendezVousPage() {
           })}
         </div>
 
-        <div className="mt-5 flex flex-wrap gap-4 border-t pt-4" style={{ borderColor: "var(--surface-panel-border)" }}>
+        <div
+          className="mt-5 flex flex-wrap gap-4 border-t pt-4"
+          style={{ borderColor: C.border }}
+        >
           {EVENT_TYPES.map(({ value, label }) => (
-            <div key={value} className="flex items-center gap-2 text-xs font-medium" style={{ color: "var(--text-muted)" }}>
-              <div className="h-2.5 w-2.5 rounded-full" style={{ background: EVENT_COLORS[value] }} />
+            <div
+              key={value}
+              className="flex items-center gap-2 text-xs font-medium"
+              style={{ color: C.muted }}
+            >
+              <div
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ background: EVENT_COLORS[value] }}
+              />
               {label}
             </div>
           ))}
@@ -302,37 +420,55 @@ export function MedicalRendezVousPage() {
 
       <AnimatePresence>
         {selectedEvent && (
-          <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedEvent(null)} />
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setSelectedEvent(null)}
+            />
             <motion.div
-              className="relative w-full max-w-md rounded-[20px] border p-6"
-              style={{ background: "rgba(15,29,58,0.98)", borderColor: "var(--surface-panel-border)" }}
-              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-md rounded-2xl border p-6"
+              style={{
+                background: "var(--surface-panel-solid)",
+                borderColor: C.border,
+                borderTop: `2px solid ${eventColor(selectedEvent.eventType)}`,
+              }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
             >
               <div className="mb-4 flex items-start justify-between">
                 <div>
                   <span
                     className="rounded-full px-2.5 py-0.5 text-xs font-semibold"
                     style={{
-                      background: `${EVENT_COLORS[selectedEvent.eventType] ?? "#FF6B57"}22`,
-                      color: EVENT_COLORS[selectedEvent.eventType] ?? "#FF6B57",
+                      background: `${eventColor(selectedEvent.eventType)}22`,
+                      color: eventColor(selectedEvent.eventType),
                     }}
                   >
                     {EVENT_LABELS[selectedEvent.eventType] ?? selectedEvent.eventType}
                   </span>
-                  <h3 className="mt-2 text-lg font-bold" style={{ color: "var(--text-primary)" }}>{selectedEvent.title}</h3>
+                  <h3 className="mt-2 text-lg font-bold" style={{ color: C.white }}>
+                    {selectedEvent.title}
+                  </h3>
                 </div>
-                <button type="button" onClick={() => setSelectedEvent(null)}><X size={18} style={{ color: "var(--text-muted)" }} /></button>
+                <button type="button" onClick={() => setSelectedEvent(null)}>
+                  <X size={18} style={{ color: C.muted }} />
+                </button>
               </div>
               <div className="space-y-3 text-sm">
-                <div className="flex items-center gap-2" style={{ color: "var(--text-secondary)" }}>
-                  <Clock size={14} />
+                <div className="flex items-center gap-2" style={{ color: C.muted }}>
+                  <Clock size={14} style={{ color: C.ice }} />
                   {formatDisplayDate(selectedEvent.eventDate)}
                   {selectedEvent.eventTime ? ` — ${selectedEvent.eventTime}` : ""}
                 </div>
                 {selectedEvent.location && (
-                  <div className="flex items-center gap-2" style={{ color: "var(--text-secondary)" }}>
-                    <MapPin size={14} /> {selectedEvent.location}
+                  <div className="flex items-center gap-2" style={{ color: C.muted }}>
+                    <MapPin size={14} style={{ color: C.ice }} /> {selectedEvent.location}
                   </div>
                 )}
               </div>

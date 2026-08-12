@@ -17,14 +17,13 @@ import { CoachPageTransition, CCard } from "../../components/coach2/CoachPageTra
 import { clubApi } from "../../lib/api/club";
 import { apiFetch } from "../../lib/api/authHeaders";
 
-type SessionType = "Physique" | "Tactique" | "Technique" | "Vidéo" | "Match";
+type SessionType = "Physique" | "Tactique" | "Technique" | "Match";
 type Intensity = "Faible" | "Modérée" | "Élevée" | "Maximale";
 
 const TYPE_COLORS: Record<string, { main: string; bg: string; border: string }> = {
   Physique: { main: "#ef4444", bg: "rgba(239,68,68,0.10)", border: "rgba(239,68,68,0.25)" },
   Tactique: { main: "#8b5cf6", bg: "rgba(139,92,246,0.10)", border: "rgba(139,92,246,0.25)" },
   Technique: { main: "#3b82f6", bg: "rgba(59,130,246,0.10)", border: "rgba(59,130,246,0.25)" },
-  Vidéo: { main: "#f59e0b", bg: "rgba(245,158,11,0.10)", border: "rgba(245,158,11,0.25)" },
   Match: { main: "#22c55e", bg: "rgba(34,197,94,0.10)", border: "rgba(34,197,94,0.25)" },
   Récupération: { main: "#0d9488", bg: "rgba(13,148,136,0.10)", border: "rgba(13,148,136,0.25)" },
   Musculation: { main: "#f97316", bg: "rgba(249,115,22,0.10)", border: "rgba(249,115,22,0.25)" },
@@ -1048,7 +1047,7 @@ export function CoachTrainingBuilderPage() {
                 <div>
                   <span style={labelStyle}>Type de séance</span>
                   <div className="flex flex-wrap gap-2">
-                    {(["Physique", "Tactique", "Technique", "Vidéo", "Match"] as const).map((t) => {
+                    {(["Physique", "Tactique", "Technique", "Match"] as const).map((t) => {
                       const c = getTypeColor(t);
                       return (
                         <motion.button

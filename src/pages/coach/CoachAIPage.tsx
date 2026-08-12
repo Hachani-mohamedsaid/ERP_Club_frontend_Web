@@ -11,6 +11,15 @@ interface AIMessage {
   meta?: string;
 }
 
+const DEFAULT_QUICK_QUESTIONS = [
+  "Qui doit jouer titulaire au prochain match ?",
+  "Quel joueur est le plus fatigué ?",
+  "Recommandation pour la composition",
+  "Risques de blessure cette semaine",
+  "Qui mérite d'être capitaine ?",
+  "Bilan des performances récentes",
+];
+
 export function CoachAIPage() {
   const [aiMeta, setAiMeta] = useState<Awaited<ReturnType<typeof coachApi.getAi>> | null>(null);
   const [messages, setMessages] = useState<AIMessage[]>([]);
@@ -25,7 +34,7 @@ export function CoachAIPage() {
       setMessages([
         {
           role: "ai",
-          text: `Bonjour ${res.coachName.split(" ")[0] || "Coach"} ! 👋 Je suis ODIN AI Coach pour ${res.clubName}. Posez-moi une question sur l'effectif (${res.summary.squadSize} joueurs), la tactique ou la préparation de match.`,
+          text: `Bonjour ${res.coachName.split(" ")[0] || "Coach"} ! 👋 Je suis l'assistant IA ODIN pour ${res.clubName}. Posez-moi une question sur l'effectif (${res.summary.squadSize} joueurs), la tactique ou la préparation de match.`,
         },
       ]);
     } catch {
@@ -42,13 +51,11 @@ export function CoachAIPage() {
     loadAi();
   }, [loadAi]);
 
+  const nextMatchQuestion = "Comment préparer le prochain match ?";
+
   const quickQuestions = aiMeta?.suggestedQuestions ?? [
-    "Qui doit jouer titulaire contre EST ?",
-    "Quel joueur est le plus fatigué ?",
-    "Recommandation pour la composition demain",
-    "Risques blessures cette semaine",
-    "Qui mérite d'être capitaine ?",
-    "Performances des 6 derniers matchs",
+    nextMatchQuestion,
+    ...DEFAULT_QUICK_QUESTIONS,
   ];
 
   async function send(q: string) {
@@ -89,7 +96,7 @@ export function CoachAIPage() {
           <Brain size={22} className="text-white" />
         </motion.div>
         <div>
-          <h1 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>ODIN AI Coach</h1>
+          <h1 className="text-lg font-extrabold" style={{ color: "var(--text-primary)" }}>Assistant IA ODIN</h1>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
             {aiMeta?.clubName ?? "Club"} · Saison {aiMeta?.season ?? new Date().getFullYear()} · Analyse effectif & tactique
             {aiMeta?.provider && aiMeta.model ? ` · ${aiMeta.provider}/${aiMeta.model}` : ""}
@@ -103,7 +110,7 @@ export function CoachAIPage() {
           style={{ borderColor: "rgba(245,158,11,0.3)", background: "rgba(245,158,11,0.08)" }}
         >
           <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-          Clé OpenAI non configurée côté serveur.
+          Clé API IA non configurée côté serveur.
         </div>
       )}
 
@@ -170,7 +177,7 @@ export function CoachAIPage() {
                       >
                         <Brain size={12} className="text-white" />
                       </div>
-                      <span className="text-[10px] font-bold" style={{ color: COACH_ACCENT }}>ODIN AI</span>
+                      <span className="text-[10px] font-bold" style={{ color: COACH_ACCENT }}>ODIN IA</span>
                       {msg.meta && (
                         <span className="text-[9px]" style={{ color: "var(--text-muted)" }}>{msg.meta}</span>
                       )}
@@ -216,7 +223,7 @@ export function CoachAIPage() {
                   <Loader2 size={12} className="animate-spin text-white" />
                 </div>
                 <div className="rounded-2xl px-4 py-3" style={{ background: "rgba(255,255,255,0.05)" }}>
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Analyse OpenAI en cours…</p>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Analyse IA en cours…</p>
                 </div>
               </motion.div>
             )}

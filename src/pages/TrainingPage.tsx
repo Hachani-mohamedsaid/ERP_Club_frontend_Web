@@ -491,7 +491,7 @@ export function TrainingPage() {
                 Aucune séance cette semaine
               </p>
               <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.6 }}>
-                Créez des séances depuis le Training Builder
+                Créez des séances depuis la Planification séances
                 <br />
                 et elles apparaîtront automatiquement ici.
               </p>

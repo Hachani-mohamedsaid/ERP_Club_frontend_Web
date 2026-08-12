@@ -1063,7 +1063,7 @@ export function PerformancePage() {
                     opacity: 0.7,
                   }}
                 >
-                  Créez des séances depuis Training Builder
+                  Créez des séances depuis Planification séances
                 </p>
               </div>
             ) : (

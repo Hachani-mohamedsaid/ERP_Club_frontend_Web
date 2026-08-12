@@ -18,20 +18,49 @@ export function AIRiskPrediction({
   ],
 }: RiskPredictionProps) {
   const getRiskColor = (risk: number) => {
-    if (risk >= 70) return "#EF4444"; // Critique - rouge
-    if (risk >= 40) return "#F59E0B"; // Moyenne - orange
-    return "#22C55E"; // Faible - vert
+    if (risk >= 70) return "#EF4444";
+    if (risk >= 40) return "#F59E0B";
+    return "#22C55E";
   };
 
-  const getRiskLabel = (risk: number) => {
-    if (risk >= 70) return "Critique";
-    if (risk >= 40) return "Élevé";
-    return "Modéré";
+  const getHealthColor = (health: number) => {
+    if (health >= 70) return "#22C55E";
+    if (health >= 40) return "#F59E0B";
+    return "#EF4444";
   };
 
-  const clampedRisk = Math.max(0, Math.min(100, overallRisk));
-  // Convert to angle: -90 to +90 degrees (180 degree range)
-  const needleAngle = (clampedRisk / 100) * 180 - 90;
+  const getHealthLabel = (health: number) => {
+    if (health >= 70) return "Effectif en bonne santé";
+    if (health >= 40) return "Surveillance recommandée";
+    return "Effectif fragilisé";
+  };
+
+  const healthScore = Math.max(0, Math.min(100, 100 - overallRisk));
+  const needleAngle = (healthScore / 100) * 180 - 90;
+
+  const getReturnDays = (risk: number) => {
+    if (risk >= 70) return "30+ jours";
+    if (risk >= 50) return "15-30 jours";
+    if (risk >= 30) return "7-15 jours";
+    return "moins d'une semaine";
+  };
+
+  const recommendationText = (() => {
+    if (risksByZone.length === 0 || risksByZone.every((item) => item.risk < 40)) {
+      return "Aucune blessure préoccupante. Effectif en bonne condition.";
+    }
+
+    const highestRiskZone = risksByZone.reduce((max, item) =>
+      item.risk > max.risk ? item : max,
+    );
+    const returnDays = getReturnDays(highestRiskZone.risk);
+
+    if (highestRiskZone.risk >= 70) {
+      return `Zone critique: ${highestRiskZone.zone} (${highestRiskZone.risk}%). Retour estimé: ${returnDays}. Maintien en arrêt recommandé.`;
+    }
+
+    return `Surveillance active requise pour ${highestRiskZone.zone}. Retour estimé: ${returnDays}. Reprise progressive autorisée.`;
+  })();
 
   return (
     <div className="space-y-6">
@@ -50,9 +79,9 @@ export function AIRiskPrediction({
             {/* Gauge background arc */}
             <defs>
               <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" style={{ stopColor: "#22C55E", stopOpacity: 1 }} />
+                <stop offset="0%" style={{ stopColor: "#EF4444", stopOpacity: 1 }} />
                 <stop offset="50%" style={{ stopColor: "#F59E0B", stopOpacity: 1 }} />
-                <stop offset="100%" style={{ stopColor: "#EF4444", stopOpacity: 1 }} />
+                <stop offset="100%" style={{ stopColor: "#22C55E", stopOpacity: 1 }} />
               </linearGradient>
             </defs>
 
@@ -128,7 +157,7 @@ export function AIRiskPrediction({
                   y1={100}
                   x2={100}
                   y2={25}
-                  stroke={getRiskColor(clampedRisk)}
+                  stroke={getHealthColor(healthScore)}
                   strokeWidth={3}
                   strokeLinecap="round"
                 />
@@ -136,7 +165,7 @@ export function AIRiskPrediction({
                 {/* Needle tip */}
                 <polygon
                   points="100,20 96,25 104,25"
-                  fill={getRiskColor(clampedRisk)}
+                  fill={getHealthColor(healthScore)}
                 />
               </motion.g>
 
@@ -145,7 +174,7 @@ export function AIRiskPrediction({
                 cx={100}
                 cy={100}
                 r={8}
-                fill={getRiskColor(clampedRisk)}
+                fill={getHealthColor(healthScore)}
                 stroke="rgba(255,255,255,0.2)"
                 strokeWidth={2}
               />
@@ -161,18 +190,18 @@ export function AIRiskPrediction({
               fontWeight={600}
               fontFamily="system-ui"
             >
-              {clampedRisk}%
+              {healthScore}%
             </text>
           </svg>
         </div>
 
-        {/* Risk level indicator */}
+        {/* Health level indicator */}
         <div className="flex flex-col items-center gap-2">
-          <div className="text-sm font-medium" style={{ color: getRiskColor(clampedRisk) }}>
-            {getRiskLabel(clampedRisk)}
+          <div className="text-sm font-medium" style={{ color: getHealthColor(healthScore) }}>
+            {getHealthLabel(healthScore)}
           </div>
           <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-            Risque global de blessure
+            Score de santé global
           </div>
         </div>
       </div>
@@ -180,7 +209,7 @@ export function AIRiskPrediction({
       {/* Risk by zone breakdown */}
       <div className="space-y-3 rounded-lg border p-4" style={{ borderColor: "var(--surface-panel-border)" }}>
         <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-          Risques par zone
+          Blessures actives et leur niveau
         </h3>
 
         <div className="space-y-3">
@@ -247,10 +276,12 @@ export function AIRiskPrediction({
       >
         <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
           <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
-            Recommandation IA:{" "}
+            Recommandation médicale:{" "}
           </span>
-          Retour estimé: <span className="font-semibold">21 jours</span>. Surveillance médicale recommandée
-          du genou droit.
+          {recommendationText}
+        </p>
+        <p className="mt-2 text-xs italic" style={{ color: "var(--text-muted)" }}>
+          Score calculé à partir des données de blessures enregistrées par le médecin du club.
         </p>
       </motion.div>
     </div>

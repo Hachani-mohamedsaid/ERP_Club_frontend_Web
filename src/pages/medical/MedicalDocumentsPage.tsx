@@ -1,6 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ComponentType, type CSSProperties } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Upload, Download, Trash2, Eye, FileText, Loader2, X, Save } from "lucide-react";
+import {
+  Upload, Download, Trash2, Eye, FileText, Loader2, X, Save,
+  Scan, ScanLine, Bone, FileBadge, FlaskConical, FolderOpen,
+  Calendar, User,
+} from "lucide-react";
 import { GlassCard } from "../../components/ui/GlassCard";
 import { Button } from "../../components/ui/Button";
 import { clubApi } from "../../lib/api/club";
@@ -25,21 +29,33 @@ interface DisplayDocument {
   size: string;
 }
 
-const TYPE_ICONS: Record<DocType, string> = {
-  IRM: "🧲",
-  Scanner: "🔬",
-  Radio: "📡",
-  Certificat: "📋",
-  Analyse: "🧪",
+const C = {
+  slate: "#64748b",
+  ice: "#38bdf8",
+  sky: "#7dd3fc",
+  white: "#f8fafc",
+  muted: "#94a3b8",
+  border: "rgba(100, 116, 139, 0.4)",
+} as const;
+
+const TYPE_ICONS: Record<DocType, ComponentType<{ size?: number; style?: CSSProperties }>> = {
+  IRM: Scan,
+  Scanner: ScanLine,
+  Radio: Bone,
+  Certificat: FileBadge,
+  Analyse: FlaskConical,
 };
 
 const TYPE_COLORS: Record<DocType, string> = {
-  IRM: "#3a7bd5",
-  Scanner: "#8b5cf6",
+  IRM: "#38bdf8",
+  Scanner: "#64748b",
   Radio: "#d99a1f",
   Certificat: "#2e9e5b",
   Analyse: "#06b6d4",
 };
+
+const PRIMARY_FILTERS: DocType[] = ["IRM", "Scanner"];
+const SECONDARY_FILTERS = ["Tous", "Radio", "Certificat", "Analyse"] as const;
 
 const UPLOAD_TYPES: DocType[] = ["IRM", "Scanner", "Radio", "Certificat", "Analyse"];
 
@@ -235,9 +251,9 @@ export function MedicalDocumentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("Tous");
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | "all">("all");
   const [showUpload, setShowUpload] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const types = ["Tous", "IRM", "Scanner", "Radio", "Certificat", "Analyse"];
 
   const loadDocuments = useCallback(async () => {
     setLoading(true);
@@ -262,9 +278,63 @@ export function MedicalDocumentsPage() {
     loadDocuments();
   }, [loadDocuments]);
 
-  const filtered = filter === "Tous"
-    ? documents
-    : documents.filter((d) => d.type === filter);
+  const displayed = documents.filter((doc) => {
+    const matchesType = filter === "Tous" || doc.type === filter;
+    const matchesPlayer =
+      selectedPlayerId === "all" || doc.playerId === selectedPlayerId;
+    return matchesType && matchesPlayer;
+  });
+
+  async function handleDownload(doc: DisplayDocument) {
+    try {
+      const token = localStorage.getItem("odin_token");
+      const baseUrl =
+        import.meta.env.VITE_API_URL ?? "https://erp-club-backend.onrender.com";
+
+      const res = await fetch(`${baseUrl}/club/documents/${doc.id}/file`, {
+        headers: {
+          Authorization: `Bearer ${token ?? ""}`,
+        },
+      });
+
+      if (!res.ok) throw new Error(`Erreur ${res.status}`);
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = doc.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.warn("Download failed:", err);
+      alert("Impossible de télécharger ce document.");
+    }
+  }
+
+  async function handlePreview(doc: DisplayDocument) {
+    try {
+      const token = localStorage.getItem("odin_token");
+      const baseUrl =
+        import.meta.env.VITE_API_URL ?? "https://erp-club-backend.onrender.com";
+
+      const res = await fetch(`${baseUrl}/club/documents/${doc.id}/file`, {
+        headers: {
+          Authorization: `Bearer ${token ?? ""}`,
+        },
+      });
+
+      if (!res.ok) throw new Error();
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    } catch {
+      alert("Impossible d'afficher ce document.");
+    }
+  }
 
   async function handleUpload(values: {
     playerId: string;
@@ -301,7 +371,7 @@ export function MedicalDocumentsPage() {
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 size={24} className="animate-spin" style={{ color: "var(--accent)" }} />
+        <Loader2 size={24} className="animate-spin" style={{ color: C.ice }} />
       </div>
     );
   }
@@ -314,87 +384,351 @@ export function MedicalDocumentsPage() {
     );
   }
 
+  const irmCount = documents.filter((d) => d.type === "IRM").length;
+  const scannerCount = documents.filter((d) => d.type === "Scanner").length;
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap gap-2">
-          {types.map((t) => (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1
+            className="text-xl font-bold tracking-tight"
+            style={{ color: C.white }}
+          >
+            Archives médicales
+          </h1>
+          <p className="mt-1 text-sm" style={{ color: C.slate }}>
+            {displayed.length} document{displayed.length !== 1 ? "s" : ""}
+            {filter !== "Tous" ? ` · ${filter}` : ""}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowUpload(true)}
+          className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold"
+          style={{ background: C.ice, color: "#0f172a" }}
+        >
+          <Upload size={16} /> Upload document
+        </button>
+      </div>
+
+      {/* Selective top: IRM + Scanner */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {PRIMARY_FILTERS.map((t) => {
+          const active = filter === t;
+          const color = TYPE_COLORS[t];
+          const Icon = TYPE_ICONS[t];
+          const count = t === "IRM" ? irmCount : scannerCount;
+          return (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setFilter(active ? "Tous" : t)}
+              className="flex items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition-colors"
+              style={{
+                borderColor: active ? `${color}66` : C.border,
+                background: active ? `${color}18` : "rgba(100,116,139,0.08)",
+                borderTop: `2px solid ${color}`,
+              }}
+            >
+              <div
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                style={{
+                  background: `${color}22`,
+                  color,
+                  border: `1px solid ${color}40`,
+                }}
+              >
+                <Icon size={18} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold" style={{ color: active ? color : C.white }}>
+                  {t}
+                </p>
+                <p className="text-xs" style={{ color: C.muted }}>
+                  {count} document{count !== 1 ? "s" : ""} · filtre rapide
+                </p>
+              </div>
+              <span
+                className="rounded-md px-2 py-0.5 text-[10px] font-bold tabular-nums"
+                style={{ background: `${color}22`, color }}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Secondary filters */}
+      <div className="flex flex-wrap gap-2">
+        {SECONDARY_FILTERS.map((t) => {
+          const active = filter === t;
+          const typeColor = t === "Tous" ? C.ice : (TYPE_COLORS[t as DocType] ?? C.ice);
+          return (
             <button
               key={t}
               type="button"
               onClick={() => setFilter(t)}
-              className="rounded-full px-4 py-2 text-sm font-medium transition-colors"
+              className="rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors"
               style={{
-                background: filter === t ? "var(--accent)" : "rgba(var(--accent-rgb), 0.1)",
-                color: filter === t ? "white" : "var(--text-secondary)",
+                background: active ? `${typeColor}22` : "rgba(100,116,139,0.1)",
+                color: active ? typeColor : C.muted,
+                border: `1px solid ${active ? `${typeColor}55` : C.border}`,
               }}
             >
               {t}
             </button>
-          ))}
-        </div>
-        <Button onClick={() => setShowUpload(true)}>
-          <Upload size={16} /> Upload document
-        </Button>
+          );
+        })}
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          marginBottom: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: "var(--text-muted)",
+          }}
+        >
+          Joueur:
+        </span>
+
+        <button
+          type="button"
+          onClick={() => setSelectedPlayerId("all")}
+          style={{
+            padding: "5px 14px",
+            borderRadius: 99,
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: "pointer",
+            border: "none",
+            background:
+              selectedPlayerId === "all" ? "var(--accent)" : "rgba(255,255,255,0.06)",
+            color: selectedPlayerId === "all" ? "white" : "var(--text-muted)",
+          }}
+        >
+          Tous
+        </button>
+
+        {players.map((p) => {
+          const count = documents.filter((d) => d.playerId === p.id).length;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setSelectedPlayerId(p.id)}
+              style={{
+                padding: "5px 14px",
+                borderRadius: 99,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+                border: "none",
+                background:
+                  selectedPlayerId === p.id ? "var(--accent)" : "rgba(255,255,255,0.06)",
+                color: selectedPlayerId === p.id ? "white" : "var(--text-muted)",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <span
+                style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: "50%",
+                  background: "rgba(255,122,0,0.20)",
+                  color: "var(--accent)",
+                  fontSize: 9,
+                  fontWeight: 800,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {p.fullName.slice(0, 2).toUpperCase()}
+              </span>
+              {p.fullName} ({count})
+            </button>
+          );
+        })}
       </div>
 
       {documents.length === 0 ? (
-        <GlassCard raised className="flex min-h-[240px] items-center justify-center p-6">
-          <p className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>
+        <GlassCard
+          raised
+          className="flex min-h-[240px] flex-col items-center justify-center gap-3 p-8"
+          style={{ borderColor: C.border, borderTop: `2px solid ${C.ice}` }}
+        >
+          <div
+            className="flex h-12 w-12 items-center justify-center rounded-xl"
+            style={{
+              background: `${C.ice}18`,
+              border: `1px solid ${C.ice}35`,
+            }}
+          >
+            <FolderOpen size={22} style={{ color: C.ice }} />
+          </div>
+          <p className="text-sm font-medium" style={{ color: C.muted }}>
             Aucun document médical. Uploadez le premier document.
           </p>
         </GlassCard>
+      ) : displayed.length === 0 ? (
+        <GlassCard
+          raised
+          className="flex min-h-[160px] items-center justify-center p-6"
+          style={{ borderColor: C.border }}
+        >
+          <p className="text-sm font-medium" style={{ color: C.muted }}>
+            Aucun document pour ce filtre.
+          </p>
+        </GlassCard>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filtered.map((doc) => {
-            const docColor = TYPE_COLORS[doc.type] ?? TYPE_COLORS.Certificat;
-            const docIcon = TYPE_ICONS[doc.type] ?? TYPE_ICONS.Certificat;
-            return (
-            <GlassCard key={doc.id} raised className="group overflow-hidden p-0">
-              <div
-                className="flex h-32 items-center justify-center text-4xl leading-none"
-                style={{ background: `${docColor}15` }}
-              >
-                <span className="select-none" aria-hidden="true">{docIcon}</span>
-              </div>
-              <div className="p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{doc.name}</p>
-                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>{doc.player}</p>
+        <GlassCard
+          raised
+          className="overflow-hidden p-0"
+          style={{ borderColor: C.border, borderTop: `2px solid ${C.ice}` }}
+        >
+          <div
+            className="hidden grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_110px_110px_90px_140px] gap-3 border-b px-4 py-3 text-[10px] font-bold uppercase tracking-wider md:grid"
+            style={{
+              borderColor: C.border,
+              color: C.slate,
+              background: "rgba(56,189,248,0.04)",
+            }}
+          >
+            <span>Document</span>
+            <span>Joueur</span>
+            <span>Type</span>
+            <span>Date</span>
+            <span>Taille</span>
+            <span className="text-right">Actions</span>
+          </div>
+
+          <div>
+            {displayed.map((doc, i) => {
+              const docColor = TYPE_COLORS[doc.type] ?? TYPE_COLORS.Certificat;
+              const DocIcon = TYPE_ICONS[doc.type] ?? FileText;
+              return (
+                <motion.div
+                  key={doc.id}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(i * 0.02, 0.2) }}
+                  className="group grid grid-cols-1 gap-3 border-b px-4 py-3.5 transition-colors md:grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_110px_110px_90px_140px] md:items-center md:gap-3"
+                  style={{
+                    borderLeft: `3px solid ${docColor}`,
+                    borderBottomColor: "rgba(100,116,139,0.25)",
+                    background: "transparent",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(56,189,248,0.04)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                      style={{
+                        background: `${docColor}18`,
+                        border: `1px solid ${docColor}35`,
+                      }}
+                    >
+                      <DocIcon size={16} style={{ color: docColor }} />
+                    </div>
+                    <div className="min-w-0">
+                      <p
+                        className="truncate text-sm font-semibold"
+                        style={{ color: C.white }}
+                        title={doc.name}
+                      >
+                        {doc.name || "Document sans nom"}
+                      </p>
+                      <p className="mt-0.5 flex items-center gap-1 text-[11px] md:hidden" style={{ color: C.muted }}>
+                        <User size={10} /> {doc.player || "—"}
+                      </p>
+                    </div>
                   </div>
-                  <span
-                    className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase"
-                    style={{ background: `${docColor}22`, color: docColor }}
-                  >
-                    {doc.type}
-                  </span>
-                </div>
-                <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
-                  <FileText size={11} /> {doc.date} • {doc.size}
-                </div>
-                <div className="mt-4 flex gap-2 opacity-80 transition-opacity group-hover:opacity-100">
-                  <button type="button" className="flex flex-1 items-center justify-center gap-1 rounded-[var(--radius-odin-md)] py-2 text-xs font-medium transition-colors hover:bg-white/5" style={{ color: "var(--color-state-info)" }}>
-                    <Eye size={12} /> Preview
-                  </button>
-                  <button type="button" className="flex flex-1 items-center justify-center gap-1 rounded-[var(--radius-odin-md)] py-2 text-xs font-medium transition-colors hover:bg-white/5" style={{ color: "var(--color-state-success)" }}>
-                    <Download size={12} /> Download
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(doc.id)}
-                    disabled={deletingId === doc.id}
-                    className="flex items-center justify-center rounded-[var(--radius-odin-md)] px-2 py-2 text-xs transition-colors hover:bg-white/5"
-                    style={{ color: "var(--color-state-danger)" }}
-                  >
-                    {deletingId === doc.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-                  </button>
-                </div>
-              </div>
-            </GlassCard>
-            );
-          })}
-        </div>
+
+                  <div className="hidden min-w-0 md:block">
+                    <p className="truncate text-sm" style={{ color: C.muted }}>
+                      {doc.player || "—"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span
+                      className="inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                      style={{
+                        background: `${docColor}18`,
+                        color: docColor,
+                        border: `1px solid ${docColor}40`,
+                      }}
+                    >
+                      {doc.type}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 text-xs" style={{ color: C.muted }}>
+                    <Calendar size={11} className="shrink-0 opacity-70" />
+                    <span>{doc.date}</span>
+                  </div>
+
+                  <div className="text-xs" style={{ color: C.muted }}>
+                    {doc.size}
+                  </div>
+
+                  <div className="flex items-center justify-start gap-1 md:justify-end">
+                    <button
+                      type="button"
+                      title="Aperçu"
+                      onClick={() => handlePreview(doc)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-white/5"
+                      style={{ color: C.ice }}
+                      aria-label="Aperçu"
+                    >
+                      <Eye size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      title="Télécharger"
+                      onClick={() => handleDownload(doc)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-white/5"
+                      style={{ color: "#2e9e5b" }}
+                      aria-label="Télécharger"
+                    >
+                      <Download size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      title="Supprimer"
+                      onClick={() => handleDelete(doc.id)}
+                      disabled={deletingId === doc.id}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-white/5 disabled:opacity-50"
+                      style={{ color: "var(--color-state-danger)" }}
+                    >
+                      {deletingId === doc.id
+                        ? <Loader2 size={14} className="animate-spin" />
+                        : <Trash2 size={14} />}
+                    </button>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </GlassCard>
       )}
 
       <AnimatePresence>

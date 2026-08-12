@@ -103,18 +103,18 @@ type HistoryEntry = {
   records: Record<string, AttStatus>;
 };
 
-const translatePosition = (pos: string): string => {
+const translatePosition = (
+  pos: string | null | undefined
+): string => {
+  if (!pos) return "—";
   const map: Record<string, string> = {
-    ST: "Attaquant",
-    BU: "Buteur",
-    MC: "Milieu central",
-    MD: "Milieu défensif",
-    DC: "Défenseur central",
-    LB: "Latéral gauche",
-    RB: "Latéral droit",
-    GK: "Gardien",
-    AG: "Ailier gauche",
-    AD: "Ailier droit",
+    "ST": "Attaquant", "BU": "Buteur",
+    "MC": "Milieu central", "MD": "Milieu défensif",
+    "DC": "Défenseur central", "GK": "Gardien",
+    "LB": "Latéral gauche", "RB": "Latéral droit",
+    "AG": "Ailier gauche", "AD": "Ailier droit",
+    "MOC": "Milieu offensif", "MDF": "Milieu défensif",
+    "ATT": "Attaquant", "DEF": "Défenseur",
   };
   return map[pos] ?? pos;
 };
@@ -400,7 +400,7 @@ export function CoachAttendancePage() {
                 color: "var(--text-muted)",
               }}
             >
-              Aucune séance trouvée — Créez des séances depuis le Training Builder
+              Aucune séance trouvée — Créez des séances depuis la Planification séances
             </div>
           ) : (
             <div
@@ -731,12 +731,12 @@ export function CoachAttendancePage() {
                 const meta = STATUS_META[status];
                 const StatusIcon = meta.icon;
                 const injury = getPlayerInjury(p);
-                const initials = (p.fullName ?? "?")
+                const initials = (p.fullName ?? p.name ?? "?")
                   .split(" ")
-                  .map((n: string) => n[0])
+                  .map((n: string) => n[0] ?? "")
                   .join("")
                   .toUpperCase()
-                  .slice(0, 2);
+                  .slice(0, 2) || "?";
                 const playerHistory = history
                   .map((h) => h.records[p.id])
                   .filter(Boolean) as AttStatus[];
@@ -798,7 +798,7 @@ export function CoachAttendancePage() {
                           marginBottom: 2,
                         }}
                       >
-                        {p.fullName}
+                        {p.fullName ?? p.name ?? "Joueur inconnu"}
                       </p>
                       <div
                         style={{
