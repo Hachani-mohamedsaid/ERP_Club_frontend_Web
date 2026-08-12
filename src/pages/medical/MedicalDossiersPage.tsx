@@ -13,6 +13,9 @@ import {
   Upload,
   FlaskConical,
   AlertTriangle,
+  Pencil,
+  Check,
+  X,
 } from "lucide-react";
 import { GlassCard } from "../../components/ui/GlassCard";
 import { clubApi, type PlayerNutritionRecord } from "../../lib/api/club";
@@ -786,6 +789,9 @@ export function MedicalDossiersPage() {
   const [nutrition, setNutrition] = useState<PlayerNutritionRecord | null>(null);
   const [ocrBusy, setOcrBusy] = useState(false);
   const [nutritionMsg, setNutritionMsg] = useState<{ kind: "error" | "info"; text: string } | null>(null);
+  const [editingNutrition, setEditingNutrition] = useState(false);
+  const [nutritionDraft, setNutritionDraft] = useState<Record<string, string>>({});
+  const [savingNutrition, setSavingNutrition] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -842,6 +848,8 @@ export function MedicalDossiersPage() {
   // Charge le bilan nutritionnel persistant du joueur sélectionné (valeurs OCR).
   useEffect(() => {
     setNutritionMsg(null);
+    setEditingNutrition(false);
+    setNutritionDraft({});
     if (!selectedId) {
       setNutrition(null);
       return;
@@ -924,6 +932,78 @@ export function MedicalDossiersPage() {
       });
     } finally {
       setOcrBusy(false);
+    }
+  }
+
+  // Ouvre le formulaire d'édition pré-rempli avec les valeurs actuelles (toutes les
+  // clés modèle, y compris manquantes, pour permettre l'ajout d'un nutriment oublié).
+  function startEditNutrition() {
+    const values: MedicalNutritionValues = nutrition?.values ?? {};
+    const next: Record<string, string> = {};
+    for (const key of MODEL_NUTRITION_KEYS) {
+      const v = values[key];
+      next[key] = typeof v === "number" && Number.isFinite(v) ? String(v) : "";
+    }
+    setNutritionDraft(next);
+    setNutritionMsg(null);
+    setEditingNutrition(true);
+  }
+
+  function cancelEditNutrition() {
+    setEditingNutrition(false);
+    setNutritionDraft({});
+  }
+
+  // Enregistre les valeurs corrigées / ajoutées manuellement via le même endpoint PUT.
+  async function handleSaveNutrition() {
+    if (!selectedPlayer) return;
+    const values: MedicalNutritionValues = {};
+    for (const key of MODEL_NUTRITION_KEYS) {
+      const raw = (nutritionDraft[key] ?? "").trim();
+      if (!raw) continue;
+      const num = Number(raw);
+      if (Number.isFinite(num) && num >= 0) values[key] = num;
+    }
+    // La coloration bas/élevé provient de l'OCR : on ne conserve un statut que pour
+    // les valeurs inchangées (aucune plage de référence côté client pour recalculer).
+    const originalValues: MedicalNutritionValues = nutrition?.values ?? {};
+    const keptFlagged = (nutrition?.flagged ?? []).filter((m) => {
+      const k = m.nutrient as keyof MedicalNutritionValues;
+      return typeof values[k] === "number" && values[k] === originalValues[k];
+    });
+    const baseSource = nutrition?.source ?? null;
+    const source = baseSource
+      ? baseSource.includes("corrigé")
+        ? baseSource
+        : `${baseSource} · corrigé`
+      : "Saisie manuelle";
+
+    setSavingNutrition(true);
+    setNutritionMsg(null);
+    try {
+      const saved = await clubApi.savePlayerNutrition(selectedPlayer.id, {
+        values,
+        mentions: nutrition?.mentions ?? [],
+        flagged: keptFlagged,
+        source,
+      });
+      setNutrition(saved);
+      setEditingNutrition(false);
+      const n = Object.keys(values).length;
+      setNutritionMsg({
+        kind: "info",
+        text:
+          n > 0
+            ? `${n} valeur${n > 1 ? "s" : ""} enregistrée${n > 1 ? "s" : ""} — transmise${n > 1 ? "s" : ""} aux modèles Analyste.`
+            : "Bilan nutritionnel vidé.",
+      });
+    } catch (e) {
+      setNutritionMsg({
+        kind: "error",
+        text: e instanceof Error ? e.message : "Échec de l'enregistrement.",
+      });
+    } finally {
+      setSavingNutrition(false);
     }
   }
 
@@ -1465,36 +1545,58 @@ export function MedicalDossiersPage() {
                 modèles de prédiction de blessure (section Analyste).
               </p>
 
-              <label
-                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-odin-md)] px-4 py-2.5 text-sm font-medium transition-colors"
-                style={{
-                  border: `1px solid ${C.border}`,
-                  borderLeftWidth: 3,
-                  borderLeftColor: C.purple,
-                  background: softBg(C.purple, 0.12),
-                  color: C.white,
-                  opacity: ocrBusy ? 0.6 : 1,
-                  pointerEvents: ocrBusy ? "none" : "auto",
-                }}
-              >
-                {ocrBusy ? (
-                  <Loader2 size={16} className="animate-spin" style={{ color: C.purple }} />
-                ) : (
-                  <Upload size={16} style={{ color: C.purple }} />
-                )}
-                <span>{ocrBusy ? "Analyse OCR…" : "Importer un rapport"}</span>
-                <input
-                  type="file"
-                  accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.doc,image/*,application/pdf"
-                  className="hidden"
-                  disabled={ocrBusy}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    e.currentTarget.value = "";
-                    if (file) void handleNutritionUpload(file);
-                  }}
-                />
-              </label>
+              {!editingNutrition ? (
+                <>
+                  <label
+                    className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-odin-md)] px-4 py-2.5 text-sm font-medium transition-colors"
+                    style={{
+                      border: `1px solid ${C.border}`,
+                      borderLeftWidth: 3,
+                      borderLeftColor: C.purple,
+                      background: softBg(C.purple, 0.12),
+                      color: C.white,
+                      opacity: ocrBusy ? 0.6 : 1,
+                      pointerEvents: ocrBusy ? "none" : "auto",
+                    }}
+                  >
+                    {ocrBusy ? (
+                      <Loader2 size={16} className="animate-spin" style={{ color: C.purple }} />
+                    ) : (
+                      <Upload size={16} style={{ color: C.purple }} />
+                    )}
+                    <span>{ocrBusy ? "Analyse OCR…" : "Importer un rapport"}</span>
+                    <input
+                      type="file"
+                      accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.doc,image/*,application/pdf"
+                      className="hidden"
+                      disabled={ocrBusy}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        e.currentTarget.value = "";
+                        if (file) void handleNutritionUpload(file);
+                      }}
+                    />
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={startEditNutrition}
+                    disabled={ocrBusy}
+                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-[var(--radius-odin-md)] px-4 py-2 text-[13px] font-medium transition-colors"
+                    style={{
+                      border: `1px solid ${C.border}`,
+                      background: softBg(C.slate, 0.1),
+                      color: C.sky,
+                      opacity: ocrBusy ? 0.5 : 1,
+                    }}
+                  >
+                    <Pencil size={14} />
+                    <span>
+                      {nutritionEntries.length > 0 ? "Corriger / compléter" : "Saisir manuellement"}
+                    </span>
+                  </button>
+                </>
+              ) : null}
 
               {nutritionMsg ? (
                 <div
@@ -1512,7 +1614,86 @@ export function MedicalDossiersPage() {
                 </div>
               ) : null}
 
-              {nutritionEntries.length > 0 ? (
+              {editingNutrition ? (
+                <div className="mt-3 space-y-2">
+                  <p className="text-[11px] leading-snug" style={{ color: C.muted }}>
+                    Corrigez une valeur mal extraite ou renseignez un nutriment manquant.
+                    Laissez un champ vide pour retirer la valeur.
+                  </p>
+                  <div className="grid grid-cols-1 gap-1.5">
+                    {MODEL_NUTRITION_KEYS.map((key) => {
+                      const meta = NUTRITION_META[key];
+                      return (
+                        <div
+                          key={key}
+                          className="flex items-center gap-2 rounded-[var(--radius-odin-sm)] px-2.5 py-1.5"
+                          style={{ background: softBg(C.slate, 0.08), border: `1px solid ${C.border}` }}
+                        >
+                          <span className="flex-1 text-[12px]" style={{ color: C.sky }}>
+                            {meta.label}
+                          </span>
+                          <input
+                            type="number"
+                            step="any"
+                            min="0"
+                            inputMode="decimal"
+                            value={nutritionDraft[key] ?? ""}
+                            placeholder="—"
+                            onChange={(e) =>
+                              setNutritionDraft((d) => ({ ...d, [key]: e.target.value }))
+                            }
+                            className="w-16 rounded-[var(--radius-odin-sm)] px-2 py-1 text-right text-[12px] font-semibold outline-none"
+                            style={{
+                              background: "var(--surface-panel-solid)",
+                              border: `1px solid ${C.border}`,
+                              color: C.white,
+                            }}
+                          />
+                          <span className="w-10 text-[10px]" style={{ color: C.muted }}>
+                            {meta.unit}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => void handleSaveNutrition()}
+                      disabled={savingNutrition}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-[var(--radius-odin-md)] px-4 py-2 text-[13px] font-semibold transition-colors"
+                      style={{
+                        border: `1px solid ${C.green}`,
+                        background: softBg(C.green, 0.14),
+                        color: C.green,
+                        opacity: savingNutrition ? 0.6 : 1,
+                      }}
+                    >
+                      {savingNutrition ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Check size={14} />
+                      )}
+                      <span>Enregistrer</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelEditNutrition}
+                      disabled={savingNutrition}
+                      className="flex items-center justify-center gap-2 rounded-[var(--radius-odin-md)] px-4 py-2 text-[13px] font-medium transition-colors"
+                      style={{
+                        border: `1px solid ${C.border}`,
+                        background: softBg(C.slate, 0.1),
+                        color: C.muted,
+                        opacity: savingNutrition ? 0.6 : 1,
+                      }}
+                    >
+                      <X size={14} />
+                      <span>Annuler</span>
+                    </button>
+                  </div>
+                </div>
+              ) : nutritionEntries.length > 0 ? (
                 <div className="mt-3">
                   <div className="grid grid-cols-1 gap-1.5">
                     {nutritionEntries.map(({ key, value, meta }) => {
