@@ -17,6 +17,57 @@ export interface ViivSensorData {
   strain: number;
 }
 
+/**
+ * Lab/nutrition values extracted from a medical report via OCR (medical section).
+ * Superset of the fields the three prediction models accept in their optional
+ * `medical_nutrition` block. Values are in report clinical units and match the
+ * backend "readiness penalty" thresholds — no conversion is applied here.
+ */
+export interface MedicalNutritionValues {
+  vitamin_d?: number;          // ng/mL
+  ferritin?: number;           // ng/mL
+  hemoglobin?: number;         // g/dL
+  vitamin_b12?: number;        // pg/mL
+  magnesium?: number;          // mg/dL
+  zinc?: number;               // µg/dL
+  iron?: number;               // µg/dL
+  calcium?: number;            // mg/dL
+  c_reactive_protein?: number; // mg/L
+}
+
+// Per-model subsets accepted by the FastAPI service (verified in app/main.py:290-320).
+const GLOBAL_RISK_NUTRITION_KEYS = [
+  "vitamin_d", "ferritin", "hemoglobin", "vitamin_b12", "magnesium", "zinc", "iron", "c_reactive_protein",
+] as const;
+const ZONE_NUTRITION_KEYS = [
+  "vitamin_d", "ferritin", "hemoglobin", "magnesium", "calcium", "c_reactive_protein",
+] as const;
+const RELAPSE_NUTRITION_KEYS = [
+  "vitamin_d", "ferritin", "hemoglobin", "vitamin_b12", "magnesium", "iron", "c_reactive_protein",
+] as const;
+
+/**
+ * Builds a model-specific nutrition block, keeping only finite numeric values for
+ * the keys that model accepts. Returns `undefined` when nothing usable is present
+ * so we never POST an empty `medical_nutrition` object.
+ */
+function pickNutrition<K extends keyof MedicalNutritionValues>(
+  nutrition: MedicalNutritionValues | undefined | null,
+  keys: readonly K[],
+): Pick<MedicalNutritionValues, K> | undefined {
+  if (!nutrition) return undefined;
+  const out: Partial<Pick<MedicalNutritionValues, K>> = {};
+  let has = false;
+  for (const key of keys) {
+    const value = nutrition[key];
+    if (typeof value === "number" && Number.isFinite(value)) {
+      out[key] = value;
+      has = true;
+    }
+  }
+  return has ? (out as Pick<MedicalNutritionValues, K>) : undefined;
+}
+
 // Module 1: Global Injury Risk
 export interface PlayerFeaturesInput {
   playerId: number;
@@ -30,6 +81,7 @@ export interface PlayerFeaturesInput {
   douleurMusculaire_7d_mean: number;
   stress_7d_mean: number;
   viiv: ViivSensorData;
+  medical_nutrition?: MedicalNutritionValues;
 }
 
 export interface ShapFactor {
@@ -61,6 +113,7 @@ export interface ZonePredictionInput {
   souplesse: number;
   agilite: number;
   viiv: ViivSensorData;
+  medical_nutrition?: MedicalNutritionValues;
 }
 
 export interface InjuryZoneResponse {
@@ -74,6 +127,7 @@ export interface RelapseSurvivalInput {
   physio_adherence: number;
   post_recovery_ACWR: number;
   viiv: ViivSensorData;
+  medical_nutrition?: MedicalNutritionValues;
 }
 
 export interface SurvivalPoint {
@@ -229,7 +283,8 @@ export function getMockViivPredictions(playerId: number, viiv: ViivSensorData): 
 export async function fetchAllViivPredictions(
   playerId: number,
   playerProfile: { position?: string; foot?: string; age?: number; fitnessScore?: number },
-  viiv: ViivSensorData
+  viiv: ViivSensorData,
+  nutrition?: MedicalNutritionValues | null,
 ): Promise<AllViivPredictionsResult> {
   const riskInput: PlayerFeaturesInput = {
     playerId,
@@ -266,6 +321,16 @@ export async function fetchAllViivPredictions(
     post_recovery_ACWR: 1.12,
     viiv,
   };
+
+  // Attach OCR-extracted medical nutrition (from the medical section) so the models'
+  // inputs reflect the lab values via the service's readiness penalty. Each model only
+  // receives the nutrients it supports; empty blocks are omitted entirely.
+  const riskNutrition = pickNutrition(nutrition, GLOBAL_RISK_NUTRITION_KEYS);
+  if (riskNutrition) riskInput.medical_nutrition = riskNutrition;
+  const zoneNutrition = pickNutrition(nutrition, ZONE_NUTRITION_KEYS);
+  if (zoneNutrition) zoneInput.medical_nutrition = zoneNutrition;
+  const relapseNutrition = pickNutrition(nutrition, RELAPSE_NUTRITION_KEYS);
+  if (relapseNutrition) relapseInput.medical_nutrition = relapseNutrition;
 
   try {
     const [injuryRisk, injuryZone, relapseSurvival] = await Promise.all([

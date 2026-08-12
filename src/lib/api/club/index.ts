@@ -1,10 +1,24 @@
 import { parseApiError } from "../config";
 import { apiFetch, apiFetchWithTimeout } from "../authHeaders";
+import type { MedicalNutritionValues } from "../viivAiApi";
+import type { MedicalNutrientMention } from "../ocrApi";
 
 async function parse<T>(response: Response): Promise<T> {
   if (!response.ok) throw new Error(await parseApiError(response));
   return response.json() as Promise<T>;
 }
+
+/** Per-player medical nutrition record (OCR-extracted lab values). */
+export type PlayerNutritionRecord = {
+  playerId: string;
+  playerName: string | null;
+  values: MedicalNutritionValues;
+  mentions: MedicalNutrientMention[];
+  flagged: MedicalNutrientMention[];
+  source: string | null;
+  extractedAt: string | null;
+  updatedAt: string | null;
+};
 
 export const clubApi = {
   getProfile: () => apiFetch("/club/profile").then(parse),
@@ -113,6 +127,24 @@ export const clubApi = {
     apiFetch(`/club/players/${id}/documents`, { method: "POST", body: JSON.stringify(body) }).then(parse),
   deleteDocument: (docId: string) =>
     apiFetch(`/club/documents/${docId}`, { method: "DELETE" }).then(parse),
+
+  // ─── Bilan nutritionnel (OCR médical) ─────────────────────────
+  // Écrit depuis le médical, lu par l'analyste pour alimenter les modèles de blessure.
+  getPlayerNutrition: (id: string) =>
+    apiFetch(`/club/players/${id}/nutrition`).then(parse<PlayerNutritionRecord>),
+  savePlayerNutrition: (
+    id: string,
+    body: {
+      values: MedicalNutritionValues;
+      mentions?: MedicalNutrientMention[];
+      flagged?: MedicalNutrientMention[];
+      source?: string | null;
+    },
+  ) =>
+    apiFetch(`/club/players/${id}/nutrition`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }).then(parse<PlayerNutritionRecord>),
 
   getTransfers: () => apiFetch("/club/transfers").then(parse),
   createTransfer: (body: Record<string, unknown>) =>

@@ -10,9 +10,19 @@ import {
   HeartPulse,
   SortDesc,
   Download,
+  Upload,
+  FlaskConical,
+  AlertTriangle,
 } from "lucide-react";
 import { GlassCard } from "../../components/ui/GlassCard";
-import { clubApi } from "../../lib/api/club";
+import { clubApi, type PlayerNutritionRecord } from "../../lib/api/club";
+import {
+  extractMedicalNutrients,
+  mentionsToNutritionValues,
+  NUTRITION_META,
+  MODEL_NUTRITION_KEYS,
+} from "../../lib/api/ocrApi";
+import type { MedicalNutritionValues } from "../../lib/api/viivAiApi";
 
 const getInitials = (name: string): string =>
   (name ?? "?")
@@ -773,6 +783,9 @@ export function MedicalDossiersPage() {
   const [tab, setTab] = useState<Tab>("Informations");
   const [search, setSearch] = useState("");
   const [playerDocuments, setPlayerDocuments] = useState<ApiPlayerDocument[]>([]);
+  const [nutrition, setNutrition] = useState<PlayerNutritionRecord | null>(null);
+  const [ocrBusy, setOcrBusy] = useState(false);
+  const [nutritionMsg, setNutritionMsg] = useState<{ kind: "error" | "info"; text: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -826,6 +839,30 @@ export function MedicalDossiersPage() {
     };
   }, [selectedId]);
 
+  // Charge le bilan nutritionnel persistant du joueur sélectionné (valeurs OCR).
+  useEffect(() => {
+    setNutritionMsg(null);
+    if (!selectedId) {
+      setNutrition(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    clubApi
+      .getPlayerNutrition(selectedId)
+      .then((rec) => {
+        if (!cancelled) setNutrition(rec);
+      })
+      .catch(() => {
+        if (!cancelled) setNutrition(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedId]);
+
   const selectedPlayer = apiPlayers.find((p) => p.id === selectedId) ?? null;
   const filtered = apiPlayers.filter((p) =>
     p.fullName.toLowerCase().includes(search.toLowerCase()),
@@ -836,6 +873,59 @@ export function MedicalDossiersPage() {
     const key = normalizeName(selectedPlayer.fullName);
     return injuries.filter((injury) => normalizeName(injury.name) === key);
   }, [injuries, selectedPlayer]);
+
+  // Nutriments hors-normes (low/high) pour la coloration de l'affichage.
+  const nutritionStatus = useMemo(() => {
+    const map: Record<string, "low" | "high"> = {};
+    for (const m of nutrition?.flagged ?? []) {
+      if (m.status === "low" || m.status === "high") map[m.nutrient] = m.status;
+    }
+    return map;
+  }, [nutrition]);
+
+  // Valeurs modèle présentes, dans un ordre stable.
+  const nutritionEntries = useMemo(() => {
+    const values: MedicalNutritionValues = nutrition?.values ?? {};
+    return MODEL_NUTRITION_KEYS.filter(
+      (k) => typeof values[k] === "number" && Number.isFinite(values[k] as number),
+    ).map((k) => ({ key: k, value: values[k] as number, meta: NUTRITION_META[k] }));
+  }, [nutrition]);
+
+  async function handleNutritionUpload(file: File) {
+    if (!selectedPlayer) return;
+    setOcrBusy(true);
+    setNutritionMsg(null);
+    try {
+      const extraction = await extractMedicalNutrients(file);
+      const values = mentionsToNutritionValues(extraction.mentions);
+      if (Object.keys(values).length === 0) {
+        setNutritionMsg({
+          kind: "error",
+          text: "Aucune valeur nutritionnelle exploitable détectée dans ce rapport.",
+        });
+        return;
+      }
+      const saved = await clubApi.savePlayerNutrition(selectedPlayer.id, {
+        values,
+        mentions: extraction.mentions,
+        flagged: extraction.flagged,
+        source: file.name,
+      });
+      setNutrition(saved);
+      const n = Object.keys(values).length;
+      setNutritionMsg({
+        kind: "info",
+        text: `${n} valeur${n > 1 ? "s" : ""} extraite${n > 1 ? "s" : ""} — transmise${n > 1 ? "s" : ""} aux modèles Analyste.`,
+      });
+    } catch (e) {
+      setNutritionMsg({
+        kind: "error",
+        text: e instanceof Error ? e.message : "Échec de l'extraction OCR.",
+      });
+    } finally {
+      setOcrBusy(false);
+    }
+  }
 
   const sortedDocuments = useMemo(() => {
     return [...playerDocuments].sort((a, b) => {
@@ -1286,8 +1376,9 @@ export function MedicalDossiersPage() {
           ) : null}
         </div>
 
-        <div className="xl:col-span-3">
+        <div className="xl:col-span-3 space-y-4">
           {selectedPlayer ? (
+            <>
             <GlassCard
               raised
               className="p-4"
@@ -1353,6 +1444,120 @@ export function MedicalDossiersPage() {
                 </button>
               </div>
             </GlassCard>
+
+            <GlassCard
+              raised
+              className="p-4"
+              style={{
+                borderColor: C.border,
+                borderTop: `2px solid ${C.purple}`,
+                background: "linear-gradient(180deg, rgba(153,58,248,0.05) 0%, var(--surface-panel-solid) 40%)",
+              }}
+            >
+              <div className="mb-1 flex items-center gap-2">
+                <FlaskConical size={16} style={{ color: C.purple }} />
+                <h3 className="text-sm font-semibold" style={{ color: C.white }}>
+                  Bilan nutritionnel (OCR)
+                </h3>
+              </div>
+              <p className="mb-3 text-[11px] leading-snug" style={{ color: C.muted }}>
+                Importez un rapport biologique. Les valeurs extraites alimentent les
+                modèles de prédiction de blessure (section Analyste).
+              </p>
+
+              <label
+                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-odin-md)] px-4 py-2.5 text-sm font-medium transition-colors"
+                style={{
+                  border: `1px solid ${C.border}`,
+                  borderLeftWidth: 3,
+                  borderLeftColor: C.purple,
+                  background: softBg(C.purple, 0.12),
+                  color: C.white,
+                  opacity: ocrBusy ? 0.6 : 1,
+                  pointerEvents: ocrBusy ? "none" : "auto",
+                }}
+              >
+                {ocrBusy ? (
+                  <Loader2 size={16} className="animate-spin" style={{ color: C.purple }} />
+                ) : (
+                  <Upload size={16} style={{ color: C.purple }} />
+                )}
+                <span>{ocrBusy ? "Analyse OCR…" : "Importer un rapport"}</span>
+                <input
+                  type="file"
+                  accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.doc,image/*,application/pdf"
+                  className="hidden"
+                  disabled={ocrBusy}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.currentTarget.value = "";
+                    if (file) void handleNutritionUpload(file);
+                  }}
+                />
+              </label>
+
+              {nutritionMsg ? (
+                <div
+                  className="mt-3 flex items-start gap-2 rounded-[var(--radius-odin-md)] px-3 py-2 text-[11px]"
+                  style={{
+                    border: `1px solid ${nutritionMsg.kind === "error" ? C.red : C.green}`,
+                    background: softBg(nutritionMsg.kind === "error" ? C.red : C.green, 0.1),
+                    color: nutritionMsg.kind === "error" ? C.red : C.green,
+                  }}
+                >
+                  {nutritionMsg.kind === "error" ? (
+                    <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+                  ) : null}
+                  <span>{nutritionMsg.text}</span>
+                </div>
+              ) : null}
+
+              {nutritionEntries.length > 0 ? (
+                <div className="mt-3">
+                  <div className="grid grid-cols-1 gap-1.5">
+                    {nutritionEntries.map(({ key, value, meta }) => {
+                      const status = nutritionStatus[key];
+                      const color = status === "low" || status === "high" ? C.red : C.green;
+                      return (
+                        <div
+                          key={key}
+                          className="flex items-center justify-between rounded-[var(--radius-odin-sm)] px-2.5 py-1.5"
+                          style={{ background: softBg(C.slate, 0.1), border: `1px solid ${C.border}` }}
+                        >
+                          <span className="text-[12px]" style={{ color: C.sky }}>
+                            {meta.label}
+                          </span>
+                          <span className="flex items-center gap-1.5 text-[12px] font-semibold" style={{ color }}>
+                            {value}
+                            <span className="text-[10px] font-normal" style={{ color: C.muted }}>
+                              {meta.unit}
+                            </span>
+                            {status ? (
+                              <span
+                                className="rounded px-1 text-[9px] font-bold uppercase"
+                                style={{ background: softBg(C.red, 0.18), color: C.red }}
+                              >
+                                {status === "low" ? "bas" : "élevé"}
+                              </span>
+                            ) : null}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {nutrition?.source ? (
+                    <p className="mt-2 truncate text-[10px]" style={{ color: C.muted }}>
+                      Source : {nutrition.source}
+                    </p>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="mt-3 text-[11px]" style={{ color: C.muted }}>
+                  Aucun bilan importé pour ce joueur.
+                </p>
+              )}
+            </GlassCard>
+            </>
           ) : null}
         </div>
       </div>

@@ -3,13 +3,13 @@ import { motion } from "framer-motion";
 import {
   Brain,
   ShieldAlert,
-  Activity,
   RefreshCw,
   AlertTriangle,
   CheckCircle2,
   BarChart3,
   LineChart as LineChartIcon,
   Zap,
+  FlaskConical,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -26,7 +26,10 @@ import {
   fetchAllViivPredictions,
   type AllViivPredictionsResult,
   type ViivSensorData,
+  type MedicalNutritionValues,
 } from "../../../lib/api/viivAiApi";
+import { clubApi, type PlayerNutritionRecord } from "../../../lib/api/club";
+import { NUTRITION_META, MODEL_NUTRITION_KEYS } from "../../../lib/api/ocrApi";
 
 interface ViivAiPredictionsCardProps {
   player: WhoopPlayerMetrics;
@@ -38,6 +41,7 @@ export function ViivAiPredictionsCard({ player }: ViivAiPredictionsCardProps) {
   const [predictions, setPredictions] = useState<AllViivPredictionsResult | null>(null);
   const [activeModule, setActiveModule] = useState<"all" | "risk" | "zone" | "survival">("all");
   const [autoAnalyze, setAutoAnalyze] = useState(true);
+  const [nutrition, setNutrition] = useState<PlayerNutritionRecord | null>(null);
 
   const runPrediction = useCallback(async () => {
     setLoading(true);
@@ -58,6 +62,17 @@ export function ViivAiPredictionsCard({ player }: ViivAiPredictionsCardProps) {
       strain: player.strain || 12.0,
     };
 
+    // Récupère le bilan nutritionnel OCR persistant (section médicale) pour ce joueur,
+    // afin d'alimenter les 3 modèles via `medical_nutrition`. Clé = ClubPlayer.id.
+    let nutritionValues: MedicalNutritionValues | null = null;
+    try {
+      const rec = await clubApi.getPlayerNutrition(player.id);
+      setNutrition(rec ?? null);
+      nutritionValues = rec?.values ?? null;
+    } catch {
+      setNutrition(null);
+    }
+
     try {
       const res = await fetchAllViivPredictions(
         numericPlayerId,
@@ -67,7 +82,8 @@ export function ViivAiPredictionsCard({ player }: ViivAiPredictionsCardProps) {
           age: player.age,
           fitnessScore: player.fitnessScore,
         },
-        viivData
+        viivData,
+        nutritionValues
       );
       setPredictions(res);
     } catch (err: unknown) {
@@ -135,6 +151,23 @@ export function ViivAiPredictionsCard({ player }: ViivAiPredictionsCardProps) {
     { id: "ankle-left", name: "Cheville gauche", risk: getRiskForKeyword(["cheville", "ankle"]), severity: getSeverityFromRisk(getRiskForKeyword(["cheville", "ankle"])) },
     { id: "ankle-right", name: "Cheville droite", risk: getRiskForKeyword(["cheville", "ankle"]), severity: getSeverityFromRisk(getRiskForKeyword(["cheville", "ankle"])) },
   ];
+
+  // OCR medical nutrition values currently feeding the models (with out-of-range flags).
+  const nutritionModelEntries = (() => {
+    const values: MedicalNutritionValues = nutrition?.values ?? {};
+    const flaggedMap = new Map<string, "low" | "high">();
+    for (const m of nutrition?.flagged ?? []) {
+      if (m.status === "low" || m.status === "high") flaggedMap.set(m.nutrient, m.status);
+    }
+    return MODEL_NUTRITION_KEYS.filter(
+      (k) => typeof values[k] === "number" && Number.isFinite(values[k] as number),
+    ).map((k) => ({
+      key: k,
+      value: values[k] as number,
+      meta: NUTRITION_META[k],
+      status: flaggedMap.get(k),
+    }));
+  })();
 
   return (
     <motion.div
@@ -243,6 +276,62 @@ export function ViivAiPredictionsCard({ player }: ViivAiPredictionsCardProps) {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* OCR Medical Nutrition feeding the 3 models */}
+      <div style={glassCard} className="p-4">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <FlaskConical size={16} style={{ color: VIIV_THEME.cyan }} />
+            <h3 className="text-xs font-extrabold uppercase tracking-wider text-white">
+              Données Nutritionnelles (OCR Médical)
+            </h3>
+          </div>
+          {nutrition?.source ? (
+            <span className="truncate text-[10px]" style={{ color: VIIV_THEME.muted }}>
+              Source: {nutrition.source}
+            </span>
+          ) : null}
+        </div>
+
+        {nutritionModelEntries.length > 0 ? (
+          <>
+            <div className="flex flex-wrap gap-2">
+              {nutritionModelEntries.map(({ key, value, meta, status }) => {
+                const flagged = status === "low" || status === "high";
+                return (
+                  <span
+                    key={key}
+                    className="flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-semibold"
+                    style={{
+                      background: flagged ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.04)",
+                      borderColor: flagged ? "rgba(239,68,68,0.4)" : "rgba(255,255,255,0.1)",
+                      color: flagged ? VIIV_THEME.coral : "#fff",
+                    }}
+                  >
+                    {meta.label}: {value}
+                    <span className="text-[9px] font-normal" style={{ color: VIIV_THEME.muted }}>
+                      {meta.unit}
+                    </span>
+                    {flagged ? (
+                      <span className="text-[8px] font-black uppercase" style={{ color: VIIV_THEME.coral }}>
+                        {status === "low" ? "bas" : "élevé"}
+                      </span>
+                    ) : null}
+                  </span>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-[10px]" style={{ color: VIIV_THEME.muted }}>
+              Ces valeurs ajustent les entrées des 3 modèles via un « readiness penalty ».
+            </p>
+          </>
+        ) : (
+          <p className="text-[11px]" style={{ color: VIIV_THEME.muted }}>
+            Aucun bilan importé — importez-en un dans{" "}
+            <span className="font-semibold text-white">Médical › Dossiers</span> pour enrichir ces prédictions.
+          </p>
+        )}
       </div>
 
       {error && (
