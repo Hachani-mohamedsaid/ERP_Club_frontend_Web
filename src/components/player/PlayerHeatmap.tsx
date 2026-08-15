@@ -9,10 +9,15 @@ import {
   intensityColors,
   type HeatBlob,
   type HeatmapPeriod,
+  type HeatmapPeriodData,
 } from "../../data/joueurPersonalData";
 
 interface PlayerHeatmapProps {
   compact?: boolean;
+  /** Live period map from the AI service; defaults to the curated static data. */
+  periods?: Record<HeatmapPeriod, HeatmapPeriodData>;
+  /** Data provenance — drives the "IA LIVE" badge. */
+  source?: "live" | "static";
 }
 
 function PitchSvg() {
@@ -87,11 +92,12 @@ function HeatBlobLayer({ blob, index, onHover, onLeave }: {
   );
 }
 
-export function PlayerHeatmap({ compact = false }: PlayerHeatmapProps) {
+export function PlayerHeatmap({ compact = false, periods, source = "static" }: PlayerHeatmapProps) {
   const [period, setPeriod] = useState<HeatmapPeriod>("season");
   const [hovered, setHovered] = useState<HeatBlob | null>(null);
 
-  const data = HEATMAP_BY_PERIOD[period];
+  const periodMap = periods ?? HEATMAP_BY_PERIOD;
+  const data = periodMap[period];
   const display = hovered ?? data.blobs[0];
   const pitchMaxWidth = compact ? 288 : 360;
 
@@ -109,8 +115,16 @@ export function PlayerHeatmap({ compact = false }: PlayerHeatmapProps) {
           <div className="flex items-center gap-2">
             <span className="text-lg">🔥</span>
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#FF6B57" }}>
+              <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#FF6B57" }}>
                 Zone préférée
+                {source === "live" && (
+                  <span
+                    className="rounded-full px-1.5 py-0.5 text-[8px] font-bold not-italic"
+                    style={{ background: "rgba(34,197,94,0.15)", color: "#22C55E" }}
+                  >
+                    ● IA LIVE
+                  </span>
+                )}
               </p>
               <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
                 {data.favoriteZone.label}

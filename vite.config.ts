@@ -7,6 +7,7 @@ import { scoutMapApiPlugin } from './vite-plugin-scout-map-api'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const apiTarget = (env.VITE_API_PROXY_TARGET ?? 'https://erp-club-backend-production.up.railway.app').replace(/\/$/, '')
+  const aiTarget = (env.VITE_AI_PROXY_TARGET ?? 'https://erp-club-ai-service-production.up.railway.app').replace(/\/$/, '')
 
   if (env.API_FOOTBALL_KEY) process.env.API_FOOTBALL_KEY = env.API_FOOTBALL_KEY
   if (env.VITE_API_FOOTBALL_KEY) process.env.VITE_API_FOOTBALL_KEY = env.VITE_API_FOOTBALL_KEY
@@ -29,6 +30,12 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: true,
           rewrite: (path) => path.replace(/^\/api/, ''),
+        },
+        '/ai': {
+          target: aiTarget,
+          changeOrigin: true,
+          secure: true,
+          rewrite: (path) => path.replace(/^\/ai/, ''),
         },
         '/uploads': {
           target: apiTarget,

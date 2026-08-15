@@ -13,13 +13,18 @@ const apiTarget = (
   process.env.VITE_API_URL ??
   "https://erp-club-backend-production.up.railway.app"
 ).replace(/\/$/, "");
+const aiTarget = (
+  process.env.AI_PROXY_TARGET ??
+  process.env.VITE_AI_PROXY_TARGET ??
+  "https://erp-club-ai-service-production.up.railway.app"
+).replace(/\/$/, "");
 
 if (!Number.isFinite(port) || port <= 0) {
   console.error(`Invalid PORT: ${process.env.PORT}`);
   process.exit(1);
 }
 
-console.log(`Starting static server (PORT=${port}, apiTarget=${apiTarget})`);
+console.log(`Starting static server (PORT=${port}, apiTarget=${apiTarget}, aiTarget=${aiTarget})`);
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -39,20 +44,32 @@ const MIME = {
 };
 
 function shouldProxy(pathname) {
-  return pathname.startsWith("/api") || pathname.startsWith("/uploads") || pathname.startsWith("/socket.io");
+  return (
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/ai") ||
+    pathname.startsWith("/uploads") ||
+    pathname.startsWith("/socket.io")
+  );
 }
 
-function backendPath(pathname, search) {
+/** Resolve the upstream origin + rewritten path for a proxied request. */
+function resolveUpstream(pathname, search) {
+  // AI microservice — strip the /ai prefix (mirrors the Vite dev proxy).
+  if (pathname === "/ai" || pathname.startsWith("/ai/")) {
+    const stripped = pathname.replace(/^\/ai/, "") || "/";
+    return { origin: aiTarget, path: `${stripped}${search}` };
+  }
   if (pathname.startsWith("/api")) {
     const stripped = pathname.replace(/^\/api/, "") || "/";
-    return `${stripped}${search}`;
+    return { origin: apiTarget, path: `${stripped}${search}` };
   }
-  return `${pathname}${search}`;
+  return { origin: apiTarget, path: `${pathname}${search}` };
 }
 
 function proxyToBackend(req, res) {
   const url = new URL(req.url ?? "/", "http://local");
-  const target = new URL(backendPath(url.pathname, url.search), `${apiTarget}/`);
+  const upstreamInfo = resolveUpstream(url.pathname, url.search);
+  const target = new URL(upstreamInfo.path, `${upstreamInfo.origin}/`);
   const isHttps = target.protocol === "https:";
   const transport = isHttps ? httpsRequest : httpRequest;
 

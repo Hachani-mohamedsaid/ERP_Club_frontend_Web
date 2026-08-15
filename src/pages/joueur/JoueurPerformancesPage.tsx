@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
@@ -11,6 +11,8 @@ import { JoueurKpiCard } from "../../components/player/JoueurKpiCard";
 import { PlayerHeatmap } from "../../components/player/PlayerHeatmap";
 import { useCurrentPlayer } from "../../hooks/useCurrentPlayer";
 import { useJoueurBackendData } from "../../hooks/useJoueurBackendData";
+import { usePlayerHeatmap } from "../../hooks/usePlayerHeatmap";
+import { aiPlayerApi } from "../../lib/api/ai/player";
 import { useLocale } from "../../contexts/LocaleContext";
 import { staggerContainer, staggerItem } from "../../lib/animations";
 
@@ -21,13 +23,69 @@ const OVERVIEW_KEYS = [
   { key: "mental" as const, icon: Heart, color: "#F59E0B", label: "Mental" },
 ];
 
+// French month labels used to extend the evolution chart into forecast months.
+const MONTHS_FR = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
+
+function nextMonths(lastLabel: string, count: number): string[] {
+  const idx = MONTHS_FR.findIndex((m) => m.toLowerCase() === lastLabel.trim().toLowerCase());
+  if (idx === -1) return Array.from({ length: count }, (_, i) => `M+${i + 1}`);
+  return Array.from({ length: count }, (_, i) => MONTHS_FR[(idx + 1 + i) % 12]);
+}
+
+type EvolutionPoint = { month: string; score: number | null; forecast: number | null };
+
+/** Combine actual monthly scores with the AI forecast into one continuous chart series. */
+function buildEvolutionChart(
+  actual: Array<{ month: string; score: number }>,
+  forecast: number[] | null,
+): EvolutionPoint[] {
+  const base: EvolutionPoint[] = actual.map((p) => ({ month: p.month, score: p.score, forecast: null }));
+  if (!forecast || forecast.length === 0 || base.length === 0) return base;
+  // Bridge the last actual point into the forecast series for a continuous line.
+  const last = base[base.length - 1];
+  base[base.length - 1] = { ...last, forecast: last.score };
+  const labels = nextMonths(last.month, forecast.length);
+  const fc: EvolutionPoint[] = forecast.map((v, i) => ({ month: labels[i], score: null, forecast: v }));
+  return [...base, ...fc];
+}
+
 interface VideoModal { title: string; thumbnail: string }
 
 export function JoueurPerformancesPage() {
   const { player } = useCurrentPlayer();
-  const { playerStats, matchStats, squadPlayers } = useJoueurBackendData();
+  const { playerStats, matchStats, squadPlayers, myPlayerId } = useJoueurBackendData();
   const { t } = useLocale();
   const [videoModal, setVideoModal] = useState<VideoModal | null>(null);
+
+  // Numeric id for the AI endpoints (they only echo it back; fall back to 10).
+  const playerIdNum = useMemo(() => {
+    const n = parseInt(String(myPlayerId ?? ""), 10);
+    return Number.isFinite(n) ? n : 10;
+  }, [myPlayerId]);
+
+  // Live heatmap from the AI service (falls back to curated static data).
+  const { periods: heatmapPeriods, source: heatmapSource } = usePlayerHeatmap(playerIdNum);
+
+  // AI performance forecast from the trained time-series model.
+  const perfHistory = useMemo(
+    () => (playerStats?.performanceEvolution ?? []).map((p) => p.score),
+    [playerStats],
+  );
+  const [forecast, setForecast] = useState<number[] | null>(null);
+  useEffect(() => {
+    if (perfHistory.length < 3) return;
+    let cancelled = false;
+    aiPlayerApi
+      .predictPerformance({
+        playerId: playerIdNum,
+        history: perfHistory,
+        steps: 3,
+        matches_played: Math.min(20, matchStats.length || 3),
+      })
+      .then((res) => { if (!cancelled) setForecast(res.predictions); })
+      .catch(() => { if (!cancelled) setForecast(null); });
+    return () => { cancelled = true; };
+  }, [perfHistory, playerIdNum, matchStats.length]);
 
   if (!player) return null;
 
@@ -85,6 +143,10 @@ export function JoueurPerformancesPage() {
 
   // Performance evolution
   const perfEvolution = playerStats?.performanceEvolution ?? [];
+  // Only surface the forecast when we actually have enough history for it.
+  const hasForecast = !!forecast && perfEvolution.length >= 3;
+  // Actual months + AI forecast tail (dashed line). Falls back to actual-only.
+  const evolutionChart = buildEvolutionChart(perfEvolution, hasForecast ? forecast : null);
 
   // Goal contribution pie — derived from real matchStats when backend data not available
   const totalGoals = matchStats.reduce((s, m) => s + m.goals, 0);
@@ -130,7 +192,7 @@ export function JoueurPerformancesPage() {
         <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
           {t.performances.heatmap}
         </h3>
-        <PlayerHeatmap compact />
+        <PlayerHeatmap compact periods={heatmapPeriods} source={heatmapSource} />
       </JoueurKpiCard>
 
       {/* Video / Last Match Analysis */}
@@ -211,15 +273,37 @@ export function JoueurPerformancesPage() {
         </JoueurKpiCard>
 
         <JoueurKpiCard delay={0.12}>
-          <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Évolution de performance</h3>
+          <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+            Évolution de performance
+            {hasForecast && (
+              <span
+                className="rounded-full px-1.5 py-0.5 text-[8px] font-bold"
+                style={{ background: "rgba(245,158,11,0.15)", color: "#F59E0B" }}
+              >
+                ● PRÉVISION IA
+              </span>
+            )}
+          </h3>
           {perfEvolution.length > 0 ? (
             <ResponsiveContainer width="100%" height={260}>
-              <LineChart data={perfEvolution}>
+              <LineChart data={evolutionChart}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
                 <XAxis dataKey="month" tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
                 <YAxis domain={[60, 100]} tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
                 <Tooltip contentStyle={{ background: "var(--surface-panel-solid)", border: "1px solid var(--surface-panel-border)", borderRadius: 12 }} />
                 <Line type="monotone" dataKey="score" stroke="#FF6B57" strokeWidth={2} dot={{ r: 4, fill: "#FF6B57" }} animationDuration={1500} />
+                {hasForecast && (
+                  <Line
+                    type="monotone"
+                    dataKey="forecast"
+                    stroke="#F59E0B"
+                    strokeWidth={2}
+                    strokeDasharray="5 4"
+                    dot={{ r: 3, fill: "#F59E0B" }}
+                    animationDuration={1500}
+                    connectNulls
+                  />
+                )}
               </LineChart>
             </ResponsiveContainer>
           ) : (
